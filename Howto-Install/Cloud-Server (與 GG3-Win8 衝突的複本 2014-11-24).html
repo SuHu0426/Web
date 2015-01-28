@@ -1,0 +1,390 @@
+<html>
+  <head>
+    <title>Cloud-Server Notes</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link type="text/css" rel="stylesheet" href="/css/style_2013.css" />
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+  </head>
+  <body>
+    <h1>Cloud-Server Notes</h1>
+    <h2>Share Storages</h2>
+    <h3>Partition Large Disk</h3>
+    <div class="console">
+      <div class="dol">sudo fdisk -l /dev/sda</div>
+      <div class="out">Linux CSIE-Server 3.10-2-amd64 #1 SMP Debian 3.10.7-1 (2013-08-17) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+You have new mail.
+Last login: Tue Sep 10 20:03:57 2013
+cloud@CSIE-Server:~$ sudo fdisk -l /dev/sda
+[sudo] password for cloud: 
+
+Disk /dev/sda: 4000.3 GB, 4000250331136 bytes
+255 heads, 63 sectors/track, 486336 cylinders, total 7812988928 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1       16064        8032   77  Unknown
+/dev/sda2           16065   419430399   209707167+  88  Linux plaintext</div>
+      <div class="dol">sudo fdisk /dev/sda</div>
+      <div class="out">WARNING: The size of this disk is 4.0 TB (4000250331136 bytes).
+DOS partition table format can not be used on drives for volumes
+larger than (2199023255040 bytes) for 512-byte sectors. Use parted(1) and GUID 
+partition table format (GPT).
+
+
+Command (m for help): <span style="color: red;">m</span>
+Command action
+   a   toggle a bootable flag
+   b   edit bsd disklabel
+   c   toggle the dos compatibility flag
+   d   delete a partition
+   l   list known partition types
+   m   print this menu
+   n   add a new partition
+   o   create a new empty DOS partition table
+   p   print the partition table
+   q   quit without saving changes
+   s   create a new empty Sun disklabel
+   t   change a partition's system id
+   u   change display/entry units
+   v   verify the partition table
+   w   write table to disk and exit
+   x   extra functionality (experts only)
+
+Command (m for help): <span style="color: red;">o</span>
+Building a new DOS disklabel with disk identifier 0xcce51cce.
+Changes will remain in memory only, until you decide to write them.
+After that, of course, the previous content won't be recoverable.
+
+Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
+
+WARNING: The size of this disk is 4.0 TB (4000250331136 bytes).
+DOS partition table format can not be used on drives for volumes
+larger than (2199023255040 bytes) for 512-byte sectors. Use parted(1) and GUID 
+partition table format (GPT).
+
+
+Command (m for help): <span style="color: red;">q</span></div>
+      <div class="dol">sudo aptitude install gdisk</div>
+      <div class="dol">sudo gdisk /dev/sda</div>
+      <div class="out">GPT fdisk (gdisk) version 0.8.5
+
+Partition table scan:
+  MBR: MBR only
+  BSD: not present
+  APM: not present
+  GPT: not present
+
+
+***************************************************************
+Found invalid GPT and valid MBR; converting MBR to GPT format.
+THIS OPERATION IS POTENTIALLY DESTRUCTIVE! Exit by typing 'q' if
+you don't want to convert your MBR partitions to GPT format!
+***************************************************************
+
+Exact type match not found for type code 7700; assigning type code for
+'Linux filesystem'
+Exact type match not found for type code 8800; assigning type code for
+'Linux filesystem'
+Warning! Main partition table overlaps the first partition by 33 blocks!
+You will need to delete this partition or resize it in another utility.
+
+Command (? for help): <span style="color: red;">?</span>
+b	back up GPT data to a file
+c	change a partition's name
+d	delete a partition
+i	show detailed information on a partition
+l	list known partition types
+n	add a new partition
+o	create a new empty GUID partition table (GPT)
+p	print the partition table
+q	quit without saving changes
+r	recovery and transformation options (experts only)
+s	sort partitions
+t	change a partition's type code
+v	verify disk
+w	write table to disk and exit
+x	extra functionality (experts only)
+?	print this menu
+
+Command (? for help): <span style="color: red;">o</span>
+This option deletes all partitions and creates a new protective MBR.
+Proceed? (Y/N): <span style="color: red;">Y</span>
+
+Command (? for help): <span style="color: red;">p</span>
+Disk /dev/sda: 7812988928 sectors, 3.6 TiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 524F107C-FEC9-43EA-BF32-7C175AE34BE8
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 7812988894
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 7812988861 sectors (3.6 TiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+
+Command (? for help): <span style="color: red;">n</span>
+Partition number (1-128, default 1): 
+First sector (34-7812988894, default = 2048) or {+-}size{KMGTP}: 
+Last sector (2048-7812988894, default = 7812988894) or {+-}size{KMGTP}: 
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300): <span style="color: red;">L</span>
+0700 Microsoft basic data  0c01 Microsoft reserved    2700 Windows RE          
+4200 Windows LDM data      4201 Windows LDM metadata  7501 IBM GPFS            
+7f00 ChromeOS kernel       7f01 ChromeOS root         7f02 ChromeOS reserved   
+8200 Linux swap            8300 Linux filesystem      8301 Linux reserved      
+8e00 Linux LVM             a500 FreeBSD disklabel     a501 FreeBSD boot        
+a502 FreeBSD swap          a503 FreeBSD UFS           a504 FreeBSD ZFS         
+a505 FreeBSD Vinum/RAID    a580 Midnight BSD data     a581 Midnight BSD boot   
+a582 Midnight BSD swap     a583 Midnight BSD UFS      a584 Midnight BSD ZFS    
+a585 Midnight BSD Vinum    a800 Apple UFS             a901 NetBSD swap         
+a902 NetBSD FFS            a903 NetBSD LFS            a904 NetBSD concatenated 
+a905 NetBSD encrypted      a906 NetBSD RAID           ab00 Apple boot          
+af00 Apple HFS/HFS+        af01 Apple RAID            af02 Apple RAID offline  
+af03 Apple label           af04 AppleTV recovery      af05 Apple Core Storage  
+be00 Solaris boot          bf00 Solaris root          bf01 Solaris /usr & Mac Z
+bf02 Solaris swap          bf03 Solaris backup        bf04 Solaris /var        
+bf05 Solaris /home         bf06 Solaris alternate se  bf07 Solaris Reserved 1  
+bf08 Solaris Reserved 2    bf09 Solaris Reserved 3    bf0a Solaris Reserved 4  
+bf0b Solaris Reserved 5    c001 HP-UX data            c002 HP-UX service       
+ef00 EFI System            ef01 MBR partition scheme  ef02 BIOS boot partition 
+fd00 Linux RAID            
+Hex code or GUID (L to show codes, Enter = 8300): 
+Changed type of partition to 'Linux filesystem'
+
+Command (? for help): <span style="color: red;">p</span>
+Disk /dev/sda: 7812988928 sectors, 3.6 TiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 524F107C-FEC9-43EA-BF32-7C175AE34BE8
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 7812988894
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048      7812988894   3.6 TiB     8300  Linux filesystem
+
+Command (? for help): <span style="color: red;">w</span>
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): <span style="color: red;">Y</span>
+OK; writing new GUID partition table (GPT) to /dev/sda.
+The operation has completed successfully.</div>
+      <div class="dol">ls -l /dev/sda*</div>
+      <div class="out">brw-rw---T 1 root disk 8, 0 Sep 10 21:43 /dev/sda
+brw-rw---T 1 root disk 8, 1 Sep 10 21:43 /dev/sda1</div>
+      <div class="dol">sudo fdisk -l /dev/sda</div>
+      <div class="out">WARNING: GPT (GUID Partition Table) detected on '/dev/sda'! The util fdisk doesn't support GPT. Use GNU Parted.
+
+
+Disk /dev/sda: 4000.3 GB, 4000250331136 bytes
+256 heads, 63 sectors/track, 484436 cylinders, total 7812988928 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1  4294967295  2147483647+  ee  GPT</div>
+      <div class="dol">sudo gdisk -l /dev/sda</div>
+      <div class="out">GPT fdisk (gdisk) version 0.8.5
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+Disk /dev/sda: 7812988928 sectors, 3.6 TiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 524F107C-FEC9-43EA-BF32-7C175AE34BE8
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 7812988894
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048      7812988894   3.6 TiB     8300  Linux filesystem</div>
+      <div class="dol">sudo mkfs.ext4 /dev/sda1</div>
+      <div class="out">mke2fs 1.42.8 (20-Jun-2013)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=0 blocks, Stripe width=0 blocks
+244162560 inodes, 976623355 blocks
+48831167 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=4294967296
+29805 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+	4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968, 
+	102400000, 214990848, 512000000, 550731776, 644972544
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done</div>
+      <div class="dol">sudo mkdir /remote</div>
+      <div class="dol">sudo mount /dev/sda1 /remote</div>
+      <div class="dol">df -h /remote</div>
+      <div class="out">Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       3.6T   68M  3.4T   1% /remote</div>
+    </div>
+
+    <h3>NFSv4 Server</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install nfs-kernel-server</div>
+      <div class="dol">sudo mkdir /media/export</div>
+      <div class="dol">sudo mkdir /media/export/cloud</div>
+      <div class="dol">sudo mkdir /media/export/ISOs</div>
+      <div class="dol">sudo mount --bind /remote /media/export/cloud</div>
+      <div class="dol">sudo mount --bind /video/ISOs /media/export/ISOs</div>
+      <div class="dol">sudo nano /etc/fstab</div>
+      <div class="out">/dev/sda1       /remote                 ext4    defaults        0       2
+/remote         /media/export/cloud     none    bind            0       0
+/video/ISOs     /media/export/ISOs      none    bind            0       0</div>
+      <div class="dol">sudo nano /etc/default/nfs-common</div>
+      <div class="out"># If you do not set values for the NEED_ options, they will be attempted
+# autodetected; this should be sufficient for most people. Valid alternatives
+# for the NEED_ options are "yes" and "no".
+
+# Do you want to start the statd daemon? It is not needed for NFSv4.
+NEED_STATD=
+
+# Options for rpc.statd.
+#   Should rpc.statd listen on a specific port? This is especially useful
+#   when you have a port-based firewall. To use a fixed port, set this
+#   this variable to a statd argument like: "--port 4000 --outgoing-port 4001".
+#   For more information, see rpc.statd(8) or http://wiki.debian.org/SecuringNFS
+STATDOPTS=
+
+# Do you want to start the idmapd daemon? It is only needed for NFSv4.
+NEED_IDMAPD=<span style="color: red;">yes</span>
+
+# Do you want to start the gssd daemon? It is required for Kerberos mounts.
+NEED_GSSD=<span style="color: red;">no</span></div>
+    </div>
+    <p>不使用 NFSv4 安全配置</p>
+    <div class="console">
+      <div class="dol">sudo nano /etc/default/nfs-kernel-server</div>
+      <div class="out"># Number of servers to start up
+RPCNFSDCOUNT=8
+
+# Runtime priority of server (see nice(1))
+RPCNFSDPRIORITY=0
+
+# Options for rpc.mountd.
+# If you have a port-based firewall, you might want to set up
+# a fixed port here using the --port option. For more information,
+# see rpc.mountd(8) or http://wiki.debian.org/SecuringNFS
+# To disable NFSv4 on the server, specify '--no-nfs-version 4' here
+RPCMOUNTDOPTS=--manage-gids
+
+# Do you want to start the svcgssd daemon? It is only required for Kerberos
+# exports. Valid alternatives are "yes" and "no"; the default is "no".
+NEED_SVCGSSD=<span style="color: red;">no</span>
+
+# Options for rpc.svcgssd.
+RPCSVCGSSDOPTS=</div>
+    </div>
+    <p>設置 ID 配對，用以解決伺服器端與用戶端 UID 不同，因此無法使用資源的問題。（還不知道要怎改）</p>
+    <div class="console">
+      <div class="dol">sudo nano /etc/idmapd.conf</div>
+      <div class="out">[General]
+
+Verbosity = 0
+Pipefs-Directory = /var/lib/nfs/rpc_pipefs
+# set your own domain here, if id differs from FQDN minus hostname
+# Domain = localdomain
+
+[Mapping]
+
+Nobody-User = <span style="color: red;">nobody</span>
+Nobody-Group = <span style="color: red;">nogroup</span></div>
+    </div>
+    <p>設定分享權限參數</p>
+    <div class="console">
+      <div class="dol">sudo nano /etc/exports</div>
+      <div class="out">/media/export   172.16.0.0/255.255.0.0(rw,fsid=0,sync,no_subtree_check,no_root_squash,nohide,insecure)
+/media/export/cloud     172.16.0.0/255.255.0.0(rw,sync,no_subtree_check,no_root_squash,nohide,insecure)
+/media/export/ISOs      172.16.0.0/255.255.0.0(rw,sync,no_subtree_check,no_root_squash,nohide,insecure)</div>
+    </div>
+    <table>
+      <tr><th>Options<th>說明</tr>
+      <tr><td>ro<td>唯讀</tr>
+      <tr><td>rw<td>讀寫</tr>
+      <tr><td>fsid=0<td>定義 NFSv4 根目錄，只能有一個</tr>
+      <tr><td>nohide<td>顯示掛載中的子目錄</tr>
+      <tr><td>insecure<td>允許客戶端使用自訂的 port</tr>
+      <tr><td>sync<td>每次寫操作要同步到物理存儲器上</tr>
+      <tr><td>no_root_squash<td>不啟用 root_squash</tr>
+      <tr><td>no_subtree_check<td>不做權限測試</tr>
+      <tr><td>root_squash<td>NFS 會將 UID 或者 GID 為0 的使用者對應到 anonymous</tr>
+      <tr><td>all_squash<td>將所有使用者對應到 anonymous</tr>
+      <tr><td>anonuid,anongid<td>指定 anonymous 的 UID 與 GID</tr>
+    </table>
+    <p>重新載入 export 設定</p>
+    <div class="console">
+      <div class="dol">sudo exportfs -rv</div>
+      <div class="out">exporting 172.16.0.0/255.255.0.0:/media/export</div>
+    </div>
+
+    <h3>NFSv4 Client</h3>
+    <p>安裝 nfs-common（新版 Debian 預設有裝？）</p>
+    <div class="console">
+      <div class="dol">sudo aptitude install nfs-common</div>
+      <div class="dol">sudo nano /etc/default/nfs-common</div>
+      <div class="out"># If you do not set values for the NEED_ options, they will be attempted
+# autodetected; this should be sufficient for most people. Valid alternatives
+# for the NEED_ options are "yes" and "no".
+
+# Do you want to start the statd daemon? It is not needed for NFSv4.
+NEED_STATD=
+
+# Options for rpc.statd.
+#   Should rpc.statd listen on a specific port? This is especially useful
+#   when you have a port-based firewall. To use a fixed port, set this
+#   this variable to a statd argument like: "--port 4000 --outgoing-port 4001".
+#   For more information, see rpc.statd(8) or http://wiki.debian.org/SecuringNFS
+STATDOPTS=
+
+# Do you want to start the idmapd daemon? It is only needed for NFSv4.
+NEED_IDMAPD=<span style="color: red;">yes</span>
+
+# Do you want to start the gssd daemon? It is required for Kerberos mounts.
+NEED_GSSD=<span style="color: red;">no</span></div>
+      <div class="dol">sudo mkdir /media/cloud</div>
+      <div class="dol">sudo mkdir /media/ISOs</div>
+      <div class="dol">sudo mount -t nfs4 172.16.0.250:/cloud /media/cloud/</div>
+      <div class="dol">sudo mount -t nfs4 172.16.0.250:/ISOs /media/ISOs</div>
+    </div>
+    <p>設定開機自動掛載</p>
+    <div class="console">
+      <div class="dol">sudo nano /etc/fstab</div>
+      <div class="out">172.16.0.250:/cloud     /media/cloud    nfs4    rw,rsize=32768,wsize=32768      0       0
+172.16.0.250:/ISOs      /media/ISOs     nfs4    rw,rsize=32768,wsize=32768      0       0</div>
+      <div class="dol">sudo mount -a</div>
+    </div>
+
+
+    <hr>
+    <address>
+      <a href="mailto:lagnua@gmail.com">ChiSheng Su</a>
+    </address>
+</body>
+</html>

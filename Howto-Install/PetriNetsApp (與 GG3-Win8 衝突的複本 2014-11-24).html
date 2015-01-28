@@ -1,0 +1,141 @@
+
+
+
+<html>
+  <head>
+<title>The Application of PetriNets to Workflow Management</title>
+</head>
+<body>
+<h1>The Application of PetriNets to Workflow Management</h1>
+<h2>Abstract</h2>
+<ol>
+  <li>Petri nets can be used as a design language for the specification of complex workflows.
+  <li>Petri net theory provides for powerful analysis techniques which can be used to verify the correctness of workflow procedures.
+  <li>Consider VM operators (e.g., build, start, suspend, stop) to bo tasks of workflow.
+</ol>
+<h2>Introduction</h2>
+<ul>
+  <li>Motivation:
+    There were no generic tools to support workflow management.
+    <img src="img/Workflow-his.png">
+  <li>The main purpose of a workflow management system:
+    <ul>
+      <li>definition
+      <li>execution
+      <li>registration
+      <li>control of <b>processes</b>
+    </ul>
+<br>
+  <li>Reasons for using Petri net for workflow modeling:
+    <ul>
+      <li>formal semantics
+	<br>A workflow process specified in terms of a Petri net has a clear and precise definition, because the semantics of the classical Petri net and several enhancements (color, time, hierarchy) <b>have been defined formally</b>.<br><br>
+      <li>graphical nature
+	<br>Petri nets are a graphical language. As a result, Petri nets are <b>intuitive and easy to learn</b>. The graphical nature also supports the communication with end-users.<br><br>
+      <li>expressiveness
+	<br>Petri nets <b>support all the primitives needed to model a workflow process</b>. All the routing constructs present in today's workflow management systems can be modeled. Moreover, the fact that states are represented explicitly, allows for the modeling of milestones and implicit choices.<br><br>
+      <li>propertires
+	<br>In the last three decades <b>many people have investigated the basic properties of Petri nets</b>. The firm mathematical foundation allows for the reasoning about these properties. As a result, there is a lot of common knowledge, in the form of books and articles, about this modeling technique.<br><br>
+      <li>analysis
+	<br>Petri nets are marked by the availability of many analysis techniques. Clearly, this is a great asset in favor of the use of Petri nets for workflow modeling. <b>These techniques can be used to prove properties</b> (safety properties, invariance properties, deadlock, etc.) and <b>to calculate performance measures</b> (response times, waiting times, occupation rates, etc.). In this way it is possible to evaluate alternative workflows using standard Petri-net-based analysis tools.<br><br>
+      <li>vendor independent
+	<br>Petri nets provide <b>a tool-independent framework</b> for modeling and analyzing processes. Petri nets are not based on a software package of a specific vendor and do not cease to exist if a new version is released or when one vendor takes over another vendor.<br><br>
+
+    </ul>
+</ul>
+<h2>Workflow management (system)</h2>
+<ul>
+  <li>The ultimate goal of workflow management is to make sure that the proper activities are executed by the right person at the right time.</li><br>
+
+  <li>The Workflow Management Coalition (WfMC) defines a workflow management system as follows ([WFM96]): <i>A system that completely defines, manages, and executes workflows through the execution of software whose order of execution is driven by a computer representation of the workflow logic.</i></li><br>
+
+  <li>characterize a  Workflow Management system are:
+    <ul>
+      <li>business operating system
+      <li>workflow manager
+      <li>case manager
+      <li>logistic control system
+    </ul></li><br>
+
+  <li>Workflows are case-based.</li><br>
+
+  <li>Cases are handled by executing tasks <b>in a specific order</b>. </li><br>
+
+  <li>Alternative terms for workflow process definition:
+    <ul>
+      <li>procedure
+      <li>flow diagram
+      <li>routing definition
+    </ul></li><br>
+
+  <li>Each task has pre- and postconditions:
+    <ul>
+      <li>the pre-conditions should hold before the task is executed.
+      <li>the post-conditions should hold after execution of the task.
+    </ul></li><br>
+
+  <li>A task which needs to be executed for a specific case is called a <b>work item</b>. </li><br>
+
+  <li>Most work items are executed by a <b>resource</b>.</li><br>
+
+  <li>To facilitate the allocation of work items to resources, resources are grouped into <b>classes</b>. A <b>resource class</b> is a group of resources with similar characteristics.
+</li><br>
+
+  <li>If a resource class is based on the <b>capabilities</b> (i.e. functional requirements) of its members, it is called a <b>role</b>. </li><br>
+
+  <li>If the classification is based on the <b>structure</b> of the organization, such a resource class is called an <b>organizational unit</b> (e.g. team, branch or department). </li><br>
+
+  <li>A work item which is being executed by a specific resource is called an <b>activity</b>. </li><br>
+
+  <img src="img/3D-workflow.png">
+<br><br>
+  <li>Four type of routing
+    <ol>
+      <li>sequential<br>
+	<img src="img/sequential.png">
+      </li><br>
+
+      <li>parallel<br>
+	<ul>
+	  <li>AND-split
+	  <li>AND-join
+	</ul>
+	<img src="img/parallel.png"><br>
+      </li><br>
+
+      <li>conditional (exclusive OR)<br>
+	<ul>
+	  <li>OR-split
+	  <li>OR-join
+	</ul>
+	<img src="img/conditional.png"><br>
+      </li><br>
+
+      <li>iteration<br>
+	<img src="img/iterative.png">
+      </li><br>
+    </ol>
+</li><br>
+  
+  <li>A workflow process is characterized by three qualities.
+  <ol>
+    <li>a workflow process is casedriven.
+    <li>the process itself is considered to be essential.
+    <li>he process can be defined in an explicit manner.
+  </ol></li><br>
+	<img src="img/workflow-processes.png">
+	<br><br>
+
+  <li><b>Production workflow</b> is concerned which highly structured processes with almost no variations. </li>
+  <li><b>Administrative workflow</b> corresponds to case-driven processes which follow a well-defined procedure. </li>
+  <li><b>Ad-hoc workflow</b> relates to processes where the procedure is not defined (completely) in advance. </li>
+  <li><b>Collaborative processes</b> are outside the scope of our definition of workflow. </li>
+</ul><br><br>
+
+
+
+<address>
+<a href="mailto:lagnua@gmail.com">ChiSheng Su</a>
+</address>
+</body>
+</html>

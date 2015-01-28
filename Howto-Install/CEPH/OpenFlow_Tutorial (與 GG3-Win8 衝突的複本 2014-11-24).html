@@ -1,0 +1,2894 @@
+<h3>OpenvSwitch Installation</h3>
+
+<b>Note: (12/23/2012)</b> It seems OpenvSwitch supports OpenFlow 1.1+, all we need is 
+installing OpenvSwitch related packages.  See
+<a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;
+f=OPENFLOW-1.1%2B;hb=HEAD" target="newwindow"><b>OpenFlow 1.1+ support in 
+Open vSwitch</b></a>.
+
+<P> In order to increase the flexibility and speed of Network, Stanford computer 
+scientist Nick McKeown and colleagues developed a standard called OpenFlow that 
+essentially opens up the Internet to researchers, allowing them to define data 
+flows using software -- a sort of "software-defined networking."  Now, the role 
+of OpenFlow is to define the mechanism or protocol of SDN.  OpenvSwitch project 
+implements most of OpenFlow and other features. 
+
+<OL>
+  <LI> <a href="./NetworkVirtualization.html#TruthSDN" 
+        target="newwindow">The Truth about Software-defined Networking</a>
+  <LI> <a href="./NetworkVirtualization.html#SDNHistory" 
+        target="newwindow">History of Software-Defined Networking</a>
+</OL>
+
+<P> These instructions apply to installing Debian packages provided by Debian.
+
+<PRE>
+1. Start by installing the "openvswitch-switch" and
+   "openvswitch-common" packages.  These packages include the core
+   userspace components of the switch.
+ 
+ 2. Install an Open vSwitch kernel module.There are multiple ways to
+    do this.  In order of increasing manual effort, these are:
+ 
+       * Use a Linux kernel 3.3 or later, which has an integrated Open
+         vSwitch kernel module.
+ 
+         The upstream Linux kernel module lacks a few features that
+         are in the third-party module.For details, please see the
+         FAQ, "What features are not available in the Open vSwitch
+         kernel datapath that ships as part of the upstream Linux
+         kernel?".
+ 
+       * Install the "openvswitch-datapath-dkms" Debian package that
+         you built earlier.This should automatically build and
+         install the Open vSwitch kernel module for your running
+         kernel.
+ 
+         This option requires that you have a compiler and toolchain
+         installed on the machine where you run Open vSwitch, which
+         may be unacceptable in some production server environments.
+ 
+       * Install the "openvswitch-datapath-source" Debian package, use
+         "module-assistant" to build a Debian package of the Open
+         vSwitch kernel module for your kernel, and then install that
+         Debian package.
+  
+         You can install the kernel module Debian packages that you
+         build this way on the same machine where you built it or on
+         another machine or machines, which means that you don't
+         necessarily have to have any build infrastructure on the
+         machines where you use the kernel module.
+  
+         /usr/share/doc/openvswitch-datapath-source/README.Debian has
+         details on the build process.
+  
+       * Build and install the kernel module by hand.
+  
+Open vSwitch .deb packages not mentioned above are rarely useful.
+Please refer to their individual package descriptions to find out
+whether any of them are useful to you.
+</PRE>  
+
+<h3><a href="http://yuba.stanford.edu/~casado/of-sw.html" 
+      target="newwindow">List of OpenFlow Software Projects</a>&nbsp;&nbsp;</h3>
+
+<a name="OpenFlowTuto"></a>
+<b>Note: (12/22/2012)</b> Probably, OpenFlow Tutorial is too old (Debian Lenny, 4 
+years ago!).  Goto the beginning of this page, Will OpenvSwitch be the correct 
+package to install?
+
+<h3>OpenFlow Tutorial 
+<a href="http://www.openflow.org/wk/index.php/OpenFlow_Tutorial" 
+target="newwindow">(Source Origin)</a></h3>
+
+<h5 id="siteSub">From OpenFlow Wiki</h5>
+
+<p>Welcome to the OpenFlow tutorial!</p>
+
+<p>OpenFlow is an open interface for remotely controlling the 
+forwarding tables in network switches, routers, and access points.  Upon
+ this low-level primitive, researchers can build networks with new 
+high-level properties.  For example, OpenFlow enables more secure 
+default-off networks, wireless networks with smooth handoffs, scalable 
+data center networks, host mobility, more energy-efficient networks and 
+new wide-area networks - to name a few.</p>
+
+<p>This tutorial is your opportunity to gain hands-on experience 
+with the platforms and debugging tools most useful for developing 
+network control applications on OpenFlow. </p>
+
+<p><b>Active ONS Tutorial Slides (4/16/2012):</b>
+</p>
+<ul><li> Main Slides <a href="http://www.stanford.edu/%7Ebrandonh/ONS/OpenFlowTutorial_ONS_Heller.pptx" class="external text" rel="nofollow">pptx</a>, <a href="http://www.stanford.edu/%7Ebrandonh/ONS/OpenFlowTutorial_ONS_Heller.pdf" class="external text" rel="nofollow">pdf</a></li>
+<li> Virtualization</li>
+<li> Controller Showdown</li>
+<li> Deployment Experiences
+</li></ul>
+<p><b>Archived Tutorial Slides:</b></p>
+<ul><li> <a href="http://opennetsummit.org/" class="external text" rel="nofollow">OpenNetSummit</a> Tutorial (10/19/2011)
+<ul><li> Main Slides: <a href="http://stanford.edu/%7Ebrandonh/downloads/OpenFlowTutorial_ONS.pdf" class="external text" rel="nofollow">pdf</a>, <a href="http://stanford.edu/%7Ebrandonh/downloads/OpenFlowTutorial_ONS.pptx" class="external text" rel="nofollow">pptx</a></li>
+<li> Deployment Forum:
+<ul><li> Johan van Reijendam (Stanford): <a href="http://stanford.edu/%7Ebrandonh/downloads/jvanreij.tgz" class="external text" rel="nofollow">tgz</a></li>
+<li> David Erickson (Stanford): <a href="http://yuba.stanford.edu/%7Ederickso/docs/ons_deployment_panel.pptx" class="external text" rel="nofollow">pptx</a></li>
+<li> Subhasree Mandal (Google): <a href="http://www.openflow.org/wk/images/0/0f/OpenFlowTutorial-Google.pdf" class="external text" rel="nofollow">pdf</a>
+</li></ul>
+</ul>
+</ul>
+
+OpenFlow Resources:
+
+<OL>
+  <LI><a href="https://github.com/mininet/" target="newwindow">Mininet Repositories</a>
+  <LI><a href="https://github.com/mininet/mininet/blob/master/util/install.sh" 
+      target="newwindow">Mininet Install.sh</a>
+  <LI><a href="http://packetpushers.net/big-switch-network-openflow-and-virtual-networking/" 
+      target="newwindow">Big Switch Network, OpenFlow, and Virtual-Networking</a>
+</OL>
+
+<h4>Contents</h4> 
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Overview"><span class="tocnumber">1</span> <span class="toctext">Overview</span></a>
+<ul>
+<li class="toclevel-2 tocsection-2"><a href="#Pre-requisites"><span class="tocnumber">1.1</span> <span class="toctext">Pre-requisites</span></a></li>
+<li class="toclevel-2 tocsection-3"><a href="#Stuck.3F_Found_a_bug.3F_Questions.3F"><span class="tocnumber">1.2</span> <span class="toctext">Stuck?  Found a bug?  Questions?</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-4"><a href="#Install_Required_Software"><span class="tocnumber">2</span> <span class="toctext">Install Required Software</span></a>
+<ul>
+<li class="toclevel-2 tocsection-5"><a href="#Download_Files"><span class="tocnumber">2.1</span> <span class="toctext">Download Files</span></a></li>
+<li class="toclevel-2 tocsection-6"><a href="#Install_and_Verify"><span class="tocnumber">2.2</span> <span class="toctext">Install and Verify</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-7"><a href="#Set_up_Virtual_Machine"><span class="tocnumber">3</span> <span class="toctext">Set up Virtual Machine</span></a>
+<ul>
+<li class="toclevel-2 tocsection-8"><a href="#Unpack_Virtual_Machine_Disk_Image"><span class="tocnumber">3.1</span> <span class="toctext">Unpack Virtual Machine Disk Image</span></a></li>
+<li class="toclevel-2 tocsection-9"><a href="#Start_Virtual_Machine"><span class="tocnumber">3.2</span> <span class="toctext">Start Virtual Machine</span></a></li>
+<li class="toclevel-2 tocsection-10"><a href="#Choose_Preferred_Editor"><span class="tocnumber">3.3</span> <span class="toctext">Choose Preferred Editor</span></a>
+<ul>
+<li class="toclevel-3 tocsection-11"><a href="#Command_Prompt_Notes"><span class="tocnumber">3.3.1</span> <span class="toctext">Command Prompt Notes</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-12"><a href="#Set_Up_Network_Access"><span class="tocnumber">3.4</span> <span class="toctext">Set Up Network Access</span></a>
+<ul>
+<li class="toclevel-3 tocsection-13"><a href="#VirtualBox"><span class="tocnumber">3.4.1</span> <span class="toctext">VirtualBox</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-14"><a href="#Access_VM_via_SSH"><span class="tocnumber">3.5</span> <span class="toctext">Access VM via SSH</span></a>
+<ul>
+<li class="toclevel-3 tocsection-15"><a href="#Mac_OS_X_and_Linux"><span class="tocnumber">3.5.1</span> <span class="toctext">Mac OS X and Linux</span></a></li>
+<li class="toclevel-3 tocsection-16"><a href="#Windows"><span class="tocnumber">3.5.2</span> <span class="toctext">Windows</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-17"><a href="#Alternative:_Run_X11_in_the_VM_console_window"><span class="tocnumber">3.6</span> <span class="toctext">Alternative: Run X11 in the VM console window</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-18"><a href="#Learn_Development_Tools"><span class="tocnumber">4</span> <span class="toctext">Learn Development Tools</span></a>
+<ul>
+<li class="toclevel-2 tocsection-19"><a href="#Start_Network"><span class="tocnumber">4.1</span> <span class="toctext">Start Network</span></a></li>
+<li class="toclevel-2 tocsection-20"><a href="#Mininet_Brief_Intro"><span class="tocnumber">4.2</span> <span class="toctext">Mininet Brief Intro</span></a></li>
+<li class="toclevel-2 tocsection-21"><a href="#dpctl_Example_Usage"><span class="tocnumber">4.3</span> <span class="toctext">dpctl Example Usage</span></a></li>
+<li class="toclevel-2 tocsection-22"><a href="#Ping_Test"><span class="tocnumber">4.4</span> <span class="toctext">Ping Test</span></a></li>
+<li class="toclevel-2 tocsection-23"><a href="#Start_Wireshark"><span class="tocnumber">4.5</span> <span class="toctext">Start Wireshark</span></a></li>
+<li class="toclevel-2 tocsection-24"><a href="#Start_Controller_and_view_Startup_messages_in_Wireshark"><span class="tocnumber">4.6</span> <span class="toctext">Start Controller and view Startup messages in Wireshark</span></a></li>
+<li class="toclevel-2 tocsection-25"><a href="#View_OpenFlow_Messages_for_Ping"><span class="tocnumber">4.7</span> <span class="toctext">View OpenFlow Messages for Ping</span></a></li>
+<li class="toclevel-2 tocsection-26"><a href="#Benchmark_Controller_w.2Fiperf"><span class="tocnumber">4.8</span> <span class="toctext">Benchmark Controller w/iperf</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-27"><a href="#Create_Learning_Switch"><span class="tocnumber">5</span> <span class="toctext">Create Learning Switch</span></a>
+<ul>
+<li class="toclevel-2 tocsection-28"><a href="#Controller_Choice:_POX_.28Python.29"><span class="tocnumber">5.1</span> <span class="toctext">Controller Choice: POX (Python)</span></a>
+<ul>
+<li class="toclevel-3 tocsection-29"><a href="#Verify_Hub_Behavior_with_tcpdump"><span class="tocnumber">5.1.1</span> <span class="toctext">Verify Hub Behavior with tcpdump</span></a></li>
+<li class="toclevel-3 tocsection-30"><a href="#Benchmark_Hub_Controller_w.2Fiperf"><span class="tocnumber">5.1.2</span> <span class="toctext">Benchmark Hub Controller w/iperf</span></a></li>
+<li class="toclevel-3 tocsection-31"><a href="#Open_Hub_Code_and_Begin"><span class="tocnumber">5.1.3</span> <span class="toctext">Open Hub Code and Begin</span></a></li>
+<li class="toclevel-3 tocsection-32"><a href="#Learning_Python"><span class="tocnumber">5.1.4</span> <span class="toctext">Learning Python</span></a></li>
+<li class="toclevel-3 tocsection-33"><a href="#Sending_OpenFlow_messages_with_POX"><span class="tocnumber">5.1.5</span> <span class="toctext">Sending OpenFlow messages with POX</span></a>
+<ul>
+<li class="toclevel-4 tocsection-34"><a href="#ofp_action_output_class"><span class="tocnumber">5.1.5.1</span> <span class="toctext">ofp_action_output class</span></a></li>
+<li class="toclevel-4 tocsection-35"><a href="#ofp_match_class"><span class="tocnumber">5.1.5.2</span> <span class="toctext">ofp_match class</span></a></li>
+<li class="toclevel-4 tocsection-36"><a href="#ofp_packet_out_OpenFlow_message"><span class="tocnumber">5.1.5.3</span> <span class="toctext">ofp_packet_out OpenFlow message</span></a></li>
+<li class="toclevel-4 tocsection-37"><a href="#ofp_flow_mod_OpenFlow_message"><span class="tocnumber">5.1.5.4</span> <span class="toctext">ofp_flow_mod OpenFlow message</span></a></li>
+</ul>
+</li>
+<li class="toclevel-3 tocsection-38"><a href="#Parsing_Packets_with_the_POX_packet_libraries"><span class="tocnumber">5.1.6</span> <span class="toctext">Parsing Packets with the POX packet libraries</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-39"><a href="#Controller_Choice:_Beacon_.28Java.29"><span class="tocnumber">5.2</span> <span class="toctext">Controller Choice: Beacon (Java)</span></a>
+<ul>
+<li class="toclevel-3 tocsection-40"><a href="#Setting_up_a_Beacon_Development_Environment"><span class="tocnumber">5.2.1</span> <span class="toctext">Setting up a Beacon Development Environment</span></a>
+<ul>
+<li class="toclevel-4 tocsection-41"><a href="#Prerequisites"><span class="tocnumber">5.2.1.1</span> <span class="toctext">Prerequisites</span></a></li>
+<li class="toclevel-4 tocsection-42"><a href="#Setup"><span class="tocnumber">5.2.1.2</span> <span class="toctext">Setup</span></a></li>
+</ul>
+</li>
+<li class="toclevel-3 tocsection-43"><a href="#Running_the_Tutorial_Controller"><span class="tocnumber">5.2.2</span> <span class="toctext">Running the Tutorial Controller</span></a></li>
+<li class="toclevel-3 tocsection-44"><a href="#Verify_Hub_Behavior_with_tcpdump_2"><span class="tocnumber">5.2.3</span> <span class="toctext">Verify Hub Behavior with tcpdump</span></a></li>
+<li class="toclevel-3 tocsection-45"><a href="#Benchmark_Hub_Controller_w.2Fiperf_2"><span class="tocnumber">5.2.4</span> <span class="toctext">Benchmark Hub Controller w/iperf</span></a></li>
+<li class="toclevel-3 tocsection-46"><a href="#Open_Tutorial_Code_and_Begin"><span class="tocnumber">5.2.5</span> <span class="toctext">Open Tutorial Code and Begin</span></a>
+<ul>
+<li class="toclevel-4 tocsection-47"><a href="#Phase_1"><span class="tocnumber">5.2.5.1</span> <span class="toctext">Phase 1</span></a></li>
+<li class="toclevel-4 tocsection-48"><a href="#Phase_2"><span class="tocnumber">5.2.5.2</span> <span class="toctext">Phase 2</span></a></li>
+</ul>
+</li>
+<li class="toclevel-3 tocsection-49"><a href="#Learning_Java_and_Beacon"><span class="tocnumber">5.2.6</span> <span class="toctext">Learning Java and Beacon</span></a></li>
+<li class="toclevel-3 tocsection-50"><a href="#Useful_Beacon_Classes"><span class="tocnumber">5.2.7</span> <span class="toctext">Useful Beacon Classes</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-51"><a href="#Controller_Choice:_Floodlight_.28Java.29"><span class="tocnumber">5.3</span> <span class="toctext">Controller Choice: Floodlight (Java)</span></a>
+<ul>
+<li class="toclevel-3 tocsection-52"><a href="#Install_Prerequisites"><span class="tocnumber">5.3.1</span> <span class="toctext">Install Prerequisites</span></a></li>
+<li class="toclevel-3 tocsection-53"><a href="#Getting_Started"><span class="tocnumber">5.3.2</span> <span class="toctext">Getting Started</span></a></li>
+<li class="toclevel-3 tocsection-54"><a href="#Developing"><span class="tocnumber">5.3.3</span> <span class="toctext">Developing</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-55"><a href="#Controller_Choice:_Trema_.28Ruby.29"><span class="tocnumber">5.4</span> <span class="toctext">Controller Choice: Trema (Ruby)</span></a>
+<ul>
+<li class="toclevel-3 tocsection-56"><a href="#Install_Prerequisites_2"><span class="tocnumber">5.4.1</span> <span class="toctext">Install Prerequisites</span></a></li>
+<li class="toclevel-3 tocsection-57"><a href="#Getting_Started_2"><span class="tocnumber">5.4.2</span> <span class="toctext">Getting Started</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-58"><a href="#Controller_Choice:_NOX_w.2FPython"><span class="tocnumber">5.5</span> <span class="toctext">Controller Choice: NOX w/Python</span></a>
+<ul>
+<li class="toclevel-3 tocsection-59"><a href="#Verify_Hub_Behavior_with_tcpdump_3"><span class="tocnumber">5.5.1</span> <span class="toctext">Verify Hub Behavior with tcpdump</span></a></li>
+<li class="toclevel-3 tocsection-60"><a href="#Benchmark_Hub_Controller_w.2Fiperf_3"><span class="tocnumber">5.5.2</span> <span class="toctext">Benchmark Hub Controller w/iperf</span></a></li>
+<li class="toclevel-3 tocsection-61"><a href="#Open_Hub_Code_and_Begin_2"><span class="tocnumber">5.5.3</span> <span class="toctext">Open Hub Code and Begin</span></a></li>
+<li class="toclevel-3 tocsection-62"><a href="#Learning_Python_2"><span class="tocnumber">5.5.4</span> <span class="toctext">Learning Python</span></a></li>
+<li class="toclevel-3 tocsection-63"><a href="#Sending_OpenFlow_messages_with_NOX"><span class="tocnumber">5.5.5</span> <span class="toctext">Sending OpenFlow messages with NOX</span></a>
+<ul>
+<li class="toclevel-4 tocsection-64"><a href="#send_openflow.28_..._.29"><span class="tocnumber">5.5.5.1</span> <span class="toctext">send_openflow( ... )</span></a></li>
+<li class="toclevel-4 tocsection-65"><a href="#install_datapath_flow.28_...._.29"><span class="tocnumber">5.5.5.2</span> <span class="toctext">install_datapath_flow( .... )</span></a></li>
+</ul>
+</li>
+<li class="toclevel-3 tocsection-66"><a href="#Parsing_Packets_with_the_NOX_packet_libraries"><span class="tocnumber">5.5.6</span> <span class="toctext">Parsing Packets with the NOX packet libraries</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-67"><a href="#Testing_Your_Controller"><span class="tocnumber">5.6</span> <span class="toctext">Testing Your Controller</span></a></li>
+<li class="toclevel-2 tocsection-68"><a href="#Support_Multiple_Switches"><span class="tocnumber">5.7</span> <span class="toctext">Support Multiple Switches</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-69"><a href="#Control_a_Slice_of_a_real_Network"><span class="tocnumber">6</span> <span class="toctext">Control a Slice of a real Network</span></a>
+<ul>
+<li class="toclevel-2 tocsection-70"><a href="#Setting_up_your_Network"><span class="tocnumber">6.1</span> <span class="toctext">Setting up your Network</span></a>
+<ul>
+<li class="toclevel-3 tocsection-71"><a href="#Control_Network_Configuration"><span class="tocnumber">6.1.1</span> <span class="toctext">Control Network Configuration</span></a>
+<ul>
+<li class="toclevel-4 tocsection-72"><a href="#Linux_and_Mac_users"><span class="tocnumber">6.1.1.1</span> <span class="toctext">Linux and Mac users</span></a></li>
+<li class="toclevel-4 tocsection-73"><a href="#Windows_users"><span class="tocnumber">6.1.1.2</span> <span class="toctext">Windows users</span></a></li>
+</ul>
+</li>
+<li class="toclevel-3 tocsection-74"><a href="#Verify_reachability"><span class="tocnumber">6.1.2</span> <span class="toctext">Verify reachability</span></a></li>
+<li class="toclevel-3 tocsection-75"><a href="#Wireless_Client_Configuration"><span class="tocnumber">6.1.3</span> <span class="toctext">Wireless Client Configuration</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2 tocsection-76"><a href="#FlowVisor_Configuration"><span class="tocnumber">6.2</span> <span class="toctext">FlowVisor Configuration</span></a></li>
+<li class="toclevel-2 tocsection-77"><a href="#Run_your_controller"><span class="tocnumber">6.3</span> <span class="toctext">Run your controller</span></a></li>
+<li class="toclevel-2 tocsection-78"><a href="#Accessing_the_WebServer"><span class="tocnumber">6.4</span> <span class="toctext">Accessing the WebServer</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-79"><a href="#Create_Router"><span class="tocnumber">7</span> <span class="toctext">Create Router</span></a>
+<ul>
+<li class="toclevel-2 tocsection-80"><a href="#Create_Topology"><span class="tocnumber">7.1</span> <span class="toctext">Create Topology</span></a></li>
+<li class="toclevel-2 tocsection-81"><a href="#Set_up_hosts"><span class="tocnumber">7.2</span> <span class="toctext">Set up hosts</span></a></li>
+<li class="toclevel-2 tocsection-82"><a href="#ARP"><span class="tocnumber">7.3</span> <span class="toctext">ARP</span></a></li>
+<li class="toclevel-2 tocsection-83"><a href="#Static_Routing"><span class="tocnumber">7.4</span> <span class="toctext">Static Routing</span></a></li>
+<li class="toclevel-2 tocsection-84"><a href="#ICMP"><span class="tocnumber">7.5</span> <span class="toctext">ICMP</span></a></li>
+<li class="toclevel-2 tocsection-85"><a href="#Testing_your_router"><span class="tocnumber">7.6</span> <span class="toctext">Testing your router</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-86"><a href="#Create_Firewall"><span class="tocnumber">8</span> <span class="toctext">Create Firewall</span></a>
+<ul>
+<li class="toclevel-2 tocsection-87"><a href="#Testing_your_Firewall"><span class="tocnumber">8.1</span> <span class="toctext">Testing your Firewall</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-88"><a href="#Learn_More"><span class="tocnumber">9</span> <span class="toctext">Learn More</span></a>
+<ul>
+<li class="toclevel-2 tocsection-89"><a href="#OpenFlow"><span class="tocnumber">9.1</span> <span class="toctext">OpenFlow</span></a></li>
+<li class="toclevel-2 tocsection-90"><a href="#Additional_Tools"><span class="tocnumber">9.2</span> <span class="toctext">Additional Tools</span></a></li>
+<li class="toclevel-2 tocsection-91"><a href="#Old_Regression_Tests"><span class="tocnumber">9.3</span> <span class="toctext">Old Regression Tests</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-92"><a href="#Credits"><span class="tocnumber">10</span> <span class="toctext">Credits</span></a></li>
+<li class="toclevel-1 tocsection-93"><a href="#Notes"><span class="tocnumber">11</span> <span class="toctext">Notes</span></a>
+<ul>
+<li class="toclevel-2 tocsection-94"><a href="#VM_Creation_Notes"><span class="tocnumber">11.1</span> <span class="toctext">VM Creation Notes</span></a></li>
+<li class="toclevel-2 tocsection-95"><a href="#Frequently_Asked_Questions_.28FAQ.29"><span class="tocnumber">11.2</span> <span class="toctext">Frequently Asked Questions (FAQ)</span></a>
+<ul>
+<li class="toclevel-3 tocsection-96"><a href="#How_can_you_convert_a_VirtualBox_VM.2F.vdi_image_to_a_VM_or_.vmdk_disk_image_usable_by_VMware.3F"><span class="tocnumber">11.2.1</span> <span class="toctext">How can you convert a VirtualBox VM/.vdi image to a VM or .vmdk disk image usable by VMware?</span></a></li>
+<li class="toclevel-3 tocsection-97"><a href="#How_does_one_scroll_an_xterm.3F"><span class="tocnumber">11.2.2</span> <span class="toctext">How does one scroll an xterm?</span></a></li>
+<li class="toclevel-3 tocsection-98"><a href="#Why_can.27t_I_ssh_into_my_VirtualBox_VM.3F"><span class="tocnumber">11.2.3</span> <span class="toctext">Why can't I ssh into my VirtualBox VM?</span></a></li>
+<li class="toclevel-3 tocsection-99"><a href="#I_can.27t_start_WireShark_or_xterm_-_help.21"><span class="tocnumber">11.2.4</span> <span class="toctext">I can't start WireShark or xterm - help!</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-100"><a href="#VirtualBox-specific_Instructions"><span class="tocnumber">12</span> <span class="toctext">VirtualBox-specific Instructions</span></a>
+<ul>
+<li class="toclevel-2 tocsection-101"><a href="#VirtualBox_Networking"><span class="tocnumber">12.1</span> <span class="toctext">VirtualBox Networking</span></a></li>
+<li class="toclevel-2 tocsection-102"><a href="#VirtualBox_SSH_Connections"><span class="tocnumber">12.2</span> <span class="toctext">VirtualBox SSH Connections</span></a>
+<ul>
+<li class="toclevel-3 tocsection-103"><a href="#Mac_OS_X_and_Linux_2"><span class="tocnumber">12.2.1</span> <span class="toctext">Mac OS X and Linux</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<p></p>
+
+<h3> <span class="mw-headline" id="Overview">Overview</span></h3>
+<p><a href="http://www.openflow.org/wk/index.php/File:Tutorial_flow_hw.png" class="image"><img alt="Tutorial flow hw.png" src="http://www.openflow.org/wk/images/6/66/Tutorial_flow_hw.png" height="309" width="740"></a></p>
+
+<p>In this tutorial, you'll turn the provided hub controller into a 
+controller-based learning switch, then a flow-accelerated learning 
+switch, and extend this from a single-switch network to a 
+multiple-switch multiple-host network. You can also find guidelines for 
+further extensions. Along the way, you'll learn the full suite of 
+OpenFlow debugging tools.  You will:
+</p>
+<ul><li> view flow tables with dpctl</li>
+<li> dissect OpenFlow message with Wireshark</li>
+<li> simulate a multi-switch, multi-host network with Mininet</li>
+<li> benchmark your controller with cbench
+</li></ul>
+<p>After the tutorial, you can apply what you've learned to physical 
+networks based on software switches, NetFPGAs, or even hardware switches
+ at line rate.</p>
+
+<p>To get you started quickly, we provide a preconfigured virtual machine with the needed software.  
+</p>
+<h4> <span class="mw-headline" id="Pre-requisites">Pre-requisites</span></h4>
+<p>You will need a computer with at least 1GB (preferably 2GB+) of RAM 
+and at least 5GB of free hard disk space (more preferred).  A faster 
+processor may speed up the virtual machine boot time, and a larger 
+screen may help to manage multiple terminal windows.</p>
+
+<p>These instructions consider Linux, OS X, and Windows.  Linux and OS X are preferred - there's less to install.</p>
+
+<p>You will need administrative access to the machine.</p>
+
+<p>The tutorial instructions require no prior knowledge of OpenFlow.  The <a href="http://www.openflowswitch.org/wp/learnmore/" class="external text" rel="nofollow">OpenFlow Learn More page</a> is a concise introduction.
+</p>
+<h4> <span class="mw-headline" id="Stuck.3F_Found_a_bug.3F_Questions.3F"> Stuck?  Found a bug?  Questions?  </span></h4>
+<p>Email [openflow-discuss - at - lists.stanford.edu] if you're stuck, 
+think you've found a bug, or just want to send some feedback.</p>
+
+<p>If you are asking a question or reporting a bug, try to include 
+as many details about your setup as possible.  Include your OS, 
+virtualization software info, X11 and ssh software you're using, VM 
+image you're using, memory size, and the step you're on.
+</p>
+<h3> <span class="mw-headline" id="Install_Required_Software"> Install Required Software </span></h3>
+<p>You will need to download these files individually.</p>
+
+<p>The files include virtualization software, a SSH-capable terminal, an X server, and the VM image.</p>
+
+<p>The tutorial image is distributed as a compressed VirtualBox 
+image (vdi).  VirtualBox enables you to run a virtual machine inside a 
+physical machine, and is free and available for Windows, Mac and Linux. 
+You can export the VirtualBox image to vmdk format and use it with 
+VMWare using the instructions below. </p>
+
+<p>The following instructions assume the use of VirtualBox, but the 
+instructions should apply regardless of virtual software after you 
+complete the initial setup.
+</p>
+<h4> <span class="mw-headline" id="Download_Files"> Download Files </span></h4>
+<p>You'll need to download the files corresponding to your OS, plus the tutorial VM.  </p>
+
+<p>Start now with downloading a compressed VM image:
+</p>
+<ul><li> <a href="http://www.openflow.org/downloads/OpenFlowTutorial-101311.zip" class="external text" rel="nofollow">VirtualBox VM Image</a>
+</li></ul>
+<p><br></p>
+
+<p>The download will take a while - it's on the order of 2GB in size.</p>
+
+<p>You will also need virtualization software, an X server, and an ssh-capable terminal emulator:
+</p>
+<table style="color: black; background-color: rgb(255, 255, 255);" border="1" cellpadding="10" cellspacing="0">
+<tbody><tr>
+<td>OS Type
+</td><td>OS Version
+</td><td>Virtualization Software
+</td><td>X Server
+</td><td>Terminal
+</td></tr>
+<tr>
+<td>Windows
+</td><td>7+
+</td><td><a href="http://www.virtualbox.org/wiki/Downloads" class="external text" rel="nofollow">VirtualBox</a>
+</td><td><a href="http://sourceforge.net/project/downloading.php?group_id=156984&amp;filename=Xming-6-9-0-31-setup.exe" class="external text" rel="nofollow">Xming</a>
+</td><td><a href="http://the.earth.li/%7Esgtatham/putty/latest/x86/putty.exe" class="external text" rel="nofollow">PuTTY</a>
+</td></tr>
+<tr>
+<td>Windows
+</td><td>XP
+</td><td><a href="http://www.virtualbox.org/wiki/Downloads" class="external text" rel="nofollow">VirtualBox</a>
+</td><td><a href="http://sourceforge.net/project/downloading.php?group_id=156984&amp;filename=Xming-6-9-0-31-setup.exe" class="external text" rel="nofollow">Xming</a>
+</td><td><a href="http://the.earth.li/%7Esgtatham/putty/latest/x86/putty.exe" class="external text" rel="nofollow">PuTTY</a>
+</td></tr>
+<tr>
+<td>Mac
+</td><td>OS X 10.7-10.8 Lion/Mountain Lion
+</td><td><a href="http://www.virtualbox.org/wiki/Downloads" class="external text" rel="nofollow">VirtualBox</a>
+</td><td>download and install <a href="http://xquartz.macosforge.org/trac/wiki" class="external text" rel="nofollow">XQuartz</a>
+</td><td>Terminal.app (built in)
+</td></tr>
+<tr>
+<td>Mac
+</td><td>OS X 10.5-10.6 Leopard/Snow Leopard
+</td><td><a href="http://www.virtualbox.org/wiki/Downloads" class="external text" rel="nofollow">VirtualBox</a>
+</td><td>X11 (install from OS X main system DVD, preferred), or download <a href="http://xquartz.macosforge.org/trac/wiki" class="external text" rel="nofollow">XQuartz</a>
+</td><td>Terminal.app (built in)
+</td></tr>
+<tr>
+<td>Linux
+</td><td>Ubuntu 10.04+
+</td><td><a href="http://www.virtualbox.org/wiki/Downloads" class="external text" rel="nofollow">VirtualBox</a>
+</td><td>X server already installed
+</td><td>gnome terminal + SSH built in
+</td></tr></tbody></table>
+<h4> <span class="mw-headline" id="Install_and_Verify"> Install and Verify </span></h4>
+<p>After you have downloaded the appropriate software and VM images, 
+make sure that each column item (X server, Virtualization software, and 
+SSH terminal) is installed and working for your platform, and that the 
+VM image loads and runs correctly for your configuration.
+</p>
+<h3> <span class="mw-headline" id="Set_up_Virtual_Machine"> Set up Virtual Machine </span></h3>
+<h4> <span class="mw-headline" id="Unpack_Virtual_Machine_Disk_Image"> Unpack Virtual Machine Disk Image </span></h4>
+<p>The virtual machine image ships compressed.  We'll need to unzip it first.</p>
+
+<p><b>Warning:</b> This step will take a while - the unpacked .vdi file is around 3 GB.</p>
+
+<p>Extracting zip archive:</p>
+
+<p><b>OS X Users</b>: Double-click the virtual machine image to extract it.</p>
+
+<p><b>Linux Users</b> (and OS X users who prefer the command line): from a terminal, unzip the virtual machine image, e.g.:
+</p>
+<pre>$ unzip OpenFlowTutorial-101311.zip 
+</pre>
+<p>(If you downloaded a different VM image, make sure you use its correct file name.)</p>
+
+<p><b>Windows Users</b>: unzip the image in Windows Explorer.
+</p>
+<h4> <span class="mw-headline" id="Start_Virtual_Machine"> Start Virtual Machine </span></h4>
+<p>You need to setup a new VirtualBox VM. Open VirtualBox.
+</p>
+<ul><li> Select New</li>
+<li> Press Continue in the next prompt.</li>
+<li> Name your VM OpenFlowTutorial, Operating System Linux, Version Ubuntu. Click Continue.</li>
+<li> Set the memory at 512MB and click Continue</li>
+<li> At that point VB should ask you to Create a new hard disk, or use the existing one. Select "Use existing hard disk".</li>
+<li> Click the icon to select the hard disk. This will open the Virtual Media Manager Window.</li>
+<li> Press Add, and find the extracted OpenFlowTutorial*.vdi from the previous steps. Click Select and then Continue.</li>
+<li> Your VM installation is complete. Press Done.</li>
+<li> You need <b>one more step before you are done with the VM setup</b>.
+ Select your VM and go to the Settings Tab. Go to Network-&gt;Adapter 2.
+ Select the "Enable adapter" box, and attach it to "host-only network".(<b>Sidenote</b>:
+ on a new VirtualBox installation you may not have any "host-only 
+network" configured yet. To have one select File 
+menu/Preferences/Network and "Add host-only network" button with default
+ settings. Then you can try the attach.) <b>This will allow you to easily access your VM through your host machine.</b>
+</li></ul>
+<p>At that point you should be ready to start your VM. Press "Run" or double-click your VM within the VirtualBox window. </p>
+
+<p>At the boot prompt, enter the username and password, which are both <i>openflow</i>.  Note that the openflow user is a sudoer.
+</p>
+<h4> <span class="mw-headline" id="Choose_Preferred_Editor"> Choose Preferred Editor </span></h4>
+<p>Nano, Vim, Emacs, and Gedit come installed on the OpenFlowTutorial VM.  Brief instructions for each:</p>
+
+<p><b>Nano</b>: You can immediately modify a file.  When you're done, hit 'ctrl-x', then say 'Yes' to the prompt, to save and quit.</p>
+
+<p><b>Vim</b>: to modify a file, type 'i' to enter Insert mode, then
+ use the arrow keys to navigate and edit.  When you're done, hit 'esc', 
+type ':wq', then press enter, to save and quit.</p>
+
+<p>Highly recommended for the NOX tutorial: add the following to ~/.vimrc in the VM:
+</p>
+<pre>set tabstop=4
+set expandtab
+</pre>
+<p><b>Emacs</b>: you can immediately modify a file.  When you're done, hit 'ctrl-x', 'ctrl-s', then hit 'ctrl-x', 'ctrl-c' to exit.  </p>
+
+<p><b>Gedit</b>: a graphical text editor, no instructions needed.</p>
+
+<p><b>Eclipse</b>: Eclipse and its dependencies would require about 
+500MB extra space on the VM image, so it's not shipped by default.  If 
+you have Eclipse installed on the host VM, using the Remote Systems 
+Explorer can be a convenient way to access and modify text files on the 
+VM, with many of the advantages of Eclipse, such as syntax highlighting.</p>
+
+<p>If you have another preferred text editor, feel free to install it now:
+</p>
+<pre>$ sudo apt-get install &lt;editor&gt;
+</pre>
+<h5> <span class="mw-headline" id="Command_Prompt_Notes"> Command Prompt Notes </span></h5>
+<p><font color="red"> In this tutorial, commands are shown along with a command prompt to indicate what subsystem they are intended for </font>. For example, 
+</p>
+<pre>$ ls
+</pre>
+<p>indicates that the <code>ls</code> command should be typed at a Unix (e.g. Linux or OS X) command prompt (which generally ends in <code>$</code> if you are a regular user or <code>#</code> if you are root. </p>
+
+<p>Other prompts used in this tutorial include 
+</p>
+<pre>mininet&gt;
+</pre>
+<p>for commands entered in the Mininet console and 
+</p>
+<pre>C:&gt; 
+</pre>
+<p>for code entered into a Windows command window.
+</p>
+<h4> <span class="mw-headline" id="Set_Up_Network_Access"> Set Up Network Access </span></h4>
+<p>The tutorial VM is shipped without a desktop environment, to reduce 
+its size.  All the exercises will be done through X forwarding, where 
+programs display graphics through an X server running on the host OS.</p>
+
+<p>To start up the X forwarding, you'll first need to find the guest IP address.
+</p>
+<h5> <span class="mw-headline" id="VirtualBox"> VirtualBox </span></h5>
+<p>If you are running VirtualBox, you should make sure your VM has <b>two network interfaces</b>. One should be a <b>NAT interface</b> that it can use to access the Internet, and the other should be a <b>host-only interface</b>
+ to enable it to communicate with the host machine. For example, your 
+NAT interface could be eth0 and have a 10.x IP address, and your 
+host-only interface could be eth1 and have a 192.168.x IP address. You 
+should ssh into the <b>host-only interface</b> at its associated IP 
+address. Both interfaces should be configured using DHCP. If they are 
+not already configured, you may have to run dhclient on each of them, as
+ described below.
+</p>
+<h4> <span class="mw-headline" id="Access_VM_via_SSH"> Access VM via SSH </span></h4>
+<p>In this step, you'll verify that you can connect from the host PC (your laptop) to the guest VM (OpenFlowTutorial) via SSH.</p>
+
+<p>First, from the virtual machine console <font color="red">login as user openflow with password openflow </font>, then enter:
+</p>
+<pre>$ ifconfig -a
+</pre>
+<p>You should see three interfaces(eth0, eth1, lo), Both eth0 and eth1 
+should have IP address assigned. If this is not the case, type
+</p>
+<pre>$ sudo dhclient ethX
+</pre>
+<p>Replacing ethX with the name of a downed interfaces; sometimes the 
+eth ports appear as eth2 or eth3, you can fix this by editing 
+/etc/udev/rules.d/70-persistent-net.rules and removing the existing 
+configuration lines. </p>
+
+<p>Note the IP address (probably the 192.168 one) for the <b>host-only</b> network; you'll need it later.  Next, log in, which will depend on your OS.
+</p>
+<h5> <span class="mw-headline" id="Mac_OS_X_and_Linux"> Mac OS X and Linux </span></h5>
+<p>Open a terminal (Terminal.app in Mac, Gnome terminal in Ubuntu, etc).  In that terminal, run:
+</p>
+<pre>$ ssh -X openflow@[Guest IP Here]
+</pre>
+<p>Replace [Guest IP Here] with the IP you just noted. If ssh does not 
+connect, make sure that you can ping the IP address you are connecting 
+to.</p>
+
+<p>Login with password openflow.  Next, try starting up an X terminal using
+</p>
+<pre>$ xterm
+</pre>
+<p>and a new terminal window should appear.  If you have succeeded, you 
+are done with the basic setup.  Close the xterm.  If you get a 'xterm: 
+DISPLAY is not set error', verify your X server installation from above.
+</p>
+<h5> <span class="mw-headline" id="Windows">Windows </span></h5>
+<p>In order to use X11 applications such as xterm and wireshark, the 
+Xming server must be running, and you must make an ssh connection with 
+X11 forwarding enabled. </p>
+
+<p><b>First, start Xming</b> (e.g. by double-clicking its icon.) No 
+window will appear, but if you wish you can verify that it is running by
+ looking for its process in Windows' task manger.</p>
+
+<p><b>Second, make an ssh connection with X11 forwarding enabled</b>.</p>
+
+<p>If you start up puTTY as a GUI application, you can connect by entering your VM's IP address and enabling X11 forwarding.</p>
+
+<p>To enable X11 forwarding from puTTY's GUI, click 
+puTTY-&gt;Connection-&gt;SSH-&gt;X11, then click on 
+Forwarding-&gt;"Enable X11 Forwarding", as shown below:</p>
+
+<p><a href="http://www.openflow.org/wk/index.php/File:Putty_x11_fwding.PNG" class="image"><img alt="Putty x11 fwding.PNG" src="http://www.openflow.org/wk/images/5/5a/Putty_x11_fwding.PNG" height="435" width="456"></a></p>
+
+<p>You can also run putty (with the -X option for X11 forwarding) from the Windows command line:</p>
+
+<p>Open a terminal: click the Windows 'Start' button, 'run', then enter 'cmd'.</p>
+
+<p>Change to the directory where you saved putty.  
+</p>
+<pre>C:&gt; cd &lt;dir&gt;
+</pre>
+<p>Run: 
+</p>
+<pre>C:&gt; putty.exe -X openflow@[Guest IP Here]
+</pre>
+<p>Replace [Guest IP Here] with the IP you just noted.</p>
+
+<p>If putty cannot connect, try pinging the VM's IP address to make sure you are connecting to the correct interface.
+</p>
+<pre>C:&gt; ping [Guest IP Here]
+</pre>
+<p>Once the ssh connection succeeds or a terminal window for the VM pops
+ up, log in as user 'openflow' using password 'openflow'.  Now, type:
+</p>
+<pre>$ xterm -sb 500
+</pre>
+<p>to start an X terminal (the -sb 500 is optional but gives 500 lines of scrollback.)</p>
+
+<p>A white terminal window should appear. If you have succeeded, you are done with the basic setup. Close the xterm.</p>
+
+<p>If the xterm window does not appear, or if you get an error like 
+"xterm:  DISPLAY is not set," make sure that Xming is running in Windows
+ and that you have correctly enabled X11 forwarding.
+</p>
+<h4> <span class="mw-headline" id="Alternative:_Run_X11_in_the_VM_console_window"> Alternative: Run X11 in the VM console window </span></h4>
+<p>As an alternative to running X11 on your host machine, you may find it
+useful or convenient to install X11 into the VM itself. To install X11 
+and a simple window manager, log in to the <b>VM console window</b> - <i>not</i> via an ssh session! - using user 'openflow' with
+password 'openflow', and type:
+</p>
+<pre>$ sudo apt-get install xinit flwm
+</pre>
+<p>At this point, you should be able to start an X11 session in the VM console window
+by typing:
+</p>
+<pre>$ startx
+</pre>
+<p>If you are familiar with Linux, you may wish to install another
+window manager (e.g. metacity) or any other GUI packages that you prefer.
+</p>
+<h3> <span class="mw-headline" id="Learn_Development_Tools"> Learn Development Tools </span></h3>
+<p>In this section, you'll bring up the development environment.  In the
+ process, you'll be introduced to tools that will later prove useful for
+ turning the provided hub into a learning switch.  You'll cover both 
+general and OpenFlow-specific debugging tools.</p>
+
+<p>Let's define some terminology, starting with terminal types:
+</p>
+<ul><li> <b>VirtualBox</b> console terminal: connects to 
+OpenFlowTutorial.  This is the one created when you started up the VM.  
+You can't copy and paste from this tutorial page to the console 
+terminal, so it's a bit of a pain.  <b>Minimize this NOW, if you haven't already done so</b>.  Once you've used it to set up networking, it won't be needed.
+</li></ul>
+<ul><li> <b>SSH</b> terminal: connects to OpenFlowTutorial.  Created by 
+using putty on Windows or SSH on OS X / Linux, as described in the 
+previous section.  Copy and paste should work on this terminal.
+</li></ul>
+<ul><li> <b>xterm</b> terminal: connects to a host in the virtual 
+network.  Created in the next section when you start up the virtual 
+network.  Will be labeled at the top with the name of the host.
+</li></ul>
+<p>The OpenFlowTutorial VM includes a number of OpenFlow-specific and 
+general networking utilities pre-installed.  Please read the short 
+descriptions:
+</p>
+<ul><li> <b>OpenFlow Controller</b>: sits above the OpenFlow interface. 
+ The OpenFlow reference distribution includes a controller that acts as 
+an Ethernet learning switch in combination with an OpenFlow switch.  
+You'll run it and look at messages being sent.  Then, in the next 
+section, you'll write our own controller on top of NOX or Beacon 
+(platforms for writing controller applications).
+</li></ul>
+<ul><li> <b>OpenFlow Switch</b>: sits below the OpenFlow interface.  The
+ OpenFlow reference distribution includes a user-space software switch. 
+ Open vSwitch is another software but kernel-based switch, while there 
+is a number of hardware switches available from Broadcom (Stanford 
+Indigo release), HP, NEC, and others.
+</li></ul>
+<ul><li> <b>dpctl</b>: command-line utility that sends quick OpenFlow 
+messages, useful for viewing switch port and flow stats, plus manually 
+inserting flow entries.
+</li></ul>
+<ul><li> <b>Wireshark</b>: general (non-OF-specific) graphical utility 
+for viewing packets.  The OpenFlow reference distribution includes a 
+Wireshark dissector, which parses OpenFlow messages sent to the OpenFlow
+ default port (6633) in a conveniently readable way.
+</li></ul>
+<ul><li> <b>iperf</b>: general command-line utility for testing the speed of a single TCP connection.
+</li></ul>
+<ul><li> <b>Mininet</b>: network emulation platform.  Mininet creates a 
+virtual OpenFlow network - controller, switches, hosts, and links - on a
+ single real or virtual machine. More Mininet details can be found at 
+the <a href="http://openflow.org/mininet" class="external text" rel="nofollow">Mininet web page</a>.
+</li></ul>
+<ul><li> <b>cbench</b>: utility for testing the flow setup rate of OpenFlow controllers. 
+</li></ul>
+<p>From here on out, make sure to copy and paste as much as possible!  
+For example, manually typing in 'sudo dpctl show n1:0' may look correct,
+ but will cause a confusing error; the 'nl' is short for NetLink, not 
+n-one.</p>
+
+<p>Let's get started...
+</p>
+<h4> <span class="mw-headline" id="Start_Network"> Start Network </span></h4>
+<p>The network you'll use for the first exercise includes 3 hosts and a 
+switch (and, eventually, an OpenFlow controller, but we'll get to that 
+later):</p>
+
+<p><br>
+<a href="http://www.openflow.org/wk/index.php/File:Three_switch_layout_simple.png" class="image"><img alt="Three switch layout simple.png" src="http://www.openflow.org/wk/images/c/c6/Three_switch_layout_simple.png" height="398" width="591"></a></p>
+
+<p><br>
+To create this network in the VM, in an SSH terminal, enter:
+</p>
+<pre>$ sudo mn --topo single,3 --mac --switch ovsk --controller remote
+</pre>
+<p>This tells Mininet to start up a 3-host, 
+single-(openvSwitch-based)switch topology, set the MAC address of each 
+host equal to its IP, and point to a remote controller which defaults to
+ the localhost.</p>
+
+<p>Here's what Mininet just did:
+</p>
+<ul><li> Created 3 virtual hosts, each with a separate IP address.</li>
+<li> Created a single OpenFlow software switch in the kernel with 3 ports. </li>
+<li> Connected each virtual host to the switch with a virtual ethernet cable.</li>
+<li> Set the MAC address of each host equal to its IP.</li>
+<li> Configure the OpenFlow switch to connect to a remote controller.
+</li></ul>
+<h4> <span class="mw-headline" id="Mininet_Brief_Intro"> Mininet Brief Intro </span></h4>
+<p>Since you'll be working in Mininet for the whole tutorial, it's worth learning a few Mininet-specific commands:</p>
+
+<p>To see the list of nodes available, in the Mininet console, run:
+</p>
+<pre>mininet&gt; nodes
+</pre>
+<p><br>
+To see a list of available commands, in the Mininet console, run:
+</p>
+<pre>mininet&gt; help
+</pre>
+<p>To run a single command on a node, prepend the command with the name 
+of the node.  For example, to check the IP of a virtual host, in the 
+Mininet console, run:
+</p>
+<pre>mininet&gt; h2 ifconfig
+</pre>
+<p>The alternative - better for running interactive commands and 
+watching debug output - is to spawn an xterm for one or more virtual 
+hosts.  In the Mininet console, run:
+</p>
+<pre>mininet&gt; xterm h2 h3
+</pre>
+<p>You can close these windows now, as we'll run through most commands in the Mininet console.</p>
+
+<p>If Mininet is not working correctly (or has crashed and needs to be restarted), first quit Mininet if necessary (using the <code>exit</code> command, or control-D), and then try clearing any residual state or processes using:
+</p>
+<pre>$ sudo mn -c
+</pre>
+<p>and running Mininet again. </p>
+
+<p><font color="red"> NB: The prompt <code> mininet&gt; </code> is for Mininet console, <code> $ </code> is for SSH terminal (normal user) and <code> # </code> is for SSH terminal (root user) </font> (See  <a href="http://www.openflow.org/wk/index.php/OpenFlow_Tutorial#Command_Prompt_Notes" class="external text" rel="nofollow">Command Prompt Notes</a>).  Hereafter we follow with this rule.</p>
+
+<p>Mininet has loads of other commands and startup options to help 
+with debugging, and this brief starter should be sufficient for the 
+tutorial.  If you're curious about other options, follow the <a href="http://www.openflowswitch.org/foswiki/bin/view/OpenFlow/MininetWalkthrough" class="external text" rel="nofollow">Mininet Walkthrough</a> after the main tutorial.
+</p>
+<h4> <span class="mw-headline" id="dpctl_Example_Usage"> dpctl Example Usage </span></h4>
+<p><b>dpctl</b> is a utility that comes with the OpenFlow reference 
+distribution and enables visibility and control over a single switch's 
+flow table.  It is especially useful for debugging, by viewing flow 
+state and flow counters.  Most OpenFlow switches can start up with a 
+passive listening port (in your current setup this is 6634), from which 
+you can poll the switch, without having to add debugging code to the 
+controller.</p>
+
+<p>Create a second SSH window if you don't already have one, and run:
+</p>
+<pre>$ dpctl show tcp:127.0.0.1:6634
+</pre>
+<p>The 'show' command connects to the switch and dumps out its port state and capabilities.</p>
+
+<p>Here's a more useful command:
+</p>
+<pre>$ dpctl dump-flows tcp:127.0.0.1:6634
+</pre>
+<p>Since we haven't started any controller yet, the flow-table should be empty.
+</p>
+<h4> <span class="mw-headline" id="Ping_Test"> Ping Test </span></h4>
+<p>Now, go back to the mininet console and try to ping h3 from h2. In the Mininet console:
+</p>
+<pre>mininet&gt; h2 ping -c3 h3
+</pre>
+<p>Note that the name of host h3 is automatically replaced when running 
+commands in the Mininet console with its IP address (10.0.0.3).</p>
+
+<p>Do you get any replies? Why? Why not?</p>
+
+<p>As you saw before, switch flow table is empty. Besides that, 
+there is no controller connected to the switch and therefore the switch 
+doesn't know what to do with incoming traffic, leading to ping failure.</p>
+
+<p>You'll use dpctl to manually install the necessary flows. In your SSH terminal:
+</p>
+<pre>$ dpctl add-flow tcp:127.0.0.1:6634 in_port=1,actions=output:2
+$ dpctl add-flow tcp:127.0.0.1:6634 in_port=2,actions=output:1
+</pre>
+<p>This will forward packets coming at port 1 to port 2 and vice-verca. Verify by checking the flow-table
+</p>
+<pre>$ dpctl dump-flows tcp:127.0.0.1:6634
+</pre>
+<p>Run the ping command again. In your mininet console:
+</p>
+<pre>mininet&gt; h2 ping -c3 h3
+</pre>
+<p>Do you get replies now? Check the flow-table again and look the 
+statistics for each flow entry. Is this what you expected to see based 
+on the ping traffic?
+NOTE: if you didn't see any ping replies coming through, it might be the
+ case that the flow-entries expired before you start your ping test. 
+When you do a "dpctl dump-flows" you can see an "idle_timeout" option 
+for each entry, which defaults to 60s. This means that the flow will 
+expire after 60secs if there is no incoming traffic. Run again 
+respecting this limit, or install a flow-entry with longer timeout.
+</p>
+<pre>$ dpctl add-flow tcp:127.0.0.1:6634 in_port=1,idle_timeout=120,actions=output:2
+</pre>
+<h4> <span class="mw-headline" id="Start_Wireshark"> Start Wireshark </span></h4>
+<p>The VM image includes the OpenFlow Wireshark dissector pre-installed.
+  Wireshark is extremely useful for watching OpenFlow protocol messages,
+ as well as general debugging.  </p>
+
+<p>Start a new SSH terminal and connect to the VM with X11 forwarding. </p>
+
+<p>(Reminder: here are the command-line commands to do so:</p>
+
+<p>If you're using MAC OS X or Linux, enter:
+</p>
+<pre>$ ssh -X openflow@[guest ip address]
+</pre>
+<p>If you're using putty.exe from the Windows command-lineshell, enter:
+</p>
+<pre>C:&gt; putty.exe -X openflow@[guest ip address]
+</pre>
+<p>If you're using putty's GUI, make sure X11 forwarding is enabled.)</p>
+
+<p>Now open Wireshark:
+</p>
+<pre>$ sudo wireshark &amp;
+</pre>
+<p>You'll probably get a warning message for using wireshark with root access. Press OK.</p>
+
+<p>Click on Capture-&gt;Interfaces in the menu bar.  Click on the 
+Start button next to 'lo', the loopback interface.  You may see some 
+packets going by.</p>
+
+<p>Now, set up a filter for OpenFlow control traffic, by typing 'of' in Filter box near the top:
+</p>
+<pre>of
+</pre>
+<p>Press the apply button to apply the filter to all recorded traffic.
+</p>
+<h4> <span class="mw-headline" id="Start_Controller_and_view_Startup_messages_in_Wireshark"> Start Controller and view Startup messages in Wireshark </span></h4>
+<p>Now, with the Wireshark dissector listening, start the OpenFlow reference controller.
+In your SSH terminal:
+</p>
+<pre>$ controller ptcp:
+</pre>
+<p>This starts a simple controller that acts as a learning switch without installing any flow-entries.</p>
+
+<p>You should see a bunch of messages displayed in Wireshark, from 
+the Hello exchange onwards.  As an example, click on the Features Reply 
+message.  Click on the triangle by the 'OpenFlow Protocol' line in the 
+center section to expand the message fields.  Click the triangle by 
+Switch Features to display datapath capabilities - feel free to explore.</p>
+
+<p>These messages include:
+</p>
+<table style="color: black; background-color: rgb(255, 255, 255);" border="1" cellpadding="10" cellspacing="0">
+<tbody><tr>
+<td>Message
+</td><td>Type
+</td><td>Description
+</td></tr>
+<tr>
+<td><b>Hello</b>
+</td><td>Controller-&gt;Switch
+</td><td>following the TCP handshake, the controller sends its version number to the switch.
+</td></tr>
+<tr>
+<td><b>Hello</b>
+</td><td>Switch-&gt;Controller
+</td><td>the switch replies with its supported version number.
+</td></tr>
+<tr>
+<td><b>Features Request</b>
+</td><td>Controller-&gt;Switch
+</td><td>the controller asks to see which ports are available.
+</td></tr>
+<tr>
+<td><b>Set Config</b>
+</td><td>Controller-&gt;Switch
+</td><td>in this case, the controller asks the switch to send flow expirations.
+</td></tr>
+<tr>
+<td><b>Features Reply</b>
+</td><td>Switch-&gt;Controller
+</td><td>the switch replies with a list of ports, port speeds, and supported tables and actions.
+</td></tr>
+<tr>
+<td><b>Port Status</b>
+</td><td>Switch-&gt;Controller
+</td><td>enables the switch to inform that controller of changes to port
+ speeds or connectivity.  Ignore this one, it appears to be a bug.
+</td></tr>
+</tbody></table>
+<p><br>
+Since all messages are sent over localhost when using Mininet, 
+determining the sender of a message can get confusing when there are 
+lots of emulated switches.  However, this won't be an issue, since we 
+only have one switch.  The controller is at the standard OpenFlow port 
+(6633), while the switch is at some other user-level port.
+</p>
+<h4> <span class="mw-headline" id="View_OpenFlow_Messages_for_Ping"> View OpenFlow Messages for Ping </span></h4>
+<p>Now, we'll view messages generated in response to packets.</p>
+
+<p>Before that update your wireshark filter to ignore the 
+echo-request/reply messages (these are used to keep the connection 
+between the switch and controller alive):
+Type the following in your wireshark filter, then press apply:
+</p>
+<pre>of &amp;&amp; (of.type&nbsp;!= 3) &amp;&amp; (of.type&nbsp;!= 2)
+</pre>
+<p>Run a ping to view the OpenFlow messages being used.  In the Mininet console:
+</p>
+<pre>mininet&gt; h2 ping -c1 h3
+</pre>
+<p>In the Wireshark window, you should see a number of new message types:
+</p>
+<table style="color: black; background-color: rgb(255, 255, 255);" border="1" cellpadding="10" cellspacing="0">
+<tbody><tr>
+<td>Message
+</td><td>Type
+</td><td>Description
+</td></tr>
+<tr>
+<td><b>Packet-In</b>
+</td><td>Switch-&gt;Controller
+</td><td>a packet was received and it didn't match any entry in the switch's flow table, causing the packet to be sent to the controller.
+</td></tr>
+<tr>
+<td><b>Packet-Out</b>
+</td><td>Controller-&gt;Switch
+</td><td>controller send a packet out one or more switch ports.
+</td></tr>
+<tr>
+<td><b>Flow-Mod</b>
+</td><td>Controller-&gt;Switch
+</td><td>instructs a switch to add a particular flow to its flow table.
+</td></tr>
+<tr>
+<td><b>Flow-Expired</b>
+</td><td>Switch-&gt;Controller
+</td><td>a flow timed out after a period of inactivity.
+</td></tr></tbody></table>
+<p><br>
+First, you see an ARP request miss the flow table, which generates a 
+broadcast Packet-Out message.  Next, the ARP response comes back; with 
+both MAC addresses now known to the controller, it can push down a flow 
+to the switch with a Flow-Mod message.  The switch does then pushes 
+flows for the ICMP packets.  Subsequent ping requests go straight 
+through the datapath, and should incur no extra messages; with the flows
+ connecting h2 and h3 already pushed to the switch, there was no 
+controller involvement.</p>
+
+<p>Re-run the ping, again from the Mininet console (hitting up is sufficient - the Mininet console has a history buffer):
+</p>
+<pre>mininet&gt; h2 ping -c1 h3
+</pre>
+<p>If the ping takes the same amount of time, run the ping once more; 
+the flow entries may have timed out while reading the above text.</p>
+
+<p>This is an example of using OpenFlow in a <i>reactive</i> mode, when flows are pushed down in response to individual packets.</p>
+
+<p>Alternately, flows can be pushed down before packets, in a <i>proactive</i> mode, to avoid the round-trip times and flow insertion delays.
+</p>
+<h4> <span class="mw-headline" id="Benchmark_Controller_w.2Fiperf"> Benchmark Controller w/iperf </span></h4>
+<p><b>iperf</b> is a command-line tool for checking speeds between two computers.  </p>
+
+<p>Here, you'll benchmark the reference controller; later, you'll 
+compare this with the provided hub controller, and your flow-based 
+switch (when you've implemented it).</p>
+
+<p>In the mininet console run&nbsp;:
+</p>
+<pre>mininet&gt; iperf
+</pre>
+<p>This Mininet command runs an iperf TCP server on one virtual host, 
+then runs an iperf client on a second virtual host.  Once connected, 
+they blast packets between each other and report the results.</p>
+
+<p>Now compare with the user-space switch.  In the mininet console:
+</p>
+<pre>mininet&gt; exit
+</pre>
+<p>Start the same Mininet with the user-space switch:
+</p>
+<pre>$ sudo mn --topo single,3 --mac --controller remote --switch user
+</pre>
+<p>Run one more iperf test with the reference controller:
+</p>
+<pre>mininet&gt; iperf
+</pre>
+<p>See a difference?  With the user-space switch, packets must cross 
+from user-space to kernel-space and back on every hop, rather than 
+staying in the kernel as they go through the switch.  The user-space 
+switch is easier to modify (no kernel oops'es to deal with), but slower 
+for simulation.</p>
+
+<p>Exit Mininet:
+</p>
+<pre>mininet&gt; exit
+</pre>
+<h3> <span class="mw-headline" id="Create_Learning_Switch"> Create Learning Switch </span></h3>
+<p>Now, let's move on building a networking application. We provide you 
+with starter code for a hub controller. After getting yourself familiar 
+with it, you'll modify the provided hub to act as an L2 learning switch.
+  In this application, the switch will examine each packet and learn the
+ source-port mapping.  Thereafter, the source MAC address will be 
+associated with the port.  If the destination of the packet is already 
+associated with some port, the packet will be sent to the given port, 
+else it will be flooded on all ports of the switch.</p>
+
+<p>Later, you'll turn this into a flow-based switch, where seeing a 
+packet with a known source and dest causes a flow entry to get pushed 
+down.</p>
+
+<p>For this tutorial you will need to choose a controller platform 
+to build on top of.  The best option is likely the controller written in
+ the language you are most familiar with.  Plus, after making your 
+controller, rewriting it on another controller platform should go 
+quickly and be a useful exercise.  Your options are:
+</p>
+<ul><li> <b>Java</b>: <a href="#Controller_Choice:_Beacon_.28Java.29">Beacon</a>, <a href="#Controller_Choice:_Floodlight_.28Java.29">Floodlight</a></li>
+<li> <b>Python</b>: <a href="#Controller_Choice:_POX_.28Python.29">POX</a>, <a href="#Controller_Choice:_NOX_w.2FPython">NOX (Deprecated)</a></li>
+<li> <b>Ruby</b>: <a href="#Controller_Choice:_Trema_.28Ruby.29">Trema</a>
+</li></ul>
+<h4> <span class="mw-headline" id="Controller_Choice:_POX_.28Python.29">Controller Choice: POX (Python) </span></h4>
+<p><b> NOTE: The POX version of the tutorial is quite new, and feedback on the pox-dev mailing list is very welcome! </b></p>
+
+<p>One option for the first exercise is to use POX.  POX is a 
+Python-based SDN controller platform geared towards research and 
+education.  For more details on POX, see <a href="http://www.noxrepo.org/pox/about-pox/" class="external text" rel="nofollow">About POX</a> or <a href="http://www.noxrepo.org/pox/documentation/" class="external text" rel="nofollow">POX Documentation</a> on <a href="http://www.noxrepo.org/" class="external text" rel="nofollow">NOXRepo.org</a>.</p>
+
+<p>We're not going to be using the reference controller anymore, which may still be running (do '<code>ps -A | grep controller</code>'
+ if you're unsure), so you should either press Ctrl-C in the window 
+running the controller program, or kill it from the other SSH window:
+</p>
+<pre>$ sudo killall controller
+</pre>
+<p>You should also run <code>sudo mn -c</code> and restart Mininet to make sure that everything is "clean" and using the faster kernel switch. From your Mininet console:
+</p>
+<pre>mininet&gt; exit
+$ sudo mn -c
+$ sudo mn --topo single,3 --mac --switch ovsk --controller remote
+</pre>
+<p>You then need to download the POX code from the <a href="https://github.com/noxrepo/pox" class="external text" rel="nofollow">POX repository on github</a> into your VM:
+</p>
+<pre>$ git clone <a href="http://github.com/noxrepo/pox" class="external free" rel="nofollow">http://github.com/noxrepo/pox</a>
+$ cd pox
+</pre>
+<dl><dd> <b>OPTIONAL</b>: The above should get you the latest release 
+branch of POX.  If you like the bleeding edge, you might like to switch 
+to the latest development branch.  This is documented on the POX 
+website, but as of this writing, it's the "betta" branch:
+</dd><dd> <tt>$ git checkout betta</tt>
+</dd></dl>
+<p>Now you can try running a basic hub example:
+</p>
+<pre>$./pox.py log.level --DEBUG samples.of_tutorial
+</pre>
+<p>This tells POX to enable verbose logging and to start the of_tutorial
+ component which you'll be using (which currently acts like a hub).</p>
+
+<p>The switches may take a little bit of time to connect.   When an 
+OpenFlow switch loses its connection to a controller, it will generally 
+increase the period between which it attempts to contact the controller,
+ up to a maximum of 15 seconds.  Since the OpenFlow switch has not 
+connected yet, this delay may be anything between 0 and 15 seconds.   If
+ this is too long to wait, the switch can be configured to wait no more 
+than N seconds using the --max-backoff parameter.  Alternately, you exit
+ Mininet to remove the switch(es), start the controller, and then start 
+Mininet to immediately connect.</p>
+
+<p>Wait until the application indicates that the OpenFlow switch has
+ connected.  When the switch connects, POX will print something like 
+this: 
+</p>
+<pre>INFO:openflow.of_01:[Con 1/1] Connected to 00-00-00-00-00-01
+DEBUG:samples.of_tutorial:Controlling [Con 1/1]
+
+</pre>
+<p>The first line is from the portion of POX that handles OpenFlow connections.  The second is from the tutorial component itself.
+</p>
+<h5> <span class="mw-headline" id="Verify_Hub_Behavior_with_tcpdump"> Verify Hub Behavior with tcpdump </span></h5>
+<p>Now we verify that hosts can ping each other, and that all hosts see 
+the exact same traffic - the behavior of a hub.  To do this, we'll 
+create xterms for each host and view the traffic in each.  In the 
+Mininet console, start up three xterms:
+</p>
+<pre>mininet&gt; xterm h2 h3 h4
+</pre>
+<p>Arrange each xterm so that they're all on the screen at once.  This 
+may require reducing the height of to fit a cramped laptop screen.</p>
+
+<p>In the xterms for h3 and h4, run <code>tcpdump</code>, a utility to print the packets seen by a host:
+</p>
+<pre># tcpdump -XX -n -i h3-eth0
+</pre>
+<p>and respectively:
+</p>
+<pre># tcpdump -XX -n -i h4-eth0
+</pre>
+<p>In the xterm for h2, send a ping:
+</p>
+<pre># ping -c1 10.0.0.3
+</pre>
+<p>The ping packets are now going up to the controller, which then 
+floods them out all interfaces except the sending one.   You should see 
+identical ARP and ICMP packets corresponding to the ping in both xterms 
+running tcpdump.  This is how a hub works; it sends all packets to every
+ port on the network.</p>
+
+<p>Now, see what happens when a non-existent host doesn't reply.  From h2 xterm:
+</p>
+<pre># ping -c1 10.0.0.5
+</pre>
+<p>You should see three unanswered ARP requests in the tcpdump xterms.  
+If your code is off later, three unanswered ARP requests is a signal 
+that you might be accidentally dropping packets.</p>
+
+<p>You can close the xterms now.
+</p>
+<h5> <span class="mw-headline" id="Benchmark_Hub_Controller_w.2Fiperf"> Benchmark Hub Controller w/iperf </span></h5>
+<p>Here, you'll benchmark the provided of_tutorial hub.</p>
+
+<p>First, verify reachability.  Mininet should be running, along with the POX hub in a second window.  In the Mininet console, run:
+</p>
+<pre>mininet&gt; pingall
+</pre>
+<p>This is just a sanity check for connectivity.  Now, in the Mininet console, run:
+</p>
+<pre>mininet&gt; iperf
+</pre>
+<p>Now, compare your number with the reference controller you saw before. How does that compare?</p>
+
+<p>Hint: every packet goes up to the controller now.
+</p>
+<h5> <span class="mw-headline" id="Open_Hub_Code_and_Begin"> Open Hub Code and Begin </span></h5>
+<p>Go to your SSH terminal and stop the tutorial hub controller using Ctrl-D or by typing <code>exit()</code>.
+The file you'll modify is <b>pox/samples/of_tutorial.py</b>.  Open this file in your favorite editor.</p>
+
+<p>The current code calls act_like_hub() from the handler for 
+packet_in messages to implement switch behavior.  You'll want to switch 
+to using the act_like_switch() function, which contains a sketch of what
+ your final learning switch code should look like.</p>
+
+<p>Each time you change and save this file, make sure to restart 
+POX, then use pings to verify the behavior of the combination of switch 
+and controller as a (1) hub, (2)  controller-based Ethernet learning 
+switch, and (3) flow-accelerated learning switch.  For (2) and (3), 
+hosts that are not the destination for a ping should display no tcpdump 
+traffic after the initial broadcast ARP request.
+</p>
+<h5> <span class="mw-headline" id="Learning_Python"> Learning Python </span></h5>
+<p>This section introduces Python, giving you just enough to be dangerous.</p>
+
+<p>Python:
+</p>
+<ul><li> is a dynamic, interpreted language.  There is no separate compilation step - just update your code and re-run it.</li>
+<li> uses indentation rather than curly braces and semicolons to 
+delimit code.  Four spaces denote the body of a for loop, for example.</li>
+<li> is dynamically typed.  There is no need to pre-declare variables and types are automatically managed.</li>
+<li> has built-in hash tables, called dictionaries, and vectors, called lists.</li>
+<li> is object-oriented and introspective.  You can easily print the member variables and functions of an object at runtime.</li>
+<li> runs slower than native code because it is interpreted.  
+Performance-critical controllers may want to distribute processing to 
+multiple nodes or switch to a more optimized language.
+</li></ul>
+<p>Common operations:</p>
+
+<p>To initialize a dictionary:
+</p>
+<pre>mactable = {}
+</pre>
+<p>To add an element to a dictionary:
+</p>
+<pre>mactable[0x123] = 2
+</pre>
+<p>To check for dictionary membership:
+</p>
+<pre>if 0x123 in mactable:
+    print 'element 2 is in mactable'
+if 0x123 not in mactable:
+    print 'element 2 is not in mactable'
+</pre>
+<p>To print a debug message in POX:
+</p>
+<pre>log.debug('saw new MAC!')
+</pre>
+<p>To print an error message in POX:
+</p>
+<pre>log.error('unexpected packet causing system meltdown!')
+</pre>
+<p>To print all member variables and functions of an object:
+</p>
+<pre>print dir(object)
+</pre>
+<p>To comment a line of code:
+</p>
+<pre># Prepend comments with a #; no // or /**/
+</pre>
+<p>More Python resources:
+</p>
+<ul><li> <a href="http://docs.python.org/lib/built-in-funcs.html" class="external text" rel="nofollow">List of built-in functions</a> </li>
+<li> <a href="http://docs.python.org/tutorial/" class="external text" rel="nofollow">Official Python tutorial</a>
+</li></ul>
+<p>The subsections below give details about POX APIs that should prove 
+useful in the exercise.  There is also other documentation available in 
+the <a href="http://www.noxrepo.org/pox/documentation/" class="external text" rel="nofollow">appropriate section of POX's website</a>. 
+</p>
+<h5> <span class="mw-headline" id="Sending_OpenFlow_messages_with_POX"> Sending OpenFlow messages with POX </span></h5>
+<pre>connection.send( ... ) # send an OpenFlow message to a switch
+</pre>
+<p>When a connection to a switch starts, a ConnectionUp event is fired. 
+ The example code creates a new Tutorial object that holds a reference 
+to the associated Connection object.  This can later be used to send 
+commands (OpenFlow messages) to the switch.
+</p>
+<h4> <span class="mw-headline" id="ofp_action_output_class"> ofp_action_output class </span></h4>
+<p>This is an action for use with ofp_packet_out and ofp_flow_mod.  It 
+specifies a switch port that you wish to send the packet out of.  It can
+ also take various "special" port numbers.  An example of this would be 
+OFPP_FLOOD which sends the packet out all ports except the one the 
+packet originally arrived on.</p>
+
+<p>Example.  Create an output action that would send packets to all ports:
+</p>
+<pre>out_action = of.ofp_action_output(port = of.OFPP_FLOOD)
+</pre>
+<h4> <span class="mw-headline" id="ofp_match_class"> ofp_match class </span></h4>
+<p>Objects of this class describe packet header fields and an iput port 
+to match on.  All fields are optional -- items that are not specified 
+are "wildcards" and will match on anything.</p>
+
+<p>Some notable fields of ofp_match objects are:
+</p>
+<ul><li> dl_src - The data link layer (MAC) source address</li>
+<li> dl_dst - The data link layer (MAC) destination address</li>
+<li> in_port - The packet input switch port
+</li></ul>
+<p>Example.  Create a match that matches packets arriving on port 3:
+</p>
+<pre>match = of.ofp_match()
+match.in_port = 3
+</pre>
+<h4> <span class="mw-headline" id="ofp_packet_out_OpenFlow_message"> ofp_packet_out OpenFlow message </span></h4>
+<p>The ofp_packet_out message instructs a switch to send a packet.  The 
+packet might be one constructed at the controller, or it might be one 
+that the switch received, buffered, and forwarded to the controller (and
+ is now referenced by a buffer_id).</p>
+
+<p>Notable fields are:
+</p>
+<ul><li>buffer_id - The buffer_id of a buffer you wish to send.  Do not set if you are sending a constructed packet.</li>
+<li>data - Raw bytes you wish the switch to send.  Do not set if you are sending a buffered packet.</li>
+<li> actions - A list of actions to apply (for this tutorial, this is just a single ofp_action_output action).</li>
+<li> in_port - The port number this packet initially arrived on if you are sending by buffer_id, otherwise OFPP_NONE.
+</li></ul>
+<p>Example. of_tutorial's send_packet() method:
+</p>
+<pre> def send_packet (self, buffer_id, raw_data, out_port, in_port):
+   """
+   Sends a packet out of the specified switch port.
+   If buffer_id is a valid buffer on the switch, use that.  Otherwise,
+   send the raw data in raw_data.
+   The "in_port" is the port number that packet arrived on.  Use
+   OFPP_NONE if you're generating this packet.
+   """
+   msg = of.ofp_packet_out()
+   msg.in_port = in_port
+   if buffer_id&nbsp;!= -1 and buffer_id is not None:
+     # We got a buffer ID from the switch; use that
+     msg.buffer_id = buffer_id
+   else:
+     # No buffer ID from switch -- we got the raw data
+     if raw_data is None:
+       # No raw_data specified -- nothing to send!
+       return
+     msg.data = raw_data
+   
+   action = of.ofp_action_output(port = out_port)
+   msg.actions.append(action)
+   
+   # Send message to switch
+   self.connection.send(msg)
+</pre>
+<h4> <span class="mw-headline" id="ofp_flow_mod_OpenFlow_message"> ofp_flow_mod OpenFlow message </span></h4>
+<p>This instructs a switch to install a flow table entry.  Flow table 
+entries match some fields of incoming packets, and executes some list of
+ actions on matching packets.  The actions are the same as for 
+ofp_packet_out, mentioned above (and, again, for the tutorial all you 
+need is the simple ofp_action_output action).  The match is described by
+ an ofp_match object.</p>
+
+<p>Notable fields are:
+</p>
+<ul><li> idle_timeout - Number of idle seconds before the flow entry is removed.  Defaults to no idle timeout.</li>
+<li> hard_timeout - Number of seconds before the flow entry is removed.  Defaults to no timeout.</li>
+<li> actions - A list of actions to perform on matching packets (e.g., ofp_action_output)</li>
+<li> priority - When using non-exact (wildcarded) matches, this 
+specifies the priority for overlapping matches.  Higher values are 
+higher priority.  Not important for exact or non-overlapping entries.</li>
+<li> buffer_id - The buffer_id of a buffer to apply the actions to immediately.  Leave unspecified for none.</li>
+<li> in_port - If using a buffer_id, this is the associated input port.</li>
+<li> match - An ofp_match object.  By default, this matches everything, so you should probably set some of its fields!
+</li></ul>
+<p>Example.  Create a flow_mod that sends packets from port 3 out of port 4.
+</p>
+<pre>fm = of.ofp_flow_mod()
+fm.match.in_port = 3
+fm.actions.append(of.ofp_action_output(port = 4))
+</pre>
+<p>For more information about OpenFlow constants, see the main OpenFlow types/enums/structs file, <b>openflow.h</b>,
+ in ~/openflow/include/openflow/openflow.h
+You may also wish to consult POX's OpenFlow library in 
+pox/openflow/libopenflow_01.py and, of course, the OpenFlow 1.0 
+Specification.
+</p>
+<h5> <span class="mw-headline" id="Parsing_Packets_with_the_POX_packet_libraries"> Parsing Packets with the POX packet libraries </span></h5>
+<p>The POX packet library is used to parse packets and make each 
+protocol field available to Python.  This library can also be used to 
+construct packets for sending.</p>
+
+<p>The parsing libraries are in:
+</p>
+<pre>pox/lib/packet/
+</pre>
+<p>Each protocol has a corresponding parsing file.</p>
+
+<p>For the first exercise, you'll only need to access the Ethernet 
+source and destination fields.  To extract the source of a packet, use 
+the dot notation:
+</p>
+<pre>packet.src
+</pre>
+<p>The Ethernet src and dst fields are stored as 
+pox.lib.addresses.EthAddr objects, which can easily be converted to 
+their common string representation (<code>str(addr)</code> will return something like "01:ea:be:02:05:01").</p>
+
+<p>To see all members of a parsed packet object:
+</p>
+<pre>print dir(packet)
+</pre>
+<p>Here's what you'd see for an ARP packet:
+</p>
+<pre>['HW_TYPE_ETHERNET', 'MIN_LEN', 'PROTO_TYPE_IP', 'REPLY', 'REQUEST', 'REV_REPLY',
+ 'REV_REQUEST', '__class__', '__delattr__', '__dict__', '__doc__', '__format__',
+ '__getattribute__', '__hash__', '__init__', '__len__', '__module__', '__new__',
+ '__nonzero__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__',
+ '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_init', 'err',
+ 'find', 'hdr', 'hwdst', 'hwlen', 'hwsrc', 'hwtype', 'msg', 'next', 'opcode',
+ 'pack', 'parse', 'parsed', 'payload', 'pre_hdr', 'prev', 'protodst', 'protolen',
+ 'protosrc', 'prototype', 'raw', 'set_payload', 'unpack', 'warn']
+</pre>
+<p>Many fields are common to all Python objects and can be ignored, but 
+this can be a quick way to avoid a trip to a function's documentation.</p>
+
+<p>Now, skip ahead to Testing Your Controller below.
+</p>
+<h4> <span class="mw-headline" id="Controller_Choice:_Beacon_.28Java.29"> Controller Choice: Beacon (Java) </span></h4>
+<p>Beacon is a Java-based OpenFlow controller platform.  For more details and tutorials see the <a href="http://www.beaconcontroller.net/" class="external text" rel="nofollow">Beacon Homepage</a>. </p>
+
+<p>Beacon is very easily developed using the Eclipse Integrated Development Environment which runs on any operating system (OS).</p>
+
+<p><b><span style="color:red">Therefore, for this tutorial you will 
+you need to download Beacon and run Eclipse on your host machine, rather
+ than inside the Mininet virtual machine.</span></b></p>
+
+<p>The next section will help you do that.
+</p>
+<h5> <span class="mw-headline" id="Setting_up_a_Beacon_Development_Environment"> Setting up a Beacon Development Environment </span></h5>
+<p>This section is a modified copy of the <a href="https://openflow.stanford.edu/display/Beacon/Quick+Start" class="external text" rel="nofollow">original</a> Beacon quick-start guide.
+</p>
+<h4> <span class="mw-headline" id="Prerequisites"> Prerequisites </span></h4>
+<p>You will need the following installed in your <b>host machine</b>&nbsp;:
+</p>
+<ul><li> <a href="http://java.sun.com/javase/downloads/widget/jdk6.jsp" class="external text" rel="nofollow">Java 6 JDK &amp; JRE</a> (Java 7 JDK is fine on OSX)
+</li></ul>
+<p>Next, download the Beacon tutorial package for your <b>host machine's operating system</b>, the file names begin with beacon-tutorial-eclipse:
+</p>
+<ul><li> <a href="https://openflow.stanford.edu/static/beacon/releases/1.0.2/" class="external text" rel="nofollow">Tutorial Packages</a>
+</li></ul>
+<p>After the download is complete extract it to your desktop, or 
+somewhere else that is convenient. For guide purposes, the folder you 
+extracted it to will be referred to by &lt;path 
+to&gt;/beacon-tutorial-1.0.2
+</p>
+<h4> <span class="mw-headline" id="Setup"> Setup </span></h4>
+<p>Launch Eclipse by running the eclipse executable inside &lt;path to&gt;/beacon-tutorial-1.0.2/eclipse/</p>
+
+<p>(Optional) Create a new Eclipse workspace if you are not starting from a fresh Eclipse install
+</p>
+<ul><li> File -&gt; Switch Workspace -&gt; Other, pick a new folder to host the workspace
+</li></ul>
+<p>Set Eclipse's compliance level to 1.6
+</p>
+<ul><li> Window (or Eclipse for MAC) -&gt; Preferences -&gt; Java -&gt; 
+Compiler then under JDK Compliance, change Compiler compliance level to 
+1.6.
+</li></ul>
+<p>Import Beacon and OpenFlowJ projects
+</p>
+<ul><li> File -&gt; Import -&gt; General -&gt; Existing Projects into 
+Workspace, Select &lt;path 
+to&gt;/beacon-tutorial-1.0.2/beacon-tutorial-1.0.2/src as the root 
+directory, click ok, then select all the projects, ensure copy projects 
+into workspace is not checked and click finish.
+</li></ul>
+<p><i><b>Note at this point you will see many Java errors, the libraries
+ Beacon depends on will be installed in the next step which will resolve
+ the errors, do not panic!</b></i></p>
+
+<p>Set the target (download libraries)
+</p>
+<ul><li> Open the Beacon Main Target project, double click the main-local.target file.</li>
+<li> Click Set as Target Platform in the top right corner of the 
+main.target window. (Note if you click before it has been resolved, you 
+will receive an error). Wait a few seconds, at this point all 
+compilation errors should be gone.
+</li></ul>
+<p>Import the Beacon code style settings
+</p>
+<ul><li> Click Window -&gt; Preferences. Then in the left column click 
+Java -&gt; Code Style -&gt; Formatter, then click the Import button, and
+ select &lt;path 
+to&gt;/beacon-tutorial-1.0.2/src/beacon-1.0.2/beacon_style_settings.xml 
+and hit ok, then ensure the Active profile is Beacon.
+</li></ul>
+<p>That's it! Your Beacon controller is ready to rock'n'roll.
+</p>
+<h5> <span class="mw-headline" id="Running_the_Tutorial_Controller"> Running the Tutorial Controller </span></h5>
+<p>Back in your VM, We're not going to be using the reference controller
+ anymore, which is running in the background (do 'ps -A | grep 
+controller' if you're unsure). </p>
+
+<p>The switches are all trying to connect to a controller, and will 
+increase the period of their attempts to contact the controller, up to a
+ maximum of 15 seconds.  Since the OpenFlow switch has not connected 
+yet, this delay may be anything between 0 and 15 seconds.   If this is 
+too long to wait, the switch can be configured  to wait no more than N 
+seconds using the --max-backoff parameter.</p>
+
+<p>Make sure the reference controller used before is not running:
+</p>
+<pre>$ sudo killall controller
+</pre>
+<p>You will need to tell the Mininet virtual switches to connect to your
+ host machine's IP address.  To get that, from your Mininet ssh window 
+run the command sudo route:
+</p>
+<pre>openflow@openflowtutorial:~$ sudo route
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+192.168.206.0   *               255.255.255.0   U     0      0        0 eth0
+default         192.168.206.2   0.0.0.0         UG    0      0        0 eth0
+</pre>
+<p>Look for the line that starts with default, and typically your host's
+ IP address will be the IP in the Gateway column.  If that IP address 
+ends with .1, and later you are unable to connect Mininet to Beacon, try
+ the same IP but swapping the ending .1 with .2.</p>
+
+<p>You should also restart Mininet to make sure that everything is "clean". From your Mininet console:
+</p>
+<pre>mininet&gt; exit
+$ sudo mn --topo single,3 --mac --switch ovsk --controller remote --ip &lt;your_host_ip&gt;
+</pre>
+<p>The --ip parameter defines in which IP your controller is located. 
+Note that this is the IP your host uses to communicate with the VM, as 
+discussed above. In my case, the VM's IP is 192.168.206.4 and the host's
+ IP is 192.168.206.2 . Thus, I started mininet using
+</p>
+<pre>$ sudo mn --topo single,3 --mac --switch ovsk --controller remote --ip 192.168.206.2
+</pre>
+<p><br>
+Now it's time to start Beacon. </p>
+
+<p>Launching Beacon from Eclipse in debug mode
+</p>
+<ul><li> Run -&gt; Debug Configurations</li>
+<li> Look for the OSGi Framework on the left, expand its children and select 'beacon Tutorial LearningSwitch', then click Debug.
+</li></ul>
+<p>This command will start Beacon, including the 'tutorial' bundle, 
+listening to incoming connection from switches on the standard OpenFlow 
+port (6633).</p>
+
+<p>Wait until the application indicates that the OpenFlow switch has
+ connected.  When the switch connects, your Eclipse console should print
+ something like this: </p>
+
+<p>01:07:31.095 [pool-2-thread-2] INFO  n.b.core.internal.Controller
+ - Switch connected from java.nio.channels.SocketChannel[connected 
+local=/192.168.206.2:6633 remote=/192.168.206.4:54994]
+</p>
+<h5> <span class="mw-headline" id="Verify_Hub_Behavior_with_tcpdump_2"> Verify Hub Behavior with tcpdump </span></h5>
+<p>Now we verify that hosts can ping each other, and that all hosts see 
+the exact same traffic - the behavior of a hub.  To do this, we'll 
+create xterms for each host, and view the traffic in each.  In the 
+Mininet console, start up three xterms:
+</p>
+<pre>mininet&gt; xterm h2 h3 h4
+</pre>
+<p>Arrange each xterm so that they're all on the screen at once.  This 
+may require reducing the height of to fit a cramped laptop screen.</p>
+
+<p>In the xterms for h3 and h4, run tcpdump, a utility to print the packets seen by a host:
+</p>
+<pre># tcpdump -XX -n -i h3-eth0
+</pre>
+<p>and respectively:
+</p>
+<pre># tcpdump -XX -n -i h4-eth0
+</pre>
+<p>In the xterm for h2, send a ping:
+</p>
+<pre># ping -c1 10.0.0.3
+</pre>
+<p>The ping packets are now going up to the controller, which then 
+floods them out all interfaces except the sending one.   You should see 
+identical ARP and ICMP packets corresponding to the ping in both xterms 
+running tcpdump.</p>
+
+<p>Now, see what happens when a non-existent host doesn't reply.  From h2 xterm:
+</p>
+<pre># ping -c1 10.0.0.5
+</pre>
+<p>You should see three unanswered ARP requests in the tcpdump xterms.  
+If your code is off later, three unanswered ARP requests is a signal 
+that you might be accidentally dropping packets.</p>
+
+<p>You can close the xterms now.
+</p>
+<h5> <span class="mw-headline" id="Benchmark_Hub_Controller_w.2Fiperf_2"> Benchmark Hub Controller w/iperf </span></h5>
+<p>Here, you'll benchmark the provided hub code, part of the Tutorial bundle.</p>
+
+<p>First, verify reachability.  Mininet should be running, along 
+with your Beacon tutorial controller.  In the Mininet console, run:
+</p>
+<pre>mininet&gt; pingall
+</pre>
+<p>This is just a sanity check for connectivity.  Now, in the Mininet console, run:
+</p>
+<pre>mininet&gt; iperf
+</pre>
+<p>Now, compare your number with the reference controller you saw before. How does that compare?
+</p>
+<h5> <span class="mw-headline" id="Open_Tutorial_Code_and_Begin"> Open Tutorial Code and Begin </span></h5>
+<p>Go to Eclipse and stop Beacon (you should see a square, red button in
+ the console window, or the top left section of Eclipse if you are in 
+the Debug perspective).</p>
+
+<p><b>NOTE&nbsp;: You can run only one controller at the same time 
+(otherwise you'll get a port conflict). Make sure that you stop any 
+running instance of Beacon before you start another one. With Eclipse 
+this might be tricky. To check the running programs open the Debug 
+perspective (Window-&gt;Open Perspective-&gt;Debug). On the top-left 
+corner you can see the running programs, click on it then hit the red 
+square to terminate the redundant ones...</b>
+</p>
+<table class="wikitable">
+<tbody><tr>
+<td> <div class="thumb tnone"><div class="thumbinner" style="width:202px;"><a href="http://www.openflow.org/wk/index.php/File:Eclipse_console_stop.png" class="image"><img alt="Eclipse console stop.png" src="http://www.openflow.org/wk/images/thumb/1/1b/Eclipse_console_stop.png/200px-Eclipse_console_stop.png" class="thumbimage" height="132" width="200"></a>  <div class="thumbcaption"><div class="magnify"><a href="http://www.openflow.org/wk/index.php/File:Eclipse_console_stop.png" class="internal" title="Enlarge"><img src="OpenFlow_Tutorial_files/magnify-clip.png" alt="" height="11" width="15"></a></div></div></div></div>
+</td><td> <div class="thumb tnone"><div class="thumbinner" style="width:202px;"><a href="http://www.openflow.org/wk/index.php/File:Eclipse_debug_stop.png" class="image"><img alt="Eclipse debug stop.png" src="http://www.openflow.org/wk/images/thumb/6/6a/Eclipse_debug_stop.png/200px-Eclipse_debug_stop.png" class="thumbimage" height="132" width="200"></a>  <div class="thumbcaption"><div class="magnify"><a href="http://www.openflow.org/wk/index.php/File:Eclipse_debug_stop.png" class="internal" title="Enlarge"><img src="OpenFlow_Tutorial_files/magnify-clip.png" alt="" height="11" width="15"></a></div></div></div></div>
+</td></tr></tbody></table>
+<p>The file you'll modify is <b>net.beaconcontroller.tutorial/src/main/java/net/beaconcontroller/tutorial/LearningSwitchTutorial.java</b>.  Find this file in the left pane of Eclipse and double-click it to open it in the editor window.</p>
+
+<p>Take a quick look through the file, the key things to notice:
+</p>
+<ul><li> The receive method is where packets initially arrive from 
+switches, by default this method calls forwardAsHub.  Once you have 
+implemented the code in forwardAsLearningSwitch you should change 
+receive by commenting out the call to forwardAsHub, and uncommenting the
+ call to forwardAsLearningSwitch.</li>
+<li> The forwardAsHub method behaves as a broadcast hub, and has 
+code that gives you an example of how to send an OFPacketOut message.</li>
+<li> The forwardAsLearningSwitch method is where you will be 
+writing all of your code (with the exception of the receive method 
+mentioned earlier).  It should take you around 30 lines of code in this 
+method to implement a learning switch.
+</li></ul>
+<p>Wireshark will be very useful to you in getting your code working.  
+Try starting Beacon and doing some pings with Mininet while capturing 
+with Wireshark.  You should see OFPacketIn and OFPacketOut messages, and
+ if you explore the OFPacketOut messages you should see their action is 
+to flood.</p>
+
+<p>Each time you change and save the LearningSwitchTutorial file, 
+make sure to stop and start your running instance, then use pings to 
+verify hub or Ethernet learning switch behavior.  Hosts that are not the
+ destination should display no tcpdump traffic after the initial 
+broadcast ARP request.</p>
+
+<p>There is a significant number of comments in the 
+LearningSwitchTutorial file to help you create the proper functionality,
+ and tips provided in the subsequent sections of this tutorial (<b>read these!</b>).  At a high level there are two phases of work for you to do.
+</p>
+<h4> <span class="mw-headline" id="Phase_1"> Phase 1 </span></h4>
+<ul><li> Build an OFMatch object based on the incoming OFPacketIn</li>
+<li> Learn that the source MAC address is at the incoming port and store it in the Map</li>
+<li> Retrieve the port the destination MAC address is at, if it is known</li>
+<li> If the destination port is known, send an OFPacketOut directly
+ and only to that port, else forward using the flooding method in the 
+forwardAsHub method
+</li></ul>
+<p>At the end of this phase you should be able to send pings back and 
+forth, and in Wireshark you should see an initial OFPacketOut in both 
+directions with its action set to flood, subsequent OFPacketOut messages
+ should have their action set to send to a single port.
+</p>
+<h4> <span class="mw-headline" id="Phase_2"> Phase 2 </span></h4>
+<ul><li> If the destination port is known, instead of sending an 
+OFPacketOut, send an OFFlowMod so that subsequent pings are matched on 
+the switch.
+</li></ul>
+<p>At the end of phase 2, when pinging and viewing the controller 
+traffic in Wireshark you should see an initial OFPacketOut that floods 
+for the request/response, then an OFFlodMod being sent for both 
+request/response, then no further traffic for the same ping.
+</p>
+<h5> <span class="mw-headline" id="Learning_Java_and_Beacon"> Learning Java and Beacon </span></h5>
+<p>Here are a few Java tips you might find useful down the road.</p>
+
+<p>To add an element to a HashMap:
+</p>
+<pre>macTable.put(mac_address_key, port)
+</pre>
+<p>To convert a MAC address in a byte[] to a Long:
+</p>
+<pre>Ethernet.toLong(match.getDataLayerSource()/match.getDataLayerDestination())
+</pre>
+<p>To check for an element in your HashMap:
+</p>
+<pre>if (macTable.containsKey(mac_address_key))
+   log.debug("mac_address_key is in hashmap")
+</pre>
+<p>To get an element from the HashMap:
+</p>
+<pre>learned_port = macTable.get(mac_address_key)
+   
+</pre>
+<p>To print a debug message in Beacon:
+</p>
+<pre>log.debug("Learned new MAC!")
+</pre>
+<p>You can change the logging level using info or error instead of debug.</p>
+
+<p>The subsections below give details about a few Beacon Classes that should prove useful in the exercise.
+</p>
+<h5> <span class="mw-headline" id="Useful_Beacon_Classes"> Useful Beacon Classes </span></h5>
+<p>In your beacon-tutorial-1.0.2 directory, there is an apidocs folder 
+which contains Javadoc documentation for all essential classes in this 
+assignment.
+Open your browser and point to &lt;your beacon-tutorial-1.0.2 
+directory&gt;/apidocs/index.html and look for the classes mentioned 
+below, which should help while implementing your code.</p>
+
+<p>To send a message to an OpenFlow switch, look at IOFSwitch class. The starter forward_as_hub function sends packets out using:
+</p>
+<pre>sw.getOutputStream().write(po);
+</pre>
+<p>Look at OFMatch and OFPacketIn to get header information from an 
+OpenFlow packet-in. You should find the following command particularly 
+useful:
+</p>
+<pre>match.loadFromPacket(pi.getPacketData(), pi.getInPort()); 
+</pre>
+<p>Down the road, you may want to print a mac address, or use it as a 
+key to a HashMap. OFMatch will give you the address as a byte array. Use
+ the functions/classes below in case needed:
+</p>
+<pre>HexString.toHexString(byte[] bytes) // Convert a string of bytes to a ':' separated hex string
+Long mac_address_key = Ethernet.toLong(byte array); // Creates a Long key from a byte array.
+</pre>
+<p>Finally, at some  point you will have to install a flow in the 
+network. Use OFFlowMod and OFActionOutput to do that. Here is a way to 
+initialize a flow-mod message for a specific switch:
+</p>
+<pre>OFFlowMod fm = new OFFlowMod();
+</pre>
+<p>Use the appropriate setters to construct the flow-mod you need. 
+Assuming you know the outgoing port for this flow, this is a snippet on 
+how to include this in your flow-mod message:
+</p>
+<pre>OFActionOutput action = new OFActionOutput(outPort);
+fm.setActions(Collections.singletonList((OFAction)action));
+</pre>
+<h4> <span class="mw-headline" id="Controller_Choice:_Floodlight_.28Java.29"> Controller Choice: Floodlight (Java) </span></h4>
+<p>Floodlight is a Java-based OpenFlow controller platform.  For more details and tutorials see the <a href="http://floodlight.openflowhub.org/" class="external text" rel="nofollow">FloodLight OpenFlowHub page</a>. 
+</p>
+<h5> <span class="mw-headline" id="Install_Prerequisites"> Install Prerequisites </span></h5>
+<p>Note: these instructions are a customized version of those on the <a href="http://floodlight.openflowhub.org/" class="external text" rel="nofollow">Floodlight Download page</a></p>
+
+<p>Make sure that you have Internet access:
+</p>
+<pre>ping -c1 www.stanford.edu
+</pre>
+<p>If not, ensure that each ethX interface on your VM has an IP assigned via DHCP:
+</p>
+<pre>ifconfig -a
+</pre>
+<p>Run for each interface without an IP assigned, replacing ethX as necessary:
+</p>
+<pre>sudo dhclient ethX
+</pre>
+<p>Update apt sources:
+</p>
+<pre>sudo apt-get update
+</pre>
+<p>Install prereqs:
+</p>
+<pre>time sudo apt-get install build-essential default-jdk ant python-dev
+</pre>
+<h5> <span class="mw-headline" id="Getting_Started"> Getting Started </span></h5>
+<p>While the dependencies are installing on your VM, follow the <a href="http://floodlight.openflowhub.org/getting-started/" class="external text" rel="nofollow">Floodlight Getting Started instructions</a>.
+</p>
+<h5> <span class="mw-headline" id="Developing"> Developing </span></h5>
+<p>Once through with the getting started part, work through <a href="http://floodlight.openflowhub.org/developing-floodlight/" class="external text" rel="nofollow">Developing on Floodlight.</a></p>
+
+<p><br>
+</p>
+<h4> <span class="mw-headline" id="Controller_Choice:_Trema_.28Ruby.29">Controller Choice: Trema (Ruby)</span></h4>
+<p>Trema is a Ruby-based OpenFlow controller platform and testing environment.  For more details and tutorials see the <a href="http://trema.github.com/trema/" class="external text" rel="nofollow">Trema GitHub page</a>. 
+</p>
+<h5> <span class="mw-headline" id="Install_Prerequisites_2"> Install Prerequisites </span></h5>
+<p>Make sure that you have Internet access:
+</p>
+<pre>ping -c1 www.stanford.edu
+</pre>
+<p>If not, ensure that each ethX interface on your VM has an IP assigned via DHCP:
+</p>
+<pre>ifconfig -a
+</pre>
+<p>Run for each interface without an IP assigned, replacing ethX as necessary:
+</p>
+<pre>sudo dhclient ethX
+</pre>
+<p>Update apt sources:
+</p>
+<pre>sudo apt-get update
+</pre>
+<p>Install prereqs:
+</p>
+<pre>sudo apt-get install rubygems1.8
+</pre>
+<h5> <span class="mw-headline" id="Getting_Started_2"> Getting Started </span></h5>
+<p>Follow the instructions on the <a href="http://trema.github.com/trema/" class="external text" rel="nofollow">main Trema page</a>, which has links to tutorial videos and more.
+</p>
+<h4> <span class="mw-headline" id="Controller_Choice:_NOX_w.2FPython"> Controller Choice: NOX w/Python </span></h4>
+<p><b> NOTE: The version of NOX used in this tutorial is no longer 
+current.  In fact, all Python-based development in NOX is now 
+deprecated.</b></p>
+
+<p><span style="color: red;">DEVELOPERS WISHING TO USE PYTHON ARE ENCOURAGED TO USE POX INSTEAD.</span><b> </b></p>
+
+<p>One option for the first exercise is to use  NOX, a controller 
+platform that allows you to write a controller on top, in Python, C++, 
+or some combination of the two. From <a href="http://noxrepo.org/" class="external text" rel="nofollow">noxrepo.org</a>:
+</p>
+<blockquote> 
+NOX is an open-source platform that simplifies the creation of software 
+for controlling or monitoring networks. Programs written within NOX 
+(using either C++ or Python) have flow-level control of the network. 
+This means that they can determine which flows are allowed on the 
+network and the path they take.
+</blockquote>
+<p>For more details, see the <a href="http://www.noxrepo.org/support/about-nox/" class="external text" rel="nofollow">NOX overview</a>.</p>
+
+<p><b>You do not need to install NOX</b> - it comes ready to run on the VM.</p>
+
+<p>We're not going to be using the reference controller anymore, 
+which is running in the background (do 'ps -A | grep controller' if 
+you're unsure). </p>
+
+<p>Make sure the reference controller used before is not running, so
+ that NOX can use port 6633.  Press Ctrl-C in the window running the 
+controller program, or in the other SSH window run:
+</p>
+<pre>$ sudo killall controller
+</pre>
+<p>You should also run <code>sudo mn -c</code> and restart Mininet to make sure that everything is "clean" and using the faster kernel switch. From your Mininet console:
+</p>
+<pre>mininet&gt; exit
+$ sudo mn -c
+$ sudo mn --topo single,3 --mac --switch ovsk --controller remote
+</pre>
+<p>Go to the directory holding the built NOX executable (~/noxcore/build/src) in the other SSH window:
+</p>
+<pre>$ cd ~/nox/build/src
+</pre>
+<p>Then, in the same window, start the base Python hub code:
+</p>
+<pre>$ ./nox_core -v -i ptcp: pytutorial
+</pre>
+<p>This command told NOX to start the 'tutorial' application, to print 
+verbose debug information, and to passively listen for new switch 
+connections on the standard OpenFlow port (6633).</p>
+
+<p>The switches may take a little bit of time to connect.   When an 
+OpenFlow switch loses its connection to a controller, it will generally 
+increase the period between which it attempts to contact the controller,
+ up to a maximum of 15 seconds.  Since the OpenFlow switch has not 
+connected yet, this delay may be anything between 0 and 15 seconds.   If
+ this is too long to wait, the switch can be configured to wait no more 
+than N seconds using the --max-backoff parameter.  Alternately, you exit
+ Mininet to remove the switch(es), start the controller, and then start 
+Mininet to immediately connect.</p>
+
+<p>Wait until the application indicates that the OpenFlow switch has
+ connected.  When the switch connects, NOX will print something like 
+this: 
+</p>
+<pre>00039|nox|DBG:Registering switch with DPID = 1
+</pre>
+<p>If you see the switch print out a message like "sent error in 
+response to capability reply, assuming no management support", this is 
+OK.  Open vSwitch has custom extensions to support a management 
+database, but we're not enabling them on our OpenFlow switch.
+</p>
+<h5> <span class="mw-headline" id="Verify_Hub_Behavior_with_tcpdump_3"> Verify Hub Behavior with tcpdump </span></h5>
+<p>Now we verify that hosts can ping each other, and that all hosts see 
+the exact same traffic - the behavior of a hub.  To do this, we'll 
+create xterms for each host and view the traffic in each.  In the 
+Mininet console, start up three xterms:
+</p>
+<pre>mininet&gt; xterm h2 h3 h4
+</pre>
+<p>Arrange each xterm so that they're all on the screen at once.  This 
+may require reducing the height of to fit a cramped laptop screen.</p>
+
+<p>In the xterms for h3 and h4, run <code>tcpdump</code>, a utility to print the packets seen by a host:
+</p>
+<pre># tcpdump -XX -n -i h3-eth0
+</pre>
+<p>and respectively:
+</p>
+<pre># tcpdump -XX -n -i h4-eth0
+</pre>
+<p>In the xterm for h2, send a ping:
+</p>
+<pre># ping -c1 10.0.0.3
+</pre>
+<p>The ping packets are now going up to the controller, which then 
+floods them out all interfaces except the sending one.   You should see 
+identical ARP and ICMP packets corresponding to the ping in both xterms 
+running tcpdump.  This is how a hub works; it sends all packets to every
+ port on the network.</p>
+
+<p>Now, see what happens when a non-existent host doesn't reply.  From h2 xterm:
+</p>
+<pre># ping -c1 10.0.0.5
+</pre>
+<p>You should see three unanswered ARP requests in the tcpdump xterms.  
+If your code is off later, three unanswered ARP requests is a signal 
+that you might be accidentally dropping packets.</p>
+
+<p>You can close the xterms now.
+</p>
+<h5> <span class="mw-headline" id="Benchmark_Hub_Controller_w.2Fiperf_3"> Benchmark Hub Controller w/iperf </span></h5>
+<p>Here, you'll benchmark the provided hub.</p>
+
+<p>First, verify reachability.  Mininet should be running, along 
+with the NOX tutorial in a second window.  In the Mininet console, run:
+</p>
+<pre>mininet&gt; pingall
+</pre>
+<p>This is just a sanity check for connectivity.  Now, in the Mininet console, run:
+</p>
+<pre>mininet&gt; iperf
+</pre>
+<p>Now, compare your number with the reference controller you saw before. How does that compare?</p>
+
+<p>Hint: every packet goes up to the controller now.
+</p>
+<h5> <span class="mw-headline" id="Open_Hub_Code_and_Begin_2"> Open Hub Code and Begin </span></h5>
+<p>Go to your SSH terminal and stop the NOX hub controller using Ctrl-C.
+The file you'll modify is <b>~/nox/src/nox/coreapps/tutorial/pytutorial.py</b>.  Open this file in your favorite editor.</p>
+
+<p>Most of the code will go in one function, learn_and_forward().  
+There isn't much code here, yet it's sufficient to make a complete hub 
+and serve as an example of a minimal NOX app.  You'll need to add 
+roughly 10 lines to make a learning switch.</p>
+
+<p>Each time you change and save this file, make sure to restart 
+NOX, then use pings to verify the behavior of the combination of switch 
+and controller as a (1) hub, (2)  controller-based Ethernet learning 
+switch, and (3) flow-accelerated learning switch.  For (2) and (3), 
+hosts that are not the destination for a ping should display no tcpdump 
+traffic after the initial broadcast ARP request.
+</p>
+<h5> <span class="mw-headline" id="Learning_Python_2"> Learning Python </span></h5>
+<p>This section introduces Python, giving you just enough to be dangerous.</p>
+
+<p>Python:
+</p>
+<ul><li> is a dynamic, interpreted language.  There is no separate compilation step - just update your code and re-run it.</li>
+<li> uses indentation rather than curly braces and semicolons to 
+delimit code.  Four spaces denote the body of a for loop, for example.</li>
+<li> is dynamically typed.  There is no need to pre-declare variables and types are automatically managed.</li>
+<li> has built-in hash tables, called dictionaries, and vectors, called lists.</li>
+<li> is object-oriented and introspective.  You can easily print the member variables and functions of an object at runtime.</li>
+<li> runs slower than native code because it is interpreted.  
+Performance-critical controllers may want to distribute processing to 
+multiple nodes or switch to a more optimized language.
+</li></ul>
+<p>Common operations:</p>
+
+<p>To initialize a dictionary:
+</p>
+<pre>mactable = {}
+</pre>
+<p>To add an element to a dictionary:
+</p>
+<pre>mactable[0x123] = 2
+</pre>
+<p>To check for dictionary membership:
+</p>
+<pre>if 0x123 in mactable:
+    print 'element 2 is in mactable'
+</pre>
+<p>To print a debug message in NOX:
+</p>
+<pre>log.debug('saw new MAC!')
+</pre>
+<p>To print an error message in NOX:
+</p>
+<pre>log.error('unexpected packet causing system meltdown!')
+</pre>
+<p>To print all member variables and functions of an object:
+</p>
+<pre>print dir(object)
+</pre>
+<p>To comment a line of code:
+</p>
+<pre># Prepend comments with a #; no // or /**/
+</pre>
+<p>More Python resources:
+</p>
+<ul><li> <a href="http://docs.python.org/lib/built-in-funcs.html" class="external text" rel="nofollow">List of built-in functions</a> </li>
+<li> <a href="http://docs.python.org/tutorial/" class="external text" rel="nofollow">Official Python tutorial</a>
+</li></ul>
+<p>The subsections below give details about NOX APIs that should prove useful in the exercise.</p>
+
+<p><br>
+</p>
+<h5> <span class="mw-headline" id="Sending_OpenFlow_messages_with_NOX"> Sending OpenFlow messages with NOX </span></h5>
+<p>NOX API documentation can be found <a href="http://noxrepo.org/%7Eyapkke/doc/" class="external text" rel="nofollow">here</a>. Please look there for the appropriate calls. 
+We also list a few functions here, that will be useful for your first steps into NOX.
+</p>
+<pre>Component.send_openflow( ... ) # send a packet out a port
+Component.install_datapath_flow( ... ) # push a flow to a switch
+</pre>
+<p>These functions, part of the core NOX API, are defined in 
+/home/openflow/nox/src/nox/lib/core.py.  To save the need to look 
+through this source code, the relevant documentation is below:
+</p>
+<h4> <span class="mw-headline" id="send_openflow.28_..._.29">send_openflow( ... )</span></h4>
+<pre>     def send_openflow(self, dp_id, buffer_id, packet, actions,
+                      inport=openflow.OFPP_CONTROLLER):
+        """
+        Sends an openflow packet to a datapath.
+
+        This function is a convenient wrapper for send_openflow_packet
+        and send_openflow_buffer for situations where it is unknown in
+        advance whether the packet to be sent is buffered.  If
+        'buffer_id' is -1, it sends 'packet'; otherwise, it sends the
+        buffer represented by 'buffer_id'.
+
+        dp_id - datapath to send packet to
+        buffer_id - id of buffer to send out
+        packet - data to put in openflow packet
+        actions - list of actions or dp port to send out of
+        inport - dp port to mark as source (defaults to Controller
+                 port)
+        """
+</pre>
+<p>Here's an example use, from the pytutorial.py starter code:
+</p>
+<pre>self.send_openflow(dpid, bufid, buf, openflow.OFPP_FLOOD, inport)
+</pre>
+<p>This code floods a packet cached at the switch (with the given bufid)
+ out all ports but the input port.  Replace openflow.OFPP_FLOOD with a 
+port number to send a packet packet out a specific port, unmodified.
+</p>
+<h4> <span class="mw-headline" id="install_datapath_flow.28_...._.29">install_datapath_flow( .... )</span></h4>
+<pre>    def install_datapath_flow(self, dp_id, attrs, idle_timeout, hard_timeout,
+                              actions, buffer_id=None, 
+                              priority=openflow.OFP_DEFAULT_PRIORITY,
+                              inport=None, packet=None):
+        """
+        Add a flow entry to datapath
+
+        dp_id - datapath to add the entry to
+
+        attrs - the flow as a dictionary (described above)
+
+        idle_timeout - # idle seconds before flow is removed from dp
+
+        hard_timeout - # of seconds before flow is removed from dp
+
+        actions - a list where each entry is a two-element list representing
+        an action.  Elem 0 of an action list should be an ofp_action_type
+        and elem 1 should be the action argument (if needed). For
+        OFPAT_OUTPUT, this should be another two-element list with max_len
+        as the first elem, and port_no as the second
+
+        buffer_id - the ID of the buffer to apply the action(s) to as well.
+        Defaults to None if the actions should not be applied to a buffer
+
+        priority - when wildcards are present, this value determines the
+        order in which rules are matched in the switch (higher values
+        take precedence over lower ones)
+
+        packet - If buffer_id is None, then a data packet to which the
+        actions should be applied, or None if none.
+
+        inport - When packet is sent, the port on which packet came in as input,
+        so that it can be omitted from any OFPP_FLOOD outputs.
+        """
+</pre>
+<p>Note that install_datapath_flow() takes in an attributes dictionary with parts of the OpenFlow match.  Here's an example:
+</p>
+<pre>attrs = {}
+attrs[core.IN_PORT] = inport
+attrs[core.DL_DST] = packet.dst
+</pre>
+<p>install_datapath_flow also requires a list of actions.  Here's another example:
+</p>
+<pre>actions = [[openflow.OFPAT_OUTPUT, [0, outport]]]
+</pre>
+<p>You will want to use exactly this action list for the tutorial.  The 
+format is a list of actions; we've defined one action, which forwards to
+ a single port (OFPAT = OpenFlow Action Type: Output).  The [0, outport]
+ part that follows is the set of parameters for the output action type: 0
+ is max_len, which is only defined for packets forwarded to the 
+controller (ignore this), while the outport param specifies the output 
+port.  </p>
+
+<p>The priority shouldn't matter, unless you have overlapping entries.  For example, the priority field could be:
+</p>
+<pre>openflow.OFP_DEFAULT_PRIORITY
+</pre>
+<p>For more details on the format, see the NOX core Python API code in src/nox/core.py.</p>
+
+<p>For more information about OpenFlow constants, see the main OpenFlow types/enums/structs file, <b>openflow.h</b>, in ~/openflow/include/openflow/openflow.h
+</p>
+<h5> <span class="mw-headline" id="Parsing_Packets_with_the_NOX_packet_libraries"> Parsing Packets with the NOX packet libraries </span></h5>
+<p>The NOX packet parsing libraries are automatically called to parse a packet and make each protocol field available to Python.  </p>
+
+<p>The parsing libraries are in:
+</p>
+<pre>~/nox/src/nox/lib/packet/
+</pre>
+<p>Each protocol has a corresponding parsing file.</p>
+
+<p>For the first exercise, you'll only need to access the Ethernet 
+source and destination fields.  To extract the source of a packet, use 
+the dot notation:
+</p>
+<pre>packet.src
+</pre>
+<p>The Ethernet src and dst fields are stored as arrays, so you'll 
+probably want to to use the mac_to_str() function or mac_to_int.  I 
+suggest mac_to_str, and it avoids the need to do any hex conversion when
+ printing.  The mac_to_str() function is already imported, and comes 
+from packet_utils in ~/nox/src/nox/lib/packet/packet_utils.py</p>
+
+<p>To see all members of a parsed packet object:
+</p>
+<pre>print dir(packet)
+</pre>
+<p>Here's what you'd see for an ARP packet:
+</p>
+<pre>['ARP_TYPE', 'IP_TYPE', 'LLDP_TYPE', 'MIN_LEN', 'PAE_TYPE', 'RARP_TYPE', 
+ 'VLAN_TYPE', '__doc__', '__init__', '__len__', '__module__', '__nonzero__',
+ '__str__', 'arr', 'dst', 'err', 'find', 'hdr', 'hdr_len', 'msg', 'next', 'parse', 
+ 'parsed', 'payload_len', 'prev', 'set_payload', 'src', 'tostring', 'type',
+ 'type_parsers']
+</pre>
+<p>Many fields are common to all Python objects and can be ignored, but 
+this can be a quick way to avoid a trip to a function's documentation.</p>
+
+<p>Now, skip ahead to Testing Your Controller below.
+</p>
+<h4> <span class="mw-headline" id="Testing_Your_Controller"> Testing Your Controller </span></h4>
+<p>To test your controller-based Ethernet switch, first verify that when
+ all packets arrive at the controller, only broadcast packets (like 
+ARPs) and packets with unknown destination locations (like the first 
+packet sent for a flow) go out all non-input ports.  You can do this 
+with tcpdump running on an xterm for each host.</p>
+
+<p>Once the switch no longer has hub behavior, work to push down a 
+flow when the source and destination ports are known.  You can use dpctl
+ to verify the flow counters, and if subsequent pings complete much 
+faster, you'll know that they're not passing through the controller.  
+You can also verify this behavior by running iperf in Mininet and 
+checking that no OpenFlow packet-in messages are getting sent.  The 
+reported iperf bandwidth should be much higher as well, and should match
+ the number you got when using the reference learning switch controller 
+earlier.</p>
+
+<p>Let the instructor know when your learning switch works!
+</p>
+<h4> <span class="mw-headline" id="Support_Multiple_Switches"> Support Multiple Switches </span></h4>
+<p>Your controller so far has only had to support a single switch, with a
+ single MAC table.  In this section, you'll extend it to support 
+multiple switches.</p>
+
+<p>Start mininet with a different topology.  In the Mininet console:
+</p>
+<pre>mininet&gt; exit
+$ sudo mn --topo linear --switch ovsk --controller remote
+</pre>
+<p>If you are using Beacon add the --ip option
+</p>
+<pre>mininet&gt; exit
+$ sudo mn --topo linear --switch ovsk --controller remote --ip=&lt;your_host_ip&gt;
+</pre>
+<p><br>
+Your created topology looks like this:</p>
+
+<p><br>
+<a href="http://www.openflow.org/wk/index.php/File:Linear2.png" class="image"><img alt="Linear2.png" src="http://www.openflow.org/wk/images/b/b4/Linear2.png" height="289" width="273"></a></p>
+
+<p><br>
+This will create a 2-switch topology where each switch has a single connected host.</p>
+
+<p>Now, modify your switch so that it stores a MAC-to-port table for
+ each DPID.  This strategy only works on spanning tree networks, and the
+ delay for setting up new paths between far-away hosts is proportional 
+to the number of switches between them.  Other modules could act 
+smarter. For example, one can maintain an all-pairs shortest path data 
+structure and immediately push down all flow entries needed to 
+previously-seen sources and destinations. This is out-of-scope for this 
+assignment.</p>
+
+<p>After the mods, to verify that your controller works, in the Mininet console, run:
+</p>
+<pre>mininet&gt; pingall
+</pre>
+<p>Congratulations on getting this far.  If you are doing this as part of the CS244 assignment, you are done! </p>
+
+<p><br>
+If you want to continue, you have three options:
+</p>
+<ul><li> run your code over real networking gear (if you are on a live tutorial)</li>
+<li> add layer-3 forwarding capabilities to your switch</li>
+<li> add firewall capabilities to your switch
+</li></ul>
+<p>Proceed to the section you prefer.
+</p>
+<h3> <span class="mw-headline" id="Control_a_Slice_of_a_real_Network">Control a Slice of a real Network</span></h3>
+<p>NOTE: This part is still in beta, so be prepared that things could break down the road...</p>
+
+<p>In this exercise you'll use the code you have so far to control a
+ slice of a real network  consisting of 3 OpenFlow switches, a server 
+and a wireless client. 
+Your goal is to access a website and post a message. The interesting 
+part is that your controller should allow traffic to go from client to 
+server and vice versa.
+The setup includes:
+</p>
+<ol><li> 3 OpenFlow-enabled LinkSys Access Points.</li>
+<li> FlowVisor ( to virtualize the network and create slices)</li>
+<li> 1 controller/team</li>
+<li> 1 Webserver</li>
+<li> 1 Wireless device/team (could be your laptop's WiFi, your iPhone, Droid  etc)
+</li></ol>
+<p>Ideally, you shouldn't write any code for this experiment. You will 
+have to form teams though. When you are ready to start, ask the 
+instructors to put you in a team.</p>
+
+<p>Here is the topology that we will use:
+</p>
+<div class="center"><div class="thumb tnone"><div class="thumbinner" style="width:502px;"><a href="http://www.openflow.org/wk/index.php/File:Virtualized_layout_detail.png" class="image"><img alt="Virtualized layout detail.png" src="http://www.openflow.org/wk/images/thumb/4/41/Virtualized_layout_detail.png/500px-Virtualized_layout_detail.png" class="thumbimage" height="328" width="500"></a>  <div class="thumbcaption"><div class="magnify"><a href="http://www.openflow.org/wk/index.php/File:Virtualized_layout_detail.png" class="internal" title="Enlarge"><img src="OpenFlow_Tutorial_files/magnify-clip.png" alt="" height="11" width="15"></a></div></div></div></div></div>
+<p><br>
+</p>
+<h4> <span class="mw-headline" id="Setting_up_your_Network">Setting up your Network</span></h4>
+<p>Here you'll work with a real network, so we won't use mininet. Go to your mininet console and type
+</p>
+<pre>mininet&gt; exit
+</pre>
+<p><br>
+You will have to deal with two network configurations.
+</p>
+<ol><li> The control network which will allow your controller to talk with the FlowVisor and OpenFlow switches (192.168.10. subnet).</li>
+<li> The actual network we want to control, i.e. your wireless client to access the Web Server (10.0.0. subnet).
+</li></ol>
+<h5> <span class="mw-headline" id="Control_Network_Configuration">Control Network Configuration</span></h5>
+<ul><li> Ask the instructor for an ethernet cable. This will go to a standard (non-OpenFlow) switch and connects to the FlowVisor.</li>
+<li> At your local machine, configure the interface where you plugged your ethernet cable with the following characteristics:
+</li></ul>
+<pre>IP address&nbsp;: 192.168.10.X (where X = 100+TeamIndex, e.g. X=101 for Team1)
+Netmask&nbsp;: 255.255.255.0
+</pre>
+<p>For Linux you'll have to do something like&nbsp;:
+</p>
+<pre>$ sudo ifconfig eth0 192.168.10.X netmask 255.255.255.0
+</pre>
+<p>For MAC
+</p>
+<pre>$ sudo ifconfig en0 192.168.10.X netmask 255.255.255.0
+</pre>
+<p>For Windows
+</p>
+<pre>Go to your Control Panel-&gt;Network Settings and configure your LAN device.
+</pre>
+<p><br>
+Now your local machine can access FlowVisor. To verify, ping FlowVisor from a terminal on your local machine:
+</p>
+<pre>ping 192.168.10.1
+</pre>
+<p>But what we really need is the guest VM - where the controller is - to be able to communicate with the FlowVisor.
+We will use port-forwarding to do that.</p>
+
+<p>First, note the IP address of your VM guest. At your VM's shell, type:
+</p>
+<pre>$ ifconfig eth1
+</pre>
+<p>Now, we need to configure port-forwarding.
+</p>
+<h4> <span class="mw-headline" id="Linux_and_Mac_users">Linux and Mac users</span></h4>
+<p>From your local machine:
+</p>
+<pre>ssh openflow@&lt;guestIP&gt; -L192.168.10.X:6633:&lt;guestIP&gt;:6633
+</pre>
+<p>where &lt;guestIP&gt; is the IP address of the eth1 interface of the VM, and X is 100 + your team number.
+</p>
+<h4> <span class="mw-headline" id="Windows_users">Windows users</span></h4>
+<p>To enable port forwarding on the Putty, please enter the appropriate fields during connection setup</p>
+
+<p><br>
+<a href="http://www.openflow.org/wk/index.php/File:Putty_port_fwding.PNG" class="image"><img alt="Putty port fwding.PNG" src="http://www.openflow.org/wk/images/3/3d/Putty_port_fwding.PNG" height="433" width="454"></a>
+</p>
+<h5> <span class="mw-headline" id="Verify_reachability">Verify reachability</span></h5>
+<p>To verify that everything worked, use tcpdump at your guest VM and 
+see whether you receive any incoming OpenFlow-related packets 
+</p>
+<pre>$ sudo tcpdump -i lo port 6633
+</pre>
+<p>Note: The reason we specify the interface 'lo' not 'eth1' here is 
+that SSH port forwarding arrives to the interface eth1 tcp port 22 and 
+forwarded to the local interface 'lo' tcp port 6633.</p>
+
+<p>Due to reconnection backoff, it might take up to one minute 
+before you see any packets coming in. If you don't get any packets after
+ 1 minute, ask one of the instructors for help.
+</p>
+<h5> <span class="mw-headline" id="Wireless_Client_Configuration">Wireless Client Configuration</span></h5>
+<p>You will have to configure your wireless client's network interface. 
+First login to the wireless network with SSID "OpenFlow-Tutorial". 
+Depending on your OS use ControlPanel/ifconfig or any other similar 
+utility&nbsp;:</p>
+
+<p>For Linux:
+</p>
+<pre>$ sudo ifconfig wlan0 10.0.0.X netmask 255.255.255.0
+</pre>
+<p>For Mac:
+</p>
+<pre>$ sudo ifconfig en1 10.0.0.X netmask 255.255.255.0
+</pre>
+<p>(Or configure it using Network Preferences.)</p>
+
+<p>For Windows, go to Control Panel-&gt;Network Settings and configure it manually.</p>
+
+<p>Write down your wireless card MAC address. We'll use this shortly.</p>
+
+<p>Try to ping the WebServer at 10.0.0.1. Does it work? If not, why?
+</p>
+<h4> <span class="mw-headline" id="FlowVisor_Configuration">FlowVisor Configuration</span></h4>
+<p>Several teams will be using the same switches at the same time, so we
+ have to virtualize our network and give each team a separate slice.
+Each controller will have a limited view of the network, as this is 
+dictated by its slice configuration. In this exercise, each team will 
+control all the traffic that comes from and goes to its wireless client.
+To do that we will need the MAC address of your team's wireless client. 
+ Hopefully you already have this from the previous step.
+Give this MAC address to the instructor to update your slice 
+configuration at the FlowVisor.</p>
+
+<p>Here is how a slice definition looks at the flowvisor configuration&nbsp;:
+</p>
+<pre>Name: team1
+ID: 1
+Host: tcp:192.168.10.101:6633
+
+FlowSpace: allow: dl_src: 00:22:41:66:13:1c
+FlowSpace: allow: dl_dst: 00:22:41:66:13:1c
+</pre>
+<p>Note that 192.168.10.101:6633 points to this slice's OF controller, 
+00:22:41:66:13:1c is the MAC address of the wireless client, and every 
+packet with that ethernet_src or ethernet_dst is assigned to this 
+controller.</p>
+
+<p>For more details on FlowVisor, look at the wikipage.
+</p>
+<h4> <span class="mw-headline" id="Run_your_controller"> Run your controller </span></h4>
+<p>Go to your directory and start your controller.
+</p>
+<pre>$ cd ~/noxcore/build/src/
+$ ./nox_core -i ptcp: -v pytutorial
+</pre>
+<p>What do you see? Are there any switches connecting to your controller? Use your debug messages or wireshark for that.
+</p>
+<h4> <span class="mw-headline" id="Accessing_the_WebServer"> Accessing the WebServer </span></h4>
+<p>By now, you should have a functional network between your client and the webserver.</p>
+
+<p>Try again to ping the server:
+</p>
+<pre>$ ping 10.0.0.1
+</pre>
+<p>Does it work now? How packets travel from client to the server? Check the switch flow-tables using dpctl.
+</p>
+<pre>$ dpctl dump-flows tcp:192.168.10.X (X=11,12,13)
+</pre>
+<p>What do you see? Do you recognize all flows?</p>
+
+<p>If ping works, you are ready to go to the final step. 
+Fire your browser and go to <a href="http://10.0.0.1:8000/" class="external free" rel="nofollow">http://10.0.0.1:8000</a>
+Write and post a short message and make sure you fill your team's number.</p>
+
+<p>Look what others said at <a href="http://10.0.0.1:8000/posts" class="external free" rel="nofollow">http://10.0.0.1:8000/posts</a>
+</p>
+<h3> <span class="mw-headline" id="Create_Router">Create Router</span></h3>
+<p>In this exercise, you'll make a static layer-3 forwarder/switch.  
+It's not exactly a router, because it won't decrement the IP TTL and 
+recompute the checksum at each hop (so traceroute won't work).  Actions 
+to do TTL and checksum modification are expected in the upcoming 
+OpenFlow version 1.1.  However, it will match on masked IP prefix 
+ranges, just like a real router.</p>
+
+<p>From <a href="http://www.faqs.org/rfcs/rfc1812.html#ixzz0oPra4P9C" class="external text" rel="nofollow">RFC 1812</a>:
+</p>
+<blockquote>
+An IP router can be distinguished from other sorts of packet switching 
+devices in that a router examines the IP protocol header as part of the 
+switching process. It generally removes the Link Layer header a message 
+was received with, modifies the IP header, and replaces the Link Layer 
+header for retransmission.
+</blockquote>
+<p>To simplify the exercise, your "router" will be completely static. 
+With no BGP or OSPF, you'll have no need to send or receive route table 
+updates.</p>
+
+<p>Each network node will have a configured subnet.  If a packet is 
+destined for a host within that subnet, the node acts as a switch and 
+forwards the packet with no changes, to a known port or broadcast, just 
+like in the previous exercise.  If a packet is destined for some IP 
+address for which the router knows the next hop, it should modify the 
+layer-2 destination and forward the packet to the correct port.</p>
+
+<p>Our hope is that this exercise will show that with an 
+OpenFlow-enabled forwarding device, the network is effectively 
+layerless; you can mix switch, router, and higher-layer functionality.</p>
+
+<p>Please note that this is an advanced exercise, and given that most implementation details are up to you, will be harder.
+</p>
+<h4> <span class="mw-headline" id="Create_Topology"> Create Topology </span></h4>
+<p>You'll need a slightly different topology, something like this:</p>
+
+<p><br>
+<a href="http://www.openflow.org/wk/index.php/File:Router_topo.png" class="image"><img alt="Router topo.png" src="http://www.openflow.org/wk/images/9/9f/Router_topo.png" height="245" width="510"></a></p>
+
+<p><br>
+... which will need to be described in a way that Mininet will understand.</p>
+
+<p>There's an example custom topology at:
+</p>
+<pre>~/mininet/custom/topo-2sw-2host.py
+</pre>
+<p>First, copy the example to a new file:
+</p>
+<pre>$ cp ~/mininet/custom/topo-2sw-2host.py mytopo.py
+</pre>
+<p>To run a custom topology, pass Mininet the custom file and pass in the custom topology:
+</p>
+<pre>$ sudo mn --custom mytopo.py --topo mytopo --mac
+</pre>
+<p>Then, in the Mininet console, run:
+</p>
+<pre>mininet&gt; pingall
+</pre>
+<p>Now, modify your topology file to match the picture and verify full host connectivity with pingall in the Mininet console.
+</p>
+<h4> <span class="mw-headline" id="Set_up_hosts"> Set up hosts </span></h4>
+<p>Set up IP configuration on each virtual host to force each one to 
+send to the gateway for destination IPs that are outside of their 
+configured subnet.</p>
+
+<p>You'll need to configure each <b>host</b> with a subnet, IP, gateway, and netmask. </p>
+
+<p><i>It may seem obvious, but we will warn you anyway: do not 
+attempt to assign IP addresses to the interfaces belonging to switches 
+s1 and s2. If you need to handle traffic "to" or "from" a switch, do so 
+using OpenFlow.</i></p>
+
+<p>There are several ways that this can be done:
+</p>
+<ul><li> <b>Unix commands via Mininet CLI</b>
+</li></ul>
+<p>From within the Mininet CLI, you can send commands to hosts to configure them:
+</p>
+<pre>mininet&gt; h2 ifconfig h2-eth0 10.0.1.2/24
+mininet&gt; h2 route add default gw 10.0.1.1
+mininet&gt; h2 route -n
+</pre>
+<ul><li> <b>Regular Unix commands via an xterm</b>
+</li></ul>
+<p>Another way of configuring hosts is to open up an xterm
+</p>
+<pre>mininet&gt; xterm h2
+</pre>
+<p>and then to type into that xterm window to configure the host:
+</p>
+<pre># ifconfig h2-eth0 10.0.1.2/24
+</pre>
+<ul><li> <b>Running a configuration script</b>
+</li></ul>
+<p>You can also run scripts on the hosts themselves, for example, if you
+ have a script called config_script, you can run it on host h2 from the 
+Mininet CLI:
+</p>
+<pre>mininet&gt; h2 config_script
+</pre>
+<p>If you write such a script, you can either have it automatically know
+ what to do (e.g. based on MAC address, which you can assign based on 
+node number with --mac ) or pass in additional parameters as desired.
+</p>
+<ul><li> <b>CLI scripting</b>
+</li></ul>
+<p>To avoid repetitive CLI typing, it is possible to create a file 
+consisting of multiple CLI commands, and then run that script in 
+Mininet:
+</p>
+<pre>mininet&gt; source my_cli_script
+</pre>
+<p>or
+</p>
+<pre># mn --pre my_cli_script
+</pre>
+<p>A sample CLI script might look like:
+</p>
+<pre>py "Configuring network"
+h3 ifconfig h3-eth0 10.0.1.2/24
+h4 ifconfig h4-eth0 10.0.1.3/24
+h5 ifconfig h5-eth0 10.0.2.2/24
+h3 route add default gw 10.0.1.1
+h4 route add default gw 10.0.1.1
+h5 route add default gw 10.0.2.1
+py "Current network:"
+net
+dump
+</pre>
+<p>CLI scripting is designed to save typing rather than to be a full 
+programming environment (although you can evaluate Python expressions 
+from the CLI, as shown above using the 'py' command!) For advanced 
+tasks, the Mininet API provides flexible access to all Mininet 
+capabilities.
+</p>
+<ul><li> <b>Mininet API</b>
+</li></ul>
+<p>Mininet's Python API provides a much more powerful means of creating 
+and configuring networks programatically, but is probably beyond the 
+scope of this tutorial. Some examples of using the Mininet API may be 
+found in <tt>mininet/examples</tt>, and they are described in <tt>mininet/examples/README</tt>.
+</p>
+<ul><li> <b>Changing the node IDs in the topology</b>
+</li></ul>
+<p>It is also possible to change the default IP addresses by changing node IDs in a topology.</p>
+
+<p>The node ID in a topology is the default IP address in base 256. 
+For example, setting node ID 258 will result in a default IP address of 10.0.1.2.</p>
+
+<p>The default IP prefix length may be changed with the command-line option --prefixlen. For example,
+</p>
+<pre># mn --prefixlen 24
+</pre>
+<p>will use /24 as the default prefix length (i.e. netmask of 255.255.255.0).</p>
+
+<p>For the this tutorial, you may find that using CLI scripting or 
+changing the node IDs (and setting the prefix length to 24) may be most 
+convenient.</p>
+
+<p>Once you have your new topology configured and connected to your 
+pytutorial controller, you should be able to ping between hosts on the 
+same subnet, but not between hosts on different subnets. Your job is to 
+create a new (or revised) controller that installs rules to forward 
+packets between the two subnets!
+</p>
+<h4> <span class="mw-headline" id="ARP"> ARP </span></h4>
+<p>A router generally has to respond to ARP requests. You will see 
+ethernet broadcasts which will (initially at least) be forwarded to the 
+controller.</p>
+
+<p>Your controller should probably construct ARP replies and forward them out the appropriate ports.</p>
+
+<p>It may be possible to avoid dealing with ARP (at least initially)
+ by adding static ARP entries in each host for all of the nodes on its 
+subnet.
+</p>
+<h4> <span class="mw-headline" id="Static_Routing"> Static Routing </span></h4>
+<p>Once ARP has been handled, you will need to handle routing for the 
+static configuration. Since we know what is connected to each port, we 
+can match on IP address (or prefix, in the case of the remote subnet) 
+and forward out the appropriate port.</p>
+
+<p>In the case of the left switch, for example, we will want to 
+forward packets destined for an attached host to the appropriate port, 
+while packets destined for the remote subnet should be forwarded to the 
+right switch.
+</p>
+<h4> <span class="mw-headline" id="ICMP"> ICMP </span></h4>
+<p>Additionally, your controller may receive ICMP echo (ping) requests for each switch, which it should respond to.</p>
+
+<p>Lastly, packets for unreachable subnets should be responded to with ICMP network unreachable messages.
+</p>
+<h4> <span class="mw-headline" id="Testing_your_router"> Testing your router </span></h4>
+<p>If the router works properly:
+</p>
+<ul><li> attempts to send from 10.0.1.2 to an unknown address range like 10.99.0.1 should yield an <a href="http://en.wikipedia.org/wiki/ICMP_Destination_Unreachable" class="external text" rel="nofollow">ICMP destination unreachable</a> message.</li>
+<li> packets sent to hosts on the same subnet should be treated like before.</li>
+<li> packets sent to hosts on a known address range should have their MAC dst field changed to that of the next-hop router.</li>
+<li> the router should be pingable, and should generate an ICMP echo reply in response to an ICMP echo request.
+</li></ul>
+<p>The exercise is meant to give more practice with packet parsing and show how to use OpenFlow to modify packets.</p>
+
+<p>Let the instructor know when you get stuck or when you complete 
+the exercise.  This one is more open, and you'll need different actions 
+(MAC dst modify) and matching (IP dst/prefix combinations), for which 
+NOX core.py should help.
+</p>
+<h3> <span class="mw-headline" id="Create_Firewall">Create Firewall</span></h3>
+<p>In this exercise, you'll modify your switch to reject connection attempts to specific ports, just like a firewall.</p>
+
+<p>This exercise is meant to show how OpenFlow can even do basic 
+layer-4 tasks.  Other uses could even extend into layer 7; cookie-based 
+load balancing, for example.
+</p>
+<h4> <span class="mw-headline" id="Testing_your_Firewall"> Testing your Firewall </span></h4>
+<p>To run iperf on xterms, on the xterm for h2, start up a server:
+</p>
+<pre>$ iperf -s
+</pre>
+<p>Then on the xterm for h3 start up a client:
+</p>
+<pre>$ iperf -c 10.0.0.2
+</pre>
+<p>Your task is to prevent this from happening, and to block all flow entries with this particular port.</p>
+
+<p>You can change the port used by iperf with the -p option.  Both 
+server and client will need this option specified.  Again, NOX core.py 
+will be useful for figuring out how to specify a flow entry that matches
+ on wildcard ports.  Also note that an empty action list will drop a 
+packet; there's no explicit drop action.
+</p>
+<h3> <span class="mw-headline" id="Learn_More">Learn More</span></h3>
+<h4> <span class="mw-headline" id="OpenFlow">OpenFlow</span></h4>
+<p>To learn more about OpenFlow in general, consult the <a href="http://www.openflowswitch.org/" class="external text" rel="nofollow">main OpenFlow page</a>.  There are videos, blog entries, and more.  Check the wiki for link to OpenFlow-based projects and demos.
+</p>
+<h4> <span class="mw-headline" id="Additional_Tools">Additional Tools</span></h4>
+<ul><li><a href="http://www.openflowswitch.org/foswiki/bin/view/OpenFlow/Mininet" class="external text" rel="nofollow">Mininet</a>.</li>
+<li><a href="http://www.openflow.org/wk/index.php/FlowVisor" class="external text" rel="nofollow">FlowVisor</a>.
+</li></ul>
+<h4> <span class="mw-headline" id="Old_Regression_Tests">Old Regression Tests</span></h4>
+<p>Note: you will need to install additional stuff to get the old 
+regression tests working.  See the install instructions for your 
+platform, referenced at the top of the <a href="http://openflow.org/wk" class="external text" rel="nofollow">OpenFlow wiki</a></p>
+
+<p>The OpenFlow reference distribution includes a set of tests to 
+verify that an OpenFlow switch correctly sends and receives packets.  In
+ this section, you'll run through some of the "Black Box" tests, where 
+the regression switch acts as a controller and verifies that a switch 
+responds properly to OpenFlow messages, as well as properly forwards 
+packets sent to the input ports of the switch.  The Black Box regression
+ tests use this layout:</p>
+
+<p><br>
+<a href="http://www.openflow.org/wk/index.php/File:Regression_tests.png" class="image"><img alt="Regression tests.png" src="http://www.openflow.org/wk/images/c/cc/Regression_tests.png" height="320" width="676"></a></p>
+
+<p><br>
+First, exit from the Mininet console:
+</p>
+<pre>mininet&gt; exit
+</pre>
+<p>To run the tests, log in as root, from the same SSH terminal:
+</p>
+<pre>$ sudo su
+</pre>
+<p>Run a script to start up virtual ethernet pairs locally.
+</p>
+<pre># openflow/regress/bin/veth_setup.pl 
+</pre>
+<p>Veth0 connects to veth1, for example, and anytime a packet is sent to
+ veth0, it'll pop out veth1, and vice versa.  The regression suite will 
+allocate four veth pair halves to a software OpenFlow switch and the 
+other four to the test suite, which sends packets and checks the 
+contents and locations of responses.</p>
+
+<p>In an SSH terminal:
+</p>
+<pre># ifconfig -a
+</pre>
+<p>You should see 8 new virtual interfaces, veth0..veth7.</p>
+
+<p>Configure Wireshark to show OpenFlow messages and TCP resets in 
+red (which delimit individual tests).  In the Wireshark filter box, 
+enter:
+</p>
+<pre>of || tcp.flags.reset == 1
+</pre>
+<p>Start running the tests, with Wireshark running on lo (loopback interface):
+</p>
+<pre># openflow/regress/bin/of_kmod_veth_test.pl
+</pre>
+<p>You may see OpenFlow messages for each test - if not, hit Ctrl-C to stop the tests, and clean up any leftover state:
+</p>
+<pre># openflow/regress/bin/of_kmod_veth_teardown.pl
+</pre>
+<p>Sometimes on the first run, the tests fail; we're not sure why this 
+is happening.  Restart after tearing down and they should work.  </p>
+
+<p>Then, re-run the tests:
+</p>
+<pre># openflow/regress/bin/of_kmod_veth_test.pl
+</pre>
+<p>When you get bored, stop the tests and check the messages.  Then clean up any state:
+</p>
+<pre># openflow/regress/bin/of_kmod_veth_teardown.pl
+</pre>
+<p>The regression suite is useful for verifying new switch features, as 
+well as diagnosis divergent behavior between different switches.  The 
+suite is generally used with 4 physical ports on hardware switches.  We 
+won't do anything more with it in this tutorial, but feel free to peruse
+ the code.  See the openflow/regress/projects/black_box directory, which
+ has a file for each test.</p>
+
+<p>To teardown virtual ethernet pairs, run:
+</p>
+<pre># openflow/regress/bin/veth_teardown.pl 
+</pre>
+<p>A replacement test suite is in the making, and is expected for mid 
+2010.  The new suite will be based on Python and reorganized to make 
+switch-specific tests and port configurations much easier to define and 
+debug.</p>
+
+<p>Exit back to regular username:
+</p>
+<pre># exit
+</pre>
+<h3> <span class="mw-headline" id="Credits">Credits</span></h3>
+<p>This tutorial was written by Brandon Heller and Yiannis Yiakoumis and beta-tested by Bob Lantz, KK Yap and Masayoshi Kobayashi.
+</p>
+<h3> <span class="mw-headline" id="Notes">Notes</span></h3>
+<h4> <span class="mw-headline" id="VM_Creation_Notes">VM Creation Notes</span></h4>
+<pre># ONS Tutorial Setup
+
+http://releases.ubuntu.com/natty/
+ubuntu-11.04-server-i386.iso
+
+Name: OpenFlowTutorial
+Disk Type: Dynamically Expanding
+Size: 6GB
+
+Ubuntu Setup:
+Hostname: openflowtutorial
+Default to all options.
+username openflow, password openflow
+No packages selected.
+
+See http://yuba.stanford.edu/foswiki/bin/view/OpenFlow/MininetVMCreationNotes
+
+sudo apt-get install -y git-core
+sudo apt-get install python-setuptools
+git clone git://github.com/mininet/mininet.git
+cd mininet 
+sudo make install
+cd ..
+
+# Install latest NOX:
+# From http://noxrepo.org/noxwiki/index.php/NOX_Installation#Debian.2FUbuntu
+cd nox
+git remote add noxtutorial git@gitosis.stanford.edu:nox-tutorial.git
+git fetch noxtutorial
+git checkout -b cs244-tutorial noxtutorial/cs244-tutorial
+
+cd /etc/apt/sources.list.d
+sudo wget http://openflowswitch.org/downloads/debian/nox.list
+sudo apt-get update
+sudo apt-get install nox-dependencies
+
+# Build NOX:
+cd nox
+./boot.sh
+mkdir build/
+cd build/
+../configure
+make -j 5
+
+# Standard install:
+cd ~/
+time ~/mininet/util/install.sh
+
+# Add to /etc/network/interfaces:
+auto eth1
+iface eth1 inet dhcp
+
+# Set capture privileges:
+# from http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
+sudo setcap cap_net_raw=+ep /usr/bin/dumpcap
+
+# PRE-SHIP INSTRUCTIONS
+
+# Ensure we don't provide the solution by default!
+cd nox
+git reset --hard HEAD
+
+# Remove authorized hosts file, pre-ship:
+rm -f ~/.ssh/authorized_keys
+rm -f ~/.ssh/known_hosts
+
+# Switch to use read-only form of Mininet:
+cd mininet
+git remote rm origin
+git remote add origin git://github.com/mininet/mininet.git
+git fetch
+
+# QUICK TEST
+cd ~/nox/build/src
+./nox_core -i ptcp: -v pytutorial
+sudo mn --topo single,3 --mac --switch ovsk --controller remote
+</pre>
+<h4> <span class="mw-headline" id="Frequently_Asked_Questions_.28FAQ.29">Frequently Asked Questions (FAQ)</span></h4>
+<h5> <span class="mw-headline" id="How_can_you_convert_a_VirtualBox_VM.2F.vdi_image_to_a_VM_or_.vmdk_disk_image_usable_by_VMware.3F">How can you convert a VirtualBox VM/.vdi image to a VM or .vmdk disk image usable by VMware?</span></h5>
+<p>If you have VMware installed, you may find that it is advantageous to run the VM under VMware rather than VirtualBox.</p>
+
+<p><b>For VMware Player on Windows</b>, use the "Export 
+Appliance..." menu command from inside VirtualBox. Make sure you select 
+the "Write Manifest file" option. This will create a .ova virtual 
+machine archive which can be imported into VMware.</p>
+
+<p>To import the .ova into VMware Player on Windows, open it using the "Open..." menu command.</p>
+
+<p><b>For VMware Fusion on the Mac</b>, it's slightly more 
+complicated, but not terribly so. Use the "Export Appliance..." menu 
+command from inside VirtualBox, making sure to save an .ovf (and .vmdk) 
+file by pressing "Choose..." and selecting "Open Virtualization Format 
+(*.ovf)" from the "Files of type:" pop-up menu. This will create a .ovf 
+file, which you can ignore (or import using VMware's ovf tool if you 
+have it installed), and a .vmdk disk image, which is exactly what you 
+need.</p>
+
+<p>(If you create an .ova file by mistake, you can either try again 
+or rename the .ova file to a .tar file and extract it to get the .vmdk 
+image.)</p>
+
+<p>Next, create a new VM in VMware Fusion, delete its default hard 
+disk (if any), and add a new hard disk, specifying the .vmdk file as the
+ existing disk image to use. Once the VM has a single hard drive 
+specified as the .vmdk file, it should be able to boot and run.</p>
+
+<p><b>For VMware player on Ubuntu</b>, you should be able to use the above approach that works for Windows, but I haven't tested it yet.</p>
+
+<p>Alternately, you can create a .vmdk image from the .vdi file by using <code>qemu-img</code> from the <code>qemu</code> package; for example:
+</p>
+<pre>qemu-img convert -f vdi tutorial.vdi -O vmdk tutorial.vmdk
+</pre>
+<p>You can then attach it to a new VM as described in the VMware Fusion instructions.
+</p>
+<h5> <span class="mw-headline" id="How_does_one_scroll_an_xterm.3F"> How does one scroll an xterm?</span></h5>
+<p>Start it with the flag -sb 500 to store 500 lines of output, e.g.
+</p>
+<pre>xterm -sb 500 &amp;
+</pre>
+<p>then use a scroll wheel, trackpad scrolling, or the middle mouse 
+button to scroll with the quaint Athena scroll widget (i.e. grey bar on 
+the left side of the window.)</p>
+
+<p>If you want a more advanced terminal, you might wish to try installing gnome-terminal, e.g.
+</p>
+<pre>sudo apt-get update
+sudo apt-get install gnome-terminal
+gnome-terminal &amp;
+</pre>
+<h5> <span class="mw-headline" id="Why_can.27t_I_ssh_into_my_VirtualBox_VM.3F"> Why can't I ssh into my VirtualBox VM? </span></h5>
+<p>You may not be able to connect to a VirtualBox VM that only has NAT 
+networking enabled. Make sure that you have followed the instructions 
+above and <b>configured host-only networking on at least one interface in the VM settings</b>, and make sure that the <b>host-only interface</b> is configured and that you are connecting to its correct IP address.</p>
+
+<p>If this does not work, or for more advanced setup, see below.
+</p>
+<h5> <span class="mw-headline" id="I_can.27t_start_WireShark_or_xterm_-_help.21"> I can't start WireShark or xterm - help! </span></h5>
+<p>You are probably getting an error like "cannot open display."</p>
+
+<p>This probably means that you have not successfully connected to the VM with ssh and X11 forwarding enabled.</p>
+
+<p>Make sure that you have carefully followed our instructions above. If you are on Windows, make sure that
+</p>
+<ul><li> You have <b>installed</b> Xming and PuTTY</li>
+<li> You have <b>started up Xming</b> (important!) and it is <b>still running</b></li>
+<li> You have enabled X11 forwarding</li>
+<li> You have verified that you can ssh in with X11 forwarding and start up an xterm
+</li></ul>
+<p><b>If you cannot start up an xterm, you will not be able to run wireshark!</b>
+</p>
+<h3> <span class="mw-headline" id="VirtualBox-specific_Instructions">VirtualBox-specific Instructions</span></h3>
+<h4> <span class="mw-headline" id="VirtualBox_Networking"> VirtualBox Networking </span></h4>
+<p>The easiest way to ssh into a VirtualBox VM is to use a <b>host-only</b> network interface, as we suggest.</p>
+
+<p>To allow network access in the VM, execute:
+</p>
+<pre>sudo dhclient eth1
+</pre>
+<p>which grabs an IP address.  If eth1 is a <b>host-only</b> network interface, you are all set and should be able to ssh to eth1's IP address from your host.</p>
+
+<p>Otherwise, you can change the default, NAT interface as shown below and execute <i>sudo dhclient eth0</i>.</p>
+
+<p>In order to log in via a NAT interface, we need to set up port 
+forwarding. This may also enable users on your LAN to log in to the VM, 
+which you may or may not want.</p>
+
+<p><b>OS X / Linux Users</b> Run the VBoxManage commands below from a local terminal (not the VM window).</p>
+
+<p><b>Windows Users</b> If you are using Windows Vista, first close 
+Virtual box, to ensure that config files aren't locked.  Then open a 
+command line prompt, by click on 'Start', then 'Run', then typing 'cmd' 
+and hitting enter.  In the terminal that appears, change to the 
+VirtualBox directory:
+</p>
+<pre>cd "C:\Program Files\Sun\xVM VirtualBox"
+</pre>
+<p><b>All OSes</b>:
+From a terminal on your local machine (NOT the VM/VirtualBox), run: 
+</p>
+<pre>VBoxManage setextradata OpenFlowTutorial "VBoxInternal/Devices/pcnet/0/LUN#0/Config/ssh/HostPort" 2222
+VBoxManage setextradata OpenFlowTutorial "VBoxInternal/Devices/pcnet/0/LUN#0/Config/ssh/GuestPort" 22
+VBoxManage setextradata OpenFlowTutorial "VBoxInternal/Devices/pcnet/0/LUN#0/Config/ssh/Protocol" TCP
+</pre>
+<p>Verify the settings:
+</p>
+<pre>VBoxManage getextradata OpenFlowTutorial enumerate
+</pre>
+<p>The three values you added above should be shown.  </p>
+
+<p>Save your network settings for future reboots, by powering down the VM, from the VM window:
+</p>
+<pre>sudo poweroff
+</pre>
+<p>Restart the OpenFlowTutorial VM once again, by clicking 'Start' at 
+the top of VirtualBox.  Login again as user openflow with password 
+openflow.  </p>
+
+<p><b>Windows Users</b> You may need to change the VM configuration.  Edit  /etc/network/interfaces.  Check that it says:
+</p>
+<pre>allow hot-plug eth1
+iface eth1 inet dhcp
+</pre>
+<p>If it says eth0, change it to eth1; note that to write the file 
+you'll need to use sudo.  If you changed the interfaces file, poweroff 
+the machine (sudo poweroff) and then start it again.
+</p>
+<h4> <span class="mw-headline" id="VirtualBox_SSH_Connections"> VirtualBox SSH Connections </span></h4>
+<h5> <span class="mw-headline" id="Mac_OS_X_and_Linux_2"> Mac OS X and Linux </span></h5>
+<p>To SSH from the local machine to the VM, on the local machine run:
+</p>
+<pre>ssh -Y -l openflow -p 2222 localhost
+</pre>
+<p>with password openflow.  Test the X11 forwarding by running on the local machine:
+</p>
+<pre>xterm
+</pre>
+<p>and a new terminal window should appear.  If you have succeeded, you are done with the basic setup.  Close the xterm.
+</p>
+

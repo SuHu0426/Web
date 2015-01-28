@@ -1,0 +1,102 @@
+<HTML>
+<TITLE>User-mode Linux Root Filesystem</TITLE>
+<OL>
+  <LI>Original</LI>
+  <LI>Prerequisites</LI>
+    <PRE>
+      $ sudo apt-get install uml-utilities debootstrap
+    </PRE>
+  <LI>從網頁 <a href="http://packages.debian.org/lenny/user-mode-linux" target="newwindow">UML</a> 
+        點選 amd64, 再點選 security.debian.org/debian-security</LI>
+    <PRE>
+      $ cd $HOME/Desktop
+      $ sudo dpkg -i user-mode-linux_2.6.26*.deb
+    </PRE>
+    <P>Debian user mode linux 已經更新, 但是我們以 dpkg 自行裝 Debiasn UML, package
+   management system 無法偵測到 Lenny uml 我們只能自求多福!</P>
+  <LI>Root File system 分兩階段完成:</LI>
+  <P>第一階段:</P>
+    <PRE>
+      $ sudo mkdir /src3/UML /mnt/tmp
+      $ sudo chown hsu:hsu /src3/UML /mnt/tmp
+      $ cd /src3/UML
+      $ scp -r as:/backup/UML-tool/* .
+   
+      $ dd if=/dev/zero of=./DebianNet-UltraLight.ext3 bs=1024K count=500
+      $ sudo mkfs.ext3 DebianNet-UltraLight.ext3
+      $ sudo mount -o loop DebianNet-UltraLight.ext3 /mnt/tmp
+      $ sudo debootstrap --arch amd64 lenny /mnt/tmp http://ftp.tw.debian.org/debian
+      $ sudo chroot /mnt/tmp  
+      # cd /dev 
+      # for i in 0 1 2 3 4 5 6 7; do mknod ubd$i b 98 $[ $i * 16 ]; done 
+      # apt-get update 
+      # adduser hsu 
+      # adduser guest
+    </PRE>
+    <P>In another xterm, run "update-base" to update basic setup, such as: </P>
+    <PRE>
+      /mnt/tmp/etc/fstab    /mnt/tmp/etc/hosts    /mnt/tmp/etc/hostname  
+      /mnt/tmp/etc/network/interfaces   /mnt/tmp/etc/inittab    
+      /mnt/tmp/etc/securetty     /mnt/tmp/etc/apt/sources.list  
+    </PRE> 
+    <PRE>
+      $ ./update-base
+      $ sudo rm /mnt/tmp/tmp/DebianNet-pkgs.txt
+      $ sudo cp DebianNet-UltraLight.txt  /mnt/tmp/tmp
+      # exit
+    </PRE>
+    <P>第二階段: 把 root file system mount 上去, 繼續裝其他 packages.</P>
+    <PRE>
+      $ sudo mount -o loop DebianNet-UltraLight.ext3 /mnt/tmp
+      $ sudo chroot /mnt/tmp
+      # apt-get -f install
+      # for pkg in `grep "\binstall$" /tmp/DebianNet-UltraLight.txt | awk '{print $1} '`; do apt-get -y --force-yes install $pkg; done
+      # apt-get autoremove
+      # apt-get dselect-upgrade  
+      # ls /var/cache/apt/archives/*deb
+      # apt-get clean
+    </PRE>   
+    <P>In another xterm,</P>
+    <PRE>
+      $ cd /usr/lib/uml/modules
+      $ ls -l
+      $ ls -l /mnt/tmp/lib/modules
+      $ sudo cp -r * /mnt/tmp/lib/modules
+    </PRE>
+    <PRE>
+      # cd /etc/init.d 
+      # ./dhcp stop 
+      # ./quagga stop 
+      # ./ssh stop 
+      # ./thttpd stop 
+      # update-rc.d -f dhcp remove 
+      # update-rc.d -f hwclock.sh remove 
+      # update-rc.d -f hwclockfirst.sh remove 
+      # update-rc.d -f quagga remove 
+      # update-rc.d -f thttpd remove 
+      # df
+      # exit 
+      $ sudo umount /mnt/tmp
+      umount: /mnt/tmp: device is busy
+      $ sudo fuser -m /mnt/tmp 
+        /mnt/tmp:            16368rce
+      $ sudo kill -2 16368 
+      $ sudo fuser -m /mnt/tmp 
+      $ sudo umount /mnt/tmp 
+      $ linux.uml ubd0=DebianNet-UltraLight.ext3 
+    </PRE>
+    <P>Check root file system is ok, then (1) login, (2) su, (3) # halt -f</P>
+    <PRE>
+      $ gzip DebianNet-UltraLight.ext3
+    <PRE>
+   <LI>Configure
+   <PRE> 
+     $ gunzip DebianNet.ext3.gz
+     $ sudo mount -o loop DebianNet-UltraLight.ext3 /mnt/tmp
+     $ sudo rm -r /mnt/tmp/lib/modules/2.6.26/*
+     $ sudo cp -r /usr/lib/uml/modules/2.6.26/* /mnt/tmp/lib/modules/2.6.26 
+     $ ./Config-UML-Rfs DebianNet-UltraLight.ext3 av-50 140.120.8.160 140.120.8.150
+   </PRE>
+</OL>
+</BODY>
+</HTML>

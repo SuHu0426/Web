@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html b:version="2" class="v2" dir="ltr">
+  <head><title>Roggy: Vyatta as an Internet Gateway</title>
+  </head>
+<body class="">
+<h3><a href="http://theithollow.com/2012/04/18/virtual-routing-for-bubble-networks/" 
+  target="newwindow">Virtual Routing for Bubble Networks</a></h3>
+<h3><a href="http://vblog.strutt.org.uk/2011/11/vyatta-router-setup/" 
+  target="newwindow">Vyatta router setup (vmware?)</a></h3>
+<h3><a href="#Vyatta-Howto" 
+  target="newwindow">Vyatta Howto</a></h3>
+<h3><a href="#Vyatta-Config" 
+  target="newwindow">Vyatta Config Guide</a></h3>
+<h3><a href="http://www.vyatta.com/download/documentation" 
+  target="newwindow">Vyatta Doc</a></h3>
+<h3><a href="" 
+  target="newwindow"></a></h3>
+
+
+<h3><a href="http://roggyblog.blogspot.tw/2009/12/vyatta-as-internet-gateway.html"
+  target="newwindow">Vyatta as an Internet Gateway</a>
+</h3>
+
+
+<a name="Vyatta-Howto"></a><h2 id="firstHeading" class="firstHeading">Vyatta 
+Howto<a href="http://vwiki.co.uk/Vyatta">(Source Origin)</a></h2>
+
+<p>Unix based Open Source firewall router that sees itself in competition with 
+Cisco.  The firewall module is not on by default, so once interfaces are
+ defined it will pass traffic freely.  All configuration is done via the
+ CLI <sup id="cite_ref-0" class="reference"><a href="#cite_note-0">[1]</a></sup>.</p>
+
+<table id="toc" class="toc"><tbody><tr><td><div id="toctitle"><h2>Contents</h2><span class="toctoggle">&nbsp;[<a href="#" class="internal" id="togglelink">hide</a>]&nbsp;</span></div>
+<ul>
+  <li class="toclevel-1 tocsection-1"><a href="#Set-up"><span class="tocnumber">1</span> <span class="toctext">Set-up</span></a>
+  <ul>
+    <li class="toclevel-2 tocsection-2"><a href="#Installation_.28ISO_Install.29"><span class="tocnumber">1.1</span> <span class="toctext">Installation (ISO Install)</span></a></li>
+    <li class="toclevel-2 tocsection-3"><a href="#Installation_.28OVF_Deployment.29"><span class="tocnumber">1.2</span> <span class="toctext">Installation (OVF Deployment)</span></a></li>
+    <li class="toclevel-2 tocsection-4"><a href="#Basic_Set-up"><span class="tocnumber">1.3</span> <span class="toctext">Basic Set-up</span></a></li>
+    <li class="toclevel-2 tocsection-5"><a href="#DNS_Client"><span class="tocnumber">1.4</span> <span class="toctext">DNS Client</span></a></li>
+    <li class="toclevel-2 tocsection-6"><a href="#SNMP_Server"><span class="tocnumber">1.5</span> <span class="toctext">SNMP Server</span></a></li>
+  </ul>
+</li>
+  <li class="toclevel-1 tocsection-7"><a href="#Configuration"><span class="tocnumber">2</span> <span class="toctext">Configuration</span></a>
+  <ul>
+    <li class="toclevel-2 tocsection-8"><a href="#Basic_Commands"><span class="tocnumber">2.1</span> <span class="toctext">Basic Commands</span></a></li>
+    <li class="toclevel-2 tocsection-9"><a href="#User_Accounts"><span class="tocnumber">2.2</span> <span class="toctext">User Accounts</span></a></li>
+    <li class="toclevel-2 tocsection-10"><a href="#Firewall"><span class="tocnumber">2.3</span> <span class="toctext">Firewall</span></a></li>
+    <li class="toclevel-2 tocsection-11"><a href="#NAT"><span class="tocnumber">2.4</span> <span class="toctext">NAT</span></a></li>
+  </ul>
+</li>
+  <li class="toclevel-1 tocsection-12"><a href="#Troubleshooting_and_General_Commands"><span class="tocnumber">3</span> <span class="toctext">Troubleshooting and General Commands</span></a>
+  <ul>
+    <li class="toclevel-2 tocsection-13"><a href="#Unable_to_Commit_Interface_Change_.28RTNETLINK.29"><span class="tocnumber">3.1</span> <span class="toctext">Unable to Commit Interface Change (RTNETLINK)</span></a></li>
+    <li class="toclevel-2 tocsection-14"><a href="#TCPdump"><span class="tocnumber">3.2</span> <span class="toctext">TCPdump</span></a></li>
+  </ul>
+</li>
+  <li class="toclevel-1 tocsection-15"><a href="#Notes"><span class="tocnumber">4</span> <span class="toctext">Notes</span></a></li>
+</ul>
+</td></tr></tbody></table>
+<h2> <a name="Set-up"></a> Set-up </h2>
+<p><a href="http://packages.vyatta.com/vyatta/iso/">Vyatta Download</a></p>
+
+<h3>Installation (ISO Install)</h3>
+<ol>
+  <li> Download the LiveOS ISO
+</li>
+  <li> Create Red Hat RHEL5 (32 bit) VM with
+<ul>
+  <li> 2GB hard drive
+</li>
+  <li> 2x E1000 NIC
+</li>
+  <li> 128MB RAM
+</li></ul>
+</li>
+  <li> Connect ISO and allow to boot fully
+</li>
+  <li> Login as <code> root / vyatta </code>
+</li>
+  <li> To install to local disk, run the install script with the following command
+<ul>
+  <li> <code> install-system </code>
+</li>
+  <li> Accept all defaults
+</li></ul>
+</li>
+  <li> Reboot and disconnect ISO
+</li></ol>
+<h3> <a name="Installation_.28OVF_Deployment.29"></a> Installation (OVF Deployment)</h3>
+<ol>
+  <li> Get the URL or download the OVF from <a rel="nofollow" class="external free" href="http://www.vyatta.com/downloads/">http://www.vyatta.com/downloads/</a>
+</li>
+  <li> Import into vCentre
+</li>
+  <li> Reconfigure network 2nd NIC is connected to as required
+</li>
+  <li> Start the VM
+</li>
+  <li> Login via the console using <code> vyatta / vyatta </code>
+</li></ol>
+<h3> <a name="Basic_Set-up"></a> Basic Set-up </h3>
+<ol>
+  <li> Login and run the following commands to set IP address and default gateway
+<ul>
+  <li> <code> configure </code>
+</li>
+  <li> <code> set system host-name router-name </code>
+</li>
+  <li> <code> set interfaces ethernet eth0 address 192.168.1.10/24 </code> (repeat for other interfaces)
+</li>
+  <li> <code> set system gateway-address 192.168.10.1 </code>
+</li></ul>
+</li>
+  <li> Enable remote ssh access
+<ul>
+  <li> <code> set service ssh </code>
+</li></ul>
+</li>
+  <li> Enable/config NTP (optional, out of the box the router will sync to Vyatta's NTP server pool)
+<ul>
+  <li> <code> set system time-zone Europe/London </code>
+</li>
+  <li> <code> set system ntp server 192.168.1.50 </code>
+</li>
+  <li> <code> delete system ntp server 0.vyatta.pool.ntp.org </code>
+</li>
+  <li> <code> delete system ntp server 1.vyatta.pool.ntp.org </code>
+</li>
+  <li> <code> delete system ntp server 2.vyatta.pool.ntp.org </code>
+</li></ul>
+</li>
+  <li> Commit changes and save
+<ul>
+  <li> <code> commit </code>
+</li>
+  <li> <code> save </code>
+</li>
+  <li> <code> exit </code>
+</li></ul>
+</li></ol>
+<h3> <a name="DNS_Client"></a> DNS Client </h3>
+<ol>
+  <li> To set DNS servers, use following command (repeat for more servers)
+<ul>
+  <li> <code> set system name-server 172.16.0.34 </code>
+</li></ul>
+</li>
+  <li> To set DNS suffix search order, in order of preference (1st entered is 1st used)
+<ul>
+  <li> <code> set system domain-search domain mydomain.com </code>
+</li></ul>
+</li>
+  <li> To review config
+<ul>
+  <li> <code> show system name-server </code>
+</li>
+  <li> <code> show system domain-search </code>
+</li></ul>
+</li></ol>
+<h3> <a name="SNMP_Server"></a> SNMP Server </h3>
+
+<p>To set up the SNMP service and allow a polling server to interact with (for example 
+perform SNMP Gets, etc) with the router</p>
+
+<ol>
+  <li> Go into configuration mode
+<ul>
+  <li> <code> configure </code>
+</li></ul>
+</li>
+  <li> Create a SNMP community
+<ul>
+  <li> <code> set service snmp community public </code>
+</li></ul>
+</li>
+  <li> Go into the created community
+<ul>
+  <li> <code> edit service snmp community mp-public </code>
+</li></ul>
+</li>
+  <li> Create a SNMP client that's allowed to make SNMP requests
+<ul>
+  <li> <code> set client 192.168.1.25 </code>
+</li></ul>
+</li>
+  <li> Apply changes and move back up to top-level part of config
+<ul>
+  <li> <code> commit </code>
+</li>
+  <li> <code> top </code>
+</li></ul>
+</li></ol>
+<p>To set up SNMP trapping (assumes you're already in config mode)
+</p>
+<ol>
+  <li> Configure a trap destination (repeat for further destinations)
+<ul>
+  <li> <code> set service snmp trap-target 192.168.10.199 </code>
+</li></ul>
+</li>
+  <li> Apply changes 
+<ul>
+  <li> <code> commit </code>
+</li></ul>
+</li></ol>
+<h2> <a name="Configuration"></a> Configuration </h2>
+<h3> <a name="Basic_Commands"></a> Basic Commands </h3>
+<p>In similar fashion to Cisco IOS, configuration has to be entered in 
+config mode, and the configuration can only be viewed in Operator mode.
+</p>
+<table class="vwikitable">
+
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Description</th>
+</tr>
+<tr>
+<td> <code>configure</code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td> Enter configuration mode
+</td></tr>
+<tr>
+<td> <code>commit</code>         </td>
+<td>&nbsp;&nbsp;</td>
+<td> Apply changes made since last commit
+</td></tr>
+<tr>
+<td> <code>save</code>           </td>
+<td>&nbsp;&nbsp;</td>
+<td> Save changes since last save (otherwise lost at reboot)
+</td></tr>
+<tr>
+<td> <code>discard</code>        </td>
+<td>&nbsp;&nbsp;</td>
+<td> Discard changes made since last commit
+</td></tr></tbody></table>
+<h3> <a name="User_Accounts"></a> User Accounts </h3>
+<table class="vwikitable">
+
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Description</th>
+</tr>
+<tr>
+<td> <code> set system login user &lt;user&gt; </code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td> Create user
+</td></tr>
+<tr>
+<td> <code> set system login user &lt;user&gt; authentication plaintext-password &lt;password&gt; </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Change users password
+</td></tr>
+<tr>
+<td> <code> set system login user &lt;user&gt; level admin </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Change users authorisation level
+</td></tr>
+<tr>
+<td> <code> delete system login user &lt;user&gt; </code>    </td>
+<td>&nbsp;&nbsp;</td>
+<td> Delete user
+</td></tr></tbody></table>
+<h3> <a name="Firewall"></a> Firewall </h3>
+<p>If an interface has no firewall config, then it passes all traffic.  
+Once any firewall config is applied then that interface acts as a 
+firewall.
+</p>
+<ul>
+  <li> <a href="http://www.carbonwind.net/VyattaOFR/Firewall/Firewall.htm">http://www.carbonwind.net/VyattaOFR/Firewall/Firewall.htm</a> - A bit old, but a useful 
+page to learn from
+</li></ul>
+<table class="vwikitable">
+
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Description</th>
+</tr>
+<tr>
+<td> <code>delete firewall name home_in rule 5</code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td> Delete firewall rule no 5
+</td></tr></tbody></table>
+<p><br>
+</p>
+<pre>vyatta@vyatta:~$ configure
+vyatta@vyatta# set firewall name home_out rule 10 action accept
+vyatta@vyatta# set firewall name home_out rule 10 description "VC client access"
+vyatta@vyatta# set firewall name home_out rule 10 destination address 10.1.1.5
+vyatta@vyatta# set firewall name home_out rule 10 destination port 80,443,8084,8443,9084
+vyatta@vyatta# set firewall name home_out rule 10 protocol tcp
+vyatta@vyatta# set interfaces ethernet eth0 firewall in name home_out
+vyatta@vyatta# commit
+vyatta@vyatta# exit
+vyatta@vyatta:~$ show firewall home_out
+
+Active on (eth0,IN)
+
+State Codes: E - Established, I - Invalid, N - New, R - Related
+
+rule  action  source              destination         proto  state
+----  ------  ------              -----------         -----  -----
+10    ACCEPT  0.0.0.0/0           10.1.1.5            tcp    any
+                                  dst ports: 80,443,8084,8443,9084
+1025  DROP    0.0.0.0/0           0.0.0.0/0           all    any
+</pre>
+
+<p><b>The firewall filters in both directions, in and out of the interface. Traffic 
+has to be configured in both directions to work!</b>  Therefore its necessary to config 
+as shown...
+</p>
+
+<pre>vyatta@vyatta:~$ show firewall home_in
+
+Active on (eth0,OUT)
+
+State Codes: E - Established, I - Invalid, N - New, R - Related
+
+rule  action  source              destination         proto  state
+----  ------  ------              -----------         -----  -----
+5     ACCEPT  0.0.0.0/0           0.0.0.0/0           icmp   any
+10    ACCEPT  0.0.0.0/0           88.221.188.7        tcp    any
+                                  dst ports: 443
+11    ACCEPT  0.0.0.0/0           92.123.36.7         tcp    any
+                                  dst ports: 443
+1025  DROP    0.0.0.0/0           0.0.0.0/0           all    any
+
+vyatta@vyatta:~$ show firewall home_out
+
+Active on (eth0,IN)
+
+State Codes: E - Established, I - Invalid, N - New, R - Related
+
+rule  action  source              destination         proto  state
+----  ------  ------              -----------         -----  -----
+5     ACCEPT  0.0.0.0/0           0.0.0.0/0           icmp   any
+110   ACCEPT  88.221.188.7/32     0.0.0.0/0           tcp    any
+              src ports: 443
+111   ACCEPT  92.123.36.7         0.0.0.0/0           tcp    any
+              src ports: 443
+1025  DROP    0.0.0.0/0           0.0.0.0/0           all    any
+</pre>
+<h3> <a name="NAT"></a> NAT </h3>
+
+<p>For full details see <a href="http://www.vyatta.com/sites/vyatta.com/files/pdfs/Vyatta_NATRef_R6.2_v01.pdf">http://www.vyatta.com/sites/vyatta.com/files/pdfs/Vyatta_NATRef_R6.2_v01.pdf</a> or 
+<a href="http://www.general-files.com/files-v/vyatta-natref-r6-2-v01/" 
+target="newwindow">Vyatta_NATRe-f_R6.2_v0-1.pdf</a>
+</p>
+
+<p>To allow <b>masquerade NAT</b>, out through eth0, from multiple inside addresses out 
+through the router's outside interface address
+</p>
+
+<pre>set service nat rule 10 type masquerade
+set service nat rule 10 source address 10.1.1.0/24
+set service nat rule 10 outbound-interface eth0
+commit
+</pre>
+
+<p>To allow <b>destination NAT</b>, into the router, presenting machines on the inside, 
+to the outside world</p>
+<pre>set interfaces ethernet eth0 address 192.168.1.20/24
+set service nat
+set service nat rule 20 description InsideServerName
+set service nat rule 20 type destination
+set service nat rule 20 inbound-interface eth0
+set service nat rule 20 destination address 192.168.1.20
+set service nat rule 20 inside-address address 10.1.1.20
+set service nat rule 20 protocol all
+</pre>
+
+<p>To allow <b>source NAT</b>, going out from the router, so that machines on the 
+inside, pick up external addresses as they communicate to the outside world</p>
+
+<pre>set service nat
+set service nat rule 1020 description InsideServerName
+set service nat rule 1020 type source
+set service nat rule 1020 inbound-interface eth0
+set service nat rule 1020 source address 10.1.1.20
+set service nat rule 1020 outside-address address 192.168.1.20
+set service nat rule 1020 protocol all
+</pre>
+<p>To configure <b>bidirectional NAT</b>, whereby machines on the inside
+ appear to the outside world by the same address for traffic initiated 
+from either outside or inside the router just combine both source and 
+destination NAT configuration.
+</p><p>To <b>delete</b> a NAT rule, use syntax similar to the following...
+</p>
+<pre>delete service nat rule 42
+</pre>
+
+<a name="Troubleshooting_and_General_Commands"></a><h2>Troubleshooting and General 
+Commands</h2>
+<table class="vwikitable">
+
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Comments</th>
+</tr>
+<tr>
+<td><code> reboot </code>              </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> shutdown </code>            </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show arp </code>            </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show interfaces</code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show ip route </code>       </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show nat rules </code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show configuration </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> set system flow-accounting interface eth0 </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Enable flow accounting
+</td></tr>
+<tr>
+<td><code> delete system flow-accounting </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Disable flow accounting
+</td></tr>
+<tr>
+<td><code> show flow-accounting interface eth0 </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Show flow accounting for <code> eth0 </code>
+</td></tr>
+<tr>
+<td><code> show flow-accounting interface eth0 host 10.1.1.1 </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Show flow accounting for specific IP through <code> eth0 </code>
+</td></tr></tbody></table>
+<a name="Unable_to_Commit_Interface_Change_.28RTNETLINK.29"></a><h3>Unable to Commit 
+Interface Change (RTNETLINK)</h3>
+
+<p>When trying to commit interface changes you receive an error like...</p>
+
+<pre>admin@router# commit
+[ interfaces ethernet eth1 address ]
+RTNETLINK answers: File exists
+
+Commit failed</pre>
+
+<p>A <code> show interfaces </code> shows the config to be correct, but a <code> show 
+configuration </code> shows that the config hasn't been saved properly.</p>
+
+<p>To resolve - restart the router (<code>reboot</code>).
+</p>
+
+<p>On restart the conflicted part of the configuration is lost (so can no longer be 
+seen via <code> show interfaces </code>).  However it can be reapplied, and shouldn't 
+generate an error this time around.</p>
+
+<a name="TCPdump"></a><h3>TCPdump</h3>
+<p>TCPdump can only be run as root, therefore you may need to set the root password 
+first...</p>
+
+<pre>sudo passwd root
+</pre>
+
+<p>...then you'll be elevate to be the super user, from where you can run TCPdump...</p>
+
+<pre>su -
+</pre>
+
+<p>Some basic TCPdump examples...</p>
+
+<table class="vwikitable">
+
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Comments</th>
+</tr>
+<tr>
+<td><code> tcpdump -i eth0 port 80 </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td> Anything on port 80 through eth0
+</td></tr>
+<tr>
+<td><code> tcpdump -i eth0 dst 10.10.0.10 and port 80 </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td> Anything going to 10.10.0.10:80 through eth0
+</td></tr>
+<tr>
+<td><code> tcpdump -w capture.pcap -i eth0 port 80 </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td> Write capture to capture.pcap
+</td></tr></tbody></table>
+
+<p>For more info see the TCPdump man page - 
+<a href="http://www.tcpdump.org/tcpdump_man.html">http://www.tcpdump.org/tcpdump_man.html</a></p>
+
+
+<a name="Notes"></a><h2>Notes</h2>
+<ol class="references">
+  <li id="cite_note-0">There was a web interface available with the free version (which 
+was just a pretty version of the CLI anyway), but this now only available via the 
+paid-for version due to its use of the <a href="http://vwiki.co.uk/Acronyms#R" 
+title="Acronyms">REST</a> <a href="http://vwiki.co.uk/Acronyms#A" 
+title="Acronyms">API</a> (which is a premium feature).
+</li></ol>
+
+<!-- 
+NewPP limit report
+Preprocessor node count: 137/1000000
+Post-expand include size: 0/2097152 bytes
+Template argument size: 0/2097152 bytes
+Expensive parser function count: 0/100
+-->
+
+<!-- Saved in parser cache with key vwiki_live:pcache:idhash:46-0!*!0!!en!*!* and timestamp 20120828141048 -->
+</div>				<!-- /bodycontent -->
+								<!-- printfooter -->
+				<div class="printfooter">
+				Retrieved from "<a href="http://vwiki.co.uk/index.php?title=Vyatta&amp;oldid=2124">http://vwiki.co.uk/index.php?title=Vyatta&amp;oldid=2124</a>"				</div>
+				<!-- /printfooter -->
+<h3 class="date-header"><span>Tuesday, August 14, 2012</span></h3>
+
+          <div class="date-posts">
+        
+<div class="post-outer">
+<div class="post hentry" itemscope="itemscope" itemtype="http://schema.org/BlogPosting">
+<a name="1730798855419683473"></a>
+<a name="Vyatta-Config"></a><h2 class="post-title entry-title" itemprop="name">
+Another Vyatta config guide 
+<a href="http://blog.edgoad.com/2012/08/another-vyatta-config-guide.html" 
+target=newwindow">(Source Origin)</a>
+</h2>
+<div class="post-header">
+<div class="post-header-line-1"></div>
+</div>
+<div class="post-body entry-content" id="post-body-1730798855419683473" itemprop="description articleBody">
+<P> I find myself using the Vyatta virtual router 
+(<a href="http://www.vyatta.org/">http://www.vyatta.org</a>) for most everytime I 
+need a router. It hasn't yet replaced my core enterprise routers, but it fits in 
+nicely for smaller environments. This example is going to be a basic home 
+configuration - The internet interface receives its address via DHCP, the 
+internal interface is static at 10.0.0.1/24 and provides DHCP, DNS, and Proxy 
+services. Additionally, an internal web server is published via HTTPS.
+
+<P> <b>NOTE:</b> I am using Vyatta version 6.4 which changed some of the 
+configuration commands. Confirm the version you are running to ensure 
+the commands are appropriate<br>
+
+
+<img src="http://3.bp.blogspot.com/--kBpH1OlJvE/UCpvOfnXC9I/AAAAAAAANyI/t0RSUJcsERs/s320/Vyatta.png" height="320" border="0" width="159"></div>
+
+<h3>1. Deploy the router</h3>
+
+<P> Deploying the router is probably the easiest step to perform, especially 
+if you are running VMware. If your running VMware, simply go to&nbsp;
+<a href="http://www.vyatta.com/downloads/vmware_ovf.php">http://www.vyatta.com/downloads/vmware_ovf.php</a>&nbsp;
+to get the link for the latest OVF available. Import this into VMware and your good 
+to go.
+
+<P> If your running some other virtualization stack (Hyper-V, Xen, etc...), 
+you will need to install from ISO. The latest stable version can be 
+found at&nbsp;<a href="http://packages.vyatta.com/vyatta/iso/stable/" 
+target="newwindow">http://packages.vyatta.com/vyatta/iso/stable/</a>, also 
+<a href="http://packages.vyatta.com/vyatta/iso/" 
+target="newwindow">Various Isos</a>, just download the LiveCD, create a VM with 
+<b>512MB RAM, 4GB disk, 2 NICs</b>, and boot from the ISO. <b>NOTE:</b> Be careful 
+the type of NIC chosen as not all adapters are supported by Vyatta. For Hyper-V, you 
+have to use the <b>Legacy Network Adapter</b>. The default adapter type will not work
+
+<P> Once booted, log into the console with username/password of <b>vyatta/vyatta</b>. 
+At the prompt type the following command, accept the default options, allow the 
+install to overwrite the disk, and set the password.
+
+<pre>$ install system</pre> 
+
+<P> When installed, type the following command, and remove the ISO. Power back up and 
+your up and running.
+
+<pre>$ poweroff</pre>
+
+<P> <b>NOTE:</b> I find it a good step to write down the MAC addresses of 
+the interfaces so I can easily determine which is internal and which is 
+external.
+
+<h3>2. Configure the interfaces</h3>
+
+<P> Log into the console as the <b>vyatta</b> user and enter configuration mode by 
+typing 
+
+<pre>$ configure</pre>
+
+<h4>Identify the interfaces</h4>
+
+<P> The first step needed is to determine which interface is which. We know 
+that we will have 1 interface on the open internet, and the other 
+interface on the trusted network - we obviously dont want to get these 
+backwards.
+
+<P> While in configuration mode, type the following command and you will see 
+something similar to below.
+
+<pre>show interfaces</pre> 
+
+
+<table align="center" bgcolor="black">
+<tbody>
+<tr><td><span style="color: white; font-family: Courier New, Courier, monospace; font-size: x-small;"><b>vyatta@vyatta# show interfaces<br>&nbsp;ethernet eth0 {<br>&nbsp; &nbsp; &nbsp;hw-id 00:15:5d:14:ed:2e<br>&nbsp;}<br>&nbsp;ethernet eth1 {<br>&nbsp; &nbsp; &nbsp;hw-id 00:15:5d:14:ed:2f<br>&nbsp;}<br>&nbsp;loopback lo {<br>&nbsp;}</b></span></td></tr>
+</tbody></table>
+
+<P> The router sees the interfaces as <b>eth0 </b>and <b>eth1 </b>and 
+provides the associated MAC addresses. Using the MAC addresses of the 
+interfaces, I can determine which interface is which, and even move them
+ based on need. In my case, <b>eth0</b> is the external interface<br>
+<br>
+<h4>Configure DHCP</h4>
+
+<P> Since our external interface will be receiving its IP address from our ISP, we 
+configure it to use DHCP. To configure <b>eth0 </b>for DHCP, simply type 
+
+<pre>
+ set interfaces ethernet eth0 address dhcp
+</pre>
+
+<h4>Configure Static Address</h4>
+
+<P> Our internal network is owned/managed by us, so we can choose to use a private  
+addressing scheme for our systems. To configure <b>eth1 </b>for a static address, 
+simply type 
+
+<pre>
+ set interfaces ethernet eth1 address 10.0.0.1/24
+</pre>
+
+<h4>Commit the Changes</h4>
+
+<P> Whenever you make a change to the Vyatta configuration, it doesn't take effect 
+until you commit them. Additionally, the changes aren't resilient (don't remain after 
+reboot) until you save them.
+
+<P> To commit and save the changes, type 
+
+<pre>
+ commit
+ save
+</pre>
+
+
+<h3>3. Configure the services</h3>
+
+<h4>System Names</h4>
+
+<P> We want to give our router a descriptive name as well as create an internal domain 
+name. In this case I am naming it <b>intRtr </b>for internet router, and giving it a 
+domain of <b>goad.local</b>. This gives me a unique name and domain to identify the 
+router and other systems.
+
+<pre>
+ set system host-name intRtr
+ set system domain-name goad.local
+</pre>
+
+<h4>DHCP</h4>
+
+<P>Next we configure the DHCP server on the router. This involves creating a pool of 
+addresses for DHCP to use, configuring the default gateway, DNS server and domain name.
+
+<pre>
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 start 10.0.0.65 stop 10.0.0.199
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 default-router 10.0.0.1
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 dns-server 10.0.0.1
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 domain-name goad.local
+ set service dhcp-server shared-network-name ETH1_POOL authoritative enable&nbsp;
+</pre>
+
+<h4>DNS</h4>
+
+<P> Now that clients have DHCP addresses, it is time to configure the DNS server. In 
+this case we are creating a caching DNS server that receives requests, forwards them 
+to the external DNS server, and caches them for future reference. This speeds up 
+recurring requests, as well as contains the configuration for easy management.
+
+<pre>
+ set service dns forwarding dhcp eth0
+ set service dns forwarding listen-on eth1
+</pre>
+
+<h4>PROXY</h4>
+
+<P> Now we set the outbound proxy<br>
+
+<pre>
+ set service webproxy listen-address 10.0.0.1
+ set service webproxy listen-address 10.0.0.1 disable-transparent
+</pre>
+
+<P> <span style="font-family: inherit;"><b>NOTE:</b> This means that clients will 
+have to configure their browsers as <b>http://10.0.0.1:3128</b> to utilize the 
+proxy</span>
+
+<h3>4. Configure outbound NAT for all traffic</h3>
+
+<P> For anything other that web traffic (or web traffic we don't want to proxy), we 
+enable Network Address Translation.
+
+<pre>
+ set nat source rule 10 source address 10.0.0.0/24
+ set nat source rule 10 outbound-interface eth0
+ set nat source rule 10 translation address masquerade
+</pre>
+
+<h3>5. Configure web publishing</h3>
+
+<P> Finally, we want to publish the web server so that when someone browses to port 
+<b>443 </b>on the external interface, it is forwarded internally.
+
+
+<pre>
+ set nat destination rule 200 destination port https
+ set nat destination rule 200 inbound-interface eth0
+ set nat destination rule 200 translation address 10.0.0.2
+ set nat destination rule 200 translation port https
+ set nat destination rule 200 protocol tcp
+ set interfaces ethernet eth0 firewall in name FROM-EXTERNAL
+ set firewall name FROM-EXTERNAL description "Block Unwanted Internet Traffic"
+ set firewall name FROM-EXTERNAL rule 10 description "Accept Established-Related Connections"
+ set firewall name FROM-EXTERNAL rule 10 action accept
+ set firewall name FROM-EXTERNAL rule 10 state established enable
+ set firewall name FROM-EXTERNAL rule 10 state related enable
+ set firewall name FROM-EXTERNAL rule 20 description "Allow https"
+ set firewall name FROM-EXTERNAL rule 20 action accept
+ set firewall name FROM-EXTERNAL rule 20 destination address 10.0.0.2
+ set firewall name FROM-EXTERNAL rule 20 destination port https
+ set firewall name FROM-EXTERNAL rule 20 protocol tcp
+</pre>
+
+<P> Thats it, 
+<pre>
+ commit
+ save
+</pre> 
+and your golden
+
+</body></html>

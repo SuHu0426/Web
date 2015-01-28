@@ -1,0 +1,68 @@
+##### TFTP ######
+$ sudo apt-get install tftpd-hpa
+
+editing the file /etc/default/tftpd-hpa
+# /etc/default/tftpd-hpa
+RUN_DAEMON="yes"
+OPTIONS="-l -s /var/lib/tftpboot"
+TFTP_USERNAME="tftp"
+TFTP_DIRECTORY="/tftpboot"
+TFTP_ADDRESS="0.0.0.0:69"
+TFTP_OPTIONS="--secure"
+
+$ more /etc/default/tftpd-hpa                                             
+               # /etc/default/tftpd-hpa                                                                        
+                                                                                                               
+               TFTP_USERNAME="tftp"                                                                            
+               TFTP_DIRECTORY="/home/hsu/tftpboot"                                                             
+               TFTP_ADDRESS="192.168.0.198:69"                                                                       
+               TFTP_OPTIONS="--secure"   
+
+# mkdir -p /var/lib/tftpboot
+# /etc/init.d/tftpd-hpa start
+
+
+##### DHCP #####
+# apt-get install dhcp3-server
+
+/etc/dhcp/dhcpd.conf
+option domain-name-servers 140.120.13.1, 140.120.1.2;                                           
+                                                                                                               
+       default-lease-time 600;                                                                         
+       max-lease-time 7200;                                                                            
+                                                                                                               
+       subnet 192.168.0.0 netmask 255.255.255.0 {                                                      
+              range 192.168.0.50 192.168.0.51;                                                        
+              filename "pxelinux.0";                                                                  
+              next-server 192.168.0.198;                                                              
+              option routers 192.168.0.198;                                                           
+              option subnet-mask 255.255.255.0;                                                       
+       }        
+
+#########################################################################
+# We've also used next-server to point to the TFTP server we're using
+# (which is the same host as our DHCP server, but doesn't need to be). 
+# We've chosen the default name of pxelinux.0 as the name of the file 
+# for booting clients to request.
+# 
+# If you want to configure static ipaddress for some machines follow this
+# 
+# host hostname {
+# hardware ethernet 00:B0:CF:8B:49:37;
+# fixed-address 192.0.0.19;
+# }
+#########################################################################
+
+#######################################################
+# addition of the following line to /etc/dnsmasq.conf
+# dhcp-boot=pxelinux.0,itchy,192.168.1.50
+#
+# # /etc/init.d/dnsmasq restart
+# Restarting DNS forwarder and DHCP server: dnsmasq.
+#
+# # mkdir /var/lib/tftpboot/pxelinux.cfg
+# /var/lib/tftpboot/pxelinux.cfg/default
+#######################################################
+
+# Add forward !!!
+$ sudo sysctl net.ipv4.ip_forward=1

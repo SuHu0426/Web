@@ -1,0 +1,10 @@
+$ sudo apt-get install libperl-dev build-essential (lm-sensors libsensors-dev)
+$ wget http://downloads.sourceforge.net/project/net-snmp/net-snmp/5.7.1/net-snmp-5.7.1.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fnet-snmp%2Ffiles%2Fnet-snmp%2F5.7.1%2F&ts=1331659172&use_mirror=ncu
+$ mv net-snmp-5.7.1.tar.gz\?r\=http\:%2F%2Fsourceforge.net%2Fprojects%2Fnet-snmp%2Ffiles%2Fnet-snmp%2F5.7.1%2F net-snmp-5.7.1.tar.gz
+$ tar zxvf net-snmp-5.7.1.tar.gz
+$ cd net-snmp-5.7.1
+$ cd net-snmp-5.1.4.2
+$ ./configure --with-mib-modules="host disman/event-mib ucd_snmp ucd-snmp/lmSensors ucd-snmp/diskio"$ make
+$ sudo make install
+$ sudo ldconfig
+$ sudo cp EXAMPLE.conf /usr/local/share/snmp/snmpd.conf

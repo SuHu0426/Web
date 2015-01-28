@@ -1,0 +1,26 @@
+ is a special command
+In emacs issue ctrl-q ESC 
+
+
+	
+[0m    - Reset the terminal characteristics
+[1m    - emphasis (bold)
+ 
+[30m    - Foreground black
+[31m    - Foreground red
+[32m    - Foreground green
+[33m    - Foreground yellow
+[34m    - Foreground blue
+[35m    - Foreground magenta
+[36m    - Foreground cyan
+[37m    - Foreground white
+
+	
+[40m    - Background black
+[41m    - Background red
+[42m    - Background green
+[43m    - Background yellow
+[44m    - Background blue
+[45m    - Background magenta
+[46m    - Background cyan
+[47m    - Background white

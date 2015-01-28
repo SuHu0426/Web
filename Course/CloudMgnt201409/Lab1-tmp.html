@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html>
+  <HEAD>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Cloud Management: Kernel-based Virtual Machine (KVM)</TITLE>
+    <link type="text/css" rel="stylesheet" href="../css/style_2014.css" />
+<style type="text/css">
+</style>
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+    <script>
+var HostIP = [];
+var Mode = 0;
+var HexRnd = function(length) {
+    var characters = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+    var randomString = '';
+    for (var i = 0; i < length; i++ ) {
+	randomString = randomString + characters[Math.floor(Math.random()*15)];
+    }
+    //console.debug(randomString);
+    return randomString;
+}
+function reSize(jQuery){
+    var scroll = $(window).scrollTop();
+    var iframe = document.getElementById('if_faq');
+    iframe.src = iframe.src;
+    $('#if_faq').on('load', function(){
+	iframe.height=10;
+	var the_height= iframe.contentWindow.document.body.scrollHeight + 50;
+	iframe.height=the_height;
+	$(document).scrollTop(scroll);
+    });
+    
+}
+
+jQuery(document).ready(function() {
+    //====== Resize iframe ======//
+    $(window).resize(reSize);
+    //====== End Resize iframe ======//
+
+    //====== Replace IP address ======//
+    var host_code_name = ["A00","A01","A02","A03","A04","A05","A06",
+			  "B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12",
+			  "C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12",
+			  "D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D11","D12",
+			  "test1","test2","test3","test4"]
+    var host_num = [];
+    for (var i=0; i<7; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnA").append('<option value="'+val+'">'+host_code_name[index]+'</option>');
+    });
+    host_num = [];
+    for (var i=7; i<19; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnB").append('<option value="'+val+'">'+host_code_name[index+7]+'</option>');
+    });
+    host_num = [];
+    for (var i=19; i<31; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnC").append('<option value="'+val+'">'+host_code_name[index+19]+'</option>');
+    });
+    host_num = [];
+    for (var i=31; i<43; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnD").append('<option value="'+val+'">'+host_code_name[index+31]+'</option>');
+    });
+    host_num = [];
+    for (var i=43; i<47; i++){
+        host_num.push(i-63);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnO").append('<option value="'+val+'">'+host_code_name[index+43]+'</option>');
+    });
+    
+    $(".num").change(function(){
+    	var codeVAL = $(this).val();
+	if ( codeVAL == "-1" ) {
+	} else {
+	    $(".num").val("-1");
+	    $(this).val(codeVAL);
+	    var ip_addr = new Number(codeVAL)+100;
+	    if ( codeVAL < 0 ) {
+		codeVAL = new Number(codeVAL)+100;
+	    }
+
+	    $(".USERNAME").html("cloud");
+	    $(".codeNUM").html(codeVAL);
+            $(".hostIP").html("172.16.1."+ip_addr);
+	    $(".vmIP").html("172.16."+ip_addr+".1");
+	    $(".gwIP").html("172.31.255.254");
+	    
+	    $(".PortNUM").html(codeVAL+"22");
+	    $(".VMPortNUM").html("1"+codeVAL+"22");
+
+	    if ( codeVAL < 10 && codeVAL >0){
+		var MAC = "10:0"+codeVAL+":01";
+	    } else {
+		var MAC = "10:"+codeVAL+":01";
+	    }
+	    for (var i=0; i<3; i++) {
+		MAC += ':' + HexRnd(2);
+	    }
+	    //console.debug(MAC);
+	    $(".randomMAC").html(MAC);
+	}
+    });
+    //====== End Replace IP address ======//
+    //====== Print Mode ======//
+    $("#PrintMode").click(function() {
+	if (Mode == 0) {
+	    Mode = 1;
+	    $('div').css('background-color', 'white');
+	    $('div').css('color', 'black');
+	    $('img').hide();
+	    $(this).val('Print Mode');
+	} else {
+	    Mode = 0;
+	    $('.console').css('background-color', 'black');
+	    $('.console').css('color', 'white');
+	    $('.adm').css('background-color', '');
+	    $('.adm').css('color', '');
+	    $('.dol').css('background-color', '');
+	    $('.dol').css('color', '');
+	    $('img').show();
+	    $(this).val('Display Mode');
+	}
+    });
+    //====== End Print Mode ======//
+    //====== input#hostIP Text numeric ======//
+    jQuery(".ipinput").keydown(function () {
+	if ( event.keyCode == 46 || event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 27 ||
+	     // Allow: Ctrl+A
+	     (event.keyCode == 65 && event.ctrlKey === true) ||
+	     // Allow: home, end, left, right
+	     (event.keyCode >= 35 && event.keyCode <= 39)) {
+	    // let it happen, don't do anything
+	    return;
+	} else if ( event.keyCode == 13 ){
+	    // Allow: Enter key submit jump
+	    tracknum = $(".ipinput").val();
+	    Play();
+	} else {
+	    // Ensure that it is a number and stop the keypress
+	    if (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57) && (event.keyCode < 96 || event.keyCode > 105 )) {
+		event.preventDefault();
+	    }
+	}
+    });
+    //====== End input#hostIP Text numeric ======//
+    //====== KVM Installation graphics ======//
+    var change_content = function() {
+	console.debug("Change Content" + count);
+	var i = parseInt(count,10);
+	var content_text = ['','安裝首頁，選擇 install','語言選擇畫面，雖然有中文，但是為了避免不必要的麻煩，我們選擇 English','選擇國家，首先選擇 other','選擇 Asia','按一下鍵盤上的 T，應該會跳到 Taiwan','語系選擇美語即可','鍵盤配置，選擇 American English','Hostname，機器名稱','Domain name，在此我們不使用 Domain name，請維持空白','Root password，請務必設定正確！','再次確認 Root password','使用者全名','使用者帳號，在此我們統一使用 cloud','使用者密碼','再次確認使用者密碼','硬碟分割，我們選擇 Manual 來手動分配','選擇 SCSI1 的 QEMU HARDDISK','選擇 Yes，建立新的分割表格','接著選擇 FREE SPACE','建立新的分割區','第一個分割區我們切出 512M 給 /boot 使用','設定為 Primary 主分割磁區','從起始分配空間','移動到 Mount point 來改變掛載點','選擇 /boot，開機所需的東西我們配置在前面','接著移動到 Use as，來改變硬碟格式','選擇 Ext2，/boot 放的東西很少，使用 Ext2 負擔會比較輕一點','接著選擇 Done setting up the partition，來完成設置','&#35;1 即是我們剛剛設定好的 /boot 分割區。接著我們移到 FREE SPACE，繼續分割其他空間。','一樣選擇建立新的分割區，我們要建立根目錄（/）', '把剩餘的所有空間都給它（可能與圖片上顯示不同）','選擇 Primary，主分割區最多可有 4 個。','Mount point 預設就幫我們選好 / 了（若非 / ，請手動更改為 / ），我們選擇 Use as 來改變硬碟格式','選擇 Ext4 使用最新的硬碟格式，聽說效能比較好？','接著選擇 Done setting up the partition，來完成設置','檢查一下 &#35;1 是 ext2 /boot，&#35;2 是 ext4 /，確認無誤後選擇 Finish partition and write changes to disk','由於是虛擬機器所以我們沒有給予 swap 空間，因此跳出這個警告畫面，選擇 No，若有需要虛擬機器我們可以日後再分配 swap 給它。','再次檢查分割區是否正確，確認無誤就選擇 Yes 吧！','在安裝一些基本套件之後來到這個畫面，設定 mirror 站，將游標移到最上面，選擇 enter information manually','輸入 mirror.cs.nchu.edu.tw，這是我們系上 mirror 的站','目錄名稱就是 /debian/，不用更改','我們沒有使用 proxy，保留空白','是否同意收集我們軟體使用喜好，選 No 即可','選擇所需的套件，在此我們只想建立一個最簡單的虛擬機器，使用空白鍵選擇 SSH server 與 Standard system utilities 即可，其他套件之後有需要再安裝即可','在前頁所選的套件都安裝完畢後出現此畫面，詢問是否安裝 GRUB boot loader，選擇 Yes，若選 No 將來則無法開機！','恭喜安裝完畢！選擇 continue 後虛擬機器將會重新開機', '開機完成後，趕快試試看剛剛設定的帳號密碼是否可以登入吧！'];
+	$('#content').html("<p>" + content_text[i] + "</p>");
+    }
+    var count = 1;
+    $('#prev').click(function() {
+	count--;
+	if (count<2) {
+	    count = 1;
+	}
+	if (count<10) {
+	    count = "0"+count;
+	}
+	$('img').attr('src', 'img/lab1/inst' + count + '.png');
+	$('#page').html(count);
+	change_content();
+    });
+    $('#next').click(function() {
+	count++;
+	if (count>46) {
+	    count = 47;
+	}
+	if (count<10) {
+	    count = "0"+count;
+	}
+	$('img').attr('src', 'img/lab1/inst' + count + '.png');
+	$('#page').html(count);
+	change_content();
+    });
+    //====== End KVM Installation graphics ======//
+});             
+  </script>
+  </HEAD>
+  <body>
+    <h1>Lab 1: Virtual Technelogy: Kernel-based Virtual Machine (KVM)</h1>
+    <div style="float: right;"><input type="button" id="PrintMode" class="ctlbtn" value="Display Mode"/></div>
+    <h2>實驗描述</h2>
+    <p>本實驗示範如何運用 Kernel-based Virtual Machine (KVM) 建立虛擬叢集環境.</p>
+    <h2>實驗環境</h2>
+    <table class="nobor">
+      <tr><td class="nobor" valign="top">
+	  <table>
+	    <caption>理學大樓 1002 教室</caption>
+	    <tbody><tr>
+		<td></td>
+		<th width="320">Cloud-A01 ～ Cloud-D12</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>AMD Phenom™ II X6 1065T Processor</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>8G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian Wheezy</td>
+	      </tr>
+	  </tbody></table>
+	</td>
+	<td class="nobor" valign="top">
+	  <table>
+	    <caption>理學大樓 821 機房</caption>
+	    <tbody><tr>
+		<td></td>
+		<th width="320">CSIE-Cloud01 ～ CSIE-Cloud06</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>
+		  AMD Opteron™ Processor 6128 * 2
+		  <br>(total 16 cpu cores)</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>32G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G、1T</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	      <tr>
+		<td></td>
+		<th width="320">CSIE-Cloud07、CSIE-Cloud08</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>
+		  AMD Opteron™ Processor 6234 * 2
+		  <br>(total 24 cpu cores)</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>32G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G、1T</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	  </tbody></table>
+	</td>
+    </table>
+    <table>
+      <caption>虛擬機環境</caption>
+      <tbody>
+	<tr>
+	  <td></td>
+	  <th width="320">Virtual Machine</th>
+	</tr>
+	<tr>
+	  <th>Location</th>
+	  <td>821 機房伺服器</td>
+	</tr>
+	<tr>
+	  <th>CPU</th>
+	  <td>vcpu*2</td>
+	</tr>
+	<tr>
+	  <th>Memory</th>
+	  <td>4G</td>
+	</tr>
+	<tr>
+	  <th>Disk spaces</th>
+	  <td>80G (QCOW2 Format)</td>
+	</tr>
+	<tr>
+	  <th>O.S.</th>
+	  <td>Debian Jessie</td>
+	</tr>
+      </tbody>   	
+    </table>
+    <hr>
+
+
+    <h2>實習簡介</h2>
+    <p>本實作內容以 step-by-step 方式寫作，盡可能地讓同學們以複製貼上方式完成指令輸入。</p>
+    <p>上機實習時使用教室電腦，另外讓同學練習用的機器是機房所提供的虛擬機器。</p>
+    <p>練習完本實作之後，同學們應可以學會基本建立與操作虛擬機器。</p>
+    <h2>環境參數</h2>
+    <p>為了避免輸入錯誤以及方便區分 IP 使用環境，我們使用下列幾個按鈕來快速取代各個不同 IP。</p>
+    <p>
+      <select id="hostcnA" class="num" style="text-align: center;">
+        <option value="-1">A 機器代號</option>
+      </select>
+      <select id="hostcnB" class="num" style="text-align: center;">
+        <option value="-1">B 機器代號</option>
+      </select>
+      <select id="hostcnC" class="num" style="text-align: center;">
+        <option value="-1">C 機器代號</option>
+      </select>
+      <select id="hostcnD" class="num" style="text-align: center;">
+        <option value="-1">D 機器代號</option>
+      </select>
+      <select id="hostcnO" class="num" style="text-align: center;">
+        <option value="-1">Other 機器代號</option>
+      </select>
+    </p>
+    <p>您的機器參數:</p>
+    <p>Username ：
+      <span class="USERNAME" style="color: green;">[USERNAME]</span></p>
+    <p>Code number ：
+      <span class="codeNUM" style="color: green;">[code-num]</span></p>
+    <p>Host IP ：
+      <span class="hostIP" style="color: red;">[Host-IP]</span></p>
+    <p>VM IP ：
+      <span class="vmIP" style="color: gold;">[VM-IP]</span></p>
+    <p>VM MAC address ：
+      <span class="randomMAC" style="color: purple;">[Random MAC address]</span></p>
+    <p>Gateway ：
+      <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span></p>
+
+
+    <hr>
+    <h2>實習內容</h2>
+    <h3>Login Server</h3>
+    <p>若您使用 MS Windows, 請參閱說明 <a href="http://snmlab.cs.nchu.edu.tw/CloudLab/Lab0.html" target="_blank">Login Server From Windows</a>.</p>
+    <p>Open a terminal emulator and then type the following commands.</p>
+    <pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span></pre>
+    
+    <h3>安裝 KVM</h3>
+    <h4>確認機器是否支援硬體虛擬化技術 VMX/SVM</h4>
+    <p>必須支援 vmx 或是 svm 指令集才有辦法使用硬體虛擬化加速, Intel 提供的指令集為 vmx 而 AMD 則是 svm.</p>
+    <pre class="dol">egrep '(vmx|svm)' --color=always /proc/cpuinfo
+<code>flags		: fpu de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat
+pse36 clflush mmx fxsr sse sse2 ht syscall nx lm nopl pni cx16 popcnt hypervisor
+lahf_lm cmp_legacy <span style="color: red;">svm</span> abm sse4a
+</code></pre>
+    
+    <h4>安裝 KVM 主程式及相關套件</h4>
+    <pre class="dol">sudo aptitude update</pre>
+    <pre class="dol">sudo aptitude install qemu-kvm uml-utilities socat screen</pre>
+    
+    <h4>檢查 kvm 使用之 kernel module 是否載入</h4>
+    <pre class="dol">lsmod | grep kvm
+<code>kvm_amd                47218  0
+kvm                   287662  1 kvm_amd
+</code></pre>
+    <p>若沒有自動載入可以下列指令手動載入 (svm 對應到 kvm_amd, vmx 則是 kvm_intel)</p>
+    <pre class="dol">sudo modprobe kvm_amd</pre>
+    
+    <h4>將使用者帳號加入 kvm 群組中</h4>
+    <pre class="dol">sudo adduser <span class="USERNAME" style="color: green;">[USERNAME]</span> kvm
+<code>Adding user `<span class="USERNAME" style="color: green;">[USERNAME]</span>' to group `kvm' ...
+Adding user <span class="USERNAME" style="color: green;">[USERNAME]</span> to group kvm
+Done.
+</code></pre>
+    
+    <h4>重新登入系統或重新開機</h4>
+    <pre class="dol">exit</pre>
+    <pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span></pre>
+    
+    <h4>建立存放 KVM 相關檔案目錄</h4>
+    <pre class="dol">mkdir ~/KVM</pre>
+    <pre class="dol">cd ~/KVM</pre>
+    
+    
+    <hr>
+    <h3>第一部虛擬機器</h3>
+    <pre class="dol">kvm</pre>
+    <p>雖然這樣就能開啟一部虛擬機器, 但是太陽春了沒有辦法使用, 接下來我們幫他加入硬碟並且安裝作業系統.</p>
+
+    <h4>建立虛擬硬碟，大小為 5G。</h4>
+    
+    <pre class="dol">mkdir img</pre>
+    <pre class="dol">cd img</pre>
+    <pre class="dol">qemu-img create vm001.img 5G
+<code>Formatting 'vm001.img', fmt=raw size=5368709120
+</code></pre>
+    
+    <h4>下載安裝光碟，上課實習我們從 Server 複製光碟以免浪費頻寬。</h4>
+    <p>在此我們安裝最新的測試版本, 虛擬機器的好處就是拿來測試不穩定的軟體, 縱使壞了我們很快又能產生新的. (穩定版為 <a href="http://mirror.cs.nchu.edu.tw/debian-7.6.0-amd64-netinst.iso">debian-7.6.0-amd64-netinst.iso</a>)</p>
+    <pre class="dol">wget http://mirror.cs.nchu.edu.tw/debian-testing-amd64-netinst.iso</pre>
+    <p>若在校外我們可以從 Debian <a href="http://www.debian.org/CD/http-ftp/">官方網站</a>下載</p>
+    <pre class="dol">wget http://cdimage.debian.org/cdimage/weekly-builds/amd64/iso-cd/debian-testing-amd64-netinst.iso</pre>
+    
+    <h4>安裝作業系統</h4>
+    <p>由於遠端使用若傳回圖形環境會變得緩慢, 在此我們借助 vnc 來幫我們加速.</p>
+    <pre class="dol">kvm -m 1024M -cdrom debian-testing-amd64-netinst.iso -hda vm001.img -vnc :1</pre>
+    
+    <p>打開遠端連線網頁 <a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">cloudwebui</a> 並且登入, 選擇 VM-編號</p>
+    <p>安裝過程請參考以下各圖 (圖文不相同時, 以文字為主, 切勿安裝桌面環境！)</p>
+    <table class="nobor">
+      <tr>
+	<td class="nobor">	  
+	  <input type="button" id="prev" value="prev"/><span id="page">01</span><input type="button" id="next" value="next"/>
+	  <br>
+	  <img src="img/lab1/inst01.png">
+	<td class="nobor"><div id="content"><p>安裝首頁，選擇 install</p></div>
+    </table>
+    <p>先以 <Span Class="USERNAME" Style="Color: Green;">[USERNAME]</Span> 帳號登入確認可以正常使用, 接著關閉虛擬機器.<br>
+      <span style="color: red;">註</span>: 接下來指令是下在虛擬機器當中！</p>
+    <pre class="dol vm">su</pre>
+    <pre class="adm vm">init 0</pre>
+    <p>至此已經完成 VM 作業系統安裝, 接下來我們要進一步加強虛擬網路環境.</p>
+    
+
+    <hr>
+    <h3>建置虛擬網路環境</h3>
+    <h4>安裝 <a href="http://openvswitch.org/" target="_blank">Open vSwitch</a></h4>
+    <p>更改 sources.list 增加 deb-src 來源, 以便抓取原始碼編譯.</p>
+    <pre class="dol">sudo nano /etc/apt/sources.list
+<code>deb http://mirror.cs.nchu.edu.tw/debian/ jessie main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/debian/ jessie-updates main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/debian/ jessie-proposed-updates main contrib non-free
+<span style="color: red;">deb-src</span> http://mirror.cs.nchu.edu.tw/debian/ jessie main
+</code></pre>
+    <pre class="dol">sudo aptitude update</pre>
+    <pre class="dol">sudo aptitude install build-essential module-assistant</pre>
+    <pre class="dol">sudo apt-get build-dep openvswitch</pre>
+    <p>下載原始碼.</p>
+    <pre class="dol">wget http://mirror.cs.nchu.edu.tw/openvswitch-latest.tar.gz</pre>
+    <p>將 Open vSwitch 原始碼編譯成為 Debian 安裝檔格式 (*.deb).</p>
+    <pre class="dol">tar zxvf openvswitch-*.tar.gz</pre>
+    <pre class="dol">rm openvswitch-*.tar.gz</pre>
+    <pre class="dol">cd openvswitch-*</pre>
+    <pre class="dol">fakeroot debian/rules binary</pre>
+    <pre class="dol">echo $?
+<code>0
+</code></pre>
+    <p>安裝 Open vSwitch 及相依套件 (除了 debug 套件都安裝).</p>
+    <pre class="dol">cd ..</pre>
+    <pre class="dol">sudo aptitude update</pre>
+    <pre class="dol">sudo aptitude safe-upgrade</pre> 
+    <pre class="dol">sudo aptitude install dkms ipsec-tools racoon uuid-runtime python-twisted-web</pre>
+    <pre class="dol">sudo dpkg -i  openvswitch-ipsec_*_amd64.deb openvswitch-pki_*_all.deb \
+      openvswitch-common_*_amd64.deb openvswitch-switch_*_amd64.deb \
+      openvswitch-datapath-dkms_*_all.deb openvswitch-test_*_all.deb \
+      openvswitch-datapath-source_*_all.deb openvswitch-vtep_*_amd64.deb \
+      python-openvswitch_*_all.deb</pre>
+    <p>檢查 module 是否正常載入, 若沒有正常載入重新檢查前面步驟或重開機試試.</p>
+    <pre class="dol">lsmod | grep openvswitch
+<code>openvswitch            69167  0 
+gre                    12777  1 openvswitch
+vxlan                  35023  1 openvswitch
+libcrc32c              12426  1 openvswitch
+</code></pre>
+    <p>啟動 Open vSwitch 並設定 IP address</p>
+    <pre class="dol">sudo ovs-vsctl show
+<code>ovs-vsctl: unix:/var/run/openvswitch/db.sock: database connection failed (No such file or directory)
+</code></pre>
+    <p>若出現此訊息表示 Open vSwitch 尚未正常初始化, 重新開機讓它重整一次</p>
+    <pre class="dol">sudo init 6&amp;&amp;exit</pre>
+    <pre class="dol">sudo ovs-vsctl show
+<code>7d8cb536-a3b7-4d3a-b5b7-e41f0c87f654
+    ovs_version: "2.3.0"
+</code></pre>
+    <p>先檢視一下目前網路狀態, 稍後建立完虛擬網路之後可以比對.</p>
+    <pre class="dol">/sbin/ifconfig
+<code>eth0      Link encap:Ethernet  HWaddr 1c:c1:de:a7:fd:46  
+          inet addr:<span class="hostIP" style="color: red;">[Host-IP]</span>  Bcast:172.31.255.255  Mask:<span style="color: red;">255.240.0.0</span>
+          inet6 addr: fe80::1ec1:deff:fea7:fd46/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:77 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:73 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:9650 (9.4 KiB)  TX bytes:11057 (10.7 KiB)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+</code></pre>
+    <pre class="dol">/sbin/route -n
+<code>Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.31.255.254  0.0.0.0         UG    0      0        0 eth0
+172.16.0.0      0.0.0.0         255.240.0.0     U     0      0        0 eth0
+</code></pre>
+    <p>建立 bridge 供串接實體網卡與虛擬網卡使用.</p>
+    <pre class="dol">sudo ovs-vsctl add-br br0</pre>
+    <pre class="dol block">sudo ovs-vsctl add-port br0 eth0; sudo ifconfig eth0 0.0.0.0; sudo ifconfig br0 <span class="hostIP" style="color: red;">[Host-IP]</span>/12; sudo route add default gw <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span></pre>
+    <pre class="dol">sudo ovs-vsctl show
+<code>cc1170c9-0f10-45db-87af-44cf82b714b2
+    Bridge "br0"
+        Port "br0"
+            Interface "br0"
+                type: internal
+        Port "eth0"
+            Interface "eth0"
+    ovs_version: "2.0.90"
+</code></pre>
+    <pre class="dol">/sbin/ifconfig
+<code>br0       Link encap:Ethernet  HWaddr 1c:c1:de:a7:fd:46  
+          inet addr:<span class="hostIP" style="color: red;">[Host-IP]</span>  Bcast:172.31.255.255  Mask:<span style="color: red;">255.240.0.0</span>
+          inet6 addr: fe80::1ec1:deff:fea7:fd46/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:23 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:27 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:1764 (1.7 KiB)  TX bytes:3214 (3.1 KiB)
+
+eth0      Link encap:Ethernet  HWaddr 1c:c1:de:a7:fd:46  
+          inet6 addr: fe80::1ec1:deff:fea7:fd46/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:266 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:251 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:26278 (25.6 KiB)  TX bytes:31109 (30.3 KiB)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+</code></pre>
+    <pre class="dol">/sbin/route -n
+<code>Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         172.31.255.254  0.0.0.0         UG    0      0        0 br0
+172.16.0.0      0.0.0.0         255.240.0.0     U     0      0        0 br0
+</code></pre>
+    
+    <p>萬一參數設定錯誤網路掛掉了怎麼辦!! 這個時候請打開遠端連線網頁 <a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">cloudwebui</a> 並且登入, 選擇 Host-編號. 使用網頁界面登入 console 端進行修復.</p>
+    <p>若系統中已無其他 VM 存在時，關閉 Open vSwitch 歸還系統資源。</p>
+    <pre class="dol block">sudo ovs-vsctl del-port br0 eth0; sudo ifconfig br0 down; sudo ovs-vsctl del-br br0; sudo ifconfig eth0 <span class="hostIP" style="color: red;">[Host-IP]</span>; sudo route add default gw <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span></pre>
+    <pre class="dol">sudo ovs-vsctl show
+<code>7d8cb536-a3b7-4d3a-b5b7-e41f0c87f654
+    ovs_version: "2.3.0"
+</code></pre>
+    <p>由於每次開關機都要做此設定, 相當麻煩而且手動輸入容易發生錯誤, 因此我們將指令寫成 shell script 方便將來使用.</p>
+    <pre class="dol">mkdir ~/KVM/bin</pre>
+    <pre class="dol">cd ~/KVM/bin</pre>
+    <pre class="dol">nano ovs-start
+<code>#! /bin/bash
+
+sudo ovs-vsctl add-br br0
+sudo ovs-vsctl add-port br0 eth0
+sudo ifconfig eth0 0.0.0.0
+sudo ifconfig br0 <span class="hostIP" style="color: red;">[Host-IP]</span>/12
+sudo route add default gw <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span>
+sudo ovs-vsctl show
+</code></pre>
+    
+    <pre class="dol">nano ovs-stop
+<code>#! /bin/bash
+
+sudo ovs-vsctl del-port br0 eth0
+sudo ifconfig br0 down
+sudo ovs-vsctl del-br br0
+sudo ifconfig eth0 <span class="hostIP" style="color: red;">[Host-IP]</span>/12
+sudo route add default gw <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span>
+sudo ovs-vsctl show
+</code></pre>
+    
+    <pre class="dol">chmod +x ovs-st*</pre>
+    <pre class="dol">ls -l
+<code>total 8
+-rwxr-xr-x 1 <span class="USERNAME" style="color: green;">[USERNAME]</span> <span class="USERNAME" style="color: green;">[USERNAME]</span> 195 Sep 22 04:53 ovs-start
+-rwxr-xr-x 1 <span class="USERNAME" style="color: green;">[USERNAME]</span> <span class="USERNAME" style="color: green;">[USERNAME]</span> 189 Sep 22 04:53 ovs-stop
+</code></pre>
+    
+
+    <hr>
+    <h4>使用剛剛建立的 script 來建立 Open vSwitch bridge</h4>
+    <pre class="dol">~/KVM/bin/ovs-start</pre>
+    
+    <h4>建立虛擬網卡供虛擬機器使用並將其與實體網卡串接</h4>
+    <p>在此我們需要使用 /dev/net/tun 裝置來建立虛擬網卡,  tun/tap 為 uml-utilities 套件所提供. 首先檢查權限使否足夠使用 (666, crw-rw-rw-).</p>
+    <pre class="dol">ls -l /dev/net/tun
+<code>crw-rw-rw- 1 root root 10, 200 Sep 22 03:31 /dev/net/tun
+</code></pre>
+    <p>若權限不足則用以下指令來修改權限.</p>
+    <pre class="dol">sudo chmod 666 /dev/net/tun</pre>
+    <p>建立 tap0 虛擬網路卡</p>
+    <pre class="dol">sudo tunctl -u <span class="USERNAME" style="color: green;">[USERNAME]</span> -t tap0</pre>
+    <pre class="dol">sudo ifconfig tap0 up</pre>
+    <pre class="dol">sudo ovs-vsctl add-port br0 tap0</pre>
+    <p>修改 KVM 開機參數，令其使用 Open vSwitch 連接網路</p>
+    <pre class="dol">cd ~/KVM/img</pre>
+    <pre class="dol block">kvm -m 1024M \
+    -net nic,vlan=0,netdev=tap0,macaddr=<span class="randomMAC" style="color: purple;">[MAC-address]</span>,model=virtio \
+    -netdev tap,id=tap0,ifname=tap0,script=no \
+    -vnc :1 \
+    -hda vm001.img &</pre>
+    <p>打開遠端連線網頁 <a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">cloudwebui</a> 並且登入, 選擇 VM-編號.  使用 <span class="USERNAME" style="color: green;">[USERNAME]</span> 帳號登入虛擬機器, 接著設定虛擬機器 IP address, DNS server.</p>
+    <pre class="dol vm">su</pre>
+    <pre class="adm vm">nano /etc/network/interfaces
+<code># This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+# The loopback network interface
+auto lo
+iface lo inet loopback
+# The primary network interface
+auto eth0         
+iface eth0 inet static
+  address <span class="guestIP" style="color: gold;">[VM-IP]</span>
+  netmask 255.240.0.0
+  gateway <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span>
+</code></pre>
+    <pre class="adm vm">nano /etc/resolv.conf
+<code>nameserver 140.120.13.1
+nameserver 140.120.1.2
+nameserver 8.8.8.8
+</code></pre>
+    <pre class="adm vm">init 6</pre>
+    <p>再次在網頁界面使用 <span class="USERNAME" style="color: green;">[USERNAME]</span> 帳號登入虛擬機器, 測試網路是否有通.</p>
+    <pre class="dol vm">ping -c 3 www.google.com
+<code>PING www.google.com (74.125.23.104) 56(84) bytes of data.
+64 bytes from tg-in-f104.1e100.net (74.125.23.104): icmp_seq=1 ttl=43 time=13.7 ms
+64 bytes from tg-in-f104.1e100.net (74.125.23.104): icmp_seq=2 ttl=43 time=16.6 ms
+64 bytes from tg-in-f104.1e100.net (74.125.23.104): icmp_seq=3 ttl=43 time=12.9 ms
+
+--- www.google.com ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 12.951/14.452/16.647/1.592 ms
+</code></pre>
+    <p>最後讓我們試試看使用 ssh 來遠端登入虛擬機器.</p>
+    <pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="VMPortNUM" style="color: blue;">[VMPortNUM]</span></pre>
+    
+    <h4>關閉虛擬機器並且, 恢復網路環境.</h4>
+    <p>關閉虛擬機器</p>
+    <pre class="dol vm">su</pre>
+    <pre class="adm vm">init 0</pre>
+    <p>關閉虛擬網卡</p>
+    <pre class="dol">sudo ovs-vsctl del-port tap0</pre>
+    <pre class="dol">sudo ifconfig tap0 down</pre>
+    <pre class="dol">sudo tunctl -d tap0
+<code>Set 'tap0' nonpersistent
+</code></pre>
+    <p>同樣地使用先前建立的 script 來還原網路.</p>
+    <pre class="dol">~/KVM/bin/ovs-stop
+<code>7d8cb536-a3b7-4d3a-b5b7-e41f0c87f654
+    ovs_version: "2.3.0"
+</code></pre>
+
+    
+    <hr>
+    <h2>Assignment#1</h2>
+    <h3>使用 Shell Script 來管理虛擬機器 (更新中)</h3>
+    <p>做到這裡大家應該發現到, 開關虛擬機器所需指令以及參數眾多, 徒手下達指令開關機不僅沒有效率, 也容易出錯.
+      因此, 通常我們會使用 Shell Script 來管理虛擬機器. 
+      <span style="color: red;">註</span>: 接下來的步驟必須完成先前內容才可正常執行! </p>
+    <P>首先下載 Scripts 並且解壓縮到我們的目錄裡.</p>
+    <pre class="dol">cd ~/KVM</pre>
+    <pre class="dol">wget http://mirror.cs.nchu.edu.tw/KVM-tool-lite-latest.tgz</pre>
+    <pre class="dol">tar zxvf KVM-tool-lite-latest.tgz</pre>
+    <pre class="dol">rm KVM-tool-lite-latest.tgz</pre>
+    
+    <h2><a href="CloudMgnt201309/Lab1-FAQ.html" target="_blank">FAQ (2013)</a></h2>
+    <iframe id="if_faq" src="Lab1-FAQ.html" width="100%" frameborder="0" marginheight="0" marginwidth="0" seamless></iframe>
+
+<!-- 頁底 -->
+<div id="footer" style="width: 98%; clear: left;" align="center">
+  <hr>
+  <p>註：助教會不定時修改網頁注意事項，遇到問題不妨先重新整理網頁更新內容 ^.^</p>
+  <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+  <address style="text-align: right; float: right;">
+    <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+  </body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+  <HEAD>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Cloud Management: Kernel-based Virtual Machine (KVM)</TITLE>
+    <link type="text/css" rel="stylesheet" href="../css/style_2014.css" />
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+    <script>
+    jQuery(document).ready(function() {
+    
+	$('#if-pre').hide();
+	$('a').hover(function (e) {
+	    var href = $(this).attr('href');
+	    $('#if-pre').attr('src', href);
+	    $('#if-pre').show();
+	}, function () {
+	    if (!($("a").hasClass("show"))) {
+		$('#if-pre').attr('src', '');
+		$('#if-pre').hide(); //dont hide popup if it is clicked
+	    }
+	});
+	$('#if-pre').attr('height',$(document).height() - 580);
+	
+	var show = 0;
+	$("#samp1").hide();
+	$("#btn_samp1").click(function(){
+	    if (show == 0){
+		$("#samp1").show();
+		show = 1;
+	    } else {
+		$("#samp1").hide();
+		show = 0;
+            }
+	});
+    });
+</script>
+<style type="text/css">
+</style>
+  </HEAD>
+  <body>
+    <h1>Assignment 1: KVM Web Service</h1>
+    <table style="text-align: center;">
+      <colgroup style="background-color: lightyellow;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" /><col width="80" />
+      </colgroup>
+      <colgroup style="background-color: lightblue;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" /><col width="80" />
+      </colgroup>
+      <colgroup style="background-color: lightyellow;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" /><col width="80" />
+      </colgroup>
+      <colgroup style="background-color: lightblue;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" /><col width="80" />
+      </colgroup>
+      <thead>
+	<tr>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>Bonus</th>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>Bonus</th>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>Bonus</th>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>Bonus</th>
+	</tr>
+      </thead>
+      <tbody>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11180">A01</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11780">B01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12980">C01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14180">D01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11280">A02</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11880">B02</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13080">C02</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14280">D02</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11380">A03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11980">B03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13180">C03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td></td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14380">D03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11480">A04</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12080">B04</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13280">C04</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14480">D04</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11580">A05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12180">B05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13380">C05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14580">D05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11680">A06</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12280">B06</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13480">C06</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14680">D06</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12380">B07</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13580">C07</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14780">D07</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12480">B08</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13680">C08</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14880">D08</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12580">B09</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13780">C09</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14980">D09</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12680">B10</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>編碼</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13880">C10</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:15080">D10</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12780">B11</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:13980">C11</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:15180">D11</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:11080">A00</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:12880">B12</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:14080">C12</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://cloud.cs.nchu.edu.tw:15280">D12</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&nbsp;</td>
+	</tr>
+      </tbody>
+    </table>
+    <h3>作業繳交期限 10/29</h3>
+    <p>同學可以參考 <a href="http://www.w3schools.com/" target="_blank">w3school</a> 網站的教學寫網頁. 根據使用的 DTD 不同, HTML 對於元素屬性等規範略有差異. 一般來說, 一個正常的 HTML 文件至少需包含 html, head 與 body 元素.<br>
+      <input id="btn_samp1" type="button" value="範例">
+      <pre id="samp1"><code>&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;標題&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+內文
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+</p>
+    <iframe id="if-pre" width="100%" height="" frameborder="0" marginheight="0" marginwidth="0" seamless></iframe>
+  </body>
+</html>

@@ -1,0 +1,371 @@
+<html>
+  <head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link type="text/css" rel="stylesheet" href="../css/style.css" />
+<title>Ceph: Open Sourece Storage</title>
+</head>
+<body>
+<a href="VirtualStorageAndUsbHdd.html"><h1>Ceph: Open Sourece Storage</h1></a>
+<pre>
+$ sudo aptitude install ceph
+$ sudo mkdir -p /srv/ceph/{osd,mon,mds}
+</pre>
+In server node
+<pre>
+$ sudo emacs /etc/ceph/ceph.conf
+<code>[global]
+    auth supported = cephx
+    keyring = /etc/ceph/keyring.admin
+    log file = /var/log/ceph/$name.log
+    pid file = /var/run/ceph/$name.pid
+[mon]
+    ;; sudo mkdir /srv/ceph/mon /srv/ceph/osd
+    ;; sudo mkdir /srv/ceph/mon/mon.$id
+    mon data = /srv/ceph/mon/mon.$id    
+[mds]
+    keyring = /etc/ceph/keyring.$name
+[osd]
+    ;; sudo mkdir /srv/ceph/osd/osd.$host
+    ;; sudo mount -t btrfs /dev/sdb /srv/ceph/osd/osd.$host
+    osd data = /srv/ceph/osd/osd.$host
+    osd journal = /srv/ceph/osd/osd.$id.journal
+    osd journal size = 1000 ; journal size, in megabytes
+    keyring = /etc/ceph/keyring.$name
+[mon.scss]
+    host = Storage-Server
+    mon addr = 192.168.121.250:6789
+[mds.scss]
+    host = Storage-Server
+[osd.0]
+    host = Storage-Server
+[osd.1]
+    host = Storage-Cloud01
+[osd.2]
+    host = Storage-Cloud02
+...
+[osd.8]
+    host = Storage-Cloud08
+</code>
+</pre>
+In all node
+<pre>
+# Load the btrfs module.
+$ sudo modprobe btrfs
+$ diff /etc/modules /etc/modules.orig
+<code>8,9d7
+< btrfs
+< ceph</code>
+$ sudo mkfs.btrfs /dev/sdb
+<code>
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+fs created label (null) on /dev/sdb
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 465.76GB
+Btrfs Btrfs v0.19
+</code>
+The next line for mounting (btrfs) object storage is added to /etc/rc.local.
+<code>mount -t btrfs /dev/sdb /srv/ceph/osd/osd.$host</code>
+Permit Root login so that mkcephfs can be executed as root.
+$ diff /etc/ssh/sshd_config /etc/ssh/sshd_config.bkp
+<code>26c26
+< PermitRootLogin yes
+---
+> PermitRootLogin no</code>
+$ ssh root@192.168.121.250
+# exit
+</pre>
+<pre>
+# Back to server node.
+$ su
+# ssh-keygen
+<code>Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+/root/.ssh/id_rsa already exists.
+Overwrite (y/n)? y
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+The key fingerprint is:
+22:ba:19:4d:0e:74:5f:4e:93:57:14:c7:68:35:1e:0b root@CSIE-Server
+The key's randomart image is:
++--[ RSA 2048]----+
+|           .E==  |
+|         . .o+.+ |
+|  . .   = ..  o  |
+| . . . + o       |
+|  . o o S        |
+|   * . .         |
+|  o o            |
+|   +             |
+|  o              |
++-----------------+
+</code>
+# ssh-copy-id root@scss
+# ssh-copy-id root@sc01
+# ssh-copy-id root@sc02
+...
+Create a new Ceph cluster file system
+# mkcephfs -c /etc/ceph/ceph.conf -a -k /etc/ceph/keyring.admin
+# echo $?
+0
+# for host in sc01 sc02 sc03 sc04 sc05 sc06 sc07 sc08 
+  do
+    scp /etc/ceph/keyring.admin root@$host:/etc/ceph/keyring.admin;
+  done
+# /etc/init.d/ceph -a start
+## In any client
+$ sudo ceph-authtool -l /etc/ceph/keyring.admin
+<code>[client.admin]
+	key = AQAjb2VQ6I4HNhAAlxStlBRj8DJV7YfkFsERvQ==
+</code>
+$ sudo mount -t ceph scss:6789:/ /mnt/tmp/ -vv -o name=admin,secret=AQAjb2VQ6I4HNhAAlxStlBRj8DJV7YfkFsERvQ==
+mount: error writing /etc/mtab: Invalid argument
+$ df -h
+<code>/dev/sdb                     466G  3.2M  464G   1% /srv/ceph/osd/osd.Storage-Server
+192.168.121.250:6789:/     4.1T   19G  4.1T   1% /mnt/tmp
+</code>
+$ sudo umount /mnt/tmp
+</pre>
+OLD data
+<pre>
+$ ls -l /src4/ceph/osd/osd.0/
+<code>
+total 1024020
+-rw-r--r-- 1 root root         37 Aug 13 22:05 ceph_fsid
+drwxr-xr-x 1 root root       3522 Aug 13 22:06 current
+-rw-r--r-- 1 root root         37 Aug 13 22:05 fsid
+-rw-r--r-- 1 root root 1048576000 Aug 13 22:10 journal
+-rw-r--r-- 1 root root         21 Aug 13 22:05 magic
+drwxr-xr-x 1 root root       3522 Aug 13 22:06 snap_430
+drwxr-xr-x 1 root root       3522 Aug 13 22:06 snap_433
+-rw-r--r-- 1 root root          4 Aug 13 22:05 store_version
+-rw-r--r-- 1 root root          2 Aug 13 22:05 whoami</code>
+SNMLab-GGsec:~$ sudo mount -t ceph SNMLab-GGone:/ /mnt/tmp/
+SNMLab-GGsec:~$ df -h
+<code>192.168.180.2:/                     466G  3.1G  463G   1% /mnt/tmp</code>
+SNMLab-GGsec:~$ cd /mnt/tmp/
+SNMLab-GGsec:/mnt/tmp$ touch a b c
+<code>touch: cannot touch `a': Permission denied
+touch: cannot touch `b': Permission denied
+touch: cannot touch `c': Permission denied</code>
+SNMLab-GGsec:/mnt/tmp$ sudo touch a b c
+SNMLab-GGsec:/mnt/tmp$ ls -l
+<code>total 0
+-rw-r--r-- 1 root root 0 Aug 13 22:10 a
+-rw-r--r-- 1 root root 0 Aug 13 22:10 b
+-rw-r--r-- 1 root root 0 Aug 13 22:10 c</code>
+SNMLab-GGone:/etc/ceph$ ls -l /mnt/tmp/
+<code>total 0
+-rw-r--r-- 1 root root 0 Aug 13 22:10 a
+-rw-r--r-- 1 root root 0 Aug 13 22:10 b
+-rw-r--r-- 1 root root 0 Aug 13 22:10 c</code>
+</pre>
+<pre>
+<code>[global]
+    log file = /var/log/ceph/$name.log
+    pid file = /var/run/ceph/$name.pid
+[mon]
+    mon data = /src4/ceph/mon/$name
+    [mon.gg1]
+    host = SNMLab-GGone
+    mon addr = 192.168.180.2:6789
+[mds]
+    [mds.gg1]
+    host = SNMLab-GGone
+[osd]
+    osd data = /src4/ceph/osd/$name
+    osd journal = /src4/ceph/osd/$name/journal
+    osd journal size = 1000 ; journal size, in megabytes
+[osd.0]
+    host = SNMLab-GGone
+    btrfs devs = /dev/sda1
+    btrfs options = rw,noatime
+[osd.1]
+    host = SNMLab-GGsec
+    btrfs devs = /dev/sdc1
+    btrfs options = rw,noatime
+</code>
+$ sudo mkcephfs -a -c /etc/ceph/ceph.conf --mkbtrfs --no-copy-conf
+<code>...
+root@snmlab-ggsec's password: 
+root@snmlab-ggsec's password: </code>
+SNMLab-GGsec:~$ sudo nano /etc/ssh/sshd_config 
+<code>PermitRootLogin yes</code>
+SNMLab-GGsec:~$ sudo /etc/init.d/ssh restart
+SNMLab-GGone:/etc/ceph$ df -h
+<code>/dev/sda1               466G 1001M  463G   1% /src4/ceph/osd/osd.0</code>
+SNMLab-GGsec:~$ df -h
+<code>/dev/sdc1               233G 1001M  230G   1% /src4/ceph/osd/osd.1</code>
+$ sudo /etc/init.d/ceph -a start
+<code>=== mon.gg1 === 
+Starting Ceph mon.gg1 on SNMLab-GGone...
+ ** WARNING: Ceph is still under development.  Any feedback can be directed  **
+ **          at ceph-devel@vger.kernel.org or http://ceph.newdream.net/.     **
+starting mon.gg1 rank 0 at 192.168.180.2:6789/0 mon_data /src4/ceph/mon/mon.gg1 fsid 49d08cfd-d07b-440c-a5bd-4ad246f0c7c6
+=== mds.gg1 === 
+Starting Ceph mds.gg1 on SNMLab-GGone...
+ ** WARNING: Ceph is still under development.  Any feedback can be directed  **
+ **          at ceph-devel@vger.kernel.org or http://ceph.newdream.net/.     **
+starting mds.gg1 at 0.0.0.0:6800/23327
+=== osd.0 === 
+Mounting Btrfs on SNMLab-GGone:/src4/ceph/osd/osd.0
+Scanning for Btrfs filesystems
+failed to read /dev/sr0
+Starting Ceph osd.0 on SNMLab-GGone...
+ ** WARNING: Ceph is still under development.  Any feedback can be directed  **
+ **          at ceph-devel@vger.kernel.org or http://ceph.newdream.net/.     **
+starting osd.0 at 0.0.0.0:6801/23405 osd_data /src4/ceph/osd/osd.0 /src4/ceph/osd/osd.0/journal
+=== osd.1 === 
+Mounting Btrfs on SNMLab-GGsec:/src4/ceph/osd/osd.1
+Scanning for Btrfs filesystems
+failed to read /dev/sr0
+Starting Ceph osd.1 on SNMLab-GGsec...
+ ** WARNING: Ceph is still under development.  Any feedback can be directed  **
+ **          at ceph-devel@vger.kernel.org or http://ceph.newdream.net/.     **
+starting osd.1 at 0.0.0.0:6800/15865 osd_data /src4/ceph/osd/osd.1 /src4/ceph/osd/osd.1/journal</code>
+SNMLab-GGone:/etc/ceph$ sudo mount -t ceph SNMLab-GGone:/ /mnt/tmp/
+SNMLab-GGone:/etc/ceph$ df -h
+<code>/dev/sda1                      466G  1.1G  463G   1% /src4/ceph/osd/osd.0
+127.0.1.1,192.168.180.2:/      699G  6.1G  693G   1% /mnt/tmp</code>
+SNMLab-GGsec:~$ sudo mount -t ceph SNMLab-GGone:/ /mnt/tmp/
+SNMLab-GGsec:~$ df -h
+<code>/dev/sdc1                      233G  1.1G  230G   1% /src4/ceph/osd/osd.1
+192.168.180.2:/                699G  6.1G  693G   1% /mnt/tmp</code>
+$ ls -l /mnt/tmp/
+<code>total 0</code>
+$ sudo umount /mnt/tmp
+$ sudo /etc/init.d/ceph -a stop
+<code>=== mon.gg1 === 
+Stopping Ceph mon.gg1 on SNMLab-GGone...kill 22483...done
+=== mds.gg1 === 
+Stopping Ceph mds.gg1 on SNMLab-GGone...kill 22534...done
+=== osd.0 === 
+Stopping Ceph osd.0 on SNMLab-GGone...kill 22612...done
+=== osd.1 === 
+Stopping Ceph osd.1 on SNMLab-GGsec...kill 14890...done</code>
+</pre>
+<h3>RADOS Block Device (RBD)</h3>
+<pre>
+$ sudo modprobe rbd
+$ sudo rbd create mydisk --size 10000
+$ sudo rbd list
+mydisk
+$ echo "192.168.180.2 name=admin rbd mydisk" | sudo tee /sys/bus/rbd/add
+192.168.180.2 name=admin rbd mydisk
+$ ls -l /dev/rbd/rbd/mydisk 
+lrwxrwxrwx 1 root root 10 Aug 13 23:02 /dev/rbd/rbd/mydisk -> ../../rbd0
+$ sudo mkfs -t ext4 /dev/rbd/rbd/mydisk
+$ sudo mkdir /media/mydisk
+$ sudo mount -t ext4 /dev/rbd/rbd/mydisk /media/mydisk
+</pre>
+<h3>KVM/Qemu Support</h3>
+<a href="http://ceph.com/wiki/QEMU-RBD">QEMU-RBD</a>
+<pre>
+$ sudo rados mkpool vm_disks
+$ sudo qemu-img create -f rbd rbd:vm_disks/vm_disk1 10G
+$ kvm -m 512M --drive format=rbd,file=rbd:vm_disks/vm_disk1
+kvm: --drive format=rbd,file=rbd:vm_disks/vm_disk1: 'rbd' invalid format
+$ qemu-img convert -f raw -O rbd DebSqz-NS2.img rbd:vm_disks/vm_disk2
+$ df -h
+<code>/dev/sda1                       466G  2.5G  462G   1% /src4/ceph/osd/osd.0
+127.0.1.1,192.168.180.2:/       699G  9.0G  690G   2% /mnt/tmp</code>
+$ ls -l /mnt/tmp/
+total 0
+$ ls -la /mnt/tmp/
+total 4
+drwxr-xr-x 1 root root    0 Aug 13 22:34 .
+drwxr-xr-x 3 root root 4096 Jun  2 22:12 ..
+$ rados lspools
+data
+metadata
+rbd
+vm_disks
+</pre>
+<h3>Getting and testing the qemu ceph/rbd block driver</h3>
+<pre>
+$ git clone git://ceph.newdream.net/git/qemu-kvm.git
+$ cd qemu-kvm
+$ git checkout -b rbd origin/rbd
+$ ./configure --enable-rbd
+ERROR
+ERROR: User requested feature rados block device
+ERROR: configure was not able to find it
+ERROR
+$ sudo aptitude install librados-dev
+$ ./configure --enable-rbd
+ERROR
+ERROR: User requested feature rados block device
+ERROR: configure was not able to find it
+ERROR
+Download <a href="http://downloads.sourceforge.net/project/kvm/qemu-kvm/1.1.0/qemu-kvm-1.1.0.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fkvm%2Ffiles%2Fqemu-kvm%2F&ts=1344873456&use_mirror=ncu">KVM 1.1.0</a> from sourceforge
+$ cd ;cd Downloads/
+$ tar zxvf qemu-kvm-1.1.0.tar.gz 
+$ cd qemu-kvm-1.1.0/
+$ ./configure --enable-rbd
+ERROR
+ERROR: User requested feature rados block device
+ERROR: configure was not able to find it
+ERROR
+</pre>
+<pre>
+Download <a href="http://downloads.sourceforge.net/project/kvm/qemu-kvm/">KVM latest</a> from sourceforge
+$ cd ;cd Downloads/
+$ tar zxvf qemu-kvm-*.tar.gz
+$ cd qemu-kvm-*
+$ sudo apt-get install gcc libsdl1.2-dev zlib1g-dev libasound2-dev \
+linux-kernel-headers pkg-config libgnutls-dev libpci-dev gawk
+$ sudo aptitude install libvdeplug2-dev
+<code>The following NEW packages will be installed:
+  libvdeplug2-dev{b} 
+0 packages upgraded, 1 newly installed, 0 to remove and 55 not upgraded.
+Need to get 14.2 kB of archives. After unpacking 90.1 kB will be used.
+The following packages have unmet dependencies:
+ libvdeplug2-dev : Depends: libvdeplug2 (= 2.2.3-3) but 2.3.2-4 is installed.
+The following actions will resolve these dependencies:
+     Keep the following packages at their current version:
+1)     libvdeplug2-dev [Not Installed]                    
+Accept this solution? [Y/n/q/?] n
+The following actions will resolve these dependencies:
+     Downgrade the following packages:                         
+1)     libvdeplug2 [2.3.2-4 (now, testing) -> 2.2.3-3 (stable)]
+Accept this solution? [Y/n/q/?] Y
+</code>
+$ sudo aptitude install librbd-dev 
+curses
+$ sudo aptitude install libcurses-ocaml-dev
+VirtFS
+$ sudo aptitude install libcap-dev libattr1-dev
+iSCSI
+$ sudo aptitude install libiscsi-dev
+$ mkdir objects; cd objects
+## $ ../configure --prefix=/usr/local --source-path=.. \
+--target-list=x86_64-linux-user,x86_64-softmmu --enable-kvm --enable-linux-user \
+--enable-vde --enable-vhost-net --enable-docs --enable-rbd
+$ ../configure --prefix=/usr/local --source-path=.. \
+--target-list=x86_64-linux-user,x86_64-softmmu --enable-kvm --enable-linux-user \
+--enable-vde --enable-vhost-net --enable-libiscsi \
+--enable-docs --enable-rbd --enable-curses --enable-sdl --enable-virtfs \
+--enable-vnc-tls --enable-vnc-jpeg --enable-vnc-png --enable-vnc
+$ make
+$ sudo make install
+$ ls -l /usr/local/bin/qemu-*
+<code>-rwxr-xr-x 1 root staff  906707 Aug 14 14:31 /usr/local/bin/qemu-ga
+-rwxr-xr-x 1 root staff 2400998 Aug 14 14:31 /usr/local/bin/qemu-img
+-rwxr-xr-x 1 root staff 2458358 Aug 14 14:31 /usr/local/bin/qemu-io
+-rwxr-xr-x 1 root staff 2356548 Aug 14 14:31 /usr/local/bin/qemu-nbd
+-rwxr-xr-x 1 root staff 4468544 Aug 14 14:31 /usr/local/bin/qemu-system-x86_64
+-rwxr-xr-x 1 root staff 2366200 Aug 14 14:31 /usr/local/bin/qemu-x86_64
+</code>
+$ qemu-system-x86_64 --version
+QEMU emulator version 1.1.1 (qemu-kvm-1.1.1), Copyright (c) 2003-2008 Fabrice Bellard
+$ qemu-system-x86_64 -m 512M --drive format=rbd,file=rbd:vm_disks/vm_disk2
+With virtio
+$ qemu-system-x86_64 -m 1024M \
+-drive index=0,media=disk,if=virtio,format=rbd,file=rbd:vm_disks/server_form \
+-cdrom /video/ISOs/debian-6.0.2.1-amd64-netinst.iso
+</pre>
+<a href="http://ceph.com/docs/master/cephfs/" target="_blank">Ceph FS</a>
+<br /><br /><br /><br />
+</body>
+</html>

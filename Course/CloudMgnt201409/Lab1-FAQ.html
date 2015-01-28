@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <HEAD>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Cloud Management: Kernel-based Virtual Machine (KVM)</TITLE>
+    <link type="text/css" rel="stylesheet" href="../css/style_2014.css" />
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+    <script language="javascript">
+function reSize(){
+　　//parent.document.all.frameid.height=document.body.scrollHeight;
+    parent.document.getElementById("if_faq").height=document.body.scrollHeight + 50;
+}
+window.onload=reSize;
+    </script>
+
+  </HEAD>
+  <body>
+    <h1>Lab 1: FAQ (2014)</h1>
+    <ol>
+      <li><a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">遠端登入網址</a>
+      <li>登入帳號為 cloud[CodeNUM]
+      <li>安裝作業系統時的指令必須加上參數 <span style="color: red;">-vnc :1</span>，注意不要與 <span style="color: red;">-curses</span> 參數同時使用！接著使用遠端連接開啟。
+      <li>使用 Shell script 進行設定時出現...
+	<code>Mount point /mnt/tmp does not exist, create it first.</code>
+	<pre class="dol">sudo mkdir /mnt/tmp</pre>
+	<code>Network bridge br0 does not exist, start it first.</code>
+	<pre class="dol">~/KVM/bin/ovs-start</pre>
+      <li>使用 Shell script 進行設定時 Mac address 是由 script 根據 Host 資料自動產生.
+      <li>安裝軟體時出現...
+	<code>dpkg was interrupted, you must manually run 'dpkg --configure -a' to correct the problem.</code>
+	<pre class="dol">sudo dpkg --configure -a</pre>
+	<pre class="vm dol">su</pre>
+	<pre class="vm adm">dpkg --configure -a</pre>
+      <li>MAC address 事實上是不能任意產生的！MAC address 共 6 bytes，以十六進位表示。前 3 bytes 由 IEEE 分配給各家廠商 (OUI)，後 3 bytes 則由廠商自行產生。在此雖然我們不用完全依照準則，但是除了避免區網中位址重複問題之外還要注意下列問題。<br>
+	<div style="float: left;"><ol>
+	  <li>FF:FF:FF:FF:FF:FF 為廣播位址使用
+	  <li>multicast and unicast<br>
+	    第一組數字若是奇數則代表 (第 41 bit 為 1) multicast，<br>如：
+	<pre><code>X1:XX:XX:XX:XX:XX
+X3:XX:XX:XX:XX:XX
+X5:XX:XX:XX:XX:XX 
+X7:XX:XX:XX:XX:XX
+X9:XX:XX:XX:XX:XX
+XB:XX:XX:XX:XX:XX
+XD:XX:XX:XX:XX:XX 
+XF:XX:XX:XX:XX:XX</code></pre>
+	反之 0,2,4,6,8,A,C,E 則為 unicast 可作為網卡位址使用，其中 X 代表 0~F 任意數。<br>
+	</ol>
+	</div>
+	<img src="img/MAC-48_Address.svg" style="float: none;">
+    </ol>
+  </body>
+</html>

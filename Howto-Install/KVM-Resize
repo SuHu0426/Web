@@ -1,0 +1,10 @@
+Mounting KVM qcow2 and overlay images: 
+
+$ sudo modprobe nbd max_part=8
+$ sudo sudo kvm-nbd --connect=/dev/nbd0 kvm-002.ovl
+$ sudo mount /dev/nbd0p1 /mnt/tmp
+
+$ sudo umount /mnt/tmp
+$ sudo kvm-nbd --disconnect /dev/nbd0
+$ sudo rmmod nbd
+

@@ -1,0 +1,88 @@
+At ac10
+$ su
+# fdisk /dev/sda
+[...]
+[...]
+
+# cd /home/hsu/vblade
+# ./vblade 1 1 eth1 /dev/sda
+
+At ac14
+$ sudo modprobe aoe
+$ ls /dev/etherd
+discover  e1.1	err  flush  interfaces	revalidate
+$ sudo fdisk /dev/etherd/e1.1
+$ ls /dev/etherd
+discover  e1.1	e1.1p1	e1.1p2	e1.1p3	err  flush  interfaces	revalidate
+$ su
+# apt-get install lvm2
+# pvscan
+  Couldn't find device with uuid 'M57dhN-6hZ2-rZYz-tOJp-1qD6-xxqW-zUU0QA'.
+  Couldn't find device with uuid 'M57dhN-6hZ2-rZYz-tOJp-1qD6-xxqW-zUU0QA'.
+  PV /dev/etherd/e1.1p1   VG hsu   lvm2 [77.56 GB / 77.56 GB free]
+  PV unknown device       VG hsu   lvm2 [77.62 GB / 77.62 GB free]
+  Total: 2 [155.19 GB] / in use: 2 [155.19 GB] / in no VG: 0 [0   ]
+# pvcreate /dev/etherd/e1.1p
+# pvscan 
+  PV /dev/etherd/e1.1p1                      lvm2 [76.60 GB]
+  PV /dev/etherd/e1.1p2                      lvm2 [76.60 GB]
+  PV /dev/etherd/e1.1p3                      lvm2 [79.68 GB]
+  Total: 3 [232.88 GB] / in use: 0 [0   ] / in no VG: 3 [232.88 GB]
+# vgcreate -s 64M hsu /dev/etherd/e1.1p{1,2,3}
+  Volume group "hsu" successfully created
+# lvcreate -L 10G -n hsulv /dev/hsu
+  Logical volume "hsulv" created
+# mkfs.ext3 /dev/hsu/hsulv 
+# mount /dev/hsu/hsulv /mnt/tmp
+# df
+[...]
+/dev/mapper/hsu-hsulv
+                      10321208    154232   9642688   2% /mnt/tmp
+# umount /mnt/tmp
+# lvresize -L 100G /dev/hsu/hsulv 
+  Extending logical volume hsulv to 100.00 GB
+  Logical volume hsulv successfully resized
+# mount /dev/hsu/hsulv /mnt/tmp
+# df
+[...]
+/dev/mapper/hsu-hsulv
+                      10321208    154232   9642688   2% /mnt/tmp
+# umount /mnt/tmp/ ## If reduce lv size
+# dumpe2fs /dev/hsu/hsulv 
+# e2fsck -f /dev/hsu/hsulv ## If reduce lv size
+# resize2fs /dev/hsu/hsulv
+# mount /dev/hsu/hsulv /mnt/tmp
+# df /mnt/tmp
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/mapper/hsu-hsulv
+                     103212320    169208  97801336   1% /mnt/tmp
+
+# umount /mnt/tmp
+# modprobe aoe -r
+FATAL: Module aoe is in use.
+# lvremove /dev/hsu/hsulv 
+Do you really want to remove active logical volume "hsulv"? [y/n]: y
+  Logical volume "hsulv" successfully removed
+# modprobe aoe -r
+# pvscan
+  No matching physical volumes found
+# exit
+
+At ac10
+Ctrl + C
+# fdisk -l /dev/sda
+
+Disk /dev/sda: 250.0 GB, 250059350016 bytes
+255 heads, 63 sectors/track, 30401 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+Disk identifier: 0xfc54fc54
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1       10000    80324968+  83  Linux
+/dev/sda2           10001       20000    80325000   83  Linux
+/dev/sda3           20001       30401    83546032+  83  Linux
+
+# pvscan
+  PV /dev/sdb2   VG pve   lvm2 [232.38 GB / 4.00 GB free]
+  Total: 1 [232.38 GB] / in use: 1 [232.38 GB] / in no VG: 0 [0   ]
+# exit

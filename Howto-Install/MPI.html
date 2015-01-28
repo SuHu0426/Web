@@ -1,0 +1,135 @@
+<html>
+  <head>
+<title>MPI</title>
+</head>
+<body>
+<h1>MPI</h1>
+<h3>Installation</h3>
+<pre>
+$ sudo aptitude update
+$ sudo aptitude install openmpi-bin libopenmpi-dev 
+$ sudo aptitude install gcc g++
+$ mkdir MPI; cd MPI
+</pre>
+<a href="https://computing.llnl.gov/tutorials/mpi/" target="_blank">Message Passing Interface (MPI)</a>
+<p>Sum of 1 to 10000
+<pre>
+$ more sum.c
+#include &lt;stdio.h>
+#define N 10000
+int main(int argc,char *argv[]){
+  int i;
+  int sum=0;
+  for (i=0;i&lt;N;i++){
+    sum=sum+i;
+  }
+  printf("%d\n",sum);
+  return 0;
+}
+$ gcc -o sum sum.c
+$ time sum  
+</pre>
+<h3>SSH Key</h3>
+<pre>
+host01$ cd ~/.ssh
+host01$ ssh-keygen -t rsa
+host01$ cat id_rsa.pub > authorized_keys
+host01$ scp id_rsa.pub host02:/tmp
+host02$ cd ~/.ssh
+host02$ ssh-keygen -t rsa
+host02$ cat id_rsa.pub > authorized_keys
+host02$ scp id_rsa.pub host01:/tmp
+host02$ cat /tmp/id_rsa.pub >> authorized_keys
+host01$ cat /tmp/id_rsa.pub >> authorized_keys
+</pre>
+<p>Parallel Sum
+<pre>
+host01$ more mpi_test.c
+#include "mpi.h"
+#include &lt;stdio.h>
+#define N 10000
+int main(argc,argv)
+     int argc;
+     char *argv[]; {
+       int  numtasks, rank, rc; 
+       
+       rc = MPI_Init(&argc,&argv);
+       if (rc != MPI_SUCCESS) {
+	 printf ("Error starting MPI program. Terminating.\n");
+	 MPI_Abort(MPI_COMM_WORLD, rc);
+       }
+       
+       MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+       MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+       printf ("Number of tasks= %d My rank= %d\n", numtasks,rank);
+       
+       /*******  do some work *******/
+       MPI_Finalize();
+       return 0;
+     }
+host01$ mpicc -o test mpi_test.c
+host01$ mpirun -np 4 test
+host01$ more mpi_sum.c
+#include "mpi.h"
+#include &lt;stdio.h>
+#define N 10000
+int main(argc,argv)
+     int argc;
+     char *argv[]; {
+       int  numtasks, rank, rc; 
+       
+       rc = MPI_Init(&argc,&argv);
+       if (rc != MPI_SUCCESS) {
+	 printf ("Error starting MPI program. Terminating.\n");
+	 MPI_Abort(MPI_COMM_WORLD, rc);
+       }
+       
+       MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+       MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+       //printf ("Number of tasks= %d My rank= %d\n", numtasks,rank);
+       
+       /*******  do some work *******/
+       int i;
+       int sum=0;
+       int count=N/numtasks;
+       int start=rank*count;
+       int end=start+count;
+       for (i=start;i&lt;end;i++){
+	 sum=sum+i;
+       }
+       printf("rank %d/%d answer: %d\n",rank ,numtasks, sum);
+       int total_sum=0;
+       int collect_sum;
+       int dest=0;
+       int tag=1;
+       MPI_Status status;
+       int j;
+       if (rank==0){
+	 for (j=1;j&lt;numtasks;j++) {
+	   rc = MPI_Recv(&collect_sum, 1, MPI_INT, j, tag, MPI_COMM_WORLD, &status);
+	   total_sum=total_sum+collect_sum;
+	   printf("%d\n", collect_sum);
+	 }
+	 total_sum=total_sum+sum;
+	 printf("Total Sum: %d\n", total_sum);
+       } else {
+	 rc = MPI_Send(&sum, 1, MPI_INT, dest, tag, MPI_COMM_WORLD);
+       }
+       MPI_Finalize();
+       return 0;
+     }
+host01$ mpicc -o mpi_sum mpi_sum.c
+host01$ scp mpi_sum host02:`pwd`
+## Edit machines file
+host01$ more machines
+host01 slots=2
+host02 slots=2
+host01$ mpirun -np 4 --hostfile machines mpi_sum
+</pre>
+<br><br><br>
+<hr>
+<address>
+<a href="mailto:d100056004@mail.nchu.edu.tw">ChiSheng Su</a>
+</address>
+</body>
+</html>

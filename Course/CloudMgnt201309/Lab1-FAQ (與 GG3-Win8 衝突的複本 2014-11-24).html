@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <HEAD>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Cloud Management: Kernel-based Virtual Machine (KVM)</TITLE>
+    <link type="text/css" rel="stylesheet" href="../css/style_2013.css" />
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+  </HEAD>
+  <body>
+    <h1>Lab 1: FAQ</h1>
+    <ol>
+      <li><a href="http://mirror.cs.nchu.edu.tw:8080/guacamole/" target="_blank">遠端登入網址</a>
+      <li>登入帳號分別為 clouda、cloudb、cloudc、cloudd
+      <li>安裝作業系統時的指令必須加上參數 <span style="color: red;">-vnc :1</span>，注意不要與 <span style="color: red;">-curses</span> 參數同時使用！<br>
+	<div class="console">
+	  <div class="dol">kvm -m 1024M -cdrom debian-7.1.0-amd64-netinst.iso -hda vm001.img <span style="color: red;">-vnc :1</span></div>
+	</div>
+	接著使用遠端連接開啟。
+      <li>MAC address 事實上是不能任意產生的！MAC address 共 6 bytes，以十六進位表示。前 3 bytes 由 IEEE 分配給各家廠商 (OUI)，後 3 bytes 則由廠商自行產生。在此雖然我們不用完全依照準則，但是除了避免區網中位址重複問題之外還要注意下列問題。<br>
+	<div style="float: left;"><ol>
+	  <li>FF:FF:FF:FF:FF:FF 為廣播位址使用
+	  <li>multicast and unicast<br>
+	    第一組數字若是奇數則代表 (第 41 bit) multicast，<br>如：
+	<pre>X1:XX:XX:XX:XX:XX
+X3:XX:XX:XX:XX:XX
+X5:XX:XX:XX:XX:XX 
+X7:XX:XX:XX:XX:XX
+X9:XX:XX:XX:XX:XX
+XB:XX:XX:XX:XX:XX
+XD:XX:XX:XX:XX:XX 
+XF:XX:XX:XX:XX:XX</pre>
+	其中 X 代表 0~F 任意數，反之則為 unicast 可作為網卡位址使用。<br>
+	</ol>
+	</div>
+	<img src="img/MAC-48_Address.svg" style="float: none;">
+	<li>關於 5.3.1 編譯出現相依性的問題
+	  <div class="console">
+	    <div class="dol">dpkg-buildpackage -b</div>
+	    <div class="out">dpkg-buildpackage: source package openvswitch
+dpkg-buildpackage: source version 2.0.90-1
+dpkg-buildpackage: source changed by Open vSwitch team <dev@openvswitch.org>
+dpkg-buildpackage: host architecture amd64
+ dpkg-source --before-build openvswitch
+dpkg-checkbuilddeps: Unmet build dependencies: <span style="color: red;">graphviz</span>
+dpkg-buildpackage: warning: build dependencies/conflicts unsatisfied; aborting
+dpkg-buildpackage: warning: (Use -d flag to override.)</div>
+	  </div>
+	  直接裝上 graphviz 即可，不建議使用 -d 參數略過，因為不知道將來什麼時候用到 graphviz 時會出錯。
+	  <div class="console">
+            <div class="dol">sudo aptitude install graphviz</div>
+	  </div> 
+
+	<li>若有更換虛擬機器的 MAC Address 則會讓作業系統以為更換了網路卡，因此網路卡編號會累加上去。這時候只要修改或是直接將該記錄檔刪除即可。（保險做法為：以空白檔案覆蓋。）
+	  <div class="console">
+	    <div class="dol">rm /etc/udev/rules.d/70-persistent-net.rules</div>
+	  </div>
+	<li>想要在網頁輸入中文有幾個做法：
+	  <ol>
+	    <li>在虛擬機器中安裝中文輸入環境 ex: ibus, gcin, hime
+	    <li>一般來說，我們不會直接在 Server 上進行編輯，選擇您習慣的環境，將文件編輯好之後上傳或從 Server 端下載。
+	  </ol>
+	<li>同學分享經驗：如果發現連線速率超慢，檢查防毒軟體是否有阻擋網頁流量！
+	<li>作業評分分為數個階段：VM 是否建立、網路是否正常、服務是否建立 (Web)
+	<li><a href="assignment1.html" target="_blank">作業檢查測試頁</a>
+    </ol>
+
+  </body>
+</html>

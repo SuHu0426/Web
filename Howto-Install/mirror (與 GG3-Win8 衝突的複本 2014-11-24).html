@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Mirror</title>
+</head>
+<body>
+<h1>Reconfigure Amath Mirrors</h1>
+<pre>
+Amath-Server:/Archive/deb/UML$ cd /src3/UML/
+Amath-Server:/src3/UML$ cp /src2/uml-rfs/DebSqz-UltraLight.ext4.gz .
+Amath-Server:/src3/UML$ cp DebSqz-UltraLight.ext4.gz AmathDebianMirror.ext4.gz
+Amath-Server:/src3/UML$ cp DebSqz-UltraLight.ext4.gz AmathUbuntuMirror.ext4.gz
+Amath-Server:/src3/UML$ Config-UML-Rfs AmathDebianMirror.ext4 Amath-DebMirror 140.120.7.21 eth0 1
+Amath-Server:/src3/UML$ Config-UML-Rfs AmathUbuntuMirror.ext4 Amath-UbnMirror 140.120.7.20 eth0
+
+Rename
+Amath-Server:/src3/UML$ mv startUML startAMM
+Amath-Server:/src3/UML$ mv startUMLAsDaemon startAMM-AsDaemon
+Amath-Server:/src3/UML$ mv startUML-1 startAMDM
+Amath-Server:/src3/UML$ mv startUML-1-AsDaemon startAMDM-AsDaemon
+Amath-Server:/src3/UML$ mv stop-uml-restore-lan stop-AMM-restore-lan
+Amath-Server:/src3/UML$ mv stop-uml-restore-lan-1 stop-AMDM-restore-lan
+Amath-Server:/src3/UML$ nano startAMM-AsDaemon
+Amath-Server:/src3/UML$ nano startAMDM-AsDaemon
+
+Amath-Server:/src3/UML$ startAMDM
+hsu@Amath-DebMirror:~$ su
+root@Amath-DebMirror:/home/hsu# nano /etc/apt/sources.list
+deb http://mirror.cs.nchu.edu.tw/debian wheezy main contrib
+deb http://mirror.cs.nchu.edu.tw/debian sid main contrib
+deb http://security.debian.org/ wheezy/updates main contrib
+# deb-src http://ftp.tw.debian.org/debian/ wheezy main
+
+root@Amath-DebMirror:/home/hsu# nano /etc/apt/apt.conf.d/99translations
+Acquire::Languages "none";
+
+root@Amath-DebMirror:/home/hsu# aptitude update
+root@Amath-DebMirror:/home/hsu# aptitude safe-upgrade
+root@Amath-DebMirror:/home/hsu# aptitude clean
+root@Amath-DebMirror:/home/hsu# aptitude install sudo
+root@Amath-DebMirror:/home/hsu# nano /etc/sudoers
+root@Amath-DebMirror:/home/hsu# exit
+hsu@Amath-DebMirror:~$ sudo aptitude install bash-completion apache2 apt-mirror
+hsu@Amath-DebMirror:~$ sudo aptitude clean
+hsu@Amath-DebMirror:~$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+rootfs          1.5G  685M  717M  49% /
+/dev/root       1.5G  685M  717M  49% /
+tmpfs            98M   48K   98M   1% /run
+tmpfs           5.0M     0  5.0M   0% /run/lock
+tmpfs            10M     0   10M   0% /dev
+tmpfs           196M     0  196M   0% /run/shm
+none            7.4G  348M  6.7G   5% /usr/local
+none             46G   20G   24G  46% /src2
+hsu@Amath-DebMirror:~$ sync;sync
+hsu@Amath-DebMirror:~$ sudo halt
+
+Amath-Server:~$ cd /media/
+Amath-Server:/media$ sudo mkdir sdc1 sdc2
+Amath-Server:/media$ sudo mount /dev/sdc2 /media/sdc2
+Amath-Server:/media$ sudo chown hsu:hsu sdc2
+Amath-Server:/media$ cd sdc2
+# Amath-Server:/media/sdc2$ dd if=/dev/zero of=Amath-DebianMirror.ext3 bs=1024M count=420
+# Amath-Server:/media/sdc2$ mkfs.ext3 Amath-DebianMirror.ext3
+# Amath-Server:/media/sdc2$ sudo chown root:root /media/sdc2
+# Amath-Server:/media/sdc2$ sudo mkdir /mnt/mirror /mnt/mirror-var
+Amath-Server:/media/sdc2$ mkdir Mirror-img
+Amath-Server:/media/sdc2$ cd Mirror-img/
+Amath-Server:/media/sdc2/Mirror-img$ dd if=/dev/zero of=Amath-DebianMirror.ext3 bs=1024k count=0 seek=$[1024*420]
+Amath-Server:/media/sdc2/Mirror-img$ ls -lh
+total 0
+-rw-r--r-- 1 hsu hsu 420G Feb  2 15:29 Amath-DebianMirror.ext3
+
+Amath-Server:/media/sdc2/Mirror-img$ sudo mkfs.ext3 Amath-DebianMirror.ext3
+Amath-Server:/media/sdc2/Mirror-img$ sudo mount -o loop ./Amath-DebianMirror.ext3 /mnt/mirror-var
+Amath-Server:/media/sdc2/Mirror-img$ cd /Archive/deb/UML/
+Amath-Server:/Archive/deb/UML$ sudo mount -o loop ./Am-DebMirror.ext3 /mnt/mirror
+Amath-Server:/Archive/deb/UML$ cd /mnt/mirror/var/spool/apt-mirror/
+Amath-Server:/mnt/mirror/var/spool/apt-mirror$ sudo aptitude install rsync
+Amath-Server:/mnt/mirror/var/spool/apt-mirror$ sudo rsync -av . /mnt/mirror-var/
+
+Amath-Server:~$ sudo umount /mnt/mirror-var
+Amath-Server:/src3/UML$ cd /Archive/
+Amath-Server:/Archive$ sudo mkdir Debian-mirror
+Amath-Server:/Archive$ sudo umount /media/sdc2
+Amath-Server:/Archive$ sudo mount /dev/sdc2 Debian-mirror/
+Amath-Server:/Archive$ cd /src3/UML/
+Amath-Server:/src3/UML$ sudo mv /Archive/Debian-mirror/Mirror-img/Amath-DebianMirror.ext3 /Archive/Debian-mirror/
+Amath-Server:/src3/UML$ sudo rm -rf /Archive/Debian-mirror/Mirror-img/
+math-Server:/src3/UML$ diff startAMDM startAMDM.orig
+40c40
+< linux.uml ubd0=AmathDebianMirror.ext4 ubd1=/Archive/Debian-mirror/Amath-DebianMirror.ext3 eth0=vde,/src3/UML/network-28535 mem=4096M con=pty con0=fd:0,fd:1 umid=Amath-DebMirror
+---
+> linux.uml ubd0=AmathDebianMirror.ext4 eth0=vde,/src3/UML/network-28535 mem=1024M con=pty con0=fd:0,fd:1 umid=Amath-DebMirror
+Amath-Server:/src3/UML$ startAMDM
+hsu@Amath-DebMirror:~$ ls -l /dev/ubd*
+brw-rw---T 1 root disk 98, 0 Feb  2 16:10 /dev/ubda
+hsu@Amath-DebMirror:~$ su
+Password:
+root@Amath-DebMirror:/home/hsu# cd /dev
+root@Amath-DebMirror:/dev# for i in 0 1 2 3 4 5 6 7; do mknod ubd$i b 98 $[ $i * 16 ]; done
+root@Amath-DebMirror:/dev# halt
+Amath-Server:/src3/UML$ stop-AMDM-restore-lan
+
+Amath-Server:/src3/UML$ startAMDM
+hsu@Amath-DebMirror:~$ ls -l /dev/ubd*
+brw-rw---T 1 root disk 98, 0 Feb  2 16:13 /dev/ubda
+hsu@Amath-DebMirror:~$ sudo mknod /dev/ubdb b 98 16
+hsu@Amath-DebMirror:~$ ls -l /dev/ubd*
+brw-rw---T 1 root disk 98,  0 Feb  2 16:13 /dev/ubda
+brw-r--r-- 1 root root 98, 16 Feb  2 16:16 /dev/ubdb
+hsu@Amath-DebMirror:~$ sudo halt
+Amath-Server:/src3/UML$ stop-AMDM-restore-lan
+Amath-Server:/src3/UML$ diff startAMDM startAMDM.orig
+40c40
+< linux.uml ubda=AmathDebianMirror.ext4 ubdb=/Archive/Debian-mirror/Amath-DebianMirror.ext3 eth0=vde,/src3/UML/network-28535 mem=4096M con=pty con0=fd:0,fd:1 umid=Amath-DebMirror
+---
+> linux.uml ubd0=AmathDebianMirror.ext4 eth0=vde,/src3/UML/network-28535 mem=1024M con=pty con0=fd:0,fd:1 umid=Amath-DebMirror
+
+Amath-Server:/src3/UML$ startAMDM
+hsu@Amath-DebMirror:~$ ls -l /lib/modules/
+total 4
+drwxr-xr-x 3 root root 4096 Dec 16 13:45 3.2.32
+hsu@Amath-DebMirror:~$ uname -a
+Linux Amath-DebMirror 2.6.32 #1 Sat Jul 2 15:24:00 CST 2011 x86_64 GNU/Linux
+hsu@Amath-DebMirror:~$ sudo halt
+Amath-Server:/src3/UML$ stop-AMDM-restore-lan
+Amath-Server:/src3/UML$ linux.uml --version
+2.6.32
+
+hsu@Amath-DebMirror:~$ more /etc/fstab
+# file system   mount point     type    options         dump    pass
+/dev/ubda       /               ext4    defaults        0       1
+/dev/ubdb	/var/spool/apt-mirror	ext3	defaults	0	2
+proc            /proc           proc    defaults        0       0
+</pre>
+<h2>Ubuntu Mirror</h2>
+<pre>
+Amath-Server:/src3/UML$ rm AmathUbuntuMirror.ext4
+Amath-Server:/src3/UML$ cp AmathDebianMirror.ext4 AmathUbuntuMirror.ext4
+Amath-Server:/src3/UML$ sudo mount -o loop AmathUbuntuMirror.ext4 /mnt/tmp
+
+Amath-Server:/mnt/mirror/home/hsu$ cp WhoIsVisiting.sh update-mirror PkgInstalled IpTracing.sh hosts.txt hosts.deny hosts.allow dpkg.selections.txt ClearAptMirrorLock.sh /mnt/tmp/home/hsu/
+Amath-Server:/mnt/mirror/var/www$ sudo rsync -av . /mnt/tmp/var/www/
+Amath-Server:/mnt/mirror/etc/apt$ sudo cp mirror.list sources.list /mnt/tmp/etc/apt/
+Amath-Server:/Archive$ tail /etc/fstab
+UUID=32bab48d-abf2-4242-943c-a1ca4ffc53c5 /usr/local      ext4    defaults        0       2
+# /var was on /dev/sda5 during installation
+UUID=51aea79f-aabb-4cc6-adb3-01bd56b06110 /var            ext4    defaults        0       2
+# swap was on /dev/sda9 during installation
+UUID=ee28a6fc-be94-407c-8f49-4c5826863a8e none            swap    sw              0       0
+# swap was on /dev/sdb9 during installation
+UUID=afde666e-d72b-4b5e-acae-e049086d0311 none            swap    sw              0       0
+/dev/scd0       /media/cdrom0   udf,iso9660 user,noauto     0       0
+/dev/sdc2	/Archive/Debian-mirror	ext4	defaults	0	2
+/dev/sdb15	/Archive/Ubuntu-mirror	ext4	defaults	0	2
+
+Amath-Server:/src3/UML$ more startAMDM
+#! /bin/bash
+# Do NOT edit this file, it is automatically generated by ./Config-UML-Rfs!
+
+string=`basename $0`
+Screen="No"
+if [ $string = "startAMDM-AsDaemon" ]; then
+     Screen="Yes"
+fi
+
+#############################################################
+IsThereTapDevice()
+  {
+   declare int i=0;
+   for devices in `find /sys/class/net -type l -name "tap*"`
+     do
+       ((i++));
+     done
+
+   if [ ${i} -gt 0 ]
+     then echo "Yes"
+   else echo "No"
+   fi
+  }
+#############################################################
+
+sudo echo Need SU passwd:
+sudo chmod 666 /dev/net/tun
+sudo tunctl -u hsu -t tap1
+sudo ifconfig tap1 140.120.7.19 netmask 255.255.255.255 up
+
+if [ `IsThereTapDevice` = "No" ]
+   then sudo iptables --flush
+        sudo iptables --table nat --flush
+        sudo iptables --delete-chain
+        sudo iptables --table nat --delete-chain
+        sudo iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+fi
+
+sudo iptables --append FORWARD --in-interface tap1 -j ACCEPT
+sudo chmod 666 /dev/net/tun # The first time, we get 660 on /dev/net/tun
+sudo sysctl net.ipv4.ip_forward=1
+sudo sysctl net.ipv4.conf.tap1.proxy_arp=1
+sudo arp -Ds 140.120.7.21 eth0 pub
+sudo route add -host 140.120.7.21 dev tap1
+vde_switch -tap tap1 -mod 644 -sock=/src3/UML/network-28535 -mgmt /src3/UML/network-28535/vde_switch.mgmt -daemon </dev/null >/dev/null
+if [ $Screen = "No" ]; then
+    linux.uml-3.2 ubd0=Amath-DebianMirror-rootfs.ext4 ubd1=/Archive/Debian-mirror/Amath-DebianMirror.ext3 eth0=vde,/src3/UML/network-28535 mem=4096M con=pty con0=fd:0,fd:1 umid=Amath-DebMirror
+else
+    echo "Start AMDM as daemon."
+    screen -S Amath-DebMirror -d -m linux.uml-3.2 \
+	ubd0=Amath-DebianMirror-rootfs.ext4 \
+	ubd1=/Archive/Debian-mirror/Amath-DebianMirror.ext3 \
+	eth0=vde,/src3/UML/network-28535 \
+	mem=4096M con=pty con0=fd:0,fd:1 umid=Amath-DebMirror &
+fi
+
+Amath-Server:/src3/UML$ rm startAMM-AsDaemon
+Amath-Server:/src3/UML$ ln startAMDM startAMDM-AsDaemon
+Amath-Server:/src3/UML$ more stop-AMDM-restore-lan
+#! /bin/bash
+# Do NOT edit this file, it is automatically generated by ./Config-UML-Rfs!
+
+#############################################################
+IsThereTapDevice()
+  {
+   declare int i=0;
+   for devices in `find /sys/class/net -type l -name "tap*"`
+     do
+       ((i++));
+     done
+
+   if [ ${i} -gt 0 ]
+     then echo "Yes"
+   else echo "No"
+   fi
+  }
+#############################################################
+
+sudo echo Need SU passwd:
+# sudo uml_mconsole Amath-DebMirror sysrq s; sudo uml_mconsole Amath-DebMirror sysrq u; sudo uml_mconsole Amath-DebMirror sysrq e; sudo uml_mconsole Amath-DebMirror  halt
+uml_mconsole Amath-DebMirror sysrq s; uml_mconsole Amath-DebMirror sysrq u; uml_mconsole Amath-DebMirror sysrq e; uml_mconsole Amath-DebMirror  halt
+# Killing the vde_switch daemon
+echo 'Stopping swich lan'
+sudo pkill -f "vde_switch -tap tap1 -mod 644 -sock=/src3/UML/network-28535 -mgmt /src3/UML/network-28535/vde_switch.mgmt"
+# Removing the control socket and its directory if need be
+if [ -S /src3/UML/network-28535/ctl ]; then sudo rm /src3/UML/network-28535/ctl; fi
+if [ -d /src3/UML/network-28535 ]; then sudo rm -rf /src3/UML/network-28535; fi
+sudo arp -d 140.120.7.21
+sudo route del -host 140.120.7.21 dev tap1
+sudo iptables -D FORWARD --in-interface tap1 -j ACCEPT
+sudo ifconfig tap1 140.120.7.19 down
+sudo sysctl net.ipv4.conf.tap1.proxy_arp=0
+sudo tunctl -d tap1
+
+if [ `IsThereTapDevice` = "No" ]
+    then sudo chmod 600 /dev/net/tun
+         sudo sysctl net.ipv4.ip_forward=0
+fi
+
+</pre>
+</body>
+</html>

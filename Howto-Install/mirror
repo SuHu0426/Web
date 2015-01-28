@@ -1,0 +1,83 @@
+$ Config-Kvm /archive1/KVM/img/Debian-mirror.img CSIE-DebMirror 140.120.13.252 eth0 DebMirror
+$ sudo aptitude install gparted uuid-runtime
+$ qemu-img resize Debian-mirror.img 400G
+$ sudo modprobe nbd max_part=8
+$ sudo qemu-nbd --connect=/dev/nbd0 /archive1/KVM/img/Debian-mirror.img 
+$ sudo gparted /dev/nbd0
+$ sudo uuidgen |sudo  xargs tune2fs /dev/nbd0p1 -U;sudo blkid /dev/nbd0p1
+$ sudo uuidgen |sudo  xargs tune2fs /dev/nbd0p2 -U;sudo blkid /dev/nbd0p2
+$ sudo mount /dev/nbd0p2 /mnt/tmp/
+$ sudo nano /mnt/tmp/etc/fstab
+/dev/vda2       /       ext4    errors=remount-ro       0       1
+/dev/vda1       /boot   ext2    defaults        0       2
+$ sudo nano /mnt/tmp/etc/initramfs-tools/modules 
+virtio
+virtio_pci
+virtio_ring
+virtio_net
+virtio_blk
+$ sudo mount /dev/nbd0p1 /mnt/tmp/boot
+$ sudo chroot /mnt/tmp
+# update-initramfs -u
+# exit
+$ sudo umount /mnt/tmp/boot /mnt/tmp
+$ sudo qemu-nbd -d /dev/nbd0
+
+kvm -m 2048M \
+  -net vde,vlan=0,sock=/archive1/KVM/network-30018 \
+  -net nic,model=virtio,vlan=0,macaddr=78:e3:b5:00:b0:ad \
+  -monitor unix:/archive1/KVM/network-30018/MonSock,server,nowait \
+  -drive file=/archive1/KVM/img/Debian-mirror.img,if=virtio &
+
+# Edit grub
+
+# apt-get install apt-mirror apache2
+# cd /var/www
+# ln -s /var/spool/apt-mirror/mirror/debian.nctu.edu.tw/debian debian
+# cd /etc/apt
+# mv mirror.list mirror.list.orig
+# more mirror.list
+############# config ##################
+#
+set base_path    /var/spool/apt-mirror
+#
+# if you change the base path you must create the directories below with write p
+rivlages
+#
+set mirror_path  $base_path/mirror
+set skel_path    $base_path/skel
+set var_path     $base_path/var
+set cleanscript $var_path/clean.sh
+set defaultarch  amd64 #<running host architecture>
+set nthreads     20
+set _tilde 0
+#
+############# end config ##############
+
+#deb http://tw.archive.ubuntu.com/ubuntu karmic main restricted universe multive
+rse
+#deb http://tw.archive.ubuntu.com/ubuntu karmic-updates main restricted universe
+ multiverse
+#deb http://tw.archive.ubuntu.com/ubuntu karmic-backports main restricted univer
+se multiverse
+#deb http://tw.archive.ubuntu.com/ubuntu karmic-security main restricted univers
+e multiverse
+
+#clean http://archive.ubuntu.com/ubuntu
+
+deb http://debian.nctu.edu.tw/debian squeeze main contrib
+deb http://debian.nctu.edu.tw/debian squeeze-proposed-updates main contrib
+deb http://debian.nctu.edu.tw/debian testing main contrib
+deb http://debian.nctu.edu.tw/debian testing-proposed-updates main contrib
+deb http://debian.nctu.edu.tw/debian sid main contrib
+
+deb http://debian.nctu.edu.tw/debian squeeze main/debian-installer
+deb http://debian.nctu.edu.tw/debian testing main/debian-installer
+
+clean http://debian.nctu.edu.tw/
+
+$ more /etc/cron.d/apt-mirror 
+#
+# Regular cron jobs for the apt-mirror package
+#
+0 4	* * *	apt-mirror	/usr/bin/apt-mirror > /var/spool/apt-mirror/var/cron.log

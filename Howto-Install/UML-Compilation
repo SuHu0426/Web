@@ -1,0 +1,111 @@
+http://packages.debian.org/squeeze/linux-source-2.6.32
+http://git.debian.org/?p=pkg-uml/user-mode-linux.git;a=blob_plain;f=config.amd64
+http://amdm/debian/pool/main/l/linux-2.6/
+
+
+ $ diff arch/um/include/asm/thread_info.h arch/um/include/asm/thread_info.h.orig
+50d49
+<   /*
+55,57d53
+<    */
+<   register unsigned long sp asm("esp");
+<   return (struct thread_info *)(sp & ~(THREAD_SIZE - 1));
+
+ $ cd $HOME/Downloads
+ $ sudo dpkg -i linux-source-2.6.32_2.6.32*_all.deb
+ $ rm linux-source-2.6.32_2.6.32-*_all.deb
+ $ if [ ! -d  /src3/kernel ]
+     then sudo mkdir /src3/kernel 
+          sudo chown hsu:hsu /src3/kernel 
+          mkdir /src3/kernel/gz
+          cd /src3/kernel/gz
+   else rm /src3/kernel/gz/*; 
+        rm -rf /src3/kernel/linux-source-2.6.32
+        cd /src3/kernel/gz
+   fi
+ $ sudo mv /usr/src/linux-source-2.6.32.tar.bz2 . 
+ $ cd .. 
+ $ tar -xjvf gz/linux-source-2.6.32.tar.bz2 
+ # We get and install the linux source from Debian, not Ubuntu.  If Ubuntu 
+ # gets newer version of linux source, we will be asked to upgrade it.  We
+ # don't want this to happen, since Ubuntu Linux is error prone!!
+ $ sudo synaptic # remove linux-source package from it so that package system
+ #                 does not know that we got it.
+ # Get /boot/config-2.6.32* from any Debian based host.  Remember to 
+ # upgrade its kernel to newest version and then scp it to /tmp. 
+ $ cd linux-source-2.6.32
+ # In case we would like to compile and install our own kernel, we use Dconfig
+ # as our configuration file.  Here, we compile it for UML linux, Debian has 
+ # already prepared it for us, we copy it to .config file.
+ $ mv /tmp/config-2.6.32* Dconfig 
+ $ cp $HOME/Downloads/config.amd64 .config 
+ $ sudo apt-get install libncurses5-dev 
+ $ make ARCH=um menuconfig # Choose the last item: Save alternate .config file and exit.
+ $ make ARCH=um linux 
+ $ echo $?  # Check whether linux was successfully made.
+ # Check /src3/kernel/linux-source-2.6.32/arch/um/Kconfig.net for missing 
+ # packages (libraries).  Probably, need to install the next few.
+ $ apt-cache search libvdeplug
+ $ sudo apt-get install libvdeplug2 libvdeplug2-dev
+ $ apt-cache search libpcap
+ $ sudo apt-get install libpcap-dev
+ $ make ARCH=um linux 
+ $ emacs23 arch/um/os-Linux/mem.c
+#====
+extern fchmod();
+#====
+ $ make ARCH=um linux 
+ $ echo $?
+ $ ls -lia linux vmlinux
+9975399 -rwxr-xr-x 2 hsu hsu 5868734 2010-09-10 15:51 linux
+9975399 -rwxr-xr-x 2 hsu hsu 5868734 2010-09-10 15:51 vmlinux
+ # We see a huge 5.8 MB executable.
+ $ linux --version 
+2.6.32
+ $ linux --help 
+ # It seems our new user mode linux kernel is OK! 
+ $ make ARCH=um modules 
+ $ echo $?
+ $ if [ ! -d  /usr/local/lib/uml ]
+     then sudo mkdir /usr/local/lib/uml 
+          sudo chown hsu:hsu /usr/local/lib/uml 
+   else rm -rf /usr/local/lib/uml/lib/*
+   fi
+ $ make ARCH=um modules_install INSTALL_MOD_PATH=/usr/local/lib/uml 
+ # When stripping symbols from binary file, its size becomes smaller, loads fast,
+ # requires less memory.  But, you lose debug or warning information.  If program
+ # crashs, probably, you have no idea why it crashed.
+ # $ strip linux  
+ # $ mv linux linux.uml 
+ $ cp linux /usr/local/lib/uml/linux.uml 
+ $ sudo cp linux /usr/local/bin
+ $ make clean
+
+
+#==================
+
+ $ sudo mkdir /src3/UML
+ $ sudo chown hsu:hsu /src3/UML
+ $ cd /src3/UML
+ $ scp amm:/src2/uml-rfs/Config-UML-Rfs .
+ $ ln Config-UML-Rfs Config-UML-Rfs-UmlSwitch
+ $ scp amm:/src2/uml-rfs/DebSqz.ext3.gz .
+ $ scp -r amm:/src2/uml-rfs/DebianNetFiles .
+ $ scp amm:/src2/uml-rfs/update-base . 
+ # The kernel modules in our uml root filesystem needed to be updated 
+ # according to our newly compiled uml.
+ $ gunzip DebSqz.ext3.gz 
+ $ sudo mount -o loop DebSqz.ext3 /mnt/tmp 
+ $ ls -l /mnt/tmp/lib/modules 
+ $ ls -l /mnt/tmp/lib/modules/2.6.32 
+ $ sudo rm -rf /mnt/tmp/lib/modules/2.6.32/*
+ $ cwd=`pwd`
+ $ cd /usr/local/lib/uml/lib/modules/2.6.32 
+ $ find . -print | sudo cpio -pdm /mnt/tmp/lib/modules/2.6.32
+ $ cd $cwd
+ $ ls -l /mnt/tmp/lib/modules/2.6.32 
+ $ sudo rm -f /mnt/tmp/lib/modules/2.6.32/build  /mnt/tmp/lib/modules/2.6.32/source
+ $ sync; sync 
+ $ sudo umount /mnt/tmp 
+ $ Config-UML-Rfs-UmlSwitch DebSqz.ext3 av09 140.120.8.209 eth0
+ $ startUML

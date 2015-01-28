@@ -1,0 +1,44 @@
+$ sudo mkdir /src4/mln
+$ sudo chown hsu:hsu /src4/mln
+$ cd /src4/mln
+$ scp jssu:`pwd`/kmln .
+$ sudo ./kmln setup
+2 - Entire system (Need to be root)
+[ /opt/mln ] : /src4/mln
+Do you want to install User-Mode Linux? [N/y]: n
+
+[ /root/mln/projects ]  : /src4/mln/projects
+[ /root/mln/files ]  : /src4/mln/files
+[ /root/mln/templates ]  : /src4/mln/templates
+
+$ sudo chown -R jssu:jssu *
+$ sudo apt-get install uml-utilities vde2 kvm qemu-utils socat
+;; For Server
+install xerces
+http://xerces.apache.org/xerces-c/download.cgi
+$ tar zxvf xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz 
+$ sudo cp -r xerces-c-3.1.1-x86_64-linux-gcc-3.4/* /usr/local/
+$ sudo apt-get install xalan 
+
+Edit /etc/mln/mln.conf
+;; For Clients
+default_kernel /usr/local/bin/linux.uml
+default_modules /usr/local/lib/uml/lib/modules/3.0.0/
+service_host gg
+daemon_allow 140.120.15.179
+
+;; For Server
+default_kernel /usr/local/bin/linux.uml
+default_modules /usr/local/lib/uml/lib/modules/3.0.0/
+service_host jssu
+daemon_listen_address 140.120.15.180
+daemon_status_query gg2
+
+
+$ sudo mkdir /etc/mln/DTD
+$ scp jssu:/etc/mln/DTD/* /tmp
+$ sudo mv /tmp/kmln.dtd /tmp/xml2mln.xsl /tmp/xml2svg.xsl /etc/mln/DTD/
+$ cd templates/
+$ scp jssu:`pwd`/* .
+;; For Clinets
+$ sudo kmln daemon -D /var/run/mln.pid

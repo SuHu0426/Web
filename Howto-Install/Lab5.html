@@ -1,0 +1,508 @@
+<HTML>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Cluster Management: KMLN</TITLE>
+  <link type="text/css" rel="stylesheet" href="style.css" />
+</HEAD>
+<BODY>
+<h1>Lab 5: Cluster Management: KMLN</h1>
+<h2>實驗描述</h2>
+本實驗描述如何運用 KMLN 建立 KVM 與 UML 之虛擬叢集環境.
+<h2>實驗環境</h2>
+資訊科學大樓 701 教室
+<table border=2>
+  <tr><td>&nbsp;     <th>Real machines</tr>
+  <tr><th>CPU        <td align="right">AMD Athlon(tm) 64 X2 5600+</tr>
+  <tr><th>Memory     <td align="right">1883M</tr>
+  <tr><th>Disk space <td align="right">137G</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+理學大樓 821 機房
+<table border=2>
+  <tr><td>&nbsp;     <th>CSIE-Cloud01</tr>
+  <tr><th>CPU        <td align="right">4 AMD Opteron(tm) Processor 6128 processors<br> (16 cpu cores)</tr>
+  <tr><th>Memory     <td align="right">8G</tr>
+  <tr><th>Disk space <td align="right">500G*2</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+<table border=2>
+  <tr><td>&nbsp;     <th>CSIE-Cloud02</tr>
+  <tr><th>CPU        <td align="right">4 AMD Opteron(tm) Processor 6128 processors<br> (16 cpu cores)</tr>
+  <tr><th>Memory     <td align="right">8G</tr>
+  <tr><th>Disk space <td align="right">500G*2</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+<h2>安裝實作</h2>
+<a href="http://snmlab.cs.nchu.edu.tw/CloudLab/CTSP/Lab5.html">Remote Version</a>
+<OL>
+  <h3><li>安裝需求</h3>
+  相依套件：
+  <ul>
+	<li>perl
+	<li>uml-utilities
+	<li>bridge-utils
+	<li>VDE
+	<li>screen
+	<li>sudo
+	<li>socat
+	<li>Xerces<br>
+	  XML parsers. <a href="http://xerces.apache.org/">The Apache Xerces Project</a>
+	<li>Xalan<br>
+	  Process XML documents with XSLT stylesheets. <a href="http://xalan.apache.org/">The Apache Xalan Project</a>
+  </ul>
+  虛擬化技術：
+  <ul>
+	<li>UML
+	<li>KVM
+	<li>XEN
+	<li>VMWare
+  </ul>
+  <h3><li><a name="frontend-inst">環境建置</a></h3>
+    <ol>
+        <li>使用 apt-get 指令安裝相依套件</li>
+<pre>  $ sudo apt-get update
+  $ sudo apt-get install perl uml-utilities bridge-utils vde2 screen sudo socat
+</pre>
+        <li><a href="http://xerces.apache.org/xerces-c/download.cgi">下載</a> Xerces-C++ 預先編譯版本使用 (在此選擇 Binary Distributions 項目下之 64 bit 中 Linux 版本 <a href="http://apache.cdpa.nsysu.edu.tw//xerces/c/3/binaries/xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz">xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz</a>)</li>
+<pre>  $ cd ; cd Downloads
+  $ tar zxvf xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz
+  $ cd xerces-c-3.1.1-x86_64-linux-gcc-3.4
+  $ sudo cp -r bin doc include lib samples /usr/local
+  $ sudo ldconfig
+  $ which SAX2Print 
+<code>/usr/local/bin/SAX2Print
+</code>  $ sudo apt-get install xalan
+</pre>
+        <li>安裝 UML 與 KVM 等虛擬化技術 (已在 <a href="Lab1.html">Lab1</a> 中完成！)</li>
+	<li>Load nbd(network block device) module
+<pre>  $ sudo modprobe nbd max_part=8
+</pre>
+        <li>安裝 KMLN</li>
+<pre>  $ sudo mkdir /archive1/mln ; sudo chown cloud:cloud /archive1/mln ; cd /archive1/mln
+  $ tar zxvf /backup/kmln/kmln-2011-11-24.tgz 
+<code><a name="frontend-inst-conf">安裝 MLN frontend</a>
+</code>  $ sudo ./kmln setup
+<code>################ MLN INSTALLER ###########
+In order to install MLN on your system,
+some questions need to be answered:
+Do you want to set up MLN for your user or for the entire system?
+1 - Single user (Default)
+2 - Entire system (Need to be root)
+3 - MLN frontend for distributed management (Need to be root)
+4 - MLN daemon backend for distributed management (Need to be root)
+[1]: <font color="red">3</font>
+<hr>
+The directory /etc/mln is not present: 
+Trying to create it ... OK
+What would you like the default install prefix to be? [ /opt/mln ] : <font color="red">/archive1/mln</font>
+<hr>
+Do you want to install User-Mode Linux? [N/y]: 
+<hr>
+Where would you like to store the projects?
+[ /archive1/mln/projects/$USER ]  : <font color="red">/archive1/mln/projects</font>
+<hr>
+Where would you like to store files that will be copied into the vm at build time?
+[ /archive1/mln/files/$USER ]  : <font color="red">/archive1/mln/files</font>
+<hr>
+Where would you like to store the templates?
+[ /archive1/mln/templates ]  : 
+<hr>
+The directory /archive1/mln/templates is not present: 
+Trying to create it ... OK
+Detecting Xen presence and kernel version...Xen was not found, is xend running?
+For distributed management to work, every server is identified as a 'service_host'
+The servive_host name should be either an IP or a resolveable name
+The service_host name for this host will be 'SNMLab-GGone'
+Please edit /etc/mln/mln.conf to change it
+Press ENTER to continue
+<hr>
+Configuration written to /etc/mln/mln.conf
+Do you want to have a MLN daemon start/stop script in /etc/init.d/mlnd?
+[Y]/n: <font color="red">n</font>
+<hr>
+Note, the MLN daemon is not set to start automatically at boot.
+Press ENTER to continue.
+<hr>
+Do you want to have the mln script in /usr/local/bin?<font color="red">y</font>
+<hr>
+Creating plugin directory: /etc/mln/plugins
+The directory /etc/mln/plugins is not present: 
+Trying to create it ... OK
+'plugins/autoenum.pl' -> '/etc/mln/plugins/autoenum.pl'
+'plugins/cluster.pl' -> '/etc/mln/plugins/cluster.pl'
+'plugins/ec2.pl' -> '/etc/mln/plugins/ec2.pl'
+'plugins/fedora.pl' -> '/etc/mln/plugins/fedora.pl'
+'plugins/hostsFile.pl' -> '/etc/mln/plugins/hostsFile.pl'
+'plugins/internalswap.pl' -> '/etc/mln/plugins/internalswap.pl'
+'plugins/iscsi.pl' -> '/etc/mln/plugins/iscsi.pl'
+'plugins/postfix.pl' -> '/etc/mln/plugins/postfix.pl'
+'plugins/sshkey.pl' -> '/etc/mln/plugins/sshkey.pl'
+'plugins/vmware.pl' -> '/etc/mln/plugins/vmware.pl'
+It appears you already have one or more templates installed.
+To add more later, you can run "mln download_templates"
+MLN setup complete.
+</code>  $ sudo cp -r DTD /etc/mln
+</pre>
+<li>修改 mln.conf 使其符合實際運作環境.
+<pre>  $ sudo emacs /etc/mln/mln.conf
+<code># MLN configuration file generated by the mln setup command
+# The location of the filesystem templates:
+# You can use environment variables in this path, but make sure
+# that the variables are there when you run he daemon
+templates /archive1/mln/templates
+# Files which are being copied into the VMs at build-time
+# must be placed in this directory
+files /archive1/mln/files
+# This folder is going to contain projects and likely filesystem images.
+# Make sure there is sufficient space as some projects can become large.
+# It is advised that every user has his own project directory, but in
+# case of XEN, root will probarbly be the only one to use MLN
+projects /archive1/mln/projects
+# The location of the User-Mode Linux kernel to use
+<font color="red">uml /usr/local/bin</font>
+# The default User-Mode Linux kernel binary
+<font color="red">default_kernel /usr/local/bin/linux.uml</font>
+# The modules beloning to the default User-Mode Linux kernel
+<font color="red">default_modules /usr/local/lib/uml/lib/modules/2.6.32</font>
+...</code></pre>
+     </ol>
+<h3><li>建立 KVM 虛擬機器專案檔案，在此專案中描述兩部虛擬機器使用 vde_switch 在同一實體機器上。</h3>
+<pre>  $ cd examples
+  $ cp vde-kvm.xml 2KVM-${account}.xml
+  $ emacs 2KVM-${account}.xml&
+<code>&lt;?xml version="1.0"?>
+&lt;!DOCTYPE project SYSTEM "/etc/mln/DTD/kmln.dtd">
+&lt;project>
+  &lt;global projName="2KVM-${account}" />
+  
+  &lt;switch name="lan"
+	  switchType="vde"
+	  owner="cloud"
+	  tap="tap2K-${account}"
+	  tun_iface="eth0"
+	  tun_address="${host_IP}"
+	  />
+  &lt;superclass name="kvm"
+	      term="screen"
+	      virTech="kvm"
+	      template="DebSqz-mini.img"
+	      size="2048M"
+	      memory="256M"
+	      >
+    &lt;network name="eth0"
+	     switch="lan"
+	     netmask="255.255.255.0"
+	     gateway="${host_IP}"
+	     />
+    &lt;host name="kvm-01">
+      &lt;network name="eth0" address="${IP1}"/>
+    &lt;/host>
+    &lt;host name="kvm-02">
+      &lt;network name="eth0" address="${IP2}"/>
+    &lt;/host>  
+  &lt;/superclass>
+&lt;/project>
+</code>  $ rm 2KVM-${account}.xml~
+  ## 使用 usage 參數獲得使用說明
+  $ kmln usage
+  $ sudo kmln build -x 2KVM-${account}.xml
+  $ more 2KVM-cloud.xml.mln
+<code>global  {
+      project 2KVM-cloud
+}
+switch lan {
+      switchType vde
+      owner cloud
+      tap tap2K-cloud
+      tun_iface eth0
+      tun_address 192.168.0.4
+}
+superclass kvm {
+      term screen
+      virTech kvm
+      template DebSqz-mini.img
+      size 2048M
+      memory 256M
+      family debian
+      network eth0 {
+        switch lan
+        netmask 255.255.255.0
+        gateway 192.168.0.4
+      }
+}
+host kvm-01 {
+      superclass kvm
+      virTech kvm
+      term screen
+      template DebSqz-mini.img
+      size 2048M
+      memory 256M
+      family debian
+      network eth0 {
+        address 192.168.0.30
+        netmask 255.255.255.0
+        gateway 192.168.0.4
+        switch lan
+      }
+}
+host kvm-02 {
+      superclass kvm
+      virTech kvm
+      term screen
+      template DebSqz-mini.img
+      size 2048M
+      memory 256M
+      family debian
+      network eth0 {
+        address 192.168.0.31
+        netmask 255.255.255.0
+        gateway 192.168.0.4
+        switch lan
+      }
+}
+</code>  $ ls -l ../projects/2KVM-cloud/
+<code>total 48
+-rw-r--r-- 1 root root  915 Nov 30 20:32 2KVM-cloud.mln
+drwxr-xr-x 2 root root 4096 Nov 30 20:32 images
+-rw-r--r-- 1 root root   13 Nov 30 20:32 manager
+drwxrwxrwx 2 root root 4096 Nov 30 20:32 network
+-rw-r--r-- 1 root root    0 Nov 30 20:32 service_hosts
+-rwxr-xr-x 1 root root 1618 Nov 30 20:32 start_99_kvm-01.sh
+-rwxr-xr-x 1 root root 1618 Nov 30 20:32 start_99_kvm-02.sh
+-rwxr-xr-x 1 root root  698 Nov 30 20:32 start_lan.sh
+-rwxr-xr-x 1 root root 1421 Nov 30 20:32 stop_99_kvm-01.sh
+-rwxr-xr-x 1 root root 1421 Nov 30 20:32 stop_99_kvm-02.sh
+-rwxr-xr-x 1 root root  626 Nov 30 20:32 stop_lan.sh
+drwxr-xr-x 2 root root 4096 Nov 30 20:32 uml_dir
+-rw-r--r-- 1 root root    2 Nov 30 20:32 version
+</code>  $ sudo kmln start -p 2KVM-${account}
+  $ ssh -X cloud@${IP1}
+<code> In another xterm
+</code>  $ ssh -X cloud@${IP2}
+</pre>
+<h3><li>The (K)MLN daemon, Distributed virtual networks.</h3>
+<p>
+<ol>
+  <li>Base Setup
+  <ol>
+    <li>(K)MLN Daemon setup
+    <p>Consider the following example: We have two servers, 
+frontend and backend. The frontend is our main (K)MLN server and 
+has no need to run the daemon, as all (K)MLN commands will be issued there. 
+The server backend is dedicated (K)MLN server which are controlled mainly 
+from the frontend and therefore need to run the (K)MLN daemon.
+    <p>Lets look at the necessary configuration. The MLN daemon does not allow any
+connections by default, so we need to define the IP addresses of the hosts we want
+to allow. This is done in the /etc/mln/mln.conf file on each of the backend servers:
+    <pre>backend:~$ sudo emacs /etc/mln/mln.conf <code> daemon_allow ${frontend_IP}</code></pre>
+    <p>Lastly, we define the ammount of memory reseverd for the server itself. 
+This is not acted upon by the MLN daemon, but helps with the status output to quickly see
+where there is resources to add more virtual machines. For Xen users, the default
+reserved ammount is 192 MB. If the backend is installed thorugh our specialized
+installer CD, the reserved ammount is 128MB.
+    <pre><code> daemon_max_memory 128M </code></pre>
+    <p>Start the daemon as root.
+    <pre>backend:~$ sudo kmln daemon -D /var/run/mln.pid</pre>
+    <li>The Frontend (Master) server
+  </ol>
+  <li>Writing a distributed project
+</ol>
+<h3><li>現在我們在 Server 上以 KVM 虛擬機器來練習使用 KMLN 部署機器！</h3>
+<ol>
+<li>登入自己的 VM，依照 IP 分配表每組第一個 IP(以下簡稱 kvm-01) 作為 Frontend，第二個 IP(以下簡稱 kvm-02) 作為 Backend。 
+<pre>$ ssh -X cloud@cloud01 # or cloud02
+$ ssh -X ${IP1}</pre>
+<li>在 kvm-01 上部署 KMLN frontend。
+<pre>$ sudo apt-get update
+$ sudo apt-get install perl uml-utilities bridge-utils vde2 screen sudo socat
+$ cd ; cd Downloads
+$ tar zxvf xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz
+$ cd xerces-c-3.1.1-x86_64-linux-gcc-3.4
+$ sudo cp -r bin doc include lib samples /usr/local
+$ sudo ldconfig
+$ cd ; cd mln
+$ tar zxvf ../Downloads/kmln-*.tgz 
+$ sudo ./kmln setup
+</pre>
+<p>安裝過程大致上與<a href="#frontend-inst">Step 2</a>相同，將安裝路徑改為 <font color="red">/home/cloud/mln</font>。
+<pre>$ sudo cp -r DTD /etc/mln
+</pre>
+<p>Modify the /etc/mln/mln.conf .
+<pre>$ sudo nano /etc/mln/mln.conf
+<code># MLN configuration file generated by the mln setup command
+# The location of the filesystem templates:
+# You can use environment variables in this path, but make sure
+# that the variables are there when you run he daemon
+templates /archive1/mln/templates
+# Files which are being copied into the VMs at build-time
+# must be placed in this directory
+<font color="red">files /archive1/mln/files</font>
+# This folder is going to contain projects and likely filesystem images.
+# Make sure there is sufficient space as some projects can become large.
+# It is advised that every user has his own project directory, but in
+# case of XEN, root will probarbly be the only one to use MLN
+projects /archive1/mln/projects
+# The location of the User-Mode Linux kernel to use
+<font color="red">uml /usr/local/bin</font>
+# The default User-Mode Linux kernel binary
+<font color="red">default_kernel /usr/local/bin/linux.uml</font>
+# The modules beloning to the default User-Mode Linux kernel
+<font color="red">default_modules /usr/local/lib/uml/lib/modules/2.6.32</font>
+...
+## DISTRIBUTED MANAGEMENT OPTIONS ##
+# The 'service_host' is the name to identify the server as a location
+# for a virtual machine. The service_host value can either be a IP address or a resolv-able
+# name for the host
+<font color="red">service_host kvm-01</font>
+# The address to listen on. Default is to listen on all addresses
+# daemon_listen_address x.x.x.x
+<font color="red">daemon_listen_address ${backend-IP}</font>
+...
+# If this is a machine that will manage other servers,
+# you will need to add one line for each server backend
+# The groups can be used to print status information for a subset
+# of the servers.
+# format: daemon_status_query <hostname> [group[,group]]
+# Example: daemon_status_query backend1.example.org Xen,HVM,development
+<font color="red">daemon_status_query kvm-02</font></code></pre>
+<p>Modify the hosts file
+<pre>$ sudo nano /etc/hosts
+<code>127.0.0.1       localhost
+127.0.1.1       ctsp20-1
+${IP1}          kvm-01          kvm01
+${IP2}          kvm-02          kvm02</code></pre>
+<li>在 kvm-02 上部署 KMLN backend。
+<p>In another xterm do the following commands.
+  <pre>$ ssh -X cloud@cloud01 # or cloud02
+$ ssh -X ${IP2}
+</pre>
+<p>安裝過程類似 Frontend。
+<pre>$ sudo apt-get update
+$ sudo apt-get install perl uml-utilities bridge-utils vde2 screen sudo socat
+$ cd ; cd Downloads
+$ tar zxvf xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz
+$ cd xerces-c-3.1.1-x86_64-linux-gcc-3.4
+$ sudo cp -r bin doc include lib samples /usr/local
+$ sudo ldconfig
+$ cd ; cd mln
+$ tar zxvf ../Downloads/kmln-*.tgz 
+$ sudo ./kmln setup
+<code>################ MLN INSTALLER ###########
+In order to install MLN on your system,
+some questions need to be answered:
+Do you want to set up MLN for your user or for the entire system?
+1 - Single user (Default)
+2 - Entire system (Need to be root)
+3 - MLN frontend for distributed management (Need to be root)
+4 - MLN daemon backend for distributed management (Need to be root)
+[1]: <font color="red">4</font>
+<hr>
+The directory /etc/mln is not present: 
+Trying to create it ... OK
+What would you like the default install prefix to be? [ /opt/mln ] : <font color="red">/home/cloud/mln</font>
+<hr>...
+following configurations are the same as <a href="#frontend-inst-conf">step2.4</a>.</code>
+$ sudo cp -r DTD /etc/mln
+</pre>
+<p>Modify the /etc/mln/mln.conf
+<pre>$ sudo nano /etc/mln/mln.conf
+<code># MLN configuration file generated by the mln setup command
+# The location of the filesystem templates:
+# You can use environment variables in this path, but make sure
+# that the variables are there when you run he daemon
+templates /archive1/mln/templates
+# Files which are being copied into the VMs at build-time
+# must be placed in this directory
+<font color="red">files /archive1/mln/files</font>
+# This folder is going to contain projects and likely filesystem images.
+# Make sure there is sufficient space as some projects can become large.
+# It is advised that every user has his own project directory, but in
+# case of XEN, root will probarbly be the only one to use MLN
+projects /archive1/mln/projects
+# The location of the User-Mode Linux kernel to use
+<font color="red">uml /usr/local/bin</font>
+# The default User-Mode Linux kernel binary
+<font color="red">default_kernel /usr/local/bin/linux.uml</font>
+# The modules beloning to the default User-Mode Linux kernel
+<font color="red">default_modules /usr/local/lib/uml/lib/modules/2.6.32</font>
+...
+## DISTRIBUTED MANAGEMENT OPTIONS ##
+# The 'service_host' is the name to identify the server as a location
+# for a virtual machine. The service_host value can either be a IP address or a resolv-able
+# name for the host
+<font color="red">service_host kvm-02</font>
+...
+# The IP address of hosts that are allowed to manage this MLN daemon
+# BE VERY AWARE THAT THIS IS VERY BETA-QUALITY SOFTWARE!!
+# USE WITH CAUTION!
+# daemon_allow x.x.x.x
+<font color="red">daemon_allow ${frontend-IP}</font>
+...
+</code>$ sudo kmln daemon -D /var/run/mln.pid
+<code>Starting MLN in daemon mode</code></pre> 
+<li>Writing a distributed project
+<p>Back to frontend terminal
+<pre>$ cd examples
+$ cp vde-uml.xml Dis-2uml.xml
+$ nano Dis-2uml.xml
+<code>&lt;?xml version="1.0"?>
+&lt;!DOCTYPE project SYSTEM "/etc/mln/DTD/kmln.dtd">
+&lt;project>
+  &lt;global projName="<font color="red">Dis-2uml</font>" />
+  &lt;switch name="lan1"
+          switchType="vde"
+          owner="cloud"
+          tap="tap0"
+          tun_iface="eth0"
+          tun_address="${IP1}"
+          physical_host="kvm-01"
+          />
+  &lt;switch name="lan2"
+          switchType="vde"
+          owner="cloud"
+          tap="tap0"
+          tun_iface="eth0"
+          tun_address="${IP2}"
+          physical_host="kvm-02"
+          />
+  &lt;superclass name="uml"
+              term="screen"
+              virTech="uml"
+              template="DebSqz-UltraLight.ext3"
+              size="1000M"
+              memory="256M"
+              >
+    &lt;network name="eth0"
+             netmask="255.255.255.0"
+             />
+    &lt;host name="uml-01" physical_host="kvm-01">
+      &lt;network name="eth0" 
+        address="${IP3}"
+        gateway="${IP1}"
+        switch="lan1"        
+        />
+    &lt;/host>
+    &lt;host name="uml-02" physical_host="kvm-02">
+      &lt;network name="eth0" 
+        address="${IP4}"
+        gateway="${IP2}"
+        switch="lan2"        
+        />
+    &lt;/host>
+  &lt;/superclass>
+&lt;/project>
+</code>$ sudo kmln build -x Dis-2uml.xml 
+$ sudo kmln start -p Dis-2uml
+$ sudo kmln stop -p Dis-2uml
+$ sudo kmln clean -p Dis-2uml
+$ sudo kmln remove -p Dis-2uml
+$ sudo kmln remove -p Dis-2uml -f
+$ exit
+</pre>
+<p>In backend terminal
+<pre>$ sudo kmln remove -p Dis-2uml -f
+$ exit
+</pre>
+</ol>
+</BODY>
+</HTML>

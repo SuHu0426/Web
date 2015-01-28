@@ -1,0 +1,8 @@
+﻿.clsCollasibleLegend
+{
+	padding-left: 12px; 
+	background-image: url(minus.gif); 
+	background-repeat: no-repeat;
+	background-position: left center;
+	cursor: pointer;
+}

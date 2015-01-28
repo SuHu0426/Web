@@ -1,0 +1,6 @@
+wget ftp://cle.linux.org.tw/pub/tex/cwtex/cwtex-1.63g-linux-1.tar.bz2
+tar xjvf cwtex-1.63g-linux-1.tar.bz2
+cd texmf
+wget ftp://cle.linux.org.tw/pub/tex/cwtex/install.sh
+#texhash updmap add sudo
+sudo ./install.sh

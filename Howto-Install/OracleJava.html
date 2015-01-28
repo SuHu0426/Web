@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Debian Oracle Java 7 Installation Guide</TITLE>
+    <link type="text/css" rel="stylesheet" href="/css/style_2013.css" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+  </head>
+  <body>
+    <h1>Debian Oracle Java 7 Installation Guide</h1>
+    <h2>Reference <a href="https://wiki.debian.org/JavaPackage">JavaPackage</a></h2>
+    <h2>Process</h2>
+    <ol>
+      <li>Add a "contrib" component to /etc/apt/sources.list
+	<pre>more /etc/apt/sources.list
+<code>deb http://mirror.cs.nchu.edu.tw/debian/ wheezy main contrib
+deb http://mirror.cs.nchu.edu.tw/debian/ jessie main contrib</code></pre>
+      <li>Update the list of available packages and install the java-package package:
+	<pre>sudo aptitude update
+sudo aptitude safe-upgrade
+sudo aptitude install java-package</pre>
+      <li>Download the desired Java JDK/JRE binary distribution (<a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank">Oracle</a>). Choose tar.gz archives or self-extracting archives, do <u>not</u> choose the RPM!
+      <li>Use java-package to create a Debian package, for example:
+	<pre>make-jpkg jdk-7u*-linux-x64.tar.gz</pre>
+      <li>Install the binary package created:
+	<pre>sudo dpkg -i oracle-java7-jdk_7u*_amd64.deb</pre>
+    </ol>
+    <h2>Configuration</h2>
+    <pre>sudo update-alternatives --auto java</pre>
+    <pre>export JAVA_HOME=`readlink -f /usr/bin/java | sed "s:bin/java::"`</pre>
+    <p>Write in the /etc/profile, if it does not work for tomcat, Add to /etc/default/tomcat6</p>
+    <pre>JAVA_HOME=JAVA_HOME=/usr/lib/jvm/jdk-7-oracle-x64
+JRE_HOME=/usr/lib/jvm/jdk-7-oracle-x64/jre
+export JAVA_HOME JRE_HOME</pre>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+Linux Amath-Client12 2.6.28-15-generic x86_64 GNU/Linux
+download liblxc
+http://sourceforge.net/projects/lxc/files/lxc/lxc-0.4.0/
+
+$ cd Desktop/
+$ tar zxvf lxc-0.4.0.tar.gz
+$ sudo mv lxc-0.4.0 /src3/.
+$ cd /src3/
+$ sudo chown hsu:hsu lxc-0.4.0
+$ cd lxc-0.4.0/
+$ ./configure --prefix=/
+$ make
+$ sudo make install
+$ sudo apt-get install iproute debootstrap
+$ sudo debootstrap sid rootfs http://debian.osuosl.org/debian/
+$ sudo chown hsu:hsu rootfs
+$ emacs lxc-self.conf
+lxc.utsname = my_ssh_container
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = eth1
+lxc.network.ipv4 = 192.168.0.121
+lxc.network.name = eth1
+lxc.rootfs = ./rootfs
+
+$ sudo lxc-create -n lxc -f lxc-self.conf
+$ sudo lxc-info -n lxc
+'lxc' is STOPPED
+$ sudo lxc-start -n lxc init
+[syserr] 	lxc_start:98: Invalid argument - failed to fork into a new namespace
+failed to start lxc
+$ sudo lxc-checkconfig
+
+The kernel configuration can not be retrieved because
+"/proc/config.gz" was not found.
+
+Is your kernel compiled with IKCONFIG_PROC ?
+
+
+##============================##
+# lxc-checkconfig
+Kernel config /proc/config.gz not found, looking in other places...
+Found kernel config file /boot/config-2.6.28-11-generic
+--- Namespaces ---
+Namespaces: enabled
+Utsname namespace: enabled
+Ipc namespace: enabled
+Pid namespace: enabled
+User namespace: disabled
+Network namespace: disabled
+Multiple /dev/pts instances: disabled
+
+--- Control groups ---
+Cgroup: enabled
+Cgroup namespace: enabled
+Cgroup device: disabled
+Cgroup sched: enabled
+Cgroup cpu account: enabled
+Cgroup memory controller: enabled
+Cgroup cpuset: enabled
+
+--- Misc ---
+Veth pair device: enabled
+Macvlan: enabled

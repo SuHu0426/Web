@@ -1,0 +1,11 @@
+su
+visudo 
+###modify
+username ALL=(root) NOPASSWD: /sbin/reboot
+%groupname ALL=(root) NOPASSWD: /sbin/reboot
+hsu ALL=(root) NOPASSWD: /sbin/reboot
+
+
+
+sudo chroot --userspec hsu:hsu /mnt/tmp ssh-keygen -P "12345" -f /home/hsu/.ssh/ddd
+

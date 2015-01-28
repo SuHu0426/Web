@@ -1,0 +1,36 @@
+hsu@Amath-Client12:~$ sudo apt-get install kvm qemu uml-utilities
+hsu@Amath-Client12:~$ sudo apt-get install opennebula opennebula-common opennebula-node
+hsu@Amath-Client12:~$ sudo apt-get install libopennebula-dev libopennebula1
+hsu@Amath-Client12:~$ sudo apt-get install ruby libsqlite3-0 sqlite3 libsqlite3-dev libsqlite3-ruby libxmlrpc-c3-dev libxmlrpc-c3 scons
+
+...
+Processing triggers for initramfs-tools ...
+update-initramfs: Generating /boot/initrd.img-2.6.28-15-generic
+hsu@Amath-Client12:~$ sudo shutdown -r now
+
+
+hsu@Amath-Client12:~$ sudo passwd oneadmin 
+hsu@Amath-Client12:~$ ssh -X oneadmin@ac12 
+
+#oneadmin@Amath-Client12:~$ cd ~/.ssh/
+#oneadmin@Amath-Client12:~/.ssh$ cat id_rsa.pub > authorized_keys
+#oneadmin@Amath-Client12:~/.ssh$ exit
+
+oneadmin@Amath-Client10:~$ onehost add ac10 im_kvm vmm_kvm tm_ssh
+
+other terminal
+hsu@Amath-Client10:~$ sudo tee /var/lib/one/.ssh/authorized_keys << EOT
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsQVPMKOzA8KgeuP98kMTCAQSXInOt7DNM8ONYQMXIf9sTHRLmwbPSoq/Jw5KbsgGrrTzBHHPUt0gsRPvuePhAKA9uMqgVq6N0b6p8vPmkysFE2a+dLyV3pBtnGUV9D90/3FWwXn7CgEH+KyDBlaifzwQ5d3TqRdGxGRxGGDvleUkQWa9CJNPWjneTMCLJam/hpOTE6HB5vf/yExI4ELSmvb/2NbB4LX8YjeOBj68xmlFdn1JCS1YSK4VdtnAx16RlMMfcU/kqm2RN05B/wLXKggMmAvzuGBxzjevipMnnIGCeMVqf/kbcCTcI8SSnB/zIdcoHfcS8Xy7fuzkf7/5Uw== oneadmin@Amath-Client10
+EOT
+
+
+hsu@Amath-Client12:~$ ssh -X oneadmin@ac12
+
+hsu@Amath-Client12:/src3/ONE$ more kvm01.one 
+NAME     = KVM01
+CPU      = 1
+MEMORY   = 128
+OS       = [boot=hd ]
+DISK     = [source="/src3/ONE/image/debian.img",clone=yes,target=hda,readonly=no
+]
+oneadmin@Amath-Client12:/src3/ONE$ onevm submit kvm01.one

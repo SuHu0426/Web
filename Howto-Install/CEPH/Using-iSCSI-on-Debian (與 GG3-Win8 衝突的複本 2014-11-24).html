@@ -1,0 +1,796 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en">
+  <head><title>Using iSCSI On Debian Squeeze (Initiator And Target)</title>
+  </head>
+<body>
+<h3 id="title">Using iSCSI On Debian (Initiator And Target)
+<a href="http://www.howtoforge.com/using-iscsi-on-debian-squeeze-initiator-and-target" 
+target="newwindow">(Source Origin)</a></h3>
+
+<p>Version 1.0 <br>
+Author: Felix Hsu
+
+Last edited 10/25/2012</p>
+
+<p>This guide explains how you can set up an iSCSI target and an iSCSI initiator 
+(client), both running Debian Sid and Wheezy. The iSCSI protocol is a SAN (storage 
+area network) protocol which allows iSCSI initiators to use storage devices on the 
+(remote) iSCSI target using normal ethernet cabling. To the iSCSI initiator, the 
+remote storage looks like a normal, locally-attached hard drive. </p>
+
+ 
+<h4>1 Preliminary Note</h4>
+<p> I'm using three Debian Kvms here:</p>
+
+<ul>
+  <li>iSCSI-iNIT (Initiator, on ac00): IP addresses: 192.168.0.100, 192.168.1.100
+  <li>Ceph-RBD2 (Target, on amd-6): IP addresses: 192.168.0.120, 192.168.1.120
+  <li>MyRouter (Gateway for 192.168.1.0/24): IP addresses: 192.168.0.2, 192.168.1.1
+</ul>
+ 
+<h4>2 Setting Up The Target (Ceph-RBD2)</h4>
+
+<p><a href="http://wiki.debian.org/SAN/iSCSI/iscsitarget" target="newwindow">iSCSITarget 
+Reference</a>
+
+<p>First we set up the target (Ceph-RBD2):</p>
+
+<PRE>
+ $ cd /src4/ceph/clients 
+ $ cp Ceph-Client.img Ceph-RBD2.img
+ # Configure Ceph-RBD2.img for eth1, first.  Then add eth0 by hands.  Consult the 
+ # ways we did on start-Deb2Nics-253 and stop-Deb2Nics-restore-lan-253
+ $ Config-Kvm ../clients/Ceph-RBD2.img Ceph-RBD2 192.168.1.120 eth1 24
+ # Booting Ceph-RBD2, login it, enable eth0 via /etc/rc.local and install iscsitarget 
+ # and iscsitarget-dkms in it.
+ $ more /etc/rc.local 
+  .
+  .
+  .
+ifconfig eth0 192.168.0.120
+ifconfig eth1 192.168.1.120
+route add default gw 192.168.1.1
+  .
+  .
+
+ $ apt-get install iscsitarget iscsitarget-dkms
+</PRE>
+
+<p>Open /etc/default/iscsitarget... and set ISCSITARGET_ENABLE to true:</p>
+
+<PRE>
+ $ diff /etc/default/iscsitarget /etc/default/iscsitarget.orig
+1c1
+< ISCSITARGET_ENABLE=true
+---
+> ISCSITARGET_ENABLE=false
+</PRE>
+
+<p>We can use unused logical volumes, image files, hard drives (e.g. /dev/sdb), 
+hard drive partitions (e.g. /dev/sdb1) or RAID devices (e.g. /dev/md0) for the 
+storage. For example, we can create a 10GB image file and mount it as /dev/sdb 
+while booting VM.
+
+
+<PRE>
+ $ cd /src4/ceph/Vdisks
+ $ dd if=/dev/zero of=blank.img bs=1024k count=10000
+ $ cd ../bin
+ $ start-Ceph-RBD2-24-efs ../Vdisks/blank.img
+ # Afeter successfully booting, ../Vdisks/blank.img becomes /dev/sdb in Ceph-RBD2
+</PRE>
+
+<p> <b>ietd</b> is the iSCSI Enterprise Target Daemon.  In Ceph-RBD2, we have the 
+<code>/dev/rbd0</code> and <code>/dev/sdb</code>, two block devices. The first one 
+is exported by our Ceph cluster, and the second one is the image file carried by 
+Ceph-RBD2 during VM booting (via <code>-hdb ../Vdisks/blank.img</code> argument). 
+We edit <code>/etc/iet/ietd.conf</code> by adding the following stanza at the end 
+of this file:</p>
+
+<PRE>
+$ sudo diff /etc/iet/ietd.conf /etc/iet/ietd.conf.orig
+113,122d112
+< Target iqn.2001-04.com.example:storage.lun1
+<         # IncomingUser someuser secret
+<         # OutgoingUser
+<         Lun 1 Path=/dev/rbd0,Type=blockio
+<         Alias LUN1
+< Target iqn.2001-04.com.example:storage.lun2
+<         # IncomingUser someuser secret
+<         # OutgoingUser
+<         Lun 2 Path=/dev/sdb,Type=fileio
+<         Alias LUN2
+</PRE>
+
+<p><b>Note: (10/13/2012)</b> 
+<OL>
+  <LI> The <a href="http://en.wikipedia.org/wiki/ISCSI#Addressing" 
+target="newwindow">iSCSI Qualified Name</a> is documented in 
+<a href="http://www.ietf.org/rfc/rfc3720.txt">RFC 3720</a>, with further examples of 
+names in <a href="http://www.ietf.org/rfc/rfc3721.txt">RFC 3721</a>. The "Target" line 
+above is an example.  This line really just needs to be unique.  Briefly, the fields 
+are:
+
+<ul>
+  <li> literal <b>iqn</b></li>
+  <li> date (yyyy-mm) that the naming authority took ownership of the domain</li>
+  <li> reversed domain name of the authority (<i>org.alpinelinux, com.example, 
+       to.yp.cr</i>)</li>
+  <li> Optional ":" prefixing a storage target name specified by the naming authority.
+</ul>
+
+<p>From the RFC:</p>
+
+<pre>                   Naming     String defined by
+      Type  Date    Auth      "example.com" naming authority
+     +--++-----+ +---------+ +--------------------------------+
+     |  ||     | |         | |                                |     
+
+     iqn.2001-04.com.example:storage:diskarrays-sn-a8675309
+     iqn.2001-04.com.example
+     iqn.2001-04.com.example:storage.tape1.sys1.xyz
+     iqn.2001-04.com.example:storage.disk2.sys1.xyz
+</pre>
+
+  <LI> The IncomingUser line contains a username and a password so that only the 
+       initiators (clients) that provide this username and password can log in and use 
+       the storage device; if you don't need authentication, don't specify a username 
+       and password in the IncomingUser line.  <b>Note:</b> I belive these fields may
+       also be set via <a href="#UserPasswd" target="newwindow">iscsiadm</a>.
+
+  <LI> In the LUN line, <code>Path=/dev/rbd0</code> refers to the disk and partition 
+       that will be presented to the initiator. In this Lun line, we must specify the 
+       full path to the storage device (e.g. <code>/dev/sdb, /dev/rbd0</code>, 
+       <code>/dev/vg0/storage_lun1</code>, or <code>/storage/lun1.img</code>, etc.). 
+  <LI> For ceph rbd, we shoud choose <a href="./VirtualStorageAndUsbHdd.html#CephiScsi"
+       target="newwindow"><b>Type=blockio</b></a> since we want Direct Block I/O. 
+       Should we choose fileio, the target kernel will utilize it's file cache, which 
+       will then lead to cache-inconsistency between the targets.  Choosing blockio 
+       will by-pass the kernel's cache, which is good in this case.
+</OL>
+
+<h5>Tell which IP addresses are allowed to connect to targets</h5>
+
+<P><b>Note: (10/20/2012)</b> It seems that we can not specify which IP addresses are 
+  allowed to connect to targets!
+
+<PRE>
+Ceph-RBD2:~$  diff /etc/iet/initiators.allow /etc/iet/initiators.allow.bkp
+24,25c24,25
+< iqn.2001-04.com.example:storage.lun1 ALL
+< iqn.2001-04.com.example:storage.lun2 ALL
+---
+> iqn.2001-04.com.example:storage.lun1 192.168.0.100 192.168.1.100
+> iqn.2001-04.com.example:storage.lun2 192.168.0.100 192.168.1.100
+</PRE>
+
+<a name="SampOutput"></a><PRE>
+hsu@iSCSI-iNIT:~$ sudo iscsiadm -m discovery -t st -p 192.168.0.120
+192.168.0.120:3260,1 iqn.2001-04.com.example:storage.lun2
+192.168.1.120:3260,1 iqn.2001-04.com.example:storage.lun2
+192.168.0.120:3260,1 iqn.2001-04.com.example:storage.lun1
+192.168.1.120:3260,1 iqn.2001-04.com.example:storage.lun1
+hsu@iSCSI-iNIT:~$ sudo iscsiadm -m node
+192.168.1.120:3260,1 iqn.2001-04.com.example:storage.lun1
+192.168.0.120:3260,1 iqn.2001-04.com.example:storage.lun1
+192.168.1.120:3260,1 iqn.2001-04.com.example:storage.lun2
+192.168.0.120:3260,1 iqn.2001-04.com.example:storage.lun2
+</PRE>
+
+<P> <b>Wrong Syntax</b>
+<PRE>
+Ceph-RBD2:~$ diff /etc/iet/initiators.allow /etc/iet/initiators.allow.orig
+24c24
+< iqn.2001-04.com.example:storage.lun1 192.168.0.100 192.168.1.100
+---
+> ALL ALL
+ # Prefer to start iscsitarget manually, since we need to make sure the block device 
+ # /dev/rbd0 is ready.
+</PRE>
+
+<P> In my first impression, it seems that we can specify multiple IPs which we allow 
+to access a certain storage.  For example, the IP addresses 192.168.0.100 192.168.1.100 
+in the third line above will be the initiator's ip addresses and only these ip addresses 
+are allowed to access this specific target.  You must use IP addresses, not hostnames.  
+If you don't care where the initiator is connecting from, you can use the keyword 
+<i>ALL</i>.  Unfortunately, when we specify IP addresses as above, iscsiadm always 
+returns with the string <b>"iscsiadm: No portals found"</b>.
+</p>
+
+<P> Also, there should be the <code>/etc/initiators.deny</code> file to deny storage 
+access from certain network.  The functionality of <code>initiators.deny</code> and
+<code>initiators.allow</code> files is similar to <code>/etc/hosts.allow</code> 
+and <code>/etc/hosts.deny</code>, isn't it? On our iSCSITarget, we don't see the 
+initiators.deny file at all.
+
+<h4>3 Setting Up The Initiator (iSCSI-iNIT)</h4>
+
+<p><a href="http://wiki.debian.org/SAN/iSCSI/open-iscsi" 
+target="newwindow">iSCSI-iNIT Reference</a></p>
+
+<p>On iSCSI-iNIT, we install the initiator (and multipath-tools, too. There is no need 
+to configure multipath):</p>
+
+<PRE>
+ $ cd /src4/ceph/clients
+ $ cp Debian-2Nics.img iSCSI-iNIT.img
+ $ cd ../bin 
+ $ Config-Kvm ../clients/iSCSI-iNIT.img iSCSI-iNIT 192.168.1.100 eth1 100
+ # We then edit the scripts to reflect two NICs: eth0 and eth1: start-iSCSI-iNIT-100, 
+ # start-iSCSI-iNIT-100-AsDaemon, stop-iSCSI-iNIT-restore-lan-100.  Hopefully, we can 
+ # reach Ceph-RBD2 (running on amd-6) via IP addresses: 192.168.0.120, 192.168.1.120
+ # Booting iSCSI-iNIT, edit /etc/rc.local and install open-iscsi and multipath-tools.
+ $ diff /etc/rc.local /etc/rc.local.orig
+19,21c19,20
+< ifconfig eth0 192.168.0.100
+< ifconfig eth1 192.168.1.100
+< route add default gw 192.168.1.1
+---
+> ifconfig eth0 192.168.1.100
+> route add default gw 192.168.1.33
+ $ sudo apt-get install open-iscsi multipath-tools 
+</PRE>
+
+<p> Next we test the IP paths between iSCSI-iNIT and Ceph-RBD2.  For simplicity reason, 
+we first test start-Test-Eth1-254, a VM with single eth0 bound to IP: 192.168.1.254.
+
+<PRE>
+$ start-Test-Eth1-254
+$ ssh -X hsu@192.168.1.254
+$ ping -c 3 192.168.1.120
+PING 192.168.1.120 (192.168.1.120) 56(84) bytes of data.
+64 bytes from 192.168.1.120: icmp_req=1 ttl=62 time=1301 ms
+64 bytes from 192.168.1.120: icmp_req=2 ttl=62 time=294 ms
+64 bytes from 192.168.1.120: icmp_req=3 ttl=62 time=1.23 ms
+    .
+    .
+hsu@Test-Eth1:~$ ping -c 3 192.168.0.120
+PING 192.168.0.120 (192.168.0.120) 56(84) bytes of data.
+64 bytes from 192.168.0.120: icmp_req=1 ttl=62 time=496 ms
+64 bytes from 192.168.0.120: icmp_req=2 ttl=62 time=1.29 ms
+64 bytes from 192.168.0.120: icmp_req=3 ttl=62 time=1.25 ms
+    .
+    .
+$ more /etc/rc.local
+    .
+    .
+ifconfig eth0 192.168.1.254
+route add default gw 192.168.1.1
+    .
+    .
+# Make sure from iSCSI-iNIT, we also can remotely login Ceph-RBD2 via above two IPs.
+$ start-iSCSI-iNIT-100 
+</PRE>
+
+
+<p>Next we open /etc/iscsi/iscsid.conf and set node.startup to automatic. Then we 
+restart the initiator.</p>
+
+<PRE>
+hsu@iSCSI-iNIT:~$ sudo emacs /etc/iscsi/iscsid.conf # We prefer node.startup to be manual
+     . 
+     . 
+node.startup = automatic
+     . 
+     . 
+</PRE>
+
+<P> <b>Note: (10/13/2012)</b> (1) It seems the above setup may be done via the next 
+command line.  (2) The command: <b>/etc/init.d/iscsid</b> has been phased out? We 
+only see <b>/etc/init.d/open-iscsi</b>.
+
+<PRE>
+$ iscsiadm -m node -T NAME_OF_TARGET -p IP_OF_TARGET --op update -n node.conn[0].startup -v automatic
+</PRE>
+
+<p> Then, we add the initiator name to the <code>/etc/iscsi/initiatorname.iscsi</code>
+file.   The initator name follows the same iqn naming scheme as the target; but this 
+is identifying the initator (client).  Either one of the following setups will be 
+fine.  Honestly, I don't know any use of the initiator name.</p>
+
+<pre>    
+ InitiatorName=iqn.2007-11.org.alpinelinux.client:01
+ InitiatorName=iqn.2007-11.com.example.me:foo:bar:baz
+ $ sudo diff /etc/iscsi/initiatorname.iscsi /etc/iscsi/initiatorname.iscsi.orig
+6c6
+< InitiatorName=iqn.2001-04.com.example.client:01
+---
+> InitiatorName=iqn.1993-08.org.debian:01:86cc206f6791
+</pre>
+
+<p> The <i>01</i>, <i>foo:bar:baz</i> are arbitrary.  You can enter anything (or 
+nothing)- as long as the intiator name is a valid iqn.</p>
+
+<h4>4 Starting Target and Initiator</h4>
+
+<OL>
+  <LI>  We export a RBD block device from storage cluster to Ceph-RBD2, then start 
+   the target.
+
+<PRE>
+ # We provide RBD via two subnets, hence start router for 192.168.1.0/24, first.
+ $ start-MyRouter-13-AsDaemon
+ $ start-Ada-21-AsDaemon; start-Bob-22-AsDaemon; start-Cay-23-AsDaemon; 
+#########################################################################################
+# If havn't done so, create a RBD block device in virtual storage cluster
+#########################################################################################
+#  $ xs cay
+# Cay:~$ sudo rbd create foo --size 1000
+# Cay:~$ sudo rbd list
+foo
+# Cay:~$ sudo rbd info foo
+rbd image 'foo':
+	size 1000 MB in 250 objects
+	order 22 (4096 KB objects)
+	block_name_prefix: rb.0.2
+	parent:  (pool -1)
+# Cay:~$ sudo rados ls -p rbd
+foo.rbd
+rbd_directory
+rbd_info
+#########################################################################################
+# Remember issue the following command to delete foo after we have done with client side.
+#########################################################################################
+# Cay:~$ sudo rbd rm foo
+Removing image: 100% complete...done.
+# Cay:~$  sudo rbd list
+#########################################################################################
+ # On another xterm, start the target VM.
+ $ start-Ceph-RBD2-24-efs ../Vdisks/blank.img
+ $ ssh -X hsu@192.168.0.120
+ # On Ceph-RBD2
+Ceph-RBD2:~$ ceph -s
+Ceph-RBD2:~$ ceph-authtool -l /etc/ceph/keyring.admin
+Ceph-RBD2:~$ echo "AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==" >/tmp/secretfile 
+Ceph-RBD2:~$ more /tmp/secretfile
+AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+Ceph-RBD2:~$ lsmod | grep rbd
+Ceph-RBD2:~$ sudo modprobe rbd
+[sudo] password for hsu: 
+Ceph-RBD2:~$ lsmod | grep rbd
+rbd                    22311  0 
+libceph                90118  2 ceph,rbd
+Ceph-RBD2:~$ ls -l /sys/bus/rbd
+total 0
+--w------- 1 root root 4096 Sep 10 09:14 add
+drwxr-xr-x 2 root root    0 Sep 10 09:14 devices
+drwxr-xr-x 2 root root    0 Sep 10 09:14 drivers
+-rw-r--r-- 1 root root 4096 Sep 10 09:14 drivers_autoprobe
+--w------- 1 root root 4096 Sep 10 09:14 drivers_probe
+--w------- 1 root root 4096 Sep 10 09:14 remove
+--w------- 1 root root 4096 Sep 10 09:14 uevent
+Ceph-RBD2:~$ echo "192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=`cat /tmp/secretfile` rbd foo" | sudo tee /sys/bus/rbd/add
+192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw== rbd foo
+Ceph-RBD2:/home/hsu$ ls -l /sys/bus/rbd/devices
+total 0
+lrwxrwxrwx 1 root root 0 Sep 10 09:31 0 -> ../../../devices/rbd/0
+Ceph-RBD2:/home/hsu$ ls -l /sys/devices/rbd/0
+total 0
+-r--r--r-- 1 root root 4096 Sep 10 09:33 client_id
+--w------- 1 root root 4096 Sep 10 09:33 create_snap
+-r--r--r-- 1 root root 4096 Sep 10 09:20 current_snap
+-r--r--r-- 1 root root 4096 Sep 10 09:33 major
+-r--r--r-- 1 root root 4096 Sep 10 09:20 name
+-r--r--r-- 1 root root 4096 Sep 10 09:20 pool
+drwxr-xr-x 2 root root    0 Sep 10 09:33 power
+--w------- 1 root root 4096 Sep 10 09:33 refresh
+-r--r--r-- 1 root root 4096 Sep 10 09:33 size
+lrwxrwxrwx 1 root root    0 Sep 10 09:20 subsystem -> ../../../bus/rbd
+-rw-r--r-- 1 root root 4096 Sep 10 09:20 uevent
+Ceph-RBD2:/home/hsu$ cat /sys/devices/rbd/0/size
+1048576000
+Ceph-RBD2:/home/hsu$ ls -l /dev/rbd0
+brw-rw---T 1 root disk 254, 0 Sep 10 09:20 /dev/rbd0
+Ceph-RBD2:/home/hsu$ cat /sys/devices/rbd/0/client_id
+client6114
+Ceph-RBD2:/home/hsu$ cat /sys/devices/rbd/0/name
+foo
+Ceph-RBD2:~$ cat /proc/net/iet/volume
+tid:2 name:iqn.2001-04.com.example:storage.lun2
+	lun:2 state:0 iotype:fileio iomode:wt blocks:20480000 blocksize:512 path:/dev/sdb
+tid:1 name:iqn.2001-04.com.example:storage.lun1
+#########################################################################################
+# iscsitarget-dkms is necessary!
+# Ceph-RBD2:/home/hsu$ sudo /etc/init.d/iscsitarget start 
+[....] Starting iSCSI enterprise target service:FATAL: Module iscsi_trgt not found.
+ failed!
+# After all, iscsitarget-dkms must be installed!
+# Ceph-RBD2:~$ sudo apt-get install iscsitarget-dkms
+#########################################################################################
+Ceph-RBD2:~$ sudo /etc/init.d/iscsitarget start
+[ ok ] Starting iSCSI enterprise target service:.
+. ok 
+Ceph-RBD2:~$ sudo ietadm --op show --tid 1 # Target id 1
+Wthreads=8
+Type=0
+QueuedCommands=32
+NOPInterval=0
+NOPTimeout=0
+Ceph-RBD2:~$ sudo ietadm --op show --tid 2 # Target id 2
+Wthreads=8
+Type=0
+QueuedCommands=32
+NOPInterval=0
+NOPTimeout=0
+# It is critical to restart Target, because /dev/rbd0 is established too late.
+# We must resart the target to guarantee that ietd knows /dev/rbd0 is available.
+Ceph-RBD2:~$ sudo /etc/init.d/iscsitarget restart
+</PRE>
+
+  <LI>  start the initiator
+
+<PRE>
+ # On iSCSI-iNIT  
+ hsu@Amath-Client00:/src4/ceph/bin$ start-iSCSI-iNIT-100
+ hsu@Amath-Client00:~$ ssh -X hsu@192.168.0.100 
+ # Since we import rbd block device from Target, we must let initiator recognize it.
+ hsu@:iSCSI-iNIT~$ sudo modprobe rbd 
+ hsu@:iSCSI-iNIT~$ lsmod | grep rbd 
+ # It seems open-iscsi automatically started, but took a long time to finish.
+ # I prefer to issue the next command by myself.
+ # " Setting up iSCSI targets: "
+ hsu@iSCSI-iNIT:~$ sudo /etc/init.d/open-iscsi restart
+[sudo] password for hsu: 
+[....] Unmounting iscsi-backed filesystems: Unmounting all devices marked _netde[.ok 
+[....] Disconnecting iSCSI targets:iscsiadm: No matching sessions found
+. ok 
+[ ok ] Stopping iSCSI initiator service:.
+[ ok ] Starting iSCSI initiator service: iscsid.
+[....] Setting up iSCSI targets:
+iscsiadm: No records found
+. ok 
+[ ok ] Mounting network filesystems:.
+hsu@iSCSI-iNIT:~$ sudo fdisk -l
+# We see /dev/sdb,  /dev/sdc,  /dev/sdd,  /dev/sde, 4 extra block devices
+</PRE>
+</OL>
+
+
+<h4>5 Connecting the Initiator to the Target</h4>
+
+<p><a href="http://www.open-iscsi.org/docs/README" target="newwindow">Reference: 
+Open-iSCSI README</a>.  The <a href="http://linux.die.net/man/8/iscsiadm" 
+target="newwindow">iscsiadm manual page</a> might be helpful. Sorry, during this 
+session, the error messages we frequently encountered are: (1) <b>iscsiadm: No 
+portals found</b> (2) <b>iscsiadm: No records found</b>.
+
+
+<p> From the iSCSI initiator, 
+
+<OL>
+  <LI> First run the discovery command: It contacts the target to determine which 
+storage devices are available.  If all is configured correctly, the target name 
+<code>iqn.2001-04.com.example:storage.lun1</code> and 
+<code>iqn.2001-04.com.example:storage.lun2</code> 
+(from the example below) will be returned.  
+  <LI> After the target is discovered, run the login command to connect. 
+
+  <LI> Replacing --login with --logout will end the connection. 
+  <LI> To make the connection persistent (so that it will reconnect after reboot), run 
+       the third command:
+</OL>
+
+<pre>    
+  iscsiadm --mode discovery --type sendtargets --portal IP_OF_TARGET
+  iscsiadm --mode node --targetname NAME_OF_TARGET --portal IP_OF_TARGET --login
+  iscsiadm -m node -T NAME_OF_TARGET -p IP_OF_TARGET --op update -n node.conn[0].startup -v automatic
+</pre>
+
+<P> <b>Question: (10/25/2012)</b> Shall we <code>sudo modprobe rbd</code> before 
+     <code>iscsiadm --login</code> first target.  Otherwise, it is not recognized! 
+     Or, we also need to install ceph filesystem in iSCSI-iNIT?  Reading this web page:  
+     <a href="./CephNotes.html#CephRbdSan">Ceph Rbd As San Storage</a>, it seems the 
+     "authentication" attribute prevents <code>/dev/rbd0</code> to be exported, since 
+     we have discovered it.  <a href="http://wiki.debian.org/SAN/iSCSI/open-iscsi"
+     target="newwindow">open-iscsi debian</a> may have some information about password.
+
+<PRE>
+ # Simpler syntax will do!
+hsu@iSCSI-iNIT:~$ $ sudo iscsiadm -m discovery -t st -p 192.168.0.120
+hsu@iSCSI-iNIT:~$ $ sudo iscsiadm -m node
+<a href="#SampOutput">Sample Output</a>
+hsu@iSCSI-iNIT:~$ sudo  iscsiadm --mode discovery --type sendtargets --portal 192.168.1.120
+192.168.1.120:3260,1 iqn.2001-04.com.example:storage.lun2
+192.168.0.120:3260,1 iqn.2001-04.com.example:storage.lun2
+192.168.1.120:3260,1 iqn.2001-04.com.example:storage.lun1
+192.168.0.120:3260,1 iqn.2001-04.com.example:storage.lun1
+# It seems "open-iscsi restart" will automatically import all the virtual storage to 
+# /dev/sdb, /dev/sdc, /dev/sdd, /dev/sde.  No login is necessary!
+hsu@iSCSI-iNIT:~$ sudo fdisk -l
+
+Disk /dev/sda: 2147 MB, 2147483648 bytes
+       . 
+       . 
+       . 
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *        2048      999423      498688   83  Linux
+/dev/sda2          999424     4192255     1596416   83  Linux
+
+Disk /dev/sdb: 10.5 GB, 10485760000 bytes
+       . 
+       . 
+       . 
+
+Disk /dev/sdb doesn't contain a valid partition table
+
+Disk /dev/sdc: 1048 MB, 1048576000 bytes
+       . 
+       . 
+       . 
+
+Disk /dev/sdc doesn't contain a valid partition table
+
+Disk /dev/mapper/149455400000000005277c9d1f32625c43968336de76fc205: 10.5 GB, 10485760000 bytes
+       . 
+       . 
+       . 
+
+Disk /dev/mapper/149455400000000005277c9d1f32625c43968336de76fc205 doesn't contain a valid partition table
+
+Disk /dev/sdd: 10.5 GB, 10485760000 bytes
+       . 
+       . 
+       . 
+
+Disk /dev/sdd doesn't contain a valid partition table
+       . 
+       . 
+       . 
+
+Disk /dev/sde doesn't contain a valid partition table
+
+Disk /dev/mapper/149455400000000003592265eae69d00a6e8560cd2833744e: 1048 MB, 1048576000 bytes
+       . 
+       . 
+       . 
+
+Disk /dev/mapper/149455400000000003592265eae69d00a6e8560cd2833744e doesn't contain a valid partition table
+hsu@iSCSI-iNIT:~$ iscsiadm --mode node --targetname iqn.2001-04.com.example:storage.lun2  --portal  192.168.0.120 --login
+iscsiadm: No records found
+hsu@iSCSI-iNIT:~$ sudo iscsiadm --mode node --targetname iqn.2001-04.com.example:storage.lun2  --portal  192.168.0.120 --login
+Logging in to [iface: default, target: iqn.2001-04.com.example:storage.lun2, portal: 192.168.0.120,3260] (multiple)
+Login to [iface: default, target: iqn.2001-04.com.example:storage.lun2, portal: 192.168.0.120,3260] successful.
+hsu@iSCSI-iNIT:~$ sudo iscsiadm --mode node --targetname iqn.2001-04.com.example:storage.lun1  --portal  192.168.0.120 --login
+Logging in to [iface: default, target: iqn.2001-04.com.example:storage.lun1, portal: 192.168.0.120,3260] (multiple)
+Login to [iface: default, target: iqn.2001-04.com.example:storage.lun1, portal: 192.168.0.120,3260] successful.
+####################################################################
+# Error message from /var/log/messages:
+# Oct 29 15:56:37 iSCSI-iNIT kernel: [ 8056.858023]  connection6:0: detected conn error (1020)
+# This message is caused by not modprobing rbd, first. The rbd disk is not recognized.
+####################################################################
+hsu@iSCSI-iNIT:~$ multipath -ll
+need to be root
+hsu@iSCSI-iNIT:~$ sudo multipath -ll
+$ sudo multipath -ll
+149455400000000003592265eae69d00a6e8560cd2833744e dm-1 IET,VIRTUAL-DISK
+size=1000M features='0' hwhandler='0' wp=rw
+|-+- policy='round-robin 0' prio=1 status=active
+| `- 2:0:0:1 sdc 8:32 active ready running
+`-+- policy='round-robin 0' prio=1 status=enabled
+  `- 4:0:0:1 sde 8:64 active ready running
+149455400000000005277c9d1f32625c43968336de76fc205 dm-0 IET,VIRTUAL-DISK
+size=9.8G features='0' hwhandler='0' wp=rw
+|-+- policy='round-robin 0' prio=1 status=active
+| `- 3:0:0:2 sdb 8:16 active ready running
+`-+- policy='round-robin 0' prio=1 status=enabled
+  `- 5:0:0:2 sdd 8:48 active ready running
+hsu@iSCSI-iNIT:~$ ls -l /dev/mapper
+total 0
+lrwxrwxrwx 1 root root       7 Nov  5 09:26 149455400000000003592265eae69d00a6e8560cd2833744e -> ../dm-1
+lrwxrwxrwx 1 root root       7 Nov  5 09:26 149455400000000005277c9d1f32625c43968336de76fc205 -> ../dm-0
+hsu@iSCSI-iNIT:~$ ls -l /etc/iscsi/nodes
+ls: cannot open directory /etc/iscsi/nodes: Permission denied
+hsu@iSCSI-iNIT:~$ sudo ls -l /etc/iscsi/nodes
+total 8
+drw------- 4 root root 4096 Oct 22 13:47 iqn.2001-04.com.example:storage.lun1
+drw------- 4 root root 4096 Oct 22 13:47 iqn.2001-04.com.example:storage.lun2
+hsu@iSCSI-iNIT:~$ sudo ls -l /etc/iscsi/nodes/iqn.2001-04.com.example:storage.lun1
+total 8
+drw------- 2 root root 4096 Oct 22 13:47 192.168.0.120,3260,1
+drw------- 2 root root 4096 Oct 22 13:47 192.168.1.120,3260,1
+hsu@iSCSI-iNIT:~$ sudo ls -l /etc/iscsi/nodes/iqn.2001-04.com.example:storage.lun1/192.168.1.120,3260,1
+total 4
+-rw------- 1 root root 1851 Oct 22 13:47 default
+hsu@iSCSI-iNIT:~$ sudo cat /etc/iscsi/nodes/iqn.2001-04.com.example:storage.lun1/192.168.1.120,3260,1/default
+# BEGIN RECORD 2.0-873
+node.name = iqn.2001-04.com.example:storage.lun1
+node.tpgt = 1
+node.startup = automatic
+node.leading_login = No
+iface.iscsi_ifacename = default
+iface.transport_name = tcp
+    . 
+    . 
+node.discovery_address = 192.168.1.120
+node.discovery_port = 3260
+node.discovery_type = send_targets
+node.session.initial_cmdsn = 0
+    . 
+    . 
+    . 
+node.conn[0].iscsi.IFMarker = No
+node.conn[0].iscsi.OFMarker = No
+# END RECORD
+hsu@iSCSI-iNIT:~$ sudo cat /etc/iscsi/nodes/iqn.2001-04.com.example:storage.lun2/192.168.1.120,3260,1/default
+# BEGIN RECORD 2.0-873
+node.name = iqn.2001-04.com.example:storage.lun2
+node.tpgt = 1
+node.startup = automatic
+node.leading_login = No
+iface.iscsi_ifacename = default
+iface.transport_name = tcp
+    . 
+    . 
+node.discovery_address = 192.168.1.120
+node.discovery_port = 3260
+node.discovery_type = send_targets
+node.session.initial_cmdsn = 0
+    . 
+    . 
+    . 
+node.conn[0].iscsi.IFMarker = No
+node.conn[0].iscsi.OFMarker = No
+# END RECORD
+
+###############################################################################
+#
+# We don't have information about /dev/rbd0, since it is not recognized?
+# After all, iSCSI-iNIT has not installed ceph filesystem in it. 
+#
+# When we boot Ceph-RBD2, the iSCSI target, it starts /etc/init.d/iscsitarget 
+# automatically.  But we create /dev/rbd0 after Ceph-RBD2 completes its booting.
+# We need to restart /etc/init.d/iscsitarget so that it knows /dev/rbd0 is available.
+#
+# On the iSCSI-iNIT, the iSCSI initiator, side, we need to "modprobe rbd" so that 
+# rbd device can be recognized.  Also, it seems open-iscsi automatically started
+# while booting it.  Again, we need to "sudo /etc/init.d/open-iscsi restart" 
+# it.  Also, it seems no need to "iscsiadm --login", all the available storage 
+# devices were carried by /dev/sdb, /dev/sdc, /dev/sdd, /dev/sde
+# 
+###############################################################################
+
+hsu@iSCSI-iNIT:~$ sudo iscsiadm --mode node --targetname iqn.2001-04.com.example:storage.lun2  --portal  192.168.0.120 --logout
+[sudo] password for hsu: 
+Logging out of session [sid: 4, target: iqn.2001-04.com.example:storage.lun2, portal: 192.168.0.120,3260]
+Logout of [sid: 4, target: iqn.2001-04.com.example:storage.lun2, portal: 192.168.0.120,3260] successful.
+hsu@iSCSI-iNIT:~$ sudo iscsiadm --mode node --targetname iqn.2001-04.com.example:storage.lun1  --portal  192.168.0.120 --logout
+Logging out of session [sid: 3, target: iqn.2001-04.com.example:storage.lun1, portal: 192.168.0.120,3260]
+Logout of [sid: 3, target: iqn.2001-04.com.example:storage.lun1, portal: 192.168.0.120,3260] successful.
+# Sometime sudo iscsiadm --logout caused iSCSI initiator to hang.  Reason unknown!
+# At this point, it seems the iSCSI-iNIT xterm hanged and we even can not login it via 
+# another xterm.  But, still can ping it from its two IP addresses.  The QEMU console 
+# went black, too.  stop-iSCSI-iNIT-restore-lan-100 can not take it offline.
+# <a href="https://bugs.launchpad.net/ubuntu/+source/open-iscsi/+bug/1053306"
+# target="newwindow">Quite Common Bug?</a>
+hsu@Amath-Client00:~$ ping -c 3 192.168.0.100
+      .
+      .
+      .
+--- 192.168.0.100 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1998ms
+rtt min/avg/max/mdev = 0.282/0.329/0.403/0.056 ms
+hsu@Amath-Client00:~$ ping -c 3 192.168.1.100
+      .
+      .
+      .
+--- 192.168.1.100 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1998ms
+rtt min/avg/max/mdev = 0.386/0.415/0.468/0.040 ms
+</PRE>
+
+<h4>6 iSCSI Multipath</h4>
+
+<p> For multipath discovery and listing, the following commands should be useful.  Just 
+keep in mind, use "/dev/mapper/14945540000000000000000000100000099b2f8000f000000" as 
+your block device for whatever you intent to use it!: 
+
+<PRE>
+ $ sudo iscsiadm -m discovery -t sendtargets -p 192.168.1.120
+ $ sudo iscsiadm -m discovery -t sendtargets -p 192.168.0.120
+ $ sudo iscsiadm -m node -T iqn.2001-04.com.example:storage.lun1 -p 192.168.1.120 --login
+ $ sudo iscsiadm -m node -T iqn.2001-04.com.example:storage.lun1 -p 192.168.0.120 --login
+ $ sudo multipath -ll
+ $ ls -l /dev/mapper
+</PRE>
+
+<a name="UserPasswd"></a>
+<h4>7 inetd.conf IncomingUser Setting</h4>
+
+<p>The settings for the storage device iqn.2001-04.com.example:storage.lun1 on 
+192.168.0.120:3260,1 are stored in the file 
+/etc/iscsi/nodes/iqn.2001-04.com.example:storage.lun1/192.168.0.120,3260,1/default. 
+We need to set the username and password for the target in that file; instead of 
+editing that file manually, we can use the iscsiadm command to do this for us:</p>
+
+<PRE>
+ $ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --op=update --name node.session.auth.authmethod --value=CHAP
+ $ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --op=update --name node.session.auth.username --value=someuser
+ $ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --op=update --name node.session.auth.password --value=secret 
+</PRE>
+
+<h4>8 Connect and Dis-Connect iSCSI target</h4>
+<p>Now we can log in, either by running the next command or by restarting the 
+initiator.  Change the argument "--login" to "--logout" to disconnect the 
+target.</p>
+
+
+<PRE>
+ $ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --login
+ # Restart open-iscsi might have unexpected side-effect, such as disrupting other user's connection.
+ # <a href="#OpenIscsiRestart">A few problems 2: IscsiTarget Restart</a> 
+ # $ sudo /etc/init.d/open-iscsi restart 
+ $ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --logout
+</PRE>
+
+<PRE>
+hsu@iSCSI-iNIT:~ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --login
+Logging in to [iface: default, target: iqn.2001-04.com.example:storage.lun1, portal: 192.168.0.120,3260]
+Login to [iface: default, target: iqn.2001-04.com.example:storage.lun1, portal: 192.168.0.120,3260]: successful
+hsu@iSCSI-iNIT:~
+hsu@iSCSI-iNIT:~ sudo iscsiadm -m node --targetname "iqn.2001-04.com.example:storage.lun1" --portal "192.168.0.120:3260" --logout
+</PRE>
+
+<h4>9 <a href="./BlockDevicePartitioning.html">Block Device Partitioning</a></h4>
+ 
+<h4>10 Links</h4>
+<ul>
+  <li> Open-iSCSI: <a href="http://www.open-iscsi.org/" target="_blank">http://www.open-iscsi.org/</a></li>
+  <li>iSCSI Enterprise Target: <a href="http://iscsitarget.sourceforge.net/" target="_blank">http://iscsitarget.sourceforge.net/</a></li>
+  <li>Debian: <a href="http://www.debian.org/" target="_blank">http://www.debian.org/</a></li>
+</ul> <div class="copyright-footer">Copyright 2012 Falko Timme All Rights Reserved.
+
+<P><b>A few problems</b>
+<P>  Submitted by Anonymous (not registered) on Mon, 2012-04-16 
+23:40.
+  
+<p>1. No need to install iscsitarget-dkms, honestly it is much better to use just 
+ iscsitarget and  iscsitarget-modules.  <b>Note: (10/19/2012)</b> Wrong! Do need 
+modules. </p>
+
+<PRE>
+Ceph-RBD2:~$ find /lib/modules -name "*iscsi_trgt*"
+/lib/modules/3.2.0-4-amd64/updates/dkms/iscsi_trgt.ko
+Ceph-RBD2:~$ ls -l /lib/modules/3.2.0-4-amd64/updates
+total 4
+drwxr-xr-x 2 root root 4096 Oct 19 15:31 dkms
+</PRE>
+
+<a name="OpenIscsiRestart"></a>
+<p>2. Adding a new device requires editing  ietd.conf
+and " /etc/init.d/iscsitarget restart". Guess what happens 
+to the clients :-)?</p>
+<p>3. Not funny! They will loose their disks, broken fs and read-only.</p>
+<p>There is an online way, just an quick example: </p>
+
+<pre>
+ ietadm --op new --tid=$TID --lun=0 --params Path="/dev/vg_ssd/$LV_NAME" 
+ ietadm --op new --tid=$TID --params Name='iqn.2009-05.cz.panelnet:storage.tukan.'$LV_NAME  
+</pre>
+<p>Check your TIDs here</p><p>  cat /proc/net/iet/volume</p></div>
+
+<P> Further References: 
+
+<OL>
+  <LI><a href="http://www.digipedia.pl/man/doc/view/ietd.8/" target="newwindow">ietd 
+      (ietadm) manual page</a> and 
+      <a href="http://www.digipedia.pl/man/doc/view/ietd.conf.5/" 
+      target="newwindow">ietd.conf config file</a>.  Also, 
+
+<TABLE>
+  <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <TD><a href="http://man.cx/ietadm%288%29" target="newwindow">ietadm manual page</a>
+          &nbsp;&nbsp;
+      <TD><a href="http://man.cx/ietd%285%29" target="newwindow">/etc/ietd.conf</a>
+          &nbsp;&nbsp;
+      <TD><a href="http://man.cx/ietd%288%29" target="newwindow">ietd</a>
+</TABLE>
+
+  <LI>iSCSI from Debian
+
+    <OL>
+      <LI><a href="http://wiki.debian.org/SAN/iSCSI/iscsitarget" 
+          target="newwindow">iSCSI Target</a>
+      <LI><a href="http://wiki.debian.org/SAN/iSCSI/open-iscsi" 
+          target="newwindow">iSCSI Initiator</a>
+    </OL>
+</OL>

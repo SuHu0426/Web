@@ -1,0 +1,487 @@
+<HTML>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Cloud Servers Configuration notes</TITLE>
+  <link type="text/css" rel="stylesheet" href="/css/precode.css" />
+  <!--<script src="/css/google-code-prettify/run_prettify.js?skin=sons-of-obsidian"></script>-->
+  <!--<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?skin=sons-of-obsidian"></script>-->
+  <style>
+  </style>
+</HEAD>
+<BODY>
+<h1>Cloud Servers Configuration notes (2014-09)</h1>
+<h2>Pre-setup</h2>
+<h3>Install Basic packages and setup sudo</h3>
+<pre>su
+aptitude install sudo build-essential linux-headers-amd64
+cp /etc/sudoers /etc/sudoers.orig
+nano /etc/sudoers
+<code>cloud   ALL=(ALL:ALL) ALL
+</code>exit
+</pre>
+
+<h3>Modify /etc/apt/sources.list</h3>
+<pre>sudo cp /etc/apt/sources.list /etc/apt/sources.list.orig
+sudo nano /etc/apt/sources.list
+<code>deb http://mirror.cs.nchu.edu.tw/debian/ jessie main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/debian/ sid main contrib non-free
+# source
+deb-src http://mirror.cs.nchu.edu.tw/debian/ jessie main contrib
+# updates, previously known as 'volatile'
+deb http://mirror.cs.nchu.edu.tw/debian/ jessie-updates main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/debian/ jessie-proposed-updates main contrib non-free
+</code>sudo aptitude update
+sudo aptitude safe-upgrade
+sudo aptitude clean</pre>
+
+<h2>System Configure</h2>
+<h3>Locale</h3>
+<pre>sudo dpkg-reconfigure locales
+<code>[*] en_US.UTF-8 UTF-8
+[*] zh_TW BIG5
+[*] zh_TW.UTF-8 UTF-8
+</code><code>Default locale for the system environment:
+                                           en_US.UTF-8 </code></pre>
+
+<h3>Hosts, allow, deny </h3>
+<pre>sudo cp /etc/hosts /etc/hosts.orig
+sudo cp /etc/hosts.allow /etc/hosts.allow.orig
+sudo cp /etc/hosts.deny /etc/hosts.deny.orig
+sudo nano /etc/hosts
+<code># The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+## Cloud Lab (511)
+140.120.7.1     fish.amath.nchu.edu.tw  fish
+140.120.7.19    Amd-Srv                 as
+140.120.7.20    am-mirror               amm
+140.120.7.21    am-DebMirror            amdm
+140.120.8.101   Amath-Client01          ac01
+140.120.8.102   Amath-Client02          ac02
+140.120.8.103   Amath-Client03          ac03
+140.120.8.104   Amath-Client04          ac04
+140.120.8.105   Amath-Client05          ac05
+140.120.8.106   Amath-Client06          ac06
+140.120.8.107   Amath-Client07          ac07
+140.120.8.108   Amath-Client08          ac08
+140.120.8.109   Amath-Client09          ac09
+140.120.8.110   Amath-Client10          ac10
+140.120.8.111   Amath-Client11          ac11
+140.120.8.112   Amath-Client12          ac12
+140.120.8.113   Amath-Client13          ac13
+140.120.8.114   Amath-Client14          ac14
+140.120.8.115   Amath-Client15          ac15
+140.120.8.116   Amath-Client16          ac16
+140.120.8.117   Amath-Client17          ac17
+140.120.8.118   Amath-Client18          ac18
+140.120.8.119   Amath-Client19          ac19
+140.120.8.120   Amath-Client20          ac20
+140.120.8.121   Amath-Client21          ac21
+#### Cloud Servers (821)
+140.120.16.67   CSE-Router              csr
+140.120.16.68   CSE-OMV
+140.120.16.69   CSE-Mirror              csm
+140.120.16.70   CSE-Server              css
+140.120.16.71   CSE-Cloud01             cs01
+140.120.16.72   CSE-Cloud02             cs02
+140.120.16.73   CSE-Cloud03             cs03
+140.120.16.74   CSE-Cloud04             cs04
+140.120.16.75   CSE-Cloud05             cs05
+140.120.16.76   CSE-Cloud06             cs06
+140.120.16.77   CSE-Cloud07             cs07
+140.120.16.78   CSE-Cloud08             cs08
+140.120.16.81   CSE-E01                 ce01
+140.120.16.82   CSE-E02                 ce02
+140.120.16.83   CSE-E03                 ce03
+140.120.16.84   CSE-E04                 ce04
+192.168.0.1     C2960-C2-Storage
+192.168.0.2     CSE-OMV-Storage         cso
+192.168.0.3     CSE-Mirror-Storage
+192.168.0.70    CSE-Server-Storage
+192.168.0.71    CSE-Cloud01-Storage
+192.168.0.72    CSE-Cloud02-Storage
+192.168.0.73    CSE-Cloud03-Storage
+192.168.0.74    CSE-Cloud04-Storage
+192.168.0.75    CSE-Cloud05-Storage
+192.168.0.76    CSE-Cloud06-Storage
+192.168.0.77    CSE-Cloud07-Storage
+192.168.0.78    CSE-Cloud08-Storage
+192.168.0.254   CSE-Router-Storage
+172.16.0.1      C2960-C2-Service
+172.16.0.2      CSE-OMV-Service
+172.16.0.3      CSE-Mirror-Service
+172.16.0.70     CSE-Server-Service
+172.16.0.71     CSE-Cloud01-Service
+172.16.0.72     CSE-Cloud02-Service
+172.16.0.73     CSE-Cloud03-Service
+172.16.0.74     CSE-Cloud04-Service
+172.16.0.75     CSE-Cloud05-Service
+172.16.0.76     CSE-Cloud06-Service
+172.16.0.77     CSE-Cloud07-Service
+172.16.0.78     CSE-Cloud08-Service
+172.31.255.254  CSE-Router-Service      csr
+
+</code>sudo nano /etc/hosts.allow
+<code>ALL: localhost
+ALL: 127.0.0.1
+ALL: 127.0.1.1
+ALL: 10.0.0.0/255.0.0.0
+ALL: 172.16.0.0/255.240.0.0
+ALL: 192.168.0.0/255.255.0.0
+ALL: 140.120.7.19
+ALL: 140.120.7.20
+ALL: 140.120.7.21
+ALL: 140.120.8.101
+ALL: 140.120.8.102
+ALL: 140.120.8.103
+ALL: 140.120.8.104
+ALL: 140.120.8.105
+ALL: 140.120.8.106
+ALL: 140.120.8.107
+ALL: 140.120.8.108
+ALL: 140.120.8.109
+ALL: 140.120.8.110
+ALL: 140.120.8.111
+ALL: 140.120.8.112
+ALL: 140.120.8.113
+ALL: 140.120.8.114
+ALL: 140.120.8.115
+ALL: 140.120.8.116
+ALL: 140.120.8.117
+ALL: 140.120.8.118
+ALL: 140.120.8.119
+ALL: 140.120.8.120
+ALL: 140.120.8.121
+ALL: 140.120.13.1
+ALL: 140.120.13.2
+ALL: 140.120.13.41
+ALL: 140.120.13.128/255.255.255.224
+ALL: 140.120.13.240/255.255.255.240
+ALL: 140.120.15.128/255.255.255.192
+ALL: 140.120.16.20
+ALL: 140.120.16.21
+ALL: 140.120.16.22
+ALL: 140.120.16.64/255.255.255.192
+ALL: 140.120.19.1
+ALL: 140.120.19.2
+ALL: 140.120.19.3
+ALL: 140.120.19.4
+ALL: 140.120.19.5
+ALL: .dynamic-ip.hinet.net
+ALL: .dynamic.hinet.net
+ALL: .emome-ip.hinet.net
+ALL: .EMOME-IP.hinet.net
+ALL: .hinet.net
+</code>sudo nano /etc/hosts.deny
+<code>ALL: ALL
+</code>sudo service ssh restart
+sudo aptitude install fail2ban
+ssh-keygen -f /home/cloud/.ssh/id_rsa -t rsa -N ''</pre>
+
+<h3>Profiles</h3>
+<pre>cp ~/.profile ~/.profile.orig
+diff ~/.profile ~/.profile.orig
+<code>19c19,22
+&lt; export PATH=.:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+---
+&gt; # set PATH so it includes user's private bin if it exists
+&gt; if [ -d "$HOME/bin" ] ; then
+&gt;     PATH="$HOME/bin:$PATH"
+&gt; fi
+</code>cp ~/.bashrc ~/.bashrc.orig
+diff ~/.bashrc ~/.bashrc.orig
+<code>46c46
+&lt; force_color_prompt=yes
+---
+&gt; #force_color_prompt=yes
+60c60
+&lt;     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u\[\033[00m\]@\[\033[35m\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+---
+&gt;     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+111d110
+&lt; export PATH=.:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+</code></pre>
+
+<h3>Create necessary directories</h3>
+<pre>sudo mkdir /src1 /src2 /src3 /src4 /backup /video /mnt/tmp
+</pre>
+
+<h3>Install KVM</h3>
+<pre>sudo aptitude install qemu-kvm uml-utilities socat screen
+sudo adduser cloud kvm
+# logout and then login again
+sudo mkdir /src3/KVM
+sudo chown cloud:cloud /src3/KVM
+sudo mkdir /archive/img
+sudo chown cloud:cloud /archive/img
+sudo mkdir /archive/ISO
+sudo chown cloud:cloud /archive/ISO
+cd /src3/KVM
+ln -s /archive/ISO
+</pre>
+
+<h3>Install OpenvSwitch</h3>
+<p>Please follow the steps in <a href="/Howto-Install/openvswitch.html" target="_blank">My Note Open vSwitch</a>, and install the stable version.
+You should skip the step of modifying sources.list.</p>
+<pre>wget http://openvswitch.org/releases/openvswitch-2.3.0.tar.gz
+</pre>
+
+<h3>Get KVM tools (lite version)</h3>
+<pre>wget http://suhu.dlinkddns.com/Howto-Install/nm/KVM-tool-lite-latest.tgz
+tar zxvf KVM-tool-lite-*.tgz
+rm -rf img KVM-tool-lite-*.tgz
+ln -s /archive/img
+</pre>
+
+<h3>Network setting and OVS init script</h3>
+<pre>sudo nano /etc/network/interfaces
+<code># This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth1
+iface eth1 inet static
+	address 140.120.<span style="color:red">**.7*</span>
+	netmask 255.255.255.192
+	gateway 140.120.<span style="color:red">**.**</span>
+	# dns-* options are implemented by the resolvconf package, if installed
+	dns-nameservers 140.120.<span style="color:red">**.**</span> 140.120.<span style="color:red">**.**</span> 8.8.8.8
+
+auto eth0
+iface eth0 inet static
+	address 172.16.0.<span style="color:red">7*</span>
+	netmask 255.240.0.0
+
+auto eth3
+iface eth3 inet static
+	address 192.168.0.<span style="color:red">7*</span>
+	netmask 255.255.255.0
+</code>
+scp cs01:~/ovs .
+nano ovs
+<code>more ovs 
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides:          NCHU-CSE
+# Required-Start:    $all
+# Required-Stop:
+# Should-Start:      openvswitch-switch
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Example initscript
+# Description:       This file should be used to construct scripts to be
+#                    placed in /etc/init.d.
+### END INIT INFO
+
+# Some things that run always
+touch /var/lock/ovs
+
+ifWAN=eth1
+ifLAN=eth0
+ifSTO=eth3
+ipWAN=140.120.<span style="color:red">**.7*</span>
+gwWAN=140.120.<span style="color:red">**.**</span>
+ipLAN=172.16.0.<span style="color:red">7*</span>
+gwLAN=172.31.255.254
+ipSTO=192.168.0.<span style="color:red">7*</span>
+gwSTO=192.168.0.254
+
+start() {
+    iptables --table nat -D POSTROUTING --out-interface ${ifWAN} -j MASQUERADE
+    iptables --table nat -A POSTROUTING --out-interface brWAN -j MASQUERADE
+    sysctl net.ipv4.ip_forward=1
+    ovs-vsctl add-br brWAN
+    ovs-vsctl add-port brWAN ${ifWAN}
+    ovs-vsctl add-br brLAN
+    ovs-vsctl add-port brLAN ${ifLAN}
+    ovs-vsctl add-br brSTO
+    ovs-vsctl add-port brSTO ${ifSTO}
+    sleep 1
+
+    ifconfig ${ifWAN} 0.0.0.0
+    ifconfig ${ifLAN} 0.0.0.0
+    ifconfig ${ifSTO} 0.0.0.0
+    sleep 1
+    ifconfig brWAN ${ipWAN}/26
+    ifconfig brLAN ${ipLAN}/12
+    ifconfig brSTO ${ipSTO}/24
+
+    route add default gw ${gwWAN}
+    route add -net 172.16.0.0/12 gw ${gwLAN}
+    route add -net 192.168.0.0/24 gw ${gwSTO}
+}
+
+stop() {
+    ovs-vsctl del-port brSTO ${ifSTO}
+    ovs-vsctl del-br brSTO
+    ovs-vsctl del-port brLAN ${ifLAN}
+    ovs-vsctl del-br brLAN
+    ovs-vsctl del-port brWAN ${ifWAN}
+    ovs-vsctl del-br brWAN
+    ifconfig ${ifSTO} ${ipSTO}/24
+    ifconfig ${ifLAN} ${ipLAN}/12
+    ifconfig ${ifWAN} ${ipWAN}/26
+    route add default gw ${gwWAN}
+    route add -net 172.16.0.0/12 gw ${gwLAN}
+    route add -net 192.168.0.0/24 gw ${gwSTO}
+    sysctl net.ipv4.ip_forward=1
+    iptables --table nat -A POSTROUTING --out-interface ${ifWAN} -j MASQUERADE
+}
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+    start)
+  echo "Starting script ovs"
+  start
+  ;;
+    stop)
+  echo "Stopping script ovs"
+  stop
+  ;;
+    restart)
+  stop
+  sleep 2
+  start
+  ;;
+    *)
+  echo "Usage: $0 {start|stop|restart}"
+  exit 1
+  ;;
+esac
+
+exit 0
+</code>sudo mv ovs /etc/init.d
+sudo chmod 755 /etc/init.d/ovs
+sudo update-rc.d ovs defaults
+sudo systemctl daemon-reload
+</pre>
+
+<h3>Remote Connection (VNC, Guacamole)</h3>
+<p>Prepare a VM for <a href="/Howto-Install/Guacamole.html" target="_blank">Guacamole</a>. (done)</p>
+<p>Install VNC server on Guacamole client.</p>
+<pre>sudo aptitude install vnc4server 
+</pre>
+
+<h3>Setting router for ssh connections</h3>
+<h4>Host forwarding</h4>
+<pre>for i in `seq -w 10 58`; do
+  set nat destination rule $i description H${i}
+  set nat destination rule $i destination address 140.120.16.67
+  set nat destination rule $i destination port ${i}22
+  set nat destination rule $i inbound-interface eth0
+  set nat destination rule $i protocol tcp
+  set nat destination rule $i translation port 22
+  set nat destination rule $i translation address 172.16.1.$i
+done
+</pre>
+<h4>VM forwarding</h4>
+<p>VM ssh port</p>
+<pre>for i in `seq 10 58`; do
+  set nat destination rule 1${i} description VM-$i
+  set nat destination rule 1${i} destination address 140.120.16.67
+  set nat destination rule 1${i} destination port 1${i}22
+  set nat destination rule 1${i} inbound-interface eth0
+  set nat destination rule 1${i} protocol tcp
+  set nat destination rule 1${i} translation address 172.16.${i}.1
+  set nat destination rule 1${i} translation port 22
+done
+</pre>
+<p>VM http port</p>
+<pre>for i in `seq 10 58`; do 
+  set nat destination rule 2${i} description VM-http-$i
+  set nat destination rule 2${i} destination address 140.120.16.67
+  set nat destination rule 2${i} destination port 1${i}80
+  set nat destination rule 2${i} inbound-interface eth0
+  set nat destination rule 2${i} protocol tcp
+  set nat destination rule 2${i} translation address 172.16.${i}.1
+  set nat destination rule 2${i} translation port 80
+done
+</pre>
+
+<h3>Configure Host VM for student example</h3>
+<pre>cloud@CSE-Cloud01:~$ cd /src3/KVM/img
+cloud@CSE-Cloud01:/src3/KVM/img$ for i in 80 81 82 83 ; do cp for-students.qcow2.gz $i.qcow2.gz ; gunzip $i.qcow2.gz ;done
+cloud@CSE-Cloud01:/src3/KVM/img$ cd /src3/KVM/bin
+cloud@CSE-Cloud01:/src3/KVM/bin$ for i in 80 81 82 83 ; do Config-Kvm ../img/${i}.qcow2 Host-${i} 172.16.1.${i} brLAN ${i}; done
+</pre>
+<p>Edit the scripts start-*-AsDaemon and stop-* by hand.</p>
+<pre>sed -i s/MEM=512M/MEM=4096M/ start-Host-*-AsDaemon</pre>
+<pre>for i in 80 81 82 83 ; do sed -i s"/-curses/-vnc :${i} -smp 2,cores=2,sockets=1/" start-Host-${i}-${i}-AsDaemon; done
+diff start-Host-81-81-AsDaemon start-Host-81-81
+<code>3c3
+< MEM=4096M
+---
+> MEM=512M
+25c25
+< screen -S Host-81 -d -m kvm -name Host-81 -localtime -vnc :81 -smp 2,cores=2,sockets=1 \
+---
+> kvm -name Host-81 -localtime \
+</code></pre>
+<p>Check server could be logged-in.</p>
+<pre>ssh cloud.cs.nchu.edu.tw -X -p 8022</pre>
+
+<p>Login cloudwebui.cs.nchu.edu.tw to modify /etc/guacamole/user-mapping.xml</p>
+<pre>ssh cloud@cloudwebui.cs.nchu.edu.tw
+cd /etc/guacamole/
+sudo nano user-mapping.xml</pre>
+
+<h3>Mount shared storage pool (NFS)</h3>
+<pre>sudo showmount -e cso
+<code>Export list for cso:
+/export          192.168.0.0/24
+/export/ISO-pool 192.168.0.0/24
+</code>sudo mkdir /archive/ISOs
+sudo chown cloud:cloud /archive/ISOs
+sudo mount  -t nfs cso:/export/ISO-pool /archive/ISOs
+cd /src3/KVM
+ln -s /archive/ISOs
+</pre>
+
+<p>Setting automount (fstab)</p>
+<pre>sudo umount /archive/ISOs
+sudo nano /etc/fstab
+<code>cso:/export/ISO-pool    /archive/ISOs     nfs     rw,async,hard,intr      0       0
+</code>sudo mount -a
+</pre>
+
+<h3>Time sunc</h3>
+<pre>sudo aptitude install ntpdate
+sudo ntpdate 140.120.1.2
+</pre>
+
+<h3>Console 滑鼠支援</h3>
+<pre>sudo aptitude install gpm</pre>
+
+<h2>Lab 2 notes</h2>
+<pre>ssh cs01~08
+cd /src3/KVM/bin
+mkdir Lab1
+mv *Host* Lab1/
+cd /src3/KVM/img
+mv for-students.qcow2.gz for-students-Lab1.qcow2.gz
+scp css:`pwd`/for-students-Lab2.qcow2.gz .
+for i in `seq 10 15` ; do gunzip -c for-students-Lab2.qcow2.gz > ${i}-Lab2.qcow2 ; done
+cd /src3/KVM/bin/
+for i in `seq 10 15` ; do Config-Kvm-vhoston /src3/KVM/img/${i}-Lab2.qcow2 Host-${i} 172.16.1.${i} brLAN ${i} ; done
+sed -i s/MEM=512M/MEM=8192M/ start-Host-*-AsDaemon
+for i in `seq 10 15` ; do sed -i s"/-curses/-vnc :${i} -smp 2,cores=2,sockets=1/" start-Host-${i}-${i}-AsDaemon; done
+for i in `seq 10 15` ; do start-Host-${i}-${i}-AsDaemon; done
+</pre>
+
+<!-- 頁底 -->
+<div id="footer" style="width: 100%; clear: left;" align="center">
+  <hr>
+  <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+</BODY>
+</HTML>

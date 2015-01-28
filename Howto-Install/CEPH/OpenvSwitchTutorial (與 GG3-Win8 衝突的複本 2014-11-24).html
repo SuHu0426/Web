@@ -1,0 +1,2687 @@
+<OL>
+  <LI> References
+    <OL>
+      <LI><a href="http://openvswitch.org/papers/hotnets2009.pdf" 
+          target="_blank">Extending Networking into the Virtual Layer</a>
+
+          <P> On page 5, it stated OpenvSwitch emulates the interfaces of VDE and 
+              the Linux Bridging code.
+      <LI><a href="http://lists.gnu.org/archive/html/qemu-discuss/2012-11/msg00040.html" 
+          target="_blank">Tap Devices</a>
+
+          <P> The following command creates a tap device (with random Mac address: 
+              fa:4c:3a:89:14:24?) and briefly (-b) outputs the tap device name (say, 
+              tap0).  Useing the second command to delete the tap, (tap0), device.
+
+<PRE>
+ $ sudo tunctl -b -g hsu -u `who -m|sed -r -e 's/[[:space:]]+.*$//'`
+tap0
+ $ sudo tunctl -d tap0
+Set 'tap0' nonpersistent
+</PRE>
+      <LI><a href="https://www.os3.nl/2009-2010/students/arthur_van_kleef/openflow" 
+          target="_blank">Using UML for OpenFlow experiments</a>          
+
+         <P> Before UML compilation, Inside menuconfig enable
+<PRE>
+# - The IPv6 protocol as module (required by Open vSwitch kernel module)
+# - 802.1d Ethernet Bridging as module (also required by Open vSwitch)
+# - VDE Transport include in kernel
+</PRE>
+      <LI><a href="http://www.sdncentral.com/sdn-blog/vswitch-the-new-battleground-what-every-datacenter-operator-must-know/2012/07/" 
+          target="_blank">vSwitch is the New Battleground</a>&nbsp;&nbsp;
+<a href="http://www.sdncentral.com/sdn-blog/open-source-the-biggest-risk-to-sdn/2012/11/" 
+          target="_blank">Risk of Open Source SDN software</a>
+    </OL>
+  <LI><a href="#OpenFlowOpenvSwitch">OpenFlow OpenvSwitch Tutorial</a>
+    <OL>
+      <LI><a href="http://networkstatic.net/openflow-openvswitch-lab/" 
+          target="_blank">Getting Started OpenFlow OpenvSwitch Tutorial Lab - Setup</a>
+      <LI><a href="#OpenFlowLabNo1" target="_blank">OpenFlow Tutorial Lab #1</a>
+      <LI><a href="#OpenFlowLabNo2" target="_blank">OpenFlow Tutorial Lab #2</a>
+      <LI><a href="#OpenFlowLabNo3" target="_blank">OpenFlow Tutorial Lab #3</a>
+    </OL>
+  <LI><a href="#L3SwitchRouter">L3 switch/router on x86</a>
+    <OL>
+      <LI><a href="#L3SwitchRouter" target="_blank">Introduction, Hardware and Software 
+          List</a>
+      <LI><a href="#OpenvSwitchInstConf" target="_blank">Openvswitch Installation and 
+          Configuration</a>
+      <LI><a href="#NATFirewallConfig" target="_blank">Connecting Box to the Internet - 
+          NAT and Firewall Configuration</a>
+      <LI><a href="#DDNSAndNTP" target="_blank">DDNS and NTP server Installation and 
+          Configuration</a>
+      <LI><a href="#DNSCache" target="_blank">DNS Cache Server Installation and 
+          Configuration</a>
+    </OL>
+</OL>
+
+
+<a name="OpenFlowOpenvSwitch"></a>
+<h3>Getting Started OpenFlow OpenvSwitch Tutorial : Setup 
+<a href="http://networkstatic.net/openflow-openvswitch-lab/">(Source 
+Origin)</a></h3>
+
+<p class="post_meta">Posted Jun 15 2012 by Brent Salisbury In the Lab 
+with 30 Comments</a>
+
+<P>
+<img src="http://networkstatic.net/wp-content/uploads/2012/06/open-vswitch-lab.png" 
+width="614" height="236"></P>
+								
+<h6>Getting Started OpenFlow OpenvSwitch Tutorial Lab: Setup</h6>
+
+<p>There is a Python installer script <a href="http://networkstatic.net/openflow-openvswitch-and-kvm-sdn-lab-installation-app/" 
+target="_blank">here</a> if you want something quick to setup. Getting Started 
+OpenFlow OpenvSwitch Tutorial Lab - Setup:</p>
+
+<p>Here is an OpenFlow Tutorial using OpenvSwitch and Floodlight controller. I have 
+had some requests on some scenarios so I put this together.  Adding a few more 
+flexible components. Getting to know all of these packages like KVM, OpenvSwitch 
+are going to be pretty big in the future ecosystem orchestrations.</p>
+
+<p>The video doesn't have any sound, I am tight on time, sorry. I think it should 
+be pretty straightforward and the video may help if you get stuck. Probably a couple 
+typos here and there I will try and catch over the weekend. We are lacking good lab 
+material on these topics right now so maybe this will save a couple folks some time.</p>
+<hr>
+
+<h6>Prerequisites</h6>
+
+
+<p><img src="http://networkstatic.net/wp-content/uploads/2012/06/OF-logo1-150x150.jpg" 
+title="" alt="" width="150" height="150"></p>
+
+<p>The KVM requires an x86 machine with either Intel VT or AMD w/AMD-V support. 
+Anything fairly new will have that support in the processor.  There are a few older 
+HW builds that support hardware assisted virtualization by enabling it in the bios. 
+Pretty much Googling your machine for hardware virtualization will let you know. 
+Qemu can be run on non VT HW but the machines will probably get brutalized by a few 
+host VMs. When you are setting up the vSwitch either have an out of band or be on it 
+physically. Be careful when you are adding multiple interfaces to bridges since you 
+can spin up a bridging loop pretty quickly unless you have STP on. I recommend a 
+test/dev network or mom's basement network. If not BPDUguard is your friend 
+<img src="http://networkstatic.net/wp-includes/images/smilies/icon_smile.gif" 
+alt=":)" class="wp-smiley">  This is done on a fresh install of 64-bit Ubuntu 12.04 
+(Precise).</p>
+
+<p>Quick screencast. I highly recommend considering using a small Linux Kernel named 
+<a href="http://wiki.qemu.org/download/linux-0.2.img.bz2" 
+target="_blank">linux-0.2.img.bz2</a> from <a href="http://wiki.qemu.org/Testing" 
+target="_blank">Qemu</a> if using a laptop or 
+<a href="http://networkstatic.net/openstack-quantum-devstack-on-a-laptop-with-vmware-fusion/" 
+target="_blank">nested</a> hypervisor.</p>
+
+<p>Uninstall network-manager if running Ubuntu desktop. Not required but you will 
+likely have to troubleshoot past it if you don't.  This will likely cut you off if 
+remote.</p>
+
+<h6>System Preparation</h6>
+
+<p>(Optional remove network-manager. If you are on a laptop with wireless it might 
+be easier to leave network-manager on mainly because Broadcoms Linux support sucks 
+just shy of 
+<a href="http://mobile.theverge.com/2012/6/17/3092829/linus-torvalds-fuck-you-nvidia" 
+target="_blank">Nvidia's</a>.</p>
+<hr>
+
+<P><img src="http://networkstatic.net/wp-content/uploads/2012/06/network-interfaces.jpg" 
+title="" alt="" width="338" height="205"></p>
+
+<pre>
+ $ nano /etc/network/interfaces
+ Add in your configuration to the file to your physical interface and save the file.
+ Restart networking. If the configuration is off this will cut you off.
+ $ /etc/init.d/networking restart
+ $ route -n will display your default route if you are having connectivity issues.
+ $ apt-get update
+ $ apt-get dist-upgrade
+</pre>
+
+<h6>Install OpenvSwitch</h6>
+
+<pre>
+$ apt-get purge network-manager
+$ apt-get install openvswitch-datapath-source bridge-utils
+# Debian <a href="http://wiki.debian.org/ModuleAssistant" target="_blank">module-assistant</a>
+$ module-assistant auto-install openvswitch-datapath
+$ apt-get install openvswitch-brcompat openvswitch-common
+# Verify install
+$ ovs-vsctl show
+ovs_version: "1.4.0+build0"
+# Processes should look something like this
+$ ps -ea | grep ovs
+ 26464 ? 00:00:00 ovsdb-server
+ 26465 ? 00:00:00 ovsdb-server
+ 26473 ? 00:00:00 ovs-vswitchd
+ 26474 ? 00:00:00 ovs-vswitchd
+ 26637 ? 00:00:00 ovs-controller
+#Enable bridge compatability
+/etc/default/openvswitch-switch
+#Change brcompat from no to yes
+#BRCOMPAT=no
+#TO and uncomment by removing the #:
+BRCOMPAT=yes
+#Restart OVS
+$ /etc/init.d/openvswitch-switch restart
+</pre>
+
+<p>Add your bridge, think of this as a subnet if you aren't familiar with the term.</p>
+
+<pre>
+$ ovs-vsctl add-br br-int&amp;lt;/p&amp;gt;
+# Add a physical interface to your virtual bridge for connectivity off box. If you don't 
+# script this part you will probably clip your connection as you zero out eth0 and apply 
+# it to br-int. You can pop the commands into a text file and make it executable with
+&lt;pre&gt;chmod +x script.sh
+$ ovs-vsctl add-port br-int eth0
+$ ifconfig eth0 0
+# Zero out your eth0 interface and slap it on the bridge interface
+# (warning will clip you unless you script it)
+$ ifconfig br-int 192.168.1.208 netmask 255.255.255.0
+# Change your default route
+$ route add default gw 192.168.1.1 br-int 
+$ route del default gw 192.168.1.1 eth0
+</pre>
+
+<P><b>Note: (01/20/2013)</b> Does the above mean: Prepare script.sh as:
+
+<PRE>
+ $ cat script.sh
+#! /bin/bash 
+ovs-vsctl add-port br-int eth0
+ifconfig eth0 0
+# Zero out your eth0 interface and slap it on the bridge interface
+# (warning will clip you unless you script it)
+ifconfig br-int 192.168.1.208 netmask 255.255.255.0
+# Change your default route
+route add default gw 192.168.1.1 br-int 
+route del default gw 192.168.1.1 eth0
+</PRE>
+
+<h6>Install FloodLight OpenFlow Controller and Attach OpenvSwitch</h6>
+
+<p>Install dependencies, apt-get for UB and yum for RH:</p>
+
+<pre>
+ $ apt-get install build-essential default-jdk ant python-dev eclipse git
+</pre>
+
+<P> <b>Note: (01/21/2013)</b> I think the purpose of the above command is to enable 
+FloodLight OpenFlow Controller GUI, Reference: 
+<a href="http://networkstatic.net/floodlight-openflow-controller-gui-applet/" 
+   target="_blank">Floodlight OpenFlow Controller GUI Applet</a>
+
+<p>Clone the Github project and build the jar and start the controller: 
+Reference: <a href="http://floodlight.openflowhub.org/getting-started/" 
+target="_blank">here</a>.</p>
+
+<pre>
+ $ git clone git://github.com/floodlight/floodlight.git
+ # cd into the floodlight directory created.
+ $ cd floodlight
+ # Run ant to build a jar. It will be in the ~/floodlight/target directory.
+ $ ant
+ # Run the controller :
+ $ java -jar target/floodlight.jar
+ # By default it will binds to port 6633 and all ports e.g. 0.0.0.0/0.0.0.0:6633
+</pre>
+<hr>
+
+<h6>Attach OpenvSwitch to the Controller</h6>
+
+<pre> 
+ $ ovs-vsctl set-controller br-int tcp:192.168.1.208:6633
+</pre>
+
+<p>In the FloodLight console you will see something like this:</p>
+
+<pre>
+[New I/O server worker #1-1] INFO n.f.core.internal.Controller - Switch handshake successful: OFSwitchImpl [/192.168.1.208:49519 DPID[00:00:ba:66:35:e8:38:48]]
+</pre>
+
+
+<p>The output of OVS 'ovs-vsctl show' looks something like this:</p>
+
+<pre>
+ # ovs-vsctl show
+ 70a40219-8725-46a8-b808-af75c642cac8
+ Bridge "br-int"
+ Controller "tcp:192.168.1.208:6633"
+ is_connected: true
+ Port "eth0"
+
+ Interface "eth0"
+ Port "br-int"
+ Interface "br-int"
+ type: internal
+ ovs_version: "1.4.0+build0"
+</pre>
+
+<h6>Install KVM and Integrate into OVS</h6>
+
+<pre>
+ $ apt-get install kvm uml-utilities 
+</pre>
+
+<p>These two scripts bring up the KVM Tap interfaces into your bridge from the CLI. 
+If you copy and paste below make sure the (') does not get formatted improperly. It 
+should be yellow in nano. "switch=br-int" br-int is the name of your bridge in OVS.
+</p>
+
+<PRE>
+ $ nano /etc/ovs-ifup  # (open and paste what is below)
+
+#!/bin/sh
+switch='br-int'
+/sbin/ifconfig $1 0.0.0.0 up
+ovs-vsctl add-port ${switch} $1
+
+ $ nano /etc/ovs-ifdown # (open and paste what is below)
+
+#!/bin/sh
+switch='br-int'
+/sbin/ifconfig $1 0.0.0.0 down
+ovs-vsctl del-port ${switch} $1
+</pre>
+
+<p>Make both files executable
+<PRE>
+ $ chmod +x /etc/ovs-ifup /etc/ovs-ifdown
+</PRE>
+<hr>
+
+<div class="video_frame">
+<iframe id="youtube_video_1" class="youtube_video" style="height: 360px; width: 630px;" 
+src="http://www.youtube.com/embed/NHHJRDmiqyg?eurl=http%3A%2F%2Fnetworkstatic.net%2Fopenflow-openvswitch-lab%2F&html5=1" width="630" frameborder="0" height="360">
+</iframe>
+</div>
+
+<h6>Boot the Guest Virtual Machines</h6>
+<hr>
+
+<ul>
+<li>Host1</li>
+</ul>
+
+<pre>
+ $ kvm -m 512 -net nic,macaddr=00:00:00:00:cc:10 -net tap,script=/etc/ovs-ifup,downscript=/etc/ovs-ifdown -cdrom ubuntu-12.04-desktop-amd64.iso
+</pre>
+
+<ul>
+<li>Host2</li>
+</ul>
+
+<pre>
+ $ kvm -m 512 -net nic,macaddr=00:11:22:CC:CC:10 -net tap,script=/etc/ovs-ifup,downscript=/etc/ovs-ifdown -cdrom ubuntu-12.04-desktop-amd64.iso
+</pre>
+
+<ul>
+<li>Host3</li>
+</ul>
+
+<pre>
+ $ kvm -m 512 -net nic,macaddr=22:22:22:00:cc:10 -net tap,script=/etc/ovs-ifup,downscript=/etc/ovs-ifdown -cdrom ubuntu-12.04-desktop-amd64.iso
+</pre>
+
+<p>Each one of those will begin loading from the ISO. I just click "Try Ubuntu" when 
+they are booting and just run them from disk since really all we need are nodes that 
+can test connectivity as we push static flows. If it is a more permanent test lab it 
+would make since to install them to disk.</p>
+
+<p>While those are spinning up let's install curl.</p>
+
+<pre>
+ $ apt-get install curl 
+</pre>
+<hr>
+
+<P><img src="http://networkstatic.net/wp-content/uploads/2012/06/ovs-tap.jpg" 
+title="" alt="" width="366" height="257"></P>
+
+<p><strong>Figure 1.</strong> OVS Taps</p>
+<hr>
+
+<P> Once they are up, assign IP addresses to them by clicking in the top left of the 
+Ubuntu window and type in 'terminal' no parentheses. Then give them IPs if you want 
+to statically assign them with ifconfig.<p></p>
+
+<pre>
+ $ sudo ifconfig eth0 192.168.1.x netmask 255.255.255.0
+</pre>
+
+<div class="video_frame">
+<iframe id="youtube_video_2" class="youtube_video" style="height: 360px;  width: 630px;" 
+ src="http://www.youtube.com/embed/0uKxO3NwzxI?eurl=http%3A%2F%2Fnetworkstatic.net%2Fopenflow-openvswitch-lab%2F&html5=1" 
+width="630" frameborder="0" height="360">
+</iframe>
+</div>
+<hr>
+
+<p>Check out the rest of the tutorials in this series:
+
+<OL>
+  <LI><a href="http://networkstatic.net/openflow-openvswitch-lab/" target="_blank">Getting Started OpenFlow OpenvSwitch Tutorial Lab - Setup</a>
+  <LI><a href="#OpenFlowLabNo1" target="_blank">OpenFlow Starter Tutorial Lab #1</a>
+  <LI><a href="#OpenFlowLabNo2" target="_blank">OpenFlow Starter Tutorial Lab #2</a>
+  <LI><a href="#OpenFlowLabNo3" target="_blank">OpenFlow Starter Tutorial Lab #3</a>
+</OL>
+
+<P>Thanks for stopping by.</p>
+<hr>
+
+<a name="OpenFlowLabNo1"></a><h3>OpenFlow Starter Tutorial Lab #1 
+<a href="http://networkstatic.net/openflow-starter-tutorial-lab-1/" 
+target="_blank">(Source Origin)</a>
+</h3>
+ 
+
+<h6>Posted Jun 15 2012 by  Brent Salisbury In the Lab with 11 Comments</h6>			
+<P><img src="http://networkstatic.net/wp-content/uploads/2012/09/openflow-lab.png"></p>
+			<div class="single_post_content">
+				
+<OL>
+  <LI><a href="#OpenFlowLabNo1"><b>Lab 1.</b></a>&nbsp; Add static destination MAC 
+      addresses to each node. Match: DstMac: , Action:DstPortX</LI>
+
+  <LI><a href="#OpenFlowLabNo2"><b>Lab 2.</b></a>&nbsp; Add static flow with src mac 
+      address match with the associated action to an output port e.g. Match:SrcMac 
+      Action:DstPortY.</LI>
+
+  <LI><a href="#OpenFlowLabNo3"><b>Lab 3.</b></a>&nbsp; Add a bad static flow for one 
+      of the hosts and watch ICMP replies from the gateway on the board port come back 
+      through tcpdump. Match:DstMac, Action:PortZ</LI>
+</OL>
+
+<p style="text-align: center;"><a href="http://networkstatic.net/wp-content/uploads/2012/06/Topology-overview.jpg" rel="lightbox[1081]"><img class="wp-image-1087 aligncenter" title="Openflow lab tutorial openvswitch" src="http://networkstatic.net/wp-content/uploads/2012/06/Topology-overview.jpg" alt="" width="482" height="265"></a></p>
+
+<p style="text-align: left;"><strong>Figure 1.</strong> The topology for the lab 
+simulates in software the same capabilities you can get in hardware thanks to 
+OpenvSwitch.</p>
+
+<p> This setup allows you to add and remove as many matches into the API calls and 
+tinker with them to get a feel once you nail down the basics. Then you can write 
+the next "killer app" get rich and make it rain, but first lets figure out what is 
+going on here.</p>
+
+<h5>REST/JSON API</h5>
+
+<p>The API is documented very well (that is huge and differentiating IMO) @</p>
+
+<p><a href="http://www.openflowhub.org/display/floodlightcontroller/Proposed+New+API">http://www.openflowhub.org/display/floodlightcontroller/Proposed+New+API</a></p>
+
+<p>RESTful APIs are very important in my opinion if there is to be a 
+transition of any kind to make it human readable for at the least 
+troubleshooting or easy field parsing programmaticlaly for those of us 
+who are only willing to muck our way through interpreted languages. Huge
+ fan of what they have done here with their API and I expect the 
+industry to follow this.</p>
+
+<h5>Forwarding Table in OpenvSwitch</h5>
+<p>Based on 'ovs-appctl fdb/show br-int' build your cheat sheet so see 
+what port your host VMs are on inside of OpenvSwitch. If you do not see 
+your entry it has like timed out ~300 seconds or so, refresh the entry 
+by simply pinging the host VM from the vSwitch.</p>
+
+
+<PRE>
+ $ ovs-appctl fdb/show br-int
+port  VLAN  MAC                Age
+1     0  00:23:69:62:26:09   58
+6     0  00:11:22:cc:cc:10    7
+5     0  00:00:00:00:cc:10    4
+0     0  5c:26:0a:5a:c8:b2    3
+7     0  22:22:22:00:cc:10    3
+</pre>
+
+<P><b>Note: (01/21/2013)</b> I am wondering, are "00:23:69:62:26:09" and 
+"5c:26:0a:5a:c8:b2" the mac addresses of etho and eth1 of physical host?
+We know for sure "00:00:00:00:cc:10", "00:11:22:cc:cc:10", and "22:22:22:00:cc:10" 
+are the fake mac addresses we assigned to kvm Host1, Host2, and Host3 while booting 
+them.  Also, notice that prefixing string "00:00:" to "5c:26:0a:5a:c8:b2" , (i.e. 
+"00:00:5c:26:0a:5a:c8:b2"), we get the DPID, (DataPath ID), and this ID is required 
+while running the <b>curl</b> command!
+
+<p>MAC tables for this lab are as follows. Yours will likely be different based on 
+the assignment by the vSwitch. The mac addresses are specifed by the KVM boot but 
+anything can be used as long as they are unique.</p>
+
+<p>The DPID datapath ID is required to send the API calls. You need to find the one 
+on your vSwitch. Lots of ways to find it either through the Floodlight console or 
+APIs or from the ovs-ofctl show &lt;bridge name&gt; listed below. It is basically a 
+few bytes prepended on your Nics MAC address).</p>
+
+
+<PRE>
+ $ ovs-ofctl show br-int
+OFPT_FEATURES_REPLY (xid=0x1): ver:0x1, dpid:00005c260a5ac8b2  (that is your DPID)
+</pre>
+
+<p>Replace the curl commands with your DPID curl -d '{"switch": 
+"00:00:5c:26:0a:5a:c8:b2",  (that longer than usual mac looking ID)</p>
+
+<p>"ovs-dpctl dump-flows br-int" will display the datapaths being 
+instantiated into the OpenvSwitch and handy for debugging and tshooting.</p>
+
+<p style="text-align: left;"><a href="http://networkstatic.net/wp-content/uploads/2012/06/Addresses.jpg" rel="lightbox[1081]"><img class="size-full wp-image-1084 aligncenter" title="Openvswitch FIB entries" src="http://networkstatic.net/wp-content/uploads/2012/06/Addresses.jpg" alt="Openvswitch FIB entries" width="472" height="300"></a></P>
+
+<P><strong>Figure2.</strong> MAC to Port mapping or forwarding table for the labs. Build 
+this from  <strong>"ovs-appctl fdb/show br-int"</strong> output.</p>
+
+<p>Throughout the lab I have my VM hosts pinging the gateway so I can watch what 
+happens as I instantiate static flows into the OpenvSwitch (OVS) flow table.</p>
+
+<h5>OpenFlow WebUI GUI</h5>
+
+<p>Through the lab for starters it might be easier for some to watch the web page. 
+This is a nice Django front end put together by Wes Felter and some of his guys at 
+IBM. There are some bugs which I'm sure the Floodlight guys would like anyone to 
+clean up. If you leave the page open it continues to refresh until it consumes the 
+planet as it polls the controller. Just close and reopen every now and then.</p>
+
+<p>The WebUI loads be default with the</p>
+
+<p>java -jar floodlight.jar</p>
+
+<p>http://&lt;yourIP&gt;:8080/ui/index.html</p>
+
+<p style="text-align: center;"><a href="http://networkstatic.net/wp-content/uploads/2012/06/WebUI-Flows.jpg" rel="lightbox[1081]"><img class="wp-image-1085 aligncenter" title="Openflow GUI web interface" src="http://networkstatic.net/wp-content/uploads/2012/06/WebUI-Flows.jpg" alt="" width="586" height="552"></a></p>
+
+<h6>Figure 3. WebUI starts automatically and binds to port 8080</h6>
+
+<p>It might be more comfortable for some to use the WebUI / GUI. It is a nice clean web front at that!</p>
+
+<p>Please enter the url to a YouTube video.</p>
+
+<p>All three labs are in this screencast.</p>
+
+<h5>Lab 1. Static MAC entries for our 3 hosts.</h5>
+
+<p style="text-align: left;"><a href="http://networkstatic.net/wp-content/uploads/2012/06/Lab11.jpg" rel="lightbox[1081]"><img class="size-full wp-image-1083 aligncenter" title="Openflow tutorial lab opevswitch" src="http://networkstatic.net/wp-content/uploads/2012/06/Lab11.jpg" alt="" width="505" height="312"></a></p>
+
+<h6>Figure 3. Three hosts with static mac entries for each port.</h6>
+
+<h5>Static Flow Push into the OpenFlow Pipeline</h5>
+
+<p>Before we run we crawl, before we dynamically forward we statically forward! It 
+seems natural that most of the time we start with static entries when teaching the 
+mechanics of routing with network IGPs. Here we are defining static data paths. We 
+match (or don't) a rule and have an associated action to it that will eventually 
+kick off a fairly complex sets of flow tables in a pipeline in v1.1 and up.</p>
+
+<p>The fairly close command for a data path  in a tradiational instruction set on 
+today's switches would be this '"mac-address-table static 0000.0000.cc10 vlan 100 
+interface GigabitEthernet0/1". We are not setting a vlan id but would be as easy as 
+adding "dataLayerVirtualLan":x to the flow push. That is obviously not scalable
+ but I think it is important to understand how datapaths get pushed to the OF 
+enabled switch. Normally even in the SDN world those mac address are learned through 
+flooding to all ports FFFF.FFFF.FFFF on the broadcast domain. The controller than 
+learns of it starts a mac address timer to begin to age it out if no more traffic is 
+received so as not to exhaust the it's tables but cache it if it continues talking 
+by restarting the timer each time a frame is received from the MAC source.</p>
+
+<p>Push static flows for each destination mac address in the switch to an assigned 
+port. We have a match and action explicitly defined. All we are doing is adding 
+static mac address entries instead of them being defined dynamically through 
+flooding. Not each name is unique. If copying and pasting make sure to strip 
+formatting.</p>
+
+<p>As you add the flows keep in mind each curl you do will overwrite the previous 
+one their with the same name in the table. Notice each flow pushed has a unique 
+name. It's almost ACLs but not quite.</p>
+
+<ul>
+<li>Install curl</li>
+</ul>
+
+
+<PRE>
+ $ apt-get install curl 
+</pre>
+
+<p>With OVS and the OF controller run each of these from your command line. Remember 
+to replace the DPID "switch": "00:00:5c:26:0a:5a:c8:b2" & the IP addr 192.168.1.208 
+with your lab addresses. Each curl command is one line.</p>
+
+<h6>Add the Flows</h6>
+
+<ul>
+<li>Host 1</li>
+</ul>
+
+
+<PRE>
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow1", "cookie":"0", "priority":"32768", "dst-mac":"00:00:00:00:cc:10","active":"true", "actions":"output=5"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+<ul>
+<li>Host 2</li>
+</ul>
+
+<PRE>
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow2", "cookie":"0", "priority":"32768", "dst-mac":"00:11:22:cc:cc:10","active":"true", "actions":"output=6"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+<ul>
+<li>Host 3</li>
+</ul>
+
+<PRE>
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow3", "cookie":"0", "priority":"32768", "dst-mac":"22:22:22:00:cc:10","active":"true", "actions":"output=7"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+
+<h5>List the Flows</h5>
+
+<p>Now through the API we can pull all static flows that have been pushed with this 
+API call. Notice all of the Tuples (header fields e.g. SrcMac, Dest,IP etc) being 
+listed. Look for the "match" and "action" you pushed.</p>
+
+<PRE>
+ $ curl <a href="http://192.168.1.208:8080/wm/staticflowentrypusher">http://192.168.1.208:8080/wm/staticflowentrypusher</a> /list/00:00:5c:26:0a:5a:c8:b2/json
+</PRE>
+
+
+<h5>Clear or Delete the Static Flows</h5>
+
+<p>To clear all of the static flows the API call looks like this. Clear all flows 
+the API also has a delete function documented:</p>
+
+
+<PRE>
+ $ curl http://192.168.1.208:8080/wm/staticflowentrypusher /clear/00:00:5c:26:0a:5a:c8:b2/json
+</PRE>
+
+<hr>
+
+<a name="OpenFlowLabNo2"></a><h3>OpenFlow Starter Tutorial Lab #2 
+<a href="http://networkstatic.net/openflow-tutorial-lab-2/" 
+target="_blank">(Source Origin)</a></h3>
+
+
+<h4>Posted Jun 15 2012 by  Brent Salisbury In the Lab with 9 Comments</h4>
+								
+<P><img src="http://networkstatic.net/wp-content/uploads/2012/09/openflow-lab.png"><p>
+
+<h6>OpenFlow Starter Tutorial Lab #2</h6>
+
+
+Lab #2. Lock down two hosts to only talk to each other with source based forwarding using the static flow pusher RESTful API.</p>
+<div class="aligncenter"><span class="shadow_frame"><a rel="prettyPhoto" href="http://networkstatic.net/wp-content/uploads/2012/06/Lab24.jpg" title=""><img class="framed" src="http://networkstatic.net/wp-content/uploads/2012/06/Lab24.jpg" title="" alt="OpenFlow Tutorial Lab" width="419" height="408"></a><img alt="" src="OpenFlowStarter-2_files/image_shadow.png" style="width: 419px;" class="image_shadow"></span></div><p><em>Figure 1.</em> OpenFlow Starter Tutorial Lab #2 Topology</p>
+
+<p>Based on source MAC address we can lock two ports into only talking 
+to each other. This is used for security reasons today in sensitive 
+areas. This allows for very granular port to port mapping. We are adding
+ two flows, just as a host needs a flow setup to talk to another host it
+ also needs a return flow to put established.</p>
+
+<p>Delete old static Flows from Lab 1.</p>
+
+<PRE>
+ $ curl <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/">http://192.168.1.208:8080/wm/staticflowentrypusher/</a>clear/00:00:5c:26:0a:5a:c8:b2/json
+</PRE>
+
+<h6>Push the two static OpenFlow RESTful API Calls to Create Your FlowMod</h6>
+
+<PRE>
+#To ping from port 1 to 6
+$ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow1", "cookie":"0", "priority":"32768", "src-mac":"00:11:22:cc:cc:10","active":"true", "actions":"output=6"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+#To ping from port 6 to 1
+$ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow2", "cookie":"0", "priority":"32768", "src-mac":"22:22:22:00:cc:10","active":"true", "actions":"output=1"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+<p>Ping the hosts from those two ports. They should only be able to ping
+ each other not your gateway or anything else since the closets match is
+ the static one pushed.</p>
+
+<p>Once I add these may gateway no longer pings becuase the only place 
+those to source mac addresses explicitly match on are eachothers ports. 
+So while they can talk to each other they can not talk anywhere else.</p>
+
+<p>While this is clearly not managable at scale, it should get the your 
+wheels going on the possiblities this opens when you start thinking 
+about how powerful this granularity can become in the security world if 
+done programmatically from policy.</p>
+<hr>
+
+<a name="OpenFlowLabNo3"></a><h3>OpenFlow Starter Tutorial Lab #3 
+<a href="http://networkstatic.net/openflow-tutorial-lab-3/" 
+target="_blank">(Source Origin)</a></h1>
+			
+<p>Posted Jun 15 2012 by  Brent Salisbury In the Lab with 4 Comments</P>
+
+<P><img src="http://networkstatic.net/wp-content/uploads/2012/09/openflow-lab.png" 
+width="614" height="236"></P>
+				
+								
+				<div class="entry">
+<h6>OpenFlow Starter Tutorial Lab #3</span></h6>
+
+<P>OpenFlow Lab #3: Move individual flows </p>
+
+<P><img src="http://networkstatic.net/wp-content/uploads/2012/06/Lab31.jpg" 
+width="409" height="415"></a></p>
+
+<p>&nbsp;<em>Figure 1.</em> OpenFlow starter tutorial Lab #3 topology. Add an entry to the wrong port and watch it break.</p>
+
+<p>Let's clear all of our flows and get everything pinging the gateway again.</p>
+
+<PRE>
+ $ curl http://192.168.1.208:8080/wm/staticflowentrypusher /clear/00:00:5c:26:0a:5a:c8:b2/json
+</pre>
+
+<p>Add our three earlier entries from Lab1</p>
+
+
+<PRE>
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow1", "cookie":"0", "priority":"32768", "dst-mac":"00:00:00:00:cc:10","active":"true", "actions":"output=5"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+
+<PRE>
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow2", "cookie":"0", "priority":"32768", "dst-mac":"00:11:22:cc:cc:10","active":"true", "actions":"output=6"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE> 
+
+
+<PRE>
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"static-flow3", "cookie":"0", "priority":"32768", "dst-mac":"22:22:22:00:cc:10","active":"true", "actions":"output=7"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+<h6>TCPdump Analysis</h6>
+
+<p>Start tcpdump on the host you will send Host3's traffic to. In my 
+case I am starting tcpdump on Host1 where I am going to send Host3's 
+traffic to.</p>
+
+<PRE>
+ $ sudo tcpdump -i eth0 host &lt;IP of host 3&gt;
+</pre>
+
+<p>The filter "host &lt;ip&gt;" says only capture traffic to or from that
+ host. We should never see unicast traffic from one host to another 
+under proper conditions on a packet switched network.</p>
+
+<h6>Instantiate Bad Flows</span></h6>
+
+<p>Now lets push a mac to a bad port and watch it break. This will overwrite 
+'static-flow3'. This will break Host 3.</p>
+
+<PRE> 
+ $ curl -d '{"switch": "00:00:5c:26:0a:5a:c8:b2", "name":"wrong-port", "cookie":"0", "priority":"32768", "dst-mac":"22:22:22:00:cc:10","active":"true", "actions":"output=5"}' <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/json">http://192.168.1.208:8080/wm/staticflowentrypusher/json</a>
+</PRE>
+
+<div class="aligncenter"><span class="shadow_frame"><a rel="prettyPhoto" href="http://networkstatic.net/wp-content/uploads/2012/06/tcp-dump-ping2.jpg" title=""><img class="framed" src="http://networkstatic.net/wp-content/uploads/2012/06/tcp-dump-ping2.jpg" title="" alt="OpenFlow Lab #3 TCPDump" width="488" height="138"></a><img alt="" src="OpenFlowStarter-3_files/image_shadow.png" style="width: 488px;" class="image_shadow"></span></div><p><em>Figure 2.</em> TCPdump output when I push host 3's forwarding datapath to host 1.</p>
+
+<p>As soon as you added the "wrong-port" static flow you began getting 
+ICMP replies from the gateway until that times out. This has many more 
+security type implications. Why not have your action be forward to two 
+ports instead of just one. The 2nd port could be an IDS moniroting 
+traffic and instead of trying to process the firehose of traffic in a 
+typical port mirror you can get as granular you want and watch only 
+particualr matching traffic as defined by the tuple matching in the 
+header fields&nbsp; (src_mac,dst_ip,VID etc.). No you can use a fraction
+ of the hardware and only process what is important to your use case. 
+Load balancing is another obvious one. Policy routing that may be 
+scalable if managed programmatically by northbound API's.</p>
+<div class="aligncenter"><span class="shadow_frame"><a rel="prettyPhoto" href="http://networkstatic.net/wp-content/uploads/2012/06/SDN-API2.jpg" title=""><img class="framed" src="http://networkstatic.net/wp-content/uploads/2012/06/SDN-API2.jpg" title="" alt="OpenFlow Lab #3 Abstractions" width="366" height="390"></a><img alt="" src="OpenFlowStarter-3_files/image_shadow.png" style="width: 366px;" class="image_shadow"></span></div><p><em>Figure 3</em>. The API is the end game IMO</p>
+
+<h6>Conclusion</h6>
+
+<p>Thats it hope this maybe demystifies a bit of OpenFlow for you. I 
+still have lots to learn as it is never-ending cycle, but going through a
+ couple of labs seems to help nail some of this down and show that with 
+complexity or more accuraltely abstraction, will bring more simplicity 
+to the operators(some day so very very very far away theoretically). 
+This lab setup can scale out to a wide range of different scenarios then
+ just the couple little guys here. Would love to hear what others are 
+doing.</p>
+
+<p>From an end user perspective, it is the same ideas we have had in 
+best matching of prefixes all along but we are adding more ways to match
+ and fields to match upon. The API is what is going to be very important
+ in my opinion and will open up the value over the next coulple of years
+ as the northbound apps begin to surface. Sorry there is not any 
+commentary on the videos, swamped but I think its fairly 
+straightforward. I only added the video in case someone gets stuck. Feel
+ free to contact with assistance or jump on irc.freenode.net on 
+#openflow.</p>
+
+<p><em>Miscellanies API Calls</em></p>
+
+<p>Find all flows</p>
+
+<PRE>
+ $ curl <a href="http://192.168.1.208:8080/wm/core/switch/">http://192.168.1.208:8080/wm/core/switch/</a> 00:00:5c:26:0a:5a:c8:b2/flow/json
+</PRE>
+
+<p>List all static</p>
+
+<PRE>
+ $ curl <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/list/00:00:5c:26:0a:5a:c8:b2/json">http://192.168.1.208:8080/wm/staticflowentrypusher/list/00:00:5c:26:0a:5a:c8:b2/json</a>
+</PRE>
+
+<p>Clear all flows</p>
+
+<PRE>$curl <a href="http://192.168.1.208:8080/wm/staticflowentrypusher/">http://192.168.1.208:8080/wm/staticflowentrypusher/</a>clear/00:00:5c:26:0a:5a:c8:b2/json
+</PRE>
+<hr>
+
+<h6>Additional OpenFlow and SDN Links and Resources</span></h6>
+
+<p><a href="http://openvswitch.org/" target="_blank">http://openvswitch.org/</a>
+ Martin Casado's group have put an amazing vSwitch out there. I doubt 
+there will be many vSwitches that are not munging his work in some form 
+or fashion over the next few years.</p>
+
+<p><a href="http://floodlight.openflowhub.org/" target="_blank">http://floodlight.openflowhub.org/</a> Thanks to Nick Bastin for answering my question on the #openflow channel. He is a great asset to the community.</p>
+
+<p><a href="http://www.noxrepo.org/" target="_blank">http://www.noxrepo.org/</a>&nbsp;Another
+ nice OpenFlow Controller is POX a Python based platform agnostic 
+project the Murphy McCauley is doing a great job with. As soon as I dig 
+into the API I am going to do a similar tutorial with that. I need the 
+API docs if anyone has them hook me up.</p>
+
+<p>I am typically always /nick networkstatic on irc.freenode.net in 
+#openvswitch #openflow #openstack and #packetpushers if anyone has any 
+questions.</p>
+<hr>
+
+<a name="L3SwitchRouter"></a>
+<h3>L3 switch/router on x86  
+<a href="http://brezular.wordpress.com/2011/09/01/building-linux-l3-switchrouter-on-x86-part1-introduction/">(Source Origin)</a></h3>
+
+<p>
+<span class="time">September 1, 2011</span>
+
+<span class="post-comments"><a href="http://brezular.wordpress.com/2011/09/01/building-linux-l3-switchrouter-on-x86-part1-introduction/#comments">1 Comment</a></span>
+                                                                                                                                        </p>
+                                        </div>
+
+<h4>1)&nbsp; What new does your project bring?</h4>
+ 
+ 
+<p>Frankly, nothing.</p>
+ 
+ 
+<p>But if you want to know how to build our own Linux Multilayer 
+switch/router from scratch, the next few parts of the tutorial have been
+ written for you.</p>
+ 
+ 
+<h4>2)&nbsp; If it does not offer anything new why should I waste my precious time?</h4>
+ 
+ 
+<p>Firstly, it is about getting knowledge. Even if you are an 
+experienced Linux user, they are some specific problems mentioned that 
+could get your attention.</p>
+ 
+ 
+<p>Secondly, no one forces you to read ;-)</p>
+ 
+ 
+<h4>3)&nbsp; Why not to use a ready-to-run free Linux router distribution such as Vyatta Core?</h4>
+ 
+ 
+<p>It is also an option you might consider. <a title="Vyatta" href="http://www.vyatta.org/" target="_blank">Vyatta</a>
+ is a professional network solution with its own OS. Running it is much 
+more about getting knowledge about networking than building your own 
+Linux router.</p>
+ 
+ 
+<h4>4)&nbsp; OK, you've&nbsp; got me. What do you hide in there?</h4>
+
+<OL>
+  <LI><a href="#L3SwitchRouter" target="_blank">Introduction, Hardware and Software 
+      List</a></p>
+  <LI><a href="http://brezular.wordpress.com/2011/09/01/building-linux-l3-switchrouter-on-x86-part2-centos-6-0-installation/" target="_blank">CentOS 6.0 Installation</a></p>
+  <LI><a href="http://brezular.wordpress.com/2011/09/01/building-linux-l3-switchrouter-on-x86-part3-wireless-access-point-installation-and-configuration/" target="_blank">Wireless Access Point Installation and Configuration</a></p>
+  <LI><a href="#OpenvSwitchInstConf" target="_blank">Openvswitch Installation and 
+      Configuration</a></p>
+  <LI><a href="http://brezular.wordpress.com/2011/09/03/building-linux-l3-switchrouter-on-x86-part5-connecting-box-to-the-internet-pppoe-configuration/" target="_blank">Connecting Box to the Internet - PPPoE Configuration</a></p>
+  <LI><a href="#NATFirewallConfig" target="_blank">Connecting Box to the Internet - NAT 
+      and Firewall Configuration</a></p>
+  <LI><a href="#DDNSAndNTP" target="_blank">DDNS and NTP server Installation and 
+      Configuration</a></p>
+  <LI><a href="#DNSCache" target="_blank">DNS Cache Server Installation and Configuration</a></p>
+  <LI><a href="http://brezular.wordpress.com/2011/09/11/building-linux-l3-switchrouter-on-x86-part9-dhcp-and-samba-server-installation-and-configuration/" target="_blank">DHCP server and Samba server Installation and Configuration</a></p>
+</OL>
+
+<h4>5)&nbsp; What kind of hardware do I need?</h4>
+ 
+ 
+<p>An old Petium III with two Ethernet card and one Wireless card should
+ be enough. The minimal RAM is 512 MB and 20 GB HardDrive disk. I 
+recommend a computer with 1024 MB RAM and two 20 GB HardDrive disks for 
+creating RAID-1 device. To have enough ports for end user connection 
+three Ethernet cards should be available - one for WAN connection and 
+two for LAN. As we are going to create an <a href="http://www.su-root.eu/computing/turn-your-linux-computer-in-a-wireless-access-point-using-hostapd" target="_blank">Access Point</a>,
+ our wireless card must be compatible with Linux and a linux driver must
+ support AP mode. Please, refer to the following URL web shorcuts:</p>
+ 
+ 
+<p>Linux Wireless LAN Compatibility:&nbsp; <a href="http://linux-wless.passys.nl/" 
+target="_blank">http://linux-wless.passys.nl/</a></p>
+ 
+ 
+<p>Linux drivers for Wireless cards:&nbsp; 
+<a href="http://linuxwireless.org/en/users/Drivers" 
+target="_blank">http://linuxwireless.org/en/users/Drivers</a></p>
+ 
+ 
+<h4>6)&nbsp; What about your hardware?</h4>
+<ul>
+  <li>&nbsp;<a title="CPU Pentium III" href="http://en.wikipedia.org/wiki/Pentium_III" target="_blank">CPU Intel Pentium III</a> - 733Mhz, freqence ranges [500 - 1000]MHz, running 733,6 Mhz (5,5 x 133,4 Mhz)</li>
+  <li>&nbsp;Mainboard Model - KOB 635T FSX
+<ul>
+  <li>Mainboard Chipset - <a title="SiS 635T" href="http://www.pcpartscollection.com/ecsp6s5atsoc.html" target="_blank">SiS 635T</a></li>
+</ul>
+</li>
+  <li>&nbsp;Memory - 2 x 512MB <a title="PC3200 DDR400" href="http://en.wikipedia.org/wiki/DDR_SDRAM" target="_blank">PC3200 DDR400 RAM 184 PIN NON ECC</a></li>
+  <li>&nbsp;Video Chipset - NVidia Riva TNT2 M64, 32MB</li>
+  <li>&nbsp;Hard Drives
+<ul>
+  <li>ST380011A 80GB</li>
+  <li>ST3204231 20GB</li>
+</ul>
+</li>
+  <li>&nbsp;CD/DVD HL-DT-ST DVDRAM GSA-4163B</li>
+  <li>&nbsp;Network Controllers:
+<ul>
+  <li>3 x <a style="" onclick="return mugicPopWin(this,event);" oncontextmenu="mugicRightClick(this);" href="http://cgi.ebay.in/INTEL-82540EM-PRO-1000-MT-Gigabit-PCI-NETWORK-CARD-NEW-/250838625576" target="_blank">Intel PRO/1000 MT</a> Gigabit Desktop adapter (82540EM)</li>
+  <li>1 x D-Link <a href="http://www.microsoft.com/windows/compatibility/windows-7/en-us/Details.aspx?type=Hardware&amp;p=D-Link%20DGE-528T%20Gigabit%20Ethernet%20Adapter&amp;v=D-Link&amp;uid=DGE-528T&amp;pf=6&amp;pi=7&amp;s=DLink%20DSB-C320&amp;os=32-bit" target="_blank">DGE-528T</a> Gigabit Ethernet Adapter</li>
+  <li>1 x Broadcom BCM 4318 [Air Force One 54g] 802.1g Wireless LAN Controller</li>
+</ul>
+</li>
+</ul>
+<h4>7)&nbsp; What if I don't have stuff to play with?</h4>
+ 
+ 
+<p>Use virtualization software instead of real hardware. They are great virtualization tools available such as <a title="Qemu" href="http://wiki.qemu.org/Main_Page" target="_blank">Qemu</a>, <a title="KVM" href="http://www.linux-kvm.org/page/Main_Page" target="_blank">KVM</a> or <a title="VirtualBox" href="http://www.virtualbox.org/" target="_blank">VirtualBox</a>. Choose the one and create a new Virtual Machine. Install <a title="GNS3" href="http://www.gns3.net/" target="_blank">GNS3</a> software and import the Virtual Machine to GNS3.</p>
+ 
+ 
+<p>One big benefit of GNS3 software is that with just few clicks you can create a functional <a href="http://brezular.wordpress.com/2011/03/10/etherchannelvrrp-dhcp-ospf-configuration-cisco-vyatta-microcore/" target="_blank">topology of virtualizated nodes</a> connected with links together. GNS3 also allows you to <a title="GNS3 to the real network" href="http://pookey.co.uk/wordpress/archives/216-getting-real-with-gns3-connecting-to-real-networks" target="_blank">connect your topology to the real network</a>.</p>
+ 
+ 
+<p>In actual version 0.8.1 it GNS3 supports <a title="Dynamips Blog" href="http://www.ipflow.utc.fr/blog/" target="_blank">Dynamips</a>, Qemu and VirtualBox.</p>
+ 
+ 
+<h4>8)&nbsp; What are we going to install?</h4>
+ 
+ 
+<p>Features, Services and Software version:</p>
+<ul>
+  <li>CentOS 6.0 - with software RAID-1</li>
+  <li>Linux switch - Openvswitch project, 1.2.0</li>
+  <li>Wireless software Access Point - Hostapd, 0.7.3</li>
+  <li>PPoE client - pppd 2.4.5</li>
+  <li>NAT, Firewall - iptables v1.4.7</li>
+  <li>DNS server -&nbsp;BIND 9.7.0</li>
+  <li>DHCP server - isc-dhcpd-4.1.1-P1</li>
+  <li>Samba 3.5.4-68</li>
+  <li>NTP client/server for LAN - 4.2.4p8</li>
+  <li>DDNS client - 3.8.1</li>
+</ul>
+<h4>9)&nbsp; What does the strange name "swouter" mean?</h4>
+ 
+ 
+<p>Basically, I named a Linux box - the&nbsp; "swouter"&nbsp; because it is Layer 3 switch with routing capabilities.</p>
+ 
+ 
+<h4>10)&nbsp; Do I need something else? </h4>
+ 
+ 
+<p>Nope. But an internet connection and your <a title="Patience" href="http://en.wikipedia.org/wiki/Patience" target="_blank">patience</a> will be really helpful.</p>
+ 
+ 
+<p>I hope you find it useful.</p>
+
+<a name="OpenvSwitchInstConf"></a><h3>Openvswitch Installation and Configuration 
+<a href="http://brezular.wordpress.com/2011/09/03/building-linux-l3-switchrouter-on-x86-part4-openvswitch-installation-and-configuration/">(Source 
+Origin)</a></h3>
+
+<p>Even they are several options which 
+can help us to bridge Ethernet interfaces together and force the Linux 
+box to act as a switch (VDE switch, LiSA or bridge utils) I would like 
+to use Openvswitch to do this job. It offers many features you can find 
+in hardware switches and I like this project.</p>
+
+<p>We have four GigabitEthernet cards 
+presented in PCI slots. Three of them are Intel e1000 - 82540EM Gigabit 
+controllers and one is D-Link System DGE-528T. There is also Broadcom 
+BCM4318 802.11g Wireless LAN Controller installed and working as we have
+ shown in a previous tutorial.</p>
+
+<p>We need to reserve DGE-528T Gigabit 
+controller to connect our Linux box to the Internet network. The IP 
+addrees for this interface will be automatically assigned from a 
+provider's DHCP server.</p>
+
+<p>Remaining three Intel e1000 Gigabit 
+controllers and a Wireless controller will be bridged together and 
+traffic is forwarded based on Ethernet adresses rather than IP adresses 
+between those interfaces. Computers connected to those ports belong to 
+the same - 172.18.0.0/16 IP subnet.</p>
+
+<p>There must be also a virtual interface 
+created with IP adress - 172.18.100.150/16 that will be used as default 
+gateway for all hosts on the subnet. All computers will forward a 
+traffic to this IP address if the destination IP address is outside the 
+scope of 172.18.0.0/16 subnet.</p>
+
+<h4>1.&nbsp; Check if 8021q and bridge module is loaded</h4>
+
+<pre>
+ # lsmod | grep 8021q 
+8021q 19587 0
+garp 5901 1 8021q
+</pre>
+
+<p>If 8021q module is not loaded, load a module to the kernel with modprobe 8021q command.</p>
+
+<p>The Open vSwitch datapath requires bridging support (CONFIG_BRIDGE) to be built as a kernel module. The bridge module must not be loaded or in use.</p>
+
+<pre>
+ # lsmod | grep bridge
+bridge 61159 0
+stp 1563 2 bridge,garp
+llc 4392 3 bridge,garp,stp
+</pre>
+
+<p>In this case, the bridge module is running and we must remove it.</p>
+
+<pre>
+ # rmmod bridge
+</pre>
+
+<h4>2.&nbsp; Download Openvswitch and Extract it</h4>
+
+<pre>
+ # wget <a href="http://openvswitch.org/releases/openvswitch-1.2.0.tar.gz" 
+   rel="nofollow">http://openvswitch.org/releases/openvswitch-1.2.0.tar.gz</a>
+ # tar zxvf ./openvswitch-1.2.0.tar.gz
+</pre>
+
+<h4>3.&nbsp; Install Necessary Dependences for Openvswitch Compilation</h4>
+
+<pre>
+ # yum install python PyQt4 python-zope-interface python-twisted-conch python-simplejson perl kernel-devel
+</pre>
+
+<h4>4.&nbsp; Openvswitch Installation</h4>
+
+<pre>
+ # cd ./openvswitch-1.2.0
+</pre>
+
+<pre>
+~/openvswitch-1.2.0# ./configure -with-linux=/lib/modules/`uname -r`/build
+~/openvswitch-1.2.0# make 
+~/openvswitch-1.2.0# make install
+</pre>
+
+<h4>5.&nbsp; Load built kernel module openvswitch_mod_ko</h4>
+
+<p>After building, kernel module 
+openvswitch_mod_ko is saved in ./datapath/linux/ directory. We can try 
+to load it to the kernel with insmod command.</p>
+
+<pre>
+~/openvswitch-1.2.0# insmod ./datapath/linux/openvswitch_mod.ko 
+</pre>
+
+<p>Check if module is loaded:</p>
+
+<pre>
+~/openvswitch-1.2.0# lsmod | grep openvswitch_mod
+openvswitch_mod 67954 0
+</pre>
+
+<h4>6.&nbsp; Make module to be loaded with modprobe command and loaded after restart</h4>
+
+<p>Even the module can be loaded to kernel with insmod it cannot be loaded with modprobe command. We are going to fix it.</p>
+
+<p><strong>a/&nbsp; Unload a module from kernel and copy it to the standard location</strong></p>
+
+<pre>
+~/openvswitch-1.2.0# rmmod openvswitch_mod
+~/openvswitch-1.2.0# mkdir /lib/modules/2.6.32-71.29.1.el6.i686/kernel/net/openvswitch/
+~/openvswitch-1.2.0# cp ./datapath/linux/openvswitch_mod.ko /lib/modules/2.6.32-71.29.1.el6.i686/kernel/net/openvswitch/
+</pre>
+
+<p><strong>b/&nbsp; Create a new list of dependences and write it to /lib/modules/`uname -r`/modules.dep</strong></p>
+
+<pre>
+ # depmod -a
+</pre>
+
+<p><strong>c/&nbsp; Load a module with modprobe</strong></p>
+
+<pre>
+ # modprobe openvswitch_mod
+</pre>
+
+<p><strong>d/&nbsp; Make module to be loaded after restart</strong></p>
+
+<p>We need to create a simple script stored in /etc/sysconfig/modules. A script will load the module if it is not loaded.</p>
+
+<pre>
+# touch /etc/sysconfig/modules/openvswitch.modules 
+# chmod 755 /etc/sysconfig/modules/openvswitch.modules
+# vi /etc/sysconfig/modules/openvswitch.modules
+</pre>
+
+<pre>
+#!/bin/sh
+
+ if [ $(grep -c openvswitch_mod /proc/modules) -eq 0 ]; then
+   modprobe -b openvswitch_mod &gt; /dev/null 2&gt;&amp;1
+ fi
+</pre>
+
+<p>If grep returns value 0, module openvswitch_mod.ko is not loaded and it will be loaded by modprobe command.</p>
+
+<p><strong>e/&nbsp; Check if RAID device is working properly </strong></p>
+
+<p>After depmode -a
+ command check status of RAID. If it is a problem with either /dev/sda1 
+or /dev/sdb1, readd device to /dev/md0. It had been shown in Centos 
+installation tutorial.</p>
+
+<h4>7.&nbsp; Initialize the configuration database using ovsdb-tool</h4>
+
+<PRE>
+~/openvswitch-1.2.0# mkdir -p /usr/local/etc/openvswitch 
+~/openvswitch-1.2.0# ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+</PRE>
+
+<h4>8.&nbsp; Start configuration database, ovsdb-server and make it started during boot/</h4>
+
+<pre>
+ # /usr/local/sbin/ovsdb-server /usr/local/etc/openvswitch/conf.db 
+   -remote=punix:/usr/local/var/run/openvswitch/db.sock 
+   -remote=db:Open_vSwitch,manager_options  -private-key=db:SSL,private_key 
+   -certificate=db:SSL,certificate  -bootstrap-ca-cert=db:SSL,ca_cert 
+   -pidfile -detach
+</pre>
+
+<p>To start database during boot you need to copy those lines to /etc/rc.local.</p>
+
+<h4>9.&nbsp; Initialialize database using ovs-vsctl and itnitialialize it during boot</h4>
+
+<p>This is only necessary the first time after you create the database with ovsdb-tool (but running it at any time is harmless).</p>
+
+<pre>
+ # /usr/local/bin/ovs-vsctl -no-wait init
+ # echo "/usr/local/sbin/ovs-vsctl -no-wait init" &gt;&gt; /etc/rc.local
+</pre>
+
+<h4>10.&nbsp; Start the main Open vSwitch daemon, telling it to connect to the same Unix domain socket and start daemon during boot</h4>
+
+<pre>
+ # /usr/local/sbin/ovs-vswitchd unix:/usr/local/var/run/openvswitch/db.sock -pidfile -detach
+ # echo "/usr/local/sbin/ovs-vswitchd unix:/usr/local/var/run/openvswitch/db.sock -pidfile -detach" &gt;&gt; /etc/rc.local
+</pre>
+
+<h4>11.&nbsp; Enable IPv4 and IPV6 packets forwarding between interfaces</h4>
+
+<p>Although not connected with Openvswitch 
+configuration we need to enable ipv4 and ipv6 packets forwarding between
+ interfaces. These options are disabled by default.</p>
+
+<pre>
+# sysctl -w net.ipv4.ip_forward=1 
+# sysctl -w net.ipv6.conf.all.forwarding=1 
+</pre>
+
+<p>To enable forwarding at boot, you'll need to edit /etc/sysctl.conf and change/add the following line.</p>
+
+<PRE>
+net.ipv4.ip_forward = 1 
+net.ipv6.conf.default.forwarding=1 
+</PRE>
+
+<h4>12.&nbsp; Openvswitch configuration - creating bridge br0, adding interfaces to the bridge</h4>
+
+<h5>a)&nbsp; Create bridge br0</h5>
+
+<pre>
+ # ovs-vsctl add-br br0
+</pre>
+
+<h5>b)&nbsp; Add ports eth0-eth2, wlan0 to the bridge</h5>
+
+<PRE>
+ # ovs-vsctl add-port br0 eth0
+ # ovs-vsctl add-port br0 eth1
+ # ovs-vsctl add-port br0 eth2
+ # ovs-vsctl add-port br0 wlan0
+</PRE>
+
+<h5>c)&nbsp; Create L3 vlan1 virtual interface </h5>
+
+<PRE>
+ # ovs-vsctl add-port br0 vlan1 - set interface vlan1 type=internal
+</PRE>
+
+<p>Check if vlan1 exists, bring bridged interfaces up</p>
+
+<pre>
+ # ifconfig vlan1
+vlan1 Link encap:Ethernet HWaddr 00:23:20:80:C9:A2
+BROADCAST MULTICAST MTU:1500 Metric:1
+RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+collisions:0 txqueuelen:0
+RX bytes:0 (0.0 b) TX bytes:0 (0.0 b)
+</PRE>
+
+<pre>
+ # ifconfig vlan1 up
+ # ifconfig eth0 up
+ # ifconfig eth1 up
+ # ifconfig eth2 up
+ # ifconfig wlan0 up</p>
+</PRE>
+
+<p>To bring interfaces up during boot, you need to change parameter ONBOOT="no" to ONBOOT="yes" for each ifcfg-ethx script in /etc/sysconfig/network-scripts/. Do it for all Ethernet interfaces.</p>
+
+<pre>
+ # sed -i 's/ONBOOT="no"/ONBOOT="yes"/g' /etc/sysconfig/network-scripts/ifcfg-eth0
+ # sed -i 's/ONBOOT="no"/ONBOOT="yes"/g' /etc/sysconfig/network-scripts/ifcfg-eth1
+ # sed -i 's/ONBOOT="no"/ONBOOT="yes"/g' /etc/sysconfig/network-scripts/ifcfg-eth2
+ # sed -i 's/ONBOOT="no"/ONBOOT="yes"/g' /etc/sysconfig/network-scripts/ifcfg-eth3
+ # sed -i 's/ONBOOT="no"/ONBOOT="yes"/g' /etc/sysconfig/network-scripts/ifcfg-wlan0
+</pre>
+
+<h5>d)&nbsp; Make IP address settings of interface vlan1 kept after reboot</h5>
+
+<pre>
+# vi /etc/sysconfig/network-scripts/ifcfg-vlan1
+DEVICE=vlan1
+ONBOOT=yes
+BOOTPROTO=static
+IPADDR=172.18.100.150
+NETMASK=255.255.0.0
+</pre>
+
+<h5>13. Create&nbsp; Openvswitch init script&nbsp;</strong></h5>
+
+<p>When the Openvswitch starts during boot 
+of OS,&nbsp; it reads own database and vlan1 interface is created. For 
+this reason we have to create an init script in order to start 
+openvswitch before network interfaces are initialized. To accomplish it 
+we must set openvswitch starting priority to be a lower to S=9 
+&nbsp;than it is a priority of network S=10.</p>
+
+<h5>Create a startup script /etc/init.d/openvswitchd</h5>
+
+<pre>
+#vi /etc/init.d/openvswitchd
+
+#!/bin/sh
+#
+# start/stop openvswitch
+#
+# chkconfig: 2345 9 99
+# description: Activates/Deactivates all Open vSwitch to start at boot time.
+# processname: openvswitchd
+# config: /usr/local/etc/openvswitch/conf.db
+# pidfile: /usr/local/var/run/openvswitch/ovs-vswitchd.pid
+#
+PATH=/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin<br>
+export PATH
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+stop()
+{
+echo -n "Stopping openvswitch: "
+
+if [ -e /usr/local/var/run/openvswitch/ovs-vswitchd.pid ]; then
+   pid=$(cat /usr/local/var/run/openvswitch/ovs-vswitchd.pid)
+   /usr/local/bin/ovs-appctl -t /usr/local/var/run/openvswitch/ovs-vswitchd.$pid.ctl exit
+   /bin/kill -9 $pid
+   rm -f /usr/local/var/run/openvswitch/ovs-vswitchd.$pid.ctl
+fi
+
+if [ -e /usr/local/var/run/openvswitch/ovsdb-server.pid ]; then
+  pid=$(cat /usr/local/var/run/openvswitch/ovsdb-server.pid)
+  /usr/local/bin/ovs-appctl -t /usr/local/var/run/openvswitch/ovsdb-server.$pid.ctl exit
+  rm -f /usr/local/var/run/openvswitch/ovsdb-server.$pid.ctl<br>
+fi
+
+rm -f /var/lock/subsys/openvswitchd 
+}
+
+start()
+{
+echo -n "Starting openvswitch: "
+if [ `lsmod | grep -c "openvswitch_mod"` -eq 0 ]; then
+  /sbin/modprobe openvswitch_mod<br>
+fi
+
+if [ `lsmod | grep -c "8021q"` -eq 0 ]; then
+  /sbin/modprobe 8021q
+fi
+
+/usr/local/sbin/ovsdb-server /usr/local/etc/openvswitch/conf.db \
+-remote=punix:/usr/local/var/run/openvswitch/db.sock \
+-remote=db:Open_vSwitch,manager_options \
+-private-key=db:SSL,private_key \
+-certificate=db:SSL,certificate \
+-bootstrap-ca-cert=db:SSL,ca_cert \
+-pidfile -detach
+
+/usr/local/bin/ovs-vsctl -no-wait init
+/usr/local/sbin/ovs-vswitchd unix:/usr/local/var/run/openvswitch/db.sock -pidfile -detach
+touch /var/lock/subsys/openvswitchd
+}
+
+# See how we were called.
+case "$1" in
+start)
+start
+;;
+stop)
+stop
+;;
+status)
+status ovs-vswitchd
+;;
+restart)
+stop
+start
+;;
+*)
+echo "Usage: openvswitchd {start|stop|status|restart}"
+exit 1
+esac
+
+exit 0
+</pre>
+
+<h5>Make Openvswitch to be started during boot</h5>
+
+<pre>
+ # chmod 755 /etc/init.d/openvswitchd
+ # chkconfig -add openvswitchd
+ # chkconfig openvswitchd on&nbsp;
+</pre>
+
+<h5>End.</strong></p>
+
+<p>This is the list of articles I had been intensively using during writing.</p>
+
+<OL>
+  <LI><a href="http://www.openvswitch.org/" 
+      target="_blank">http://www.openvswitch.org/</a>
+  <LI><a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob;f=INSTALL.Linux;h=78152b6940f7a6a5b04847d014b38a7c6352d121;hb=f8f26e986525c11ee838f5964fca6af68aed2f95" target="_blank">INSTALL.Linux</a>
+  <LI><a href="http://serverfault.com/questions/147501/will-modules-installed-by-insmod-command-persist-after-rebooting" 
+      target="_blank">http://serverfault.com/questions/147501/will-modules-installed-by-insmod-command-persist-after-rebooting</a>
+  <LI><a href="http://www.linuxtopia.org/online_books/rhel6/rhel_6_deployment/rhel_6_deployment_sec-Persistent_Module_Loading.html" 
+      target="_blank">http://www.linuxtopia.org/online_books/rhel6/rhel_6_deployment/rhel_6_deployment_sec-Persistent_Module_Loading.html</a>
+</OL>
+
+<a name="NATFirewallConfig"></a><h3>Connecting Box to the Internet - NAT and 
+Firewall Configuration 
+<a href="http://brezular.wordpress.com/2011/09/11/building-linux-l3-switchrouter-on-x8-part6-connecting-box-to-the-internet-nat-and-firewall-configuration/" 
+target="newwindow">(Source Origin)</a></h3>
+
+<p>September 11, 2011&nbsp;&nbsp; 1 Comment</p>
+
+<p>I'm not going to explain either the purpose of both firewall and NAT or how they 
+  are working. For more information, please check these links:</p>
+
+<OL>
+  <LI><a href="http://en.wikipedia.org/wiki/Firewall_%28computing%29" 
+      target="_blank">http://en.wikipedia.org/wiki/Firewall_%28computing%29</a>
+  <LI><a href="http://en.wikipedia.org/wiki/Network_address_translation" 
+      target="_blank">http://en.wikipedia.org/wiki/Network_address_translation</a>
+</OL>
+
+<h4>1.  Check if service itables is running</h4>
+
+<PRE>
+ # /etc/init.d/iptables status
+iptables: Firewall is not running.
+</pre>
+
+<p>The warning message "iptables: Firewall is not running." tells us that iptables is 
+not running. We need to start it with command:</p>
+
+<PRE>
+ # /etc/init.d/iptables start
+iptables: Applying firewall rules: [  OK  ]
+</pre>
+
+<p>Check iptables status again:</p>
+
+<PRE>
+ # /etc/init.d/iptables status 
+</pre>
+
+<PRE>
+Table: nat 
+Chain PREROUTING (policy ACCEPT) 
+num  target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT) 
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT) 
+num  target     prot opt source               destination
+
+Table: filter 
+Chain INPUT (policy ACCEPT) 
+num  target     prot opt 
+source              
+ destination 
+1    ACCEPT     all  -  
+0.0.0.0/0           
+ 0.0.0.0/0           
+state RELATED,ESTABLISHED 
+2    ACCEPT     icmp -  
+0.0.0.0/0           
+ 0.0.0.0/0 
+3    ACCEPT     all  -  
+0.0.0.0/0           
+ 0.0.0.0/0 
+4    ACCEPT     tcp  -  
+0.0.0.0/0           
+ 0.0.0.0/0           
+state NEW tcp dpt:22 
+5    REJECT     all  -  
+0.0.0.0/0           
+ 0.0.0.0/0           
+reject-with icmp-host-prohibited
+
+Chain FORWARD (policy ACCEPT) 
+num  target     prot opt source               destination 
+1    REJECT     all  -  
+0.0.0.0/0           
+ 0.0.0.0/0           
+reject-with icmp-host-prohibited
+
+Chain OUTPUT (policy ACCEPT) 
+num  target     prot opt source               destination
+</PRE>
+
+<p>From the output above we can see that two
+ tables are loaded - NAT and Filter. We need them both - table NAT for 
+masquerading and table filter for firewalling.
+If table is not presented you can easily load it to kernel with command.</p>
+
+<PRE>
+ # modprobe iptable_filter 
+ # modprobe iptable_nat 
+</pre>
+
+<p>The third table is Mangle which is not 
+shown in the output. This table is used for Quality Of Service (QOS) and
+ we are not going to use it. If it is loaded, unload it to save RAM:</p>
+
+<PRE>
+ # rmmod iptable_mangle
+</pre>
+
+<h4>2.  Flush rules from table filter and nat</h4>
+
+<p>This is the list of options we are going to use.  Both options are correct, use one of them for writing rules.</p>
+
+<PRE>
+-flush     = -F
+-table     = -t
+-append    = -A
+-out-interface = -o
+-in-interface  = -i
+-jump        = -j
+</pre>
+
+<p><strong>a)  Flush Filter table</strong></p>
+
+<p>If you do not specify the concrete 
+table,  your changes will always be done on Filter table as it is 
+considered as the default iptable. For example:</p>
+
+<PRE>
+ # iptables -flush 
+</pre>
+
+<p>meaning the same as:</p>
+
+<PRE>
+ # iptables -t filter -flush
+</pre>
+
+<p>but we can use a shorther version as well:</p>
+
+<PRE>
+ # iptables  -F 
+</pre>
+
+<p><strong>b)   Flush NAT table</strong></p>
+
+<PRE>
+ # iptables -t nat -F
+</pre>
+
+<h4>3.  NAT configuration</h4>
+
+<p>Outside NAT interface is ppp0. Inside NAT interface is vlan1.</p>
+
+<PRE>
+ # iptables -table nat -A POSTROUTING -o ppp0 -jump MASQUERADE 
+</pre>
+
+<p>Save iptables:</p>
+
+<PRE>
+ # /etc/init.d/iptables save 
+iptables: Saving firewall rules to /etc/sysconfig/iptables: [  OK  ]
+</pre>
+
+<p>Check NAT table configuration in detail:</p>
+
+<PRE>
+ #  iptables -t nat -L -v</p>
+
+Chain PREROUTING (policy ACCEPT 2 packets, 528 bytes)
+pkts bytes target     prot opt in     out     source               destination
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+pkts bytes target     prot opt in     out     source               destination
+0     0 MASQUERADE  all  -  any    ppp0       anywhere             anywhere
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+pkts bytes target     prot opt in     out     source               destination
+</pre>
+
+<p>Traffic coming from any inside interface 
+with any source IP address via outside interface ppp0 will be 
+translated. So far any translation has been done  because - pkts 
+counter is null.</p>
+
+<h4>4.  Firewal configuration</h4>
+
+<p><strong>a)  Check default filter policy</strong></p>
+
+<PRE>
+ # iptables -L -v
+Chain INPUT (policy ACCEPT 140 packets, 14016 bytes)
+pkts bytes target     prot opt in     out     source               destination
+Chain FORWARD (policy ACCEPT 1726 packets, 145K bytes)
+pkts bytes target     prot opt in     out     source               destination
+Chain OUTPUT (policy ACCEPT 113 packets, 9052 bytes)
+pkts bytes target     prot opt in     out     source               destination
+</pre>
+
+<p>Default configured policy is set to ACCEPT for all the chains. Assuming NAT is 
+working you should be able to ping from LAN to the Internet. If you do that, counter 
+pkts for POSTROUTING policy in NAT table should increased as translation of source 
+address IP address in packet is nedeed.</p>
+
+<p><strong>b)  Change default filter policy</strong></p>
+
+<p>As long as default filter policy is set to ACCEPT  all the traffic is allowed, if 
+it is not explicitly denied. The Cisco IOS ACLs work in different way - what is not 
+explicitly allowed, it is denied by default. It is more secure way  and we are going 
+to implement it. This method enables us to explicitly define each type of traffic 
+going through the firewall in order to allow it to pass.</p>
+
+<p>First we need to change default filter policy to DENY for all the chains in 
+firewall iptable.</p>
+
+<p>Note: 
+During playing with iptable filter it is recommended to be connected to box via 
+serial port. It is very like to be disconnected if something goes wrong.</p>
+
+<PRE>
+ #  iptables -P INPUT DROP 
+ #  iptables -P OUTPUT DROP 
+ #  iptables -P FORWARD DROP
+</pre>
+
+<p>You might notice that now you cannot ping local interface of the  router from 
+the host in LAN, because INPUT chain is set as DROP. Yo cannot ping from the router 
+to the Internet because OUTPUT chain is set to DROP.  Also ping from the host in 
+LAN to the Internet is not working due to DROP policy for FORWARD chain.</p>
+
+<p><strong>c)  Allow ssh connection from LAN to router and vice versa</strong></p>
+
+<p>We need to allow traffic from subnet 172.18.0.0/16 with destination TCP port 22 
+(ssh) coming to interface vlan1</p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -s 172.18.0.0/16 -p tcp -dport ssh -j ACCEPT
+</pre>
+
+<p>Packet comming from LAN to VLAN1 interface, with destination TCP port 22 (ssh) can 
+reach vlan1 interface but ssh connection cannot be established. The default DROP 
+policy in OUPUT chain blocks traffic originating from local intereface of router. 
+We need to add command to allow connection with source TCP port 22 from vlan1 
+interface to the hosts on LAN</p>
+
+<PRE>
+ # iptables -A OUTPUT -p tcp -sport 22 -o vlan1 -d 172.18.0.0/16 -j ACCEPT 
+</pre>
+
+<p>Now, hosts on LAN can connect to the router using ssh. If we want to allow 
+establish ssh connection from vlan1 of router to the hosts on LAN we need to add 
+following  two commands.</p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -s 172.18.0.0/16 -p tcp -sport ssh -j ACCEPT 
+ # iptables -A OUTPUT -o vlan1 -d 172.18.0.0/16 -p tcp -dport ssh -j ACCEPT 
+</pre>
+
+<p><strong>d)  Allow ping from hosts on LAN to default gateway and vice 
+   versa</strong></p>
+
+<p>Ping is kind of ICMP message. Following rule allows  icmp request coming from the 
+   subnet 172.18.0.0/16 to VLAN1 interface.</p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -s 172.18.0.0/16 -p icmp -j ACCEPT 
+</pre>
+
+<p>We need also add the rule which allow to send ICMP echo message from VLAN1 
+interface to the host on 172.18.0.0/16 subnet.</p>
+
+<PRE>
+ # iptables -A OUTPUT -o vlan1 -d 172.18.0.0/16 -p icmp -j ACCEPT 
+</pre>
+
+<p><strong>e)  Allow ping, DNS, http/https, ssh originating on router's ppp0 
+interface to reach the Internet</strong></p>
+
+<p>ICMP</span></p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p icmp -j ACCEPT 
+ # iptables -A INPUT -i ppp0 -p icmp -m state -state ESTABLISHED -j ACCEPT
+</pre>
+
+<p>We can ping hosts on the Internet but they cannot ping ppp0 ineterface. Only 
+established icmp connection are allowed on ppp0 interface.</p>
+
+<p>ICMP localhost</span></p>
+
+<pre>
+ # iptables -A OUTPUT -o lo -p icmp -j ACCEPT
+ # iptables -A INPUT -i lo -p icmp -j ACCEPT 
+</pre>
+
+<p>This rule allows to ping loopback interface itself and ping local interfaces from 
+router.</p>
+
+<p>DNS client</span></p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p udp -dport 53 -j ACCEPT 
+ # iptables -A INPUT -i ppp0 -p udp -sport 53 -m state -state ESTABLISHED -j ACCEPT
+</pre>
+
+<p>The rule allows to send DNS query to provider's DNS server.</p>
+
+<p>Local DNS server - access from LAN</span></p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -p udp -dport 53 -j ACCEPT 
+ # iptables -A OUTPUT -o vlan1 -p udp -sport 53 -j ACCEPT 
+</pre>
+
+<p>The rule allows DNS request coming from LAN to reach  local DNS server running on 
+router.</p>
+
+<p>DNS server - router's own queries of local DNS server</p>
+
+<PRE>
+ # iptables -A INPUT -i lo -p udp -j ACCEPT
+ # iptables -A OUTPUT -o lo -p udp -j ACCEPT
+</pre>
+
+<p>DNS queries originating on router to local DNS server will be allowed.</p>
+
+<p>HTTP/HTTPS</span></p>
+
+<p>We need to allow http traffic originating on router to receive CentOS updates.</p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p tcp -dport 80 -j ACCEPT 
+ # iptables -A OUT PUT -o ppp0 -p tcp -dport 443 -j ACCEPT
+
+ # iptables -A INPUT -i ppp0 -p tcp -sport 80 -m state -state ESTABLISHED -j ACCEPT
+ # iptables -A INPUT -i ppp0 -p tcp -sport 443 -m state -state ESTABLISHED -j ACCEPT
+</pre>
+
+<p>SSH to the Ineternet</p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p tcp -dport 22 -j ACCEPT
+ # iptables -A INPUT -i ppp0 -p tcp -sport 22 -m state -state ESTABLISHED -j ACCEPT
+</pre>
+
+<p><strong>f)  NTP client and server rules</strong></p>
+
+<p>Allow NTP client running on router to be sychronized with public NTP server.</p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p udp -dport 123 -j ACCEPT
+ # iptables -A INPUT -i ppp0 -p udp -sport 123 -j ACCEPT
+</pre>
+
+<p>Allow NTP server to provide service to the hosts on LAN.</p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -p udp -dport 123 -j ACCEPT
+ # iptables -A OUTPUT -o vlan1 -p udp -sport 123 -j ACCEPT 
+</pre>
+
+<p><strong>g)  Allow DHCP requests from LAN to to reach DHCP server and vice 
+versa</strong></p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -p udp -dport 67 -j ACCEPT
+ # iptables -A INPUT -i vlan1 -p udp -dport 68 -j ACCEPT
+</pre>
+
+<PRE>
+ # iptables -A OUTPUT -o vlan1 -p udp -sport 67 -j ACCEPT 
+ # iptables -A OUTPUT -o vlan1 -p udp -sport 68 -j ACCEPT 
+</pre>
+
+<p><strong>h)  Allow host on LAN to access Samba server</strong></p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -p tcp -m multiport -dport 137,138,139,445 -j ACCEPT 
+ # iptables -A INPUT -i vlan1 -p udp -m multiport -dport 137,138,139,445 -j ACCEPT
+</pre>
+
+<PRE>
+ # iptables -A OUTPUT -o vlan1 -p tcp -m multiport -sport 137,138,139,445 -j ACCEPT 
+ # iptables -A OUTPUT -o vlan1 -p udp -m multiport -sport 137,138,139,445 -j ACCEPT
+</pre>
+
+<p><strong>i)  Allow only established session coming from the Internet to be forwarded 
+to LAN</strong></p>
+
+<PRE>
+ # /sbin/iptables -A FORWARD -i ppp0 -o vlan1 -m state -state RELATED,ESTABLISHED -j ACCEPT
+</pre>
+
+<p><strong>j)  Allow any kind of traffic originating on  LAN to be forwarded to the 
+Internet</strong></p>
+
+<PRE>
+ # /sbin/iptables -A FORWARD -i vlan1 -o ppp0 -j ACCEPT
+</pre>
+
+<p><strong>k)  Check filter table</strong></p>
+
+<PRE>
+ # iptables -L -v 
+
+Chain INPUT (policy DROP 56 packets, 7156 bytes)
+pkts bytes target     prot opt in     out     source         destination
+0     0    ACCEPT     icmp -  vlan1  any     172.18.0.0/16   anywhere
+145 12353  ACCEPT     tcp  -  vlan1  any     172.18.0.0/16   anywhere     tcp dpt:ssh
+0     0    ACCEPT     tcp  -  vlan1  any     172.18.0.0/16   anywhere     tcp spt:ssh
+0     0    ACCEPT     icmp -  ppp0   any     anywhere        anywhere     state ESTABLISHED
+401 54442  ACCEPT     udp  -  ppp0   any     anywhere        anywhere     udp spt:domain state ESTABLISHED
+8   948    ACCEPT     tcp  -  ppp0   any     anywhere        anywhere     tcp spt:http state ESTABLISHED
+7  1837    ACCEPT     tcp  -  ppp0   any     anywhere        anywhere     tcp spt:https state ESTABLISHED
+0     0    ACCEPT     tcp  -  ppp0   any     anywhere        anywhere     tcp spt:ssh state ESTABLISHED
+20  1552   ACCEPT     icmp -  lo     any     anywhere        anywhere
+11   836   ACCEPT     udp  -  vlan1  any     anywhere        anywhere     udp dpt:ntp
+37  2812   ACCEPT     udp  -  ppp0   any     anywhere        anywhere     udp spt:ntp
+304 19672  ACCEPT     udp  -  vlan1  any     anywhere        anywhere     udp dpt:domain
+20  1559   ACCEPT     udp  -  lo     any     anywhere        anywhere
+4   200    ACCEPT     tcp  -  lo     any     anywhere        anywhere
+1   328    ACCEPT     udp  -  vlan1  any     anywhere        anywhere     udp dpt:bootps
+0     0    ACCEPT     udp  -  vlan1  any     anywhere        anywhere     udp dpt:bootpc
+65 11009   ACCEPT     tcp  -  vlan1  any     anywhere        anywhere     multiport dports netbios-ns,netbios-dgm,netbios-ssn,microsoft-ds
+139 13812  ACCEPT     udp  -  vlan1  any     anywhere        anywhere     multiport dports netbios-ns,netbios-dgm,netbios-ssn,microsoft-ds
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+pkts bytes target     prot opt in     out     source         destination
+1800 1232K ACCEPT     all  -  ppp0   vlan1   anywhere        anywhere     state RELATED,ESTABLISHED
+2481  305K ACCEPT     all  -  vlan1  ppp0    anywhere        anywhere
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+pkts bytes target     prot opt in     out     source         destination
+90 10749  ACCEPT      tcp  -  any    vlan1   anywhere        172.18.0.0/16 tcp spt:ssh
+0     0   ACCEPT      icmp -  any    vlan1   anywhere        172.18.0.0/16
+0     0   ACCEPT      tcp  -  any    vlan1   anywhere        172.18.0.0/16 tcp dpt:ssh
+16  1488  ACCEPT      icmp -  any    ppp0    anywhere        anywhere
+401 27246 ACCEPT      udp  -  any    ppp0    anywhere        anywhere     udp dpt:domain
+10   718  ACCEPT      tcp  -  any    ppp0    anywhere        anywhere     tcp dpt:http
+8   933   ACCEPT      tcp  -  any    ppp0    anywhere        anywhere     tcp dpt:https
+0     0   ACCEPT      tcp  -  any    ppp0    anywhere        anywhere     tcp dpt:ssh
+20  1552  ACCEPT      icmp -  any    lo      anywhere        anywhere
+11   836  ACCEPT      udp  -  any    vlan1   anywhere        anywhere     udp spt:ntp
+37  2812  ACCEPT      udp  -  any    ppp0    anywhere        anywhere     udp dpt:ntp
+304 39665 ACCEPT      udp  -  any    vlan1   anywhere        anywhere     udp spt:domain
+20  1559  ACCEPT      udp  -  any    lo      anywhere        anywhere
+4   200   ACCEPT      tcp  -  any    lo      anywhere        anywhere
+0     0   ACCEPT      udp  -  any    vlan1   anywhere        anywhere     udp spt:bootpc
+0     0   ACCEPT      udp  -  any    vlan1   anywhere        anywhere     udp spt:bootps
+74  9590  ACCEPT      tcp  -  any    vlan1   anywhere        anywhere     multiport sports netbios-ns,netbios-dgm,netbios-ssn,microsoft-ds
+0     0   ACCEPT      udp  -  any    vlan1   anywhere        anywhere     multiport sports netbios-ns,netbios-dgm,netbios-ssn,microsoft-ds
+</PRE>
+
+<h4>5.  Allow forwarding between interfaces</h4>
+
+<PRE>
+ # sysctl -w net.ipv4.ip_forward=1
+ # sysctl -w net.ipv6.conf.all.forwarding=1
+</PRE>
+
+<p>To enable forwarding at boot, you'll need to edit /etc/sysctl.conf and change/add 
+the following line.</p>
+
+<pre>
+ net.ipv4.ip_forward = 1 
+ net.ipv6.conf.default.forwarding=1
+</pre>
+
+<h4>6.  Save and restart iptables</h4>
+
+<PRE>
+ # /etc/init.d/iptables save<br>
+iptables: Saving firewall rules to /etc/sysconfig/iptables: [  OK  ]
+</pre>
+
+<PRE>
+ # /etc/init.d/iptables restart
+iptables: Flushing firewall rules: [  OK  ]
+iptables: Setting chains to policy ACCEPT: filter nat [  OK  ]
+iptables: Unloading modules: [  OK  ]
+iptables: Applying firewall rules: [  OK  ]
+</pre>
+
+<p>Make iptables to be started after boot.</p>
+
+<PRE>
+  # chkconfig iptables on
+</pre>
+
+<p><strong>END.</strong></p>
+
+<p>This is the list of articles I had been intensively using during writing.</p>
+
+<OL>
+  <LI><a href="http://www.yolinux.com/TUTORIALS/LinuxTutorialIptablesNetworkGateway.html"
+ target="_blank">LinuxTutorialIptablesNetworkGateway.html</a>
+  <LI><a href="http://www.bctes.com/nat-linux-iptables.html" 
+ target="_blank">http://www.bctes.com/nat-linux-iptables.html</a>
+  <LI><a href="http://billauer.co.il/ipmasq-html.html" 
+ target="_blank">http://billauer.co.il/ipmasq-html.html</a>
+  <LI><a href="https://help.ubuntu.com/community/IptablesHowTo" 
+ target="_blank">https://help.ubuntu.com/community/IptablesHowTo</a>
+  <LI><a href="http://www.gentoo.org/doc/en/home-router-howto.xml" 
+ target="_blank">http://www.gentoo.org/doc/en/home-router-howto.xml</a>
+  <LI><a href="http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers" 
+ target="_blank">http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers</a>
+</OL>
+
+
+<a name="DDNSAndNTP"></a>
+<h3>Part7 DDNS and NTP Installation and Configuration 
+<a href="http://brezular.wordpress.com/2011/09/11/building-linux-l3-switchrouter-on-x8-part7-ddns-and-ntp-installation-and-configuration/" 
+target="newwindow">(Source Origin)</a></h3>
+
+<h4>Part1 - Dynamic DNS /DDNS/ Configuration</h4>
+
+<p>Dynamic DNS is a service which allows us to use a domain name even our public IP 
+address is dynamically assigned from ISP range. To accomplish it our router must 
+send http formatted query to DDNS provider in regular intervals. Thanks to those 
+queries,  DDSN provider is informed about the public IP address of router and store 
+the pair - the IP address with particular DNS name.  It enables  DNS queries to be 
+answered with the public IP address of your router by public DNS server. You can 
+read more about DDNS service here:</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Dynamic_DNS" 
+   target="_blank">http://en.wikipedia.org/wiki/Dynamic_DNS</a></p>
+
+<p><strong>Note</span></strong>: I've chosen <a href="http://dyn.com/dns/dyndns-free/" 
+target="_blank">DynDNS</a> to provide DDNS service but feel free to use any 
+<a href="http://www.dd-wrt.com/wiki/index.php/DDNS_-_How_to_setup_Custom_DDNS_settings_using_embedded_inadyn_-_HOWTO" 
+target="_blank">DDNS provider</a> you like. But be aware that the tutorial is written 
+to shown configuration of DDNS with DynNDS service provider.</p>
+
+<h4>1.  Register your DynDNS domain</h4>
+
+<p><strong>-</strong>  Navigate to <a href="http://dyn.com/dns/dyndns-free/" 
+target="_blank">http://dyn.com/dns/dyndns-free/</a><br>
+<strong>-</strong>  Click on "Get it Now"<br>
+<strong>-</strong>  Fill the hostname, IPv4 or IPv6 address, click Next<br>
+<strong>- </strong> Register your account - login/password, email etc. Click "Create 
+Account<br>
+<strong>- </strong> The confirmation mail will be send to your email account. Click 
+on link provided in email to activate DynDNS account.<br>
+<strong>- </strong> Click on "Activate your free DynDNS"</p>
+
+<h4>2.  Install necessary packages</h4>
+
+<PRE>
+ # yum install perl-IO-Socket-SSL perl-Net-LibIDN 
+</pre>
+
+<h4>3.  Install the latest  DDNS client</h4>
+
+<PRE>
+ # wget <a href="http://sourceforge.net/projects/ddclient/files/ddclient/ddclient-3.8.1/ddclient-3.8.1.tar.gz/download" rel="nofollow">http://sourceforge.net/projects/ddclient/files/ddclient/ddclient-3.8.1/ddclient-3.8.1.tar.gz/download</a>
+ # tar zxvf ddclient-3.8.1.tar.gz
+ # cd ./ddclient-3.8.1
+
+ # mkdir /etc/ddclient/
+ # mkdir /var/cache/ddclient/
+
+ # cp ddclient /usr/local/sbin
+ # cp sample-etc_ddclient.conf /etc/ddclient/ddclient.conf
+ # cp sample-etc_rc.d_init.d_ddclient /etc/rc.d/init.d/ddclient
+ # chkconfig -add ddclient
+</pre>
+
+<h4>4.  Configure /etc/ddclient/dddclient.conf</h4>
+
+<PRE>
+daeomon=300
+use=web
+login=brezular
+password=yourdyndnspassword
+server=members.dyndns.org
+protocol=dyndns2
+brezular.dyndns.org
+</PRE>
+
+<p>Now start the ddclient daemon:</p>
+
+<PRE>
+ # /etc/init.d/ddclient start 
+Starting ddclient: WARNING:  file /etc/ddclient/ddclient.conf: file /etc/ddclient/ddclient.conf must be accessible only by its owner (fixed).
+[  OK  ]
+</PRE>
+
+<p>Rights for other users were kicked out and kept read and write for the owner 
+   (root).</p>
+
+<PRE>
+ # ls -l /etc/ddclient/ddclient.conf
+-rw------ 1 root root 5919 Sep  3 21:12 /etc/ddclient/ddclient.conf
+</pre>
+
+<p>Check if ddclient is running</p>
+
+<PRE>
+ # /etc/init.d/ddclient status
+ddclient (pid  2011) is running 
+</PRE>
+
+<h4>5.  Configure IP address updates to DynDNS provider</h4>
+
+<PRE>
+ # ps -aux | grep ddclient
+root 2011 0.0 0.8 15124 8260 pts/0  S  21:30 0:00 ddclient - sleeping for 300 seconds
+</pre>
+
+<p>Ddclient is running in daemon mode. Parameter daemon=300  in 
+/etc/ddclient/ddclient.conf says, that every 300 seconds ddclient is activated and it 
+is checking for public IP address change. If the IP address is changed, update is 
+automatically sent to ddns server. If there is not change, update is not sent.</p>
+
+<p>However, the ddclient running in daemon mode should automatically send an update 
+every month, even if no changes have been made in the ip address, in order to keep 
+the account active.</p>
+
+<h4>6.  Test DynDNS</h4>
+
+<PRE>
+ # ping brezular.dyndns.org
+PING brezular.dyndns.org (78.98.103.30) 56(84) bytes of data.
+64 bytes from adsl-dyn30.78-98-103.t-com.sk (78.98.103.30): icmp_seq=1 ttl=64 time=0.145 ms
+64 bytes from adsl-dyn30.78-98-103.t-com.sk (78.98.103.30): icmp_seq=2 ttl=64 time=0.091 ms
+64 bytes from adsl-dyn30.78-98-103.t-com.sk (78.98.103.30): icmp_seq=3 ttl=64 time=0.109 ms
+64 bytes from adsl-dyn30.78-98-103.t-com.sk (78.98.103.30): icmp_seq=4 ttl=64 time=0.118 ms
+</pre>
+
+<h4>Part2 - Network Time Protocol NTP - Client and Server Configuration</h4>
+
+<p>Assuming that we are  familiar with  Network Time protocol, we are not going to 
+explain of  purpose of NTP. If it is needed, start  
+<a href="http://en.wikipedia.org/wiki/Network_Time_Protocol" 
+target="_blank">here</a>.</p>
+
+<h4>1.  Install NTP tools</h4>
+
+<PRE>
+ # yum install ntp
+</PRE>
+
+<h4>2.  Configure NTP client on router</h4>
+
+<PRE>
+ # vi /etc/ntp.conf
+</PRE>
+
+<h5>a)  Specify NTP public servers or leave it to default</h5>
+
+<p>These are the default pre-configured public NTP servers.</p>
+
+<PRE>
+ server 0.rhel.pool.ntp.org
+ server 1.rhel.pool.ntp.org
+ server 2.rhel.pool.ntp.org
+</PRE>
+
+<h5>b)  Restrict the type of access you allow public NTP servers</h5>
+
+<PRE>
+ restrict default kod nomodify notrap nopeer noquery
+ restrict -6 default kod nomodify notrap nopeer noquery
+</PRE>
+
+<p>Time will be synchronized with public NTP  server but this  server are not allowed 
+to modify the run-time configuration or query our Linux NTP server.</p>
+
+<h5>c)  Start ntpd daemon and make ntpd daemon to be started after boot</h5>
+
+<PRE>
+ # /etc/init.d/ntpd start 
+ # chkconfig ntpd on
+</PRE>
+
+<h5>d)  Check if synchronization is working</h5>
+
+<PRE>
+ # ntpq -p
+ntpq: read: Connection refused
+</pre>
+
+<p>Check /var/log/messages for any error messages.</p>
+
+<PRE>
+ #  tail /var/log/messages
+
+Sep  4 14:23:34 swouter-x86 ntpd[1735]: kernel time sync status 2040
+Sep  4 14:23:35 swouter-x86 ntpd[1735]: sendto(81.89.63.67) (fd=24): Operation not permitted
+Sep  4 14:23:36 swouter-x86 ntpd[1735]: sendto(217.73.16.2) (fd=24): Operation not permitted
+Sep  4 14:24:39 swouter-x86 ntpd[1735]: sendto(81.89.63.67) (fd=24): Operation not permitted
+Sep  4 14:24:42 swouter-x86 ntpd[1735]: sendto(217.73.16.2) (fd=24): Operation not permitted
+Sep  4 14:25:44 swouter-x86 ntpd[1735]: sendto(81.89.63.67) (fd=24): Operation not permitted
+Sep  4 14:25:45 swouter-x86 ntpd[1735]: sendto(217.73.16.2) (fd=24): Operation not permitted
+Sep  4 14:26:49 swouter-x86 ntpd[1735]: sendto(81.89.63.67) (fd=24): Operation not permitted
+Sep  4 14:26:50 swouter-x86 ntpd[1735]: sendto(217.73.16.2) (fd=24): Operation not permitted
+Sep  4 14:27:00 swouter-x86 ntpd[1735]: ntpd exiting on signal 15
+</pre>
+
+<p>Obviously, there is a problem with firewall configuration. UDP traffic to 
+destination port 123 originating on router must be allowed to be forwarded to the 
+Internet.</p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p udp -dport 123 -j ACCEPT
+ # iptables -A INPUT -i ppp0 -p udp -sport 123  -j ACCEPT
+</PRE>
+
+<p>Restart ntpd daemon.</p>
+
+<PRE>
+ # /etc/init.d/ntpd restart
+Shutting down ntpd: [FAILED]
+Starting ntpd: [  OK  ]
+</PRE>
+
+<PRE>
+ #  ntpq -p
+
+remote           refid      st t when poll reach   delay   offset  jitter<br>
+==============================================================================
+ns2.vnet.sk     81.89.63.150     2 u  100   64    2    5.308  -63.725   0.008
+*lb02.vnet.sk    194.160.23.2     2 u   32   64   77    5.185  -67.698  39.818
+</PRE>
+
+<p>For correct synchronization, the delay and offset values must be non-zero and 
+the jitter value should be under 100. After successful synchronization  a symbol *  
+has to be presented beside the particular NTP server.</p>
+
+<PRE>
+ #  date
+Sun Sep  4 12:56:32 CEST 2011
+</pre>
+
+<p>Time is  updated correctly, now.</p>
+
+<h4>3.  Configure NTP server</h4>
+
+<h5>a)  Edit /etc/ntpd.conf and configure NTP server to allow respond  NTP 
+queries coming from  LAN.</h5>
+
+<p>Time will be synchronized with public NTP server but this  server are not allowed 
+to modify the run-time configuration or query our Linux NTP server.</p>
+
+<PRE>
+ restrict default kod nomodify notrap nopeer noquery
+ restrict -6 default kod nomodify notrap nopeer noquery
+</PRE>
+
+<p>Deny to query our NTP server from the Internet and deny to modify the run-time 
+configuration  of our  NTP server.</p>
+
+<PRE>
+ restrict 0.rhel.pool.ntp.org mask 255.255.255.255 nomodify notrap noquery
+ restrict 1.rhel.pool.ntp.org mask 255.255.255.255 nomodify notrap noquery
+ restrict 2.rhel.pool.ntp.org mask 255.255.255.255 nomodify notrap noquery
+</PRE>
+
+<p>To allow hosts on LAN to query our NTP server you need to add this rule.</p>
+
+<PRE>
+ restrict 172.18.0.0 mask 255.255.0.0 nomodify notrap
+</PRE>
+
+<h5>b)   Restart ntpd daemon on NTP server</h5>
+
+<PRE>
+ #  /etc/init.d/ntpd restart
+Shutting down ntpd: [  OK  ]
+Starting ntpd: [  OK  ]
+</PRE>
+
+<h5>c)  Configure iptables to allow NTP queries from hosts on LAN</h5>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -p udp -dport 123 -j ACCEPT
+ # iptables -A OUTPUT -o vlan1 -p udp -sport 123 -j ACCEPT
+</PRE>
+
+<h4>3.  Configure NTP client on  LAN computers</h4>
+
+<p>The steps as very similar to configuration of NTP client on the router. Comment 
+lines pointing to public NTP servers and put our NTP server 172.18.100.150 to 
+/etc/ntp.conf. Restart ntpd daemon and wait for synchronization.  Remember our NTP 
+server must be be synchronized with public NTP server first. After that your computer 
+might synchronize time from our NTP server.</p>
+
+<h4>4.  Trobleshooting</h4>
+
+<p>After reboot of Linux router, NTP peers were not available. It might be caused 
+by non available public NTP server or poorly configured firewall which prevents 
+access to server.</p>
+
+<PRE>
+ # ntpq -d -p
+No association ID's returned 
+</PRE>
+
+<p>After restarting npdd daemon peers were immediately shown in the output of ntpqd 
+and synchronization occurred.</p>
+
+<p>Explanation:
+
+<P> Public NTP servers cannot be reached by their domain names during the boot 
+because public DNS servers are not added to /etc/resolv.conf by pppd daemon,  
+before start of NTP daemon.  For this reason NTP server might be defined by its 
+IP address instead of its name in /etc/ntpd.conf. This article describes a problem 
+in more details.</p>
+
+<p><a href="http://mail-index.netbsd.org/current-users/2005/10/09/0006.html" 
+target="_blank">http://mail-index.netbsd.org/current-users/2005/10/09/0006.html</a></p>
+
+<h4>END.</h4>
+
+<p>The following articles had been  intensively used during writing of this tutorial.</p>
+
+<h5>DynDNS</h5>
+<OL>
+  <LI><a href="http://www.dd-wrt.com/wiki/index.php/DDNS_-_How_to_setup_Custom_DDNS_settings_using_embedded_inadyn_-_HOWTO" 
+      target="_blank">How_to_setup_Custom_DDNS_settings_using_embedded_inadyn_-_HOWTO</a>
+  <LI><a href="http://en.wikipedia.org/wiki/Dynamic_DNS" 
+      target="_blank">http://en.wikipedia.org/wiki/Dynamic_DNS</a>
+  <LI><a href="http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch19_:_Dynamic_DNS" 
+      target="_blank">Quick_HOWTO_:_Ch19_:_Dynamic_DNS</a>
+  <LI><a href="http://www.sonoracomm.com/support/19-inet-support/232-ddclient" 
+      target="_blank">232-ddclient</a>
+  <LI><a href="http://sourceforge.net/apps/trac/ddclient" 
+      target="_blank">ddclient</a>
+  <LI><a href="http://www.ubuntugeek.com/update-ip-addresses-at-dynamic-dns-services-using-ddclient.html" 
+      target="_blank">update-ip-addresses-at-dynamic-dns-services-using-ddclient.html</a>
+</OL>
+<h5>NTP</h5>
+<OL>
+  <LI><a href="http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch24_:_The_NTP_Server" 
+      target="_blank">The_NTP_Server</a>
+  <LI><a href="http://www.brennan.id.au/09-Network_Time_Protocol.html" 
+      target="_blank">Network_Time_Protocol.html</a>
+  <LI><a href="http://www.ghidinelli.com/2008/09/25/iptables-firewall-rules-for-ntpd-time-synchronization" 
+      target="_blank">iptables-firewall-rules-for-ntpd-time-synchronization</a>
+</OL>
+
+<a name="DNSCache"></a>
+<h3>DNS Cache Server Installation and Configuration</h3>
+
+					<div class="post-info">
+						<p>
+							<span class="time">September 11, 2011</span>
+																						<span class="post-comments"><a href="http://brezular.wordpress.com/2011/09/11/building-linux-l3-switchrouter-on-x86-part8-dns-cache-server-installation-and-configuration/#comments" title="Comment on Building Linux L3 switch/router on x86 - Part8  - DNS Cache Server Installation and Configuration">1 Comment</a></span>
+																				</p>
+					</div>
+
+					<p style="text-align:justify;">Even we do not necessary need to run our own DNS server  having own cache DNS server brings two main benefits:</p>
+
+<ul style="text-align:justify;">
+  <li>Improved speed of DNS lookups</li>
+  <li>Reducing overall traffic on link to ISP</li>
+</ul>
+
+<p style="text-align:justify;">Instead of retrieving IP address by 
+contacting public DNS servers for each request, DNS caches IP addresses 
+of commonly visited websites to RAM.</p>
+
+<p><strong>1.  Install bind caching DNS server</strong></span></p>
+
+<PRE>
+ # yum install bind bind-utils
+</pre>
+
+<p><strong>2.  Configure bind caching DNS server</strong></span></p>
+
+<p style="text-align:justify;">We are going to configure /etc/named.conf</span>
+ to make our basic DNS cache server working. Changes for this file are 
+shown with green colour. We have to  specify IP address and ports 
+on which is DNS server listening. Also range of source IP address 
+requesting DNS lookup need to be configured. The last step is 
+configuration of public DNS server which have to be specified in 
+forwarders list.</p>
+
+<PRE>
+ # vi /etc/named.conf
+
+//listen-on port 53 { 127.0.0.1; };
+listen-on port 53 { 127.0.0.1; 172.18.100.150; };
+
+//allow-query     { localhost; };
+allow-query     { localhost; 172.18.0.0/16; };
+
+//dnssec-enable yes;
+dnssec-enable no;
+
+//dnssec-validation yes;
+dnssec-validation no;
+
+//Add list of forwarders - public DNS of ISP
+forwarders { 195.146.132.58; 195.146.128.62; };
+</PRE>
+
+<p><strong>3)  Specify the cache DNS server</strong></p>
+
+<PRE>
+ # /etc/resolv.conf 
+nameserver 127.0.0.1
+</pre>
+
+
+<p><strong>4)  Start named daemon and make it started during the boot</strong></span></p>
+
+<PRE>
+ # /etc/init.d/named start
+ # chkconfig named on
+</PRE>
+
+<p><strong>5)  Iptables configuration</strong></span></p>
+
+<p style="text-align:justify;">Allow router itself to send  DNS request and receive replays:</p>
+
+<PRE>
+ # iptables -A OUTPUT -o ppp0 -p udp -dport 53 -j ACCEPT
+ # iptables -A INPUT -i ppp0 -p udp -sport 53 -m state -state ESTABLISHED -j ACCEPT
+</pre>
+
+<p style="text-align:justify;">Allow DNS qrequests from hosts on  LAN to reach our Cache DNS server.</p>
+
+<PRE>
+ # iptables -A INPUT -i vlan1 -p udp -dport 53 -j ACCEPT
+ # iptables -A OUTPUT -o vlan1 -p udp -sport 53 -j ACCEPT
+</pre>
+
+<p style="text-align:justify;">Allow DNS queries generated on router itself to be sent</p>
+
+<PRE>
+ # iptables -A INPUT -i lo -p udp -j ACCEPT 
+ # iptables -A OUTPUT -o lo -p udp -j ACCEPT 
+</pre>
+
+<p style="text-align:justify;">Allow <a href="http://www.centos.org/docs/5/html/Deployment_Guide-en-US/s1-bind-rndc.html" target="_blank">rndc</a> to listen on TCP 953</p>
+
+<PRE>
+ # iptables -A INPUT -i lo -p tcp -j ACCEPT 
+ # iptables -A OUTPUT -o lo -p tcp -j ACCEPT 
+</pre>
+
+<p><strong>6)  Avoid rewriting /etc/resolv.conf</strong></span></p>
+
+<p style="text-align:justify;">In PPPoE tutorial we had to add copy 
+command to /etc/ppp/ip-up.local in order to get /etc/resolv.conf updated
+ with the list of public DNS servers. The command made a copy of content
+ /var/run/ppp/resolv.conf with the list of public DNS to 
+/etc/resolv.conf.</p>
+
+<p style="text-align:justify;">Now we have to delete or comment a line starting with copy in /etc/ppp/ip-up.local in order to do not rewrite  entry "nameserver 127.0.0.1</span>" in  /etc/resol.conf</p>
+
+<p style="text-align:justify;"><strong>7)  Change priority of starting named daemon during boot</span></strong></p>
+
+<p style="text-align:justify;">Getting our cache DNS server properly 
+working, we have to make named server daemon to be started as the last 
+daemon in the list. Higher priority means that a proccess will be 
+started later.  Edit file /etc/init.d/named and change S parameter 
+from 13 to 99 for line starting with chkconfig as it is shown below.</p>
+
+<p style="text-align:justify;"><strong>a)  First remove named daemon from chkconfig administration</span></strong></p>
+
+<PRE>
+ # chkconfig -del named 
+</pre>
+
+<p style="text-align:justify;"><strong>b)  Edit /etc/init.d/named and find a line starting with #chkconfig: - 13 87</span></strong></p>
+
+<p style="text-align:justify;">Change 13 to 99. It will makes named daemon to be started as one of the last daemon during the boot of CentOS.</p>
+
+<p style="text-align:justify;"><strong>c) Add named under management of chkconfig command and start it for all runleves</span></strong></p>
+
+<PRE>
+ # chkconfig -add named 
+ # chkconfig named on 
+</pre>
+
+<p style="text-align:justify;"><strong>End.</strong></p>
+
+<p style="text-align:justify;">The following articles had been intensively used during writing of this tutorial.</p>
+
+<OL>
+  <LI><a href="http://www.lamolabs.org/blog/282/how-to-setup-a-dns-server-on-centos-5/" target="_blank">how-to-setup-a-dns-server-on-centos-5/</a><br>
+  <LI><a href="http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch18_:_Configuring_DNS" target="_blank">Quick_HOWTO_:_Ch18_:_Configuring_DNS</a><br>
+  <LI><a href="http://www.labtestproject.com/linnet/dns-server.html" target="_blank">dns-server.html</a><br>
+  <LI><a href="http://www.zaphu.com/2007/09/10/ubuntu-dns-server-guide-bind-caching-name-server-setup/" target="_blank">ubuntu-dns-server-guide-bind-caching-name-server-setup/</a><br>
+  <LI><a href="http://www.zaphu.com/2007/09/14/ubuntu-dns-server-guide-bind-master-server-setup/" target="_blank">ubuntu-dns-server-guide-bind-master-server-setup/</a><br>
+  <LI><a href="http://h30499.www3.hp.com/t5/System-Administration/iptables-is-blocking-rndc/td-p/3034191" target="_blank">iptables-is-blocking-rndc</a>
+</OL>
+
+
+<h3>Virtual switching with Open vSwitch 
+<a href="http://www.admin-magazine.com/CloudAge/Articles/Virtual-switching-with-Open-vSwitch">(Source Origin)</a></h3>
+
+<h3>Switching Station</h3>
+    </div>
+	
+<P> Virtualization with Vmware, KVM, and Xen is here to stay. But up to now,
+no virtual switch has supported complex scenarios. Open vSwitch supports flows, 
+VLANS, trunking, and port aggregation just like major league switches.<br><br>	
+	
+Ralf Spenneberg<br>	
+		
+	
+<p>Many corporations are moving their whole infrastructure to virtual systems. This 
+process involves virtualizing centralized components like SAP systems, Oracle database 
+servers, email systems, and fileservers, thus facilitating administration. 
+Additionally, administrators no longer need to shut down systems for maintenance, 
+because the workloads can be migrated on the fly to other virtual hosts.</p>
+
+<p>One of the biggest disadvantages of a virtual environment has always been the 
+simplistic network structure. Although physical network switches support VLANs, 
+trunking, QoS, port aggregation, firewalling, and Layer 3 functionality, virtual 
+switches are very simple affairs. VMware provided a solution in cooperation with 
+Cisco, which now offers the virtual Cisco Nexus 1000V switch for VMware environments. 
+The switch integrates with the VMware environment and offers advanced functionality.</p>
+
+<p>An open source product of this caliber previously has not been available, but Open 
+vSwitch tackles the problem. Open vSwitch supports Xen, KVM, and VirtualBox, as well 
+as XenServer. The next generation of Citrix will also be moving to Open vSwitch.</p>
+
+<p>Open vSwitch <a href="http://www.admin-magazine.com/CloudAge/content/view/full/3868/%28offset%29/4#article_i1" target="_self">[1]</a>, 
+which is based on Stanford University's OpenFlow project 
+<a href="http://www.admin-magazine.com/CloudAge/content/view/full/3868/%28offset%29/4#article_i2" target="_self">[2]</a>,
+ is a new open standard designed to support the management of switches 
+and routers with arbitrary software (see the "OpenFlow" box).</p>
+
+<hr><p>OpenFlow</p>
+
+<p>The OpenFlow project aims to revolutionize the world of routers and 
+switches. A classical router or switch combines two functions in a 
+single device:</p>
+
+<ul>
+  <li>Fast packet forwarding (data path)</li>
+  <li>Decisionmaking on how and where to forward packets (control path)</li>
+</ul>
+
+<p>These two systems typically work independently on the same device.  The data path 
+component only asks the control path component if it doesn't know how and where to 
+route a packet. The control path component then determines the path/route and stores 
+it in the flow table. All other packets in the same flow can then be forwarded quickly 
+by the data path engine.</p>
+
+<p>OpenFlow offloads the control path onto a separate controller, which can be a 
+simple server. The OpenFlow switch (data path) and controller then communicate over 
+a secure channel.</p>
+
+<p>The OpenFlow switch stores the flow table where the controller saves the 
+individual flows. Each flow describes the properties of the packets that make up the 
+flow and how the switch should handle the packets (drop, sendout port, and so on). 
+Once the switch receives a packet for which it doesn't have a matching entry in the 
+table, it sends the packet to the controller, which analyzes the packet, makes a 
+decision and stores the decision in the flow table.</p>
+
+<p>Because of cooperation between multiple manufacturers, the developers have been 
+able to achieve OpenFlow support in several commercial network appliances. Customized 
+firmware exists for several switches by HP, NEC, Toroki, and Pronto 
+<a href="http://www.admin-magazine.com/CloudAge/content/view/full/3868/%28offset%29/4#article_i3" target="_self">[3]</a>. 
+Open vSwitch is a software implementation that provides both functionalities (data 
+path and controller).</p><hr>
+
+<p>Open vSwitch gives the administrator the following features on a Linux system:</p>
+
+<ul>
+  <li>Fully functional Layer 2 switch</li>
+  <li>NetFlow, sFlow, SPAN, and RSPAN support</li>
+  <li>802.1Q VLANs with trunking</li>
+  <li>QoS</li>
+  <li>Port aggregation</li>
+  <li>GRE tunneling</li>
+  <li>Compatibility with the Linux bridge code (brctl)</li>
+  <li>Kernel and userspace switch implementation</li>
+</ul>
+
+<p>Before you can benefit from these features, however, you first need to install Open 
+vSwitch. Prebuilt packages exist for Debian Sid (unstable).  I have released packages 
+for Fedora/Red Hat that you can download from my own website 
+<a href="http://www.admin-magazine.com/CloudAge/content/view/full/3868/%28offset%29/4#article_i4" target="_self">[4]</a>. 
+You can also install from the source code (see the "Installation" box).</p>
+
+<hr><p>Installation</p>
+
+<p>After unpacking the source code, you'll need to build and install Open vSwitch using 
+the typical commands:</p>
+
+<pre>	
+./configure   with l26=U
+   /lib/modules/$(uname  r)/build
+make
+sudo make install
+</PRE><hr>
+
+<p>You'll need the kernel headers to build the kernel module. In recent distributions, 
+typically, you will find the headers in a package named kerneldevel, or something 
+similar. After the build, you should check the installation and launch the software 
+for the first time. To do so, load the kernel module manually:</p>
+
+<pre>	
+modprobe datapath/linux 2.6/U
+   openvswitch_mod.ko
+</PRE>
+
+<p>If this command fails, you probably need to unload a bridge module: 
+<b>rmmod bridge</b>.</p>
+
+<p>The kernel module version may not match your current kernel, which can be a
+ problem if you use prebuilt packages. In this case, you need to rebuild the module. 
+After doing so, you can initialize the Open vSwitch configuration database:</p>
+
+<pre>	
+ovsdb tool create U
+  /usr/local/etc/ovs vswitchd.conf.db U
+  vswitchd/vswitch.ovsschema
+</PRE>
+
+<p>In case of other issues, the INSTALL.Linux file provides troubleshooting tips.</p>
+
+
+<p>Although the packages provide start scripts for simple use, you will need to launch 
+manually or create your own start script in case of a manual installation. The 
+configuration database handles switch management (see 
+<a href="#article_l1" target="_self">Listing 1</a>).</p>
+
+<a name="article_l1"></a><hr><p>Listing 1</p>
+
+<p>Configuration</p>
+
+<pre class="contained">
+  ovsdb server /usr/local/etc/ovs vswitchd.conf.db \
+       remote=punix:/usr/local/var/run/openvswitch/db.sock \
+       remote=db:Open_vSwitch,managers \
+       private key=db:SSL,private_key \
+       certificate=db:SSL,certificate \
+       bootstrap ca cert=db:SSL,ca_cert
+</PRE><hr>
+
+<p>The next step is to launch the Open vSwitch service:</p>
+
+<pre>	
+ovs vswitchd unix:/usr/local/var/U
+   run/openvswitch/db.sock
+</PRE>
+
+<p>You can now run the <b>ovs vsctl</b> command to create new switches or add and 
+configure ports. Because most scripts for Xen and KVM rely on the bridge utilities, 
+and on the <b>brctl</b> command to manage the bridge, you will need to start the 
+bridge compatibility daemon. To do this, load the kernel module and then start 
+the service:</p>
+
+<pre>
+modprobe U
+  datapath/linux 2.6/brcompat_mod.ko
+ovs brcompatd U
+     pidfile   detach U
+    vANY:console:EMER unix:/usr/U
+    local/var/run/openvswitch/db.sock
+</pre>
+
+<p>You can now use the bridge utilities to manage your Open vSwitch:</p>
+
+<pre>	
+brctl addbr extern0
+brctl addif extern0 eth0
+</PRE>
+
+<p>Distribution scripts for creating bridges will work in the normal way. You can 
+also use <b>ovs vsctl</b> to manage the bridge. In fact, you can use both commands 
+at the same time (<a href="#article_l2" target="_self">Listing 2</a>).</p>
+
+<a name="article_l2"></a><hr><p>Listing 2</p>
+
+<p>Bridge Management</p>
+
+<pre>
+ [root@kvm1 ~]# brctl show
+ bridge name bridge id           STP enabled interfaces
+ extern0     0000.00304879668c   no          eth0
+                                             vnet0
+ [root@kvm1 ~]# ovs vsctl list ports extern0
+ eth0
+ vnet0
+</PRE><hr>
+
+<p>If the <b>brctl show</b> command says it can't find some files in the <b>/sys/</b>
+ directory, the bridge utilities may be too new (e.g., on RHEL 6). In this case, you 
+might want to downgrade to the latest version of RHEL 5. Up to this point, Open vSwitch 
+has acted exactly like a bridge set up using the bridge utilities. Some additional 
+configuration steps are necessary to use the advanced features. All of the settings 
+in the Open vSwitch configuration database can be handled using the <b>ovs vsctl</b> 
+command.</p>
+
+<a name="eztoc0_0_1" id="eztoc0_0_1"></a><h4>NetFlow</h4>
+
+<p>Open vSwitch can export the NetFlows within the switch. To allow this to happen, 
+you first need to create a new NetFlow probe.</p>
+
+<pre>	
+# ovs vsctl create netflow target=U
+   "192.168.0.5\:5000"
+75545802 675f 45b2 814e 0875921e7ede
+</PRE>
+
+<p>Then link the probe with the <b>extern0</b> bridge:</p>
+
+<pre>	
+# ovs vsctl add bridge extern0 netflow U
+  75545802 675f 45b2 814e 0875921e7ede
+</PRE>
+
+<p>If you previously launched a NetFlow collector (such as Ntop) on port 5000 of a 
+machine with the address of 192.168.0.5, you can now view the file 
+(<a href="#article_f1" target="_self">Figure 1</a>).</p>
+    
+<a name="article_f1"></a><hr><P>                                                                        
+<img src="http://www.admin-magazine.com/var/ezflow_site/storage/images/cloudage/articles/virtual-switching-with-open-vswitch/figure-1/38424-1-eng-US/Figure-1_large.png" style="border: 0px solid;" alt="Figure 1" title="Figure 1" width="360" height="186">
+            
+    
+<p>Figure 1: Ntop showing the flows for the bridge.</p><hr>
+
+<p>The configuration settings in the database can be managed using</p>
+
+<code>ovs vsctl list bridge</code>&nbsp;&nbsp; and &nbsp;&nbsp;<code>ovs vsctl list 
+netflow</code>
+
+<p>commands and removed using ovs vsctl destroy ...</p>
+
+
+<a name="eztoc0_0_2" id="eztoc0_0_2"></a><h4>QoS</h4>
+
+<p>In  many cases, administrators need to restrict the bandwidth of individual virtual 
+guests, particularly when different customers use the same virtual environment. 
+Different guests receive the performance they pay for, based on their Service Level 
+Agreements.</p>
+
+<p>Open vSwitch gives administrators a fairly simple option for restricting the 
+maximum transmit performance of individual guests. To test this, you should 
+first measure the normal throughput. The <b>iperf</b> tool is useful for doing so. 
+You can launch iperf as a server on one system and as a client on a virtual guest 
+(<a href="#article_l3" target="_self">Listing 3</a>).</p>
+
+<a name="article_l3"></a><hr><p>Listing 3</p>
+
+<p>Performance Measurement</p>
+
+<pre>
+ ## Server:
+ ## iperf  s
+ ## Client:
+ # iperf  c 192.168.0.5   t 60
+
+ Client connecting to 192.168.0.5, TCP port 5001
+ TCP window size: 16.0 KByte (default)
+
+ [  3] local 192.168.0.210 port 60654 connected with 192.168.0.5 port 5001
+ [ ID] Interval       Transfer     Bandwidth
+ [  3] 0.0 60.0 sec   5.80 GBytes  830 Mbits/sec
+</PRE><hr>
+
+<p>You can now restrict the send performance. Note that the command expects you to 
+enter the send performance in kbps. Besides the send performance, you will also need 
+to specify the burst speed, which should be about a tenth of the send performance. 
+The <b>vnet0</b> interface in this case in this switch port to which the virtual 
+guest is connected.</p>
+
+<pre>	
+# ovs vsctl set Interface vnet0 U
+  ingress_policing_rate=1000
+# ovs vsctl set Interface vnet0 U
+  ingress_policing_burst=100
+</PRE>
+
+<p>You can test the results directly using iperf. In this case, the restrictions work 
+(<a href="#article_f2" target="_self">Figure 2</a>).</p>
+
+<a name="article_f2"></a><hr>
+<P><img src="http://www.admin-magazine.com/var/ezflow_site/storage/images/cloudage/articles/virtual-switching-with-open-vswitch/figure-2/38428-1-eng-US/Figure-2_large.png" style="border: 0px solid;" alt="Figure 2" title="Figure 2" width="360" height="197">
+
+<p>Figure 2: Using iperf to check the effectiveness of send performance restrictions.</p>
+<hr>
+
+<p>If you are familiar with the tc command and classbased QoS on Linux with various 
+queuing disciplines, you can use this tool in combination with Open vSwitch. The man 
+page provides various examples.</p>
+		
+	
+<a name="eztoc0_0_1" id="eztoc0_0_1"></a><h4>Mirroring</h4>
+
+<p>To run an Intrusion Detection System, you need a mirror port on the switch. 
+Again, Open vSwitch gives you this option. To use it, you first need to create the 
+mirror port and then add it to the correct switch. To create a mirror port that 
+receives the traffic from all other ports and mirrors it on <b>vnet0</b>, use the 
+following command:</p>
+
+<pre>	
+ovs vsctl create mirror name=mirror U
+  select_all=1 output_port=U
+   e46e7d4a 2316 407f ab11 4d248cd8fa94
+</PRE>
+
+<p>The command <code>"ovs vsctl list port vnet0"</code> discovers the output port ID 
+that you need. The following command adds the mirror port to the bridge.
+
+<pre>	
+# ovs vsctl add bridge extern0 mirrors U
+  716462a4 8aac 4b9c aa20 a0844d86f9ef
+</PRE>
+
+<a name="eztoc0_0_2" id="eztoc0_0_2"></a><h4>VLANs</h4>
+
+<p>You can also implement VLANs with Open vSwitch, and you have two options for 
+doing so. Every Open vSwitch is VLANcapable: If you add a port to the virtual 
+switch, it is always a VLAN trunk port that provides tagged transport of all VLANs. 
+To create an access port that transports a VLAN natively and without tags, you can 
+enter the following command:</p>
+
+<pre>	
+ovs vsctl add port extern0 vnet1 tag=1
+</PRE>
+
+<p>The <b>brctl</b>  command doesn't give you the option of creating this kind of port 
+directly. You'll need a fake bridge as a workaround. Open vSwitch supports fake 
+bridges, which you can then assign to individual VLANs. Every port on a fake bridge 
+is then an access port on the VLAN. To implement this, you first create a fake bridge 
+as the child of a parent bridge. For example, do:</p>
+
+<pre>	
+# ovs vsctl add br VLAN1 extern0 1
+</PRE>
+
+<p>The  new fake bridge now answers to the name of VLAN1 and transports the VLAN with 
+a tag of 1. You need to enable this, and you can assign an IP address at the same 
+time.</p>
+
+<pre>	
+# ifconfig VLAN1 192.168.1.1 up
+</PRE>
+
+<p>Each port you create on this bridge is an access port for VLAN 1, which means 
+you can again use the <b>brctl</b> command.</p>
+
+
+<a name="eztoc0_0_1" id="eztoc0_0_1"></a><h4>Additional Functions</h4>
+
+<p>Open vSwitch offers many other functions. For example, it can create a GRE 
+tunnel between multiple systems and run VLAN trunking across it. Thus, you can 
+move virtual machines to other mosts outside of the LAN. Communication takes place 
+through the GRE tunnel.</p>
+
+<p>Open vSwitch can also aggregate ports. The Linux kernel developers call this 
+process bundling; Cisco refers to the same function as EtherChannel. It gives 
+the administrator the ability to combine multiple physical ports as a single 
+logical port, which can then be used for load balancing and high availability.</p>
+
+<p>Open vSwitch is a very interesting project that is currently suffering from a 
+lack of popularity and documentation. I hope the major distributions decide to 
+incorporate the project and integrate it natively with their own tools, such as 
+Libvirt. This functionality would remove the need to use the bridge compatibility 
+daemon.</p>
+
+
+<p>Infos</p>
+
+<ol>
+  <li>Open vSwitch: <a href="http://www.openvswitch.org/" target="_blank">http://www.openvswitch.org</a></li>
+  <li>OpenFlow: <a href="http://://www.openflow.org" target="_blank">http://://www.openflow.org</a></li>
+  <li>OpenFlow switches: <a href="http://://openflow.org/foswiki/bin/view/OpenFlow/Deployment/Components" target="_blank">http://://openflow.org/foswiki/bin/view/OpenFlow/Deployment/Components</a></li>
+  <li>Open vSwitch RPM: <a href="http://://www.spenneberg.org/Openvswitch/" target="_blank">http://://www.spenneberg.org/Openvswitch/</a></li>
+</ol>
+

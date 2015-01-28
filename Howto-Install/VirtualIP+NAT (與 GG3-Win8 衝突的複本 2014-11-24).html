@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>VirtualIP+NAT</title>
+	<link type="text/css" rel="stylesheet" href="/css/style_emacs.css" />
+</head>
+<body>
+<h1>Virtual IP and NAT</h1>
+<p>目前還沒有時間排版，請多多包含
+<p>Dear all,<br/>
+<p>由於大家對於網路路由還是感到相當頭痛，在此我用簡單的範例為大家說明。<br/>
+首先我們先定義好環境，以兩台實體機器，上面各開一台虛擬機器為例。
+<pre>
+                   ┌────────┐                          
+                   │ switch │                        
+                   └─┬────┬─┘                         
+     ┌───────────────┘    └──────────────┐
+┌────┴───┐                          ┌────┴───┐
+│ Host 1 │                          │ Host 2 │
+└────────┘                          └────────┘
+Public IP  (eth0): 140.120.X.1      Public IP (eth0): 140.120.X.2
+Default gateway 140.120.X.254
+Private IP (eth1): 192.168.0.1      Private IP (eth1): 192.168.0.2
+</pre>
+<p>
+<p>這時候我們需有要一台機器出面指揮虛擬 IP 交通（gateway）！<br/>
+要特別注意的是，一台機器不能有兩個 Default gateway！<br/>
+所以我們要手動增加 routing table 的規則，在此我們以 Host 1 當作 gateway。
+<p>指令如下（以 Debian 為例，使用 Redhat 系列可能有所不同）
+<pre><div class="console">$ sudo route add -net 192.168.0.0/24 gw 192.168.0.1
+</div></pre>
+<p>現在 routing table 長這樣：
+<pre><div class="console">$ route -n
+</div><div class="out">Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         140.120.X.254   0.0.0.0         UG    0      0        0 eth0
+140.120.X.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.0     192.168.0.1     255.255.255.0   UG    0      0        0 eth1
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth1
+</div></pre>
+
+<p>這樣就可以了嗎？<br/>
+當然不是，身為一個 gateway 除了幫忙報路以外，還要幫忙傳封包（可以把它當成郵局）。<br/>
+因此，我們要開啟 ip forward 功能。
+<pre><div class="console">$ sudo sysctl net.ipv4.ip_forward=1
+</div></pre>
+
+<p>到此已經完成 Host 部分的設定。<br/>
+接下來我們將虛擬網路分為兩類：bridge 與 switch
+
+<h2>Bridge</h2>
+<p>我們先介紹 bridge，也就是課堂上 virt-manager 預設使用的方式。<br/>
+現在網路連接方式大概會長這樣：
+<pre>
+                   ┌────────┐                          
+                   │ switch │                        
+                   └─┬────┬─┘                         
+                ┌────┘    └────┐
+                │              │
+           ┌────┴───┐      ┌───┴────┐
+           │  br0   │      │   br0  │
+┌────────┐ │┌──────┐│      │┌──────┐│ ┌────────┐
+│ Host 1 ├─┼┤ eth1 ││      ││ eth1 ├┼─┤ Host 2 │
+└────────┘ │└──────┘│      │└──────┘│ └────────┘
+┌──────┐   │┌──────┐│      │┌──────┐│   ┌──────┐
+│ VM 1 ├───┼┤ tap0 ││      ││ tap0 ├┼───┤ VM 2 │
+└──────┘tun│└──────┘│      │└──────┘│tun└──────┘
+           └────────┘      └────────┘
+</pre>
+<p>設定完 bridge 後由於 eth1 不會獲得 IP（被 br0 取代了），
+所以 routing 要再設定一次。
+<pre><div class="console">$ sudo route add -net 192.168.0.0/24 gw 192.168.0.1
+$ route -n
+</div><div class="out">Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         140.120.X.254   0.0.0.0         UG    0      0        0 eth0
+140.120.X.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.0     192.168.0.1     255.255.255.0   UG    0      0        0 br0
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 br0
+</div></pre>
+<p>那 VM 網路該如何設定呢？<br/>
+很簡單，由於 VM 我們在此只給一張網路卡，
+所以只要給定 IP，接著 default gateway 也設定成 192.168.0.1 就可以了。
+<h2>Switch</h2>
+<p>Switch 如果使用我們地一堂課所教的方式，以 VDE Swtich 來建置那網路會長這個樣子：
+<pre>
+                   ┌────────┐                          
+                   │ switch │                        
+                   └─┬────┬─┘                         
+                ┌────┘    └────┐
+                │              │
+┌────────┐  ┌───┴──┐        ┌──┴───┐  ┌────────┐
+│ Host 1 ├──┤ eth1 │        │ eth1 ├──┤ Host 2 │
+└────┬───┘  └──────┘        └──────┘  └────┬───┘
+     │                                     │  
+┌────┴───┐                            ┌────┴───┐
+│ switch │                            │ switch │
+└─┬──────┘                            └──────┬─┘
+  └─────────────┐              ┌─────────────┘
+                │              │
+┌──────┐ tun ┌──┴───┐      ┌───┴──┐ tun ┌──────┐
+│ VM 1 ├─────┤ tap0 │      │ tap0 ├─────┤ VM 2 │
+└──────┘     └──────┘      └──────┘     └──────┘
+</pre>         
+<p>圖畫的不是很好，不過可以看出來跟 bridge 有很大的分別，
+使用 switch 可以充分的展現出階層式的架構。
+因此，VM 實際上是在 Host 的下一層各自獨立的 LAN 上，
+<p>那這樣要怎麼把虛擬機器串起來呢？<br/>
+同樣地我們需要一部 gateway 來幫我們傳遞封包。
+但是由於我們不是使用專業的 router，而是使用 Host 來充當 router 使用。
+因此，設定上會略顯麻煩。
+<p>首先實體機器上設定跟 bridge 設定時相同，先把在同一個 switch 下的機器連接起來。
+<pre><div class="console">$ sudo route add -net 192.168.0.0/24 gw 192.168.0.1
+$ route -n
+</div><div class="out">Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         140.120.X.254   0.0.0.0         UG    0      0        0 eth0
+140.120.X.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.0     192.168.0.1     255.255.255.0   UG    0      0        0 eth1
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth1
+</div></pre>
+我們給予 VM IP 如下：
+<pre>
+VM 1： 192.168.0.101
+VM 2： 192.168.0.102
+</pre>
+接著要告訴 Host 哪些 IP 是我自己負責的（在我身上 VM 的 IP）
+<pre><div class="console">Host1:~$ sudo route add -host 192.168.0.101 dev tap0
+Host1:~$ route -n
+</div><div class="out">Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         140.120.X.254   0.0.0.0         UG    0      0        0 eth0
+140.120.X.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.0     192.168.0.1     255.255.255.0   UG    0      0        0 eth1
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth1
+192.168.0.101   0.0.0.0         255.255.255.255 UH    0      0        0 tap0
+</div><div class="console">Host2:~$ sudo route add -host 192.168.0.102 dev tap0
+Host2:~$ route -n
+</div><div class="out">Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         140.120.X.254   0.0.0.0         UG    0      0        0 eth0
+140.120.X.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.0     192.168.0.1     255.255.255.0   UG    0      0        0 eth1
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth1
+192.168.0.102   0.0.0.0         255.255.255.255 UH    0      0        0 tap0
+</div></pre>
+
+<p>在虛擬機器內，注意要把 gateway 設定成宿主機器。<br/>
+換句話說 VM1 把 Host1 當 gateway，VM2 把 Host2 當 gateway。<br/>
+如此一來便會發現：<br/>
+Host1 可以 ping 到 VM1, ping 不到 VM2。<br/>
+而<br/>
+Host2 可以 ping 到 VM1, VM2。
+
+<p>WHY？<br/>
+原來是 Host1 的 gateway 是他自己，但是他並不認得 VM2 的 IP 啊！
+所以我們加上一條 routing 規則：
+<pre><div class="console">Host1:~$ sudo route add -host 192.168.0.102 gw 192.168.0.2
+</div></pre>
+<p>打完收工，大功告成！
+
+<h2>NAT</h2>
+<p>虛擬機器用虛擬 IP 出不去啊～～～～<br/>
+這個時候我們請出 NAT, Network address translation。<br/>
+設定方式很簡單，我們在 Host 上使用 iptable 指令來完成。
+<pre><div class="console">$ sudo iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+</div></pre>
+<p>上列指令中 out-interface 顧名思義就是對外的網路卡，
+如果我們對外網路設定了 bridge 這邊就要改成相對應的 interface。
+
+<p>PS1. 以後若有機會，我們再介紹使用專業的 router 軟體（vyatta）來完成這些工作<br/>
+PS2. 若大家發現有誤請告訴我會立即修正
+
+</body>
+</html>

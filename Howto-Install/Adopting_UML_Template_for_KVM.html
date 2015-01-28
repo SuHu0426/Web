@@ -1,0 +1,169 @@
+<!DOCTYPE HTML SYSTEM "../html/html-3.2.dtd">
+<HTML>
+<HEAD>
+  <TITLE>Adopting UML Template for KVM</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link type="text/css" rel="stylesheet" href="style.css" />
+</HEAD>
+<BODY>
+<ol>
+  <li><h3><a href="http://nbd.sourceforge.net/">Network Block Device</a></h3>
+<p>在 Ubuntu 或是 Debian Linux Kernel 中, 通常 nbd module 已經編譯成可動態載入的核心模組.
+ 一般多用以建立無碟系統 (機器使用軟碟片或網路等方式開機), 利用 NBD (透過 TCP) 存取遠端 block 裝置.
+ 而其與 NFS (Network FileSystem) 不同點在於, NBD 可與任意檔案系統連結使用. 
+但是 NBD 是屬於獨占式服務, 亦即欲掛載使用 NBD 裝置時, 必須確保沒有其他人正在使用此裝置. 
+<pre>
+$ find /lib/modules -name "*nbd*"
+$ cat /boot/config* | grep NBD
+CONFIG_BLK_DEV_NBD=m
+$ find /dev -name "nbd*"
+$ sudo modprobe nbd max_part=8
+$ find /dev -name "nbd*"
+/dev/nbd15
+/dev/nbd14
+/dev/nbd13
+/dev/nbd12
+/dev/nbd11
+/dev/nbd10
+/dev/nbd9
+/dev/nbd8
+/dev/nbd7
+/dev/nbd6
+/dev/nbd5
+/dev/nbd4
+/dev/nbd3
+/dev/nbd2
+/dev/nbd1
+/dev/nbd0
+$ cd /src4/KVM/Resize
+$ sudo kvm-nbd --connect=/dev/nbd0 DebSqz-Mini.img
+W: /usr/bin/kvm-nbd: this binary is deprecated, use qemu-nbd instead
+$ sudo qemu-nbd --connect=/dev/nbd0 DebSqz-Mini.img
+$ ls -l /dev/nbd0*
+brw-rw---- 1 root disk 43, 0 2011-08-20 13:25 /dev/nbd0
+brw-rw---- 1 root disk 43, 1 2011-08-20 13:25 /dev/nbd0p1
+brw-rw---- 1 root disk 43, 2 2011-08-20 13:25 /dev/nbd0p2
+$ sudo qemu-nbd --disconnect /dev/nbd0
+/dev/nbd0 disconnected
+$ ls -l /dev/nbd0*
+brw-rw---- 1 root disk 43, 0 2011-08-20 13:26 /dev/nbd0
+$ sudo rmmod nbd</pre>
+  <li><h3>Adopting UML Template for KVM</h3>
+    <p>我們應用 NBD 技術與 KVM 虛擬硬碟映像檔, 將其轉換成 block 裝置使用. 
+      如此一來, 我們即可掛載使用 KVM root filesystem , 或將其導出成 UML 虛擬化技術可以使用的檔案格式.
+   </p>
+    <p>KVM 與 UML 用以開機的 root filesystem 極為相似, 主要差異如下:</p>
+    <ol>
+      <li>Master boot record, <a href="http://en.wikipedia.org/wiki/Master_boot_record">MBR</a></br>
+	<p>KVM root filesystem 的第一個 block 為 boot block, 即一般所熟知的 MBR, 
+	  UML 沒有這個 block.
+      <li>/boot directory</br>
+	<p>UML root filesystem 也有 /boot 目錄, 但是此目錄是空的. KVM 的
+	  /boot 目錄與實體機器的 /boot 目錄一樣, linux kernel, 開機用的 grub.cfg 等都儲存在此.
+	  習慣上, 我們分割硬碟時, 分割出來的第一個磁區 (512M) 指定為 /boot 檔案系統.
+      <li>modules</br>
+	<p>UML 與 KVM 都有 /lib/modules 目錄. 此目錄儲存的 kernel modules 必須
+	  是核心編譯過程所編譯出來的 kernel modules. 這部份必須與 linux kernel 版本同步.
+   </ol>
+<p>要讓 KVM 使用 UML 的 root filesystem 還算單純, 我們幫 KVM 製造一個 /boot 檔案系統, 
+小量修改 UML root filesystem, 把它掛載在 KVM 的 root filesystem 之下即可.
+</p>
+<center><img src="img/uml2kvm.png" alt="uml2kvm.png" width="250" height="200"></center>
+<ol>
+  <li>建立可開機虛擬硬碟:
+    <pre>
+$ cd /src4/KVM
+$ qemu-img create boot.img 512M
+$ qemu-img create DebSqz-tmp.img 1G
+$ kvm -hda boot.img -hdb DebSqz-tmp.img -cdrom Resize/debian-6.0.2.1-amd64-netinst.iso
+$ rm DebSqz-tmp.img</pre>
+  <li>修改 <a href="http://amm/uml-rfs/DebianNetFiles/">UML 相關檔案</a>, fstab, inittab
+    <pre>
+$ cp ../DebianNet/DebSqz-UltraLight.ext3 .
+$ sudo mount -o loop DebSqz-UltraLight.ext3 /mnt/tmp/
+$ cd /mnt/tmp/etc
+$ sudo emacs fstab
+$ sudo mv fstab~ fstab.orig
+$ diff fstab fstab.orig
+2,4c2
+< # /dev/ubd0       /               ext3    defaults        0       1
+< /dev/sda1	/boot		ext2	defaults	0	2
+< /dev/sdb	/		ext4	errors=remount-ro 0	1
+---
+> /dev/ubd0       /               ext3    defaults        0       1
+$ diff inittab.orig inittab
+54,59c54,59
+< 1:2345:respawn:/sbin/getty 38400 tty1
+< 2:23:respawn:/sbin/getty 38400 tty2
+< 3:23:respawn:/sbin/getty 38400 tty3
+< 4:23:respawn:/sbin/getty 38400 tty4
+< 5:23:respawn:/sbin/getty 38400 tty5
+< 6:23:respawn:/sbin/getty 38400 tty6
+---
+> 1:2345:respawn:/sbin/getty 38400 tty0
+> #2:23:respawn:/sbin/getty 38400 tty2
+> #3:23:respawn:/sbin/getty 38400 tty3
+> #4:23:respawn:/sbin/getty 38400 tty4
+> #5:23:respawn:/sbin/getty 38400 tty5
+> #6:23:respawn:/sbin/getty 38400 tty6
+$ sudo cp inittab.orig inittab
+$ sudo rm -r /mnt/tmp/lib/modules/*   </pre>
+  <li>修改 grub 開機選單
+    <pre>
+$ cd /src4/KVM
+$ sudo modprobe nbd max_part=8
+$ sudo qemu-nbd --connect=/dev/nbd0 boot.img
+$ sudo mount /dev/nbd0p1 /mnt/tmp/boot
+$ sudo emacs /mnt/tmp/boot/grub/grub.cfg
+$ sudo mv /mnt/tmp/boot/grub/grub.cfg~ /mnt/tmp/boot/grub/grub.cfg.orig
+$ diff /mnt/tmp/boot/grub/grub.cfg /mnt/tmp/boot/grub/grub.cfg.orig
+61a62
+> 	insmod part_msdos
+63c64,65
+< 	set root='(hd0,1)'
+---
+> 	set root='(hd0,msdos1)'
+> 	search --no-floppy --fs-uuid --set 2597d018-6af0-471d-9a93-6565370c8b36
+65c67
+< 	linux	/vmlinuz-2.6.32-5-amd64 root=/dev/sdb ro  quiet
+---
+> 	linux	/vmlinuz-2.6.32-5-amd64 root=UUID=5043c806-bc4f-4836-a2dd-5881b6cc77a2 ro  quiet
+69a72
+> 	insmod part_msdos
+71c74,75
+< 	set root='(hd0,1)'
+---
+> 	set root='(hd0,msdos1)'
+> 	search --no-floppy --fs-uuid --set 2597d018-6af0-471d-9a93-6565370c8b36
+73c77
+< 	linux	/vmlinuz-2.6.32-5-amd64 root=/dev/sdb ro single 
+---
+> 	linux	/vmlinuz-2.6.32-5-amd64 root=UUID=5043c806-bc4f-4836-a2dd-5881b6cc77a2 ro single 
+   </pre>
+  <li>安裝 linux kernel and headers
+    <pre>
+$ ls -l /mnt/tmp/lib/modules
+total 0
+$ sudo chroot /mnt/tmp
+# apt-get update
+# apt-get install linux-image-2.6.32-5-amd64 linux-headers-2.6.32-5-amd64
+# ls -l /lib/modules
+total 4
+drwxr-xr-x 3 root root 4096 Aug 20 07:48 2.6.32-5-amd64
+# exit
+$ sync;sync
+$ sudo umount /mnt/tmp/boot
+$ sudo umount /mnt/tmp
+$ sudo qemu-nbd -d /dev/nbd0
+/dev/nbd0 disconnected
+$ sudo rmmod nbd   </pre>
+  <li>測試開機
+    <pre>
+$ kvm -hda boot.img -hdb DebSqz-UltraLight.ext3 -m 512M
+## login hsu and in KVM
+$ su
+# halt   </pre>
+</ol>
+</ol>
+</BODY>
+</HTML>

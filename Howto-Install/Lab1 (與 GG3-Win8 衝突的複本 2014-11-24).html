@@ -1,0 +1,198 @@
+<HTML>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Virtual Technelogy: UML and KVM</TITLE>
+  <link type="text/css" rel="stylesheet" href="style.css" />
+</HEAD>
+<BODY>
+<h1>作業請參考 <a href="Lab1-assignment.html">Lab 1 assignment</a></h1>
+<h1>Lab 1: Virtual Technelogy: UML and KVM</h1>
+<h2>實驗描述</h2>
+本實驗示範如何運用 Paravirtualization (UML) 與 Full virtualization (KVM) 建立虛擬叢集環境.
+<h2>實驗環境</h2>
+資訊科學大樓 701 教室
+<table border=2>
+  <tr><td>&nbsp;     <th>Real machines</tr>
+  <tr><th>CPU        <td align="right">AMD Athlon(tm) 64 X2 5600+</tr>
+  <tr><th>Memory     <td align="right">1883M</tr>
+  <tr><th>Disk space <td align="right">137G</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+理學大樓 821 機房
+<table border=2>
+  <tr><td>&nbsp;     <th>CSIE-Cloud01</tr>
+  <tr><th>CPU        <td align="right">4 AMD Opteron(tm) Processor 6128 processors<br> (16 cpu cores)</tr>
+  <tr><th>Memory     <td align="right">8G</tr>
+  <tr><th>Disk space <td align="right">500G*2</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+<table border=2>
+  <tr><td>&nbsp;     <th>CSIE-Cloud02</tr>
+  <tr><th>CPU        <td align="right">4 AMD Opteron(tm) Processor 6128 processors<br> (16 cpu cores)</tr>
+  <tr><th>Memory     <td align="right">8G</tr>
+  <tr><th>Disk space <td align="right">500G*2</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+
+<h2>安裝實作</h2>
+<a href="http://snmlab.cs.nchu.edu.tw/CloudLab/CTSP/Lab1.html">Remote Version</a>
+<OL>
+  <h3><li>建立 User Mode Linux, UML, 虛擬機器.</h3>
+  <ol>
+    <li><a href="http://140.120.7.20/LinuxRef/UML/UmlCompilation.html">UML Compilation</a>
+    <li><a href="http://140.120.7.20/uml-rfs/README.html#MLNTemplate">UML Template Creation</a>
+  </ol>
+<br><br>
+  <ol>
+    <!-- <LI><a href="http://amm/uml-rfs/uml-howto.html">Original</a></LI> -->
+    <li>Check whether you got linux.uml and its related module </LI>
+<pre>  $ ls -l /usr/local/lib/uml 
+<code>  # If you get No such file or directory 
+</code>  $ sudo apt-get install uml-utilities vde2
+  $ sudo mkdir /usr/local/lib/uml 
+  $ sudo chown cloud:cloud /usr/local/lib/uml 
+  $ cd /usr/local/lib/uml 
+  $ scp 701-teacher:/backup/tmp/uml-2011-08-01.tgz .
+  $ tar -zxvf uml-2011-08-01.tgz 
+  $ ls -l 
+  $ rm uml-2011-08-01.tgz 
+<code>  # Later on, these files will be re-generated.
+</code>  $ sudo cp linux.uml /usr/local/bin
+</pre>
+        </li><li> Now, get template and related tools from our server
+
+<pre>  $ cd /src3/UML 
+<code>  # If no such directory
+</code>  $ sudo mkdir /src3/UML 
+  $ sudo chown cloud:cloud /src3/UML;  cd /src3/UML 
+  $ rm -f *
+  $ scp 701-teacher:/src2/uml-rfs/Config-UML-Rfs . 
+  $ ln Config-UML-Rfs Config-UML-Rfs-UmlSwitch 
+  $ scp -r 701-teacher:/src2/uml-rfs/DebianNetFiles . 
+  $ scp 701-teacher:/src2/uml-rfs/DebianNet-*txt . 
+  $ scp 701-teacher:/src2/uml-rfs/[Ru]* . 
+  $ scp 701-teacher:/src2/uml-rfs/DebSqz-UltraLight.ext3.gz .  
+  $ gunzip DebSqz-UltraLight.ext3.gz 
+  $ sudo mount -o loop DebSqz-UltraLight.ext3 /mnt/tmp 
+<code>  # In another xterm
+</code>  $ sudo rm -rf /mnt/tmp/lib/modules/* 
+  $ cd /usr/local/lib/uml/lib/modules/ 
+  $ find . -print | sudo cpio -pdm /mnt/tmp/lib/modules/ 
+  $ sync; sync 
+  $ ls -l /mnt/tmp/lib/modules 
+<code>  # Back to the original xterm 
+</code> $ sudo umount /mnt/tmp 
+</pre>
+  </li><li> Configure and Test VM
+
+<pre>  $ Config-UML-Rfs
+<code>./Config-UML-Rfs root-fs-pathname uml-hostname UML-IP Ether-Card [TAP-No]
+    TAP-No is optional, if need tap to be different from tap0.
+</code>  $ Config-UML-Rfs ./DebSqz-UltraLight.ext3 av-102 192.168.1.* eth0 
+<code>  # Hopefully, you get startUML, startUMLAsDaemon, stop-uml-restore-lan, 3 files.
+  # The first script is for starting UML in foreground.  For system repairing
+  # or maintenance reasons, from time to time, we need to start our VMs in 
+  # the foreground.  For common usage, whether it be special server, compute
+  # slave in some high performance cluster, usually, we start it as a daemon.
+  # After halting a VM, it is our job to restore the system network state to 
+  # its origin. Otherwise, next time, we will have hard time to get our VM's
+  # virtual network working again.
+  # Nowadays, the smallest graphical system needs at least 1GB.  Otherwise, 
+  # it would be almost impossible to upgrade system safely.  How I hate it!
+</code>  $ startUML 
+<code>  # login UML as cloud, and in UML
+</code>  $ su 
+<code>  ;; The first time online, take care of cached share object library database
+  ;; so that the system know where they are, especially, some libraries are 
+  ;; are from /usr/local/lib.
+</code>  # ldconfig
+  # aptitude update; aptitude safe-upgrade 
+  # aptitude clean 
+  # deborphan 
+<code>  ;; If anything shows up,
+</code>  # dpkg -P `deborphan` ;; Do these two commands until deborphan return nothing
+  # halt ;; shutdown uml
+<code>  ;; We need to restore lan to its original state 
+</code>  $ ifconfig -a ;; You see tap0, a virtual ethernet card
+  $ stop-uml-restore-lan 
+  $ ifconfig -a ;; The tap0 virtual ethernet card should disappear 
+  $ startUMLAsDaemon  
+  $ ps -C linux.uml 
+<code>  ;; Wait for two or three minutes 
+</code>  $ xs av102 ;; check whether you can login or not.
+<code>  ;; After login, type exit.
+</code></pre>
+     </li></ol>
+   </li>
+<h3><li>建立 Kernel-based virtual machine, KVM, 虛擬機器.</h3>
+<p>  The procedures involved for starting and halting VMs are rather 
+   complicated, but the command lines need to accomplish the whole job 
+   are quite similar.  If we are going to key-in all the commands by 
+   hands, it is rather error-prone.  Our biggest contribution is that 
+   we unify the whole process, from starting to halting UML or KVM VMs, 
+   via rather similar procedures, such as startVM in foreground, startVM 
+   as daemon, stop-VM-restore-lan. And we write a shell script to prepare 
+   the above 3 scripts automatically.
+
+  <ol>
+    <li><a href="http://140.120.7.20/KVM-tool/MyKvmNotes.html#KvmSrc">Kvm Compilation</a>
+    <li><a href="http://amm/KVM-tool/MyKvmNotes.html#KvmTemplate">Kvm Template Creation</a>
+  </ol>
+<br><br>
+<ol>
+  <li>Check hardware virtualization support, and then install KVM.
+<pre>  $ egrep '(vmx|svm)' --color=always /proc/cpuinfo # Hardware Assisted Virtualization
+  $ sudo aptitude update
+  $ sudo aptitude install kvm qemu-utils vde2 socat
+  $ sudo modprobe kvm_amd
+<code>  ## logout and relogin
+</code>  $ sudo adduser cloud kvm
+</pre>
+
+  <li>Prepare for VM.
+<pre>  $ sudo mkdir /src4/KVM 
+  $ sudo chown cloud:cloud /src4/KVM  
+  $ cd /src4/KVM; mkdir Resize img 
+  $ cp /backup/KVM-tool/KVM-tool-*.tgz . 
+  # $ cp /backup/KVM-tool/Resize/Resize-*.tgz Resize 
+  # $ cd Resize; tar -zxvf Resize-*.tgz; rm Resize-*.tgz 
+  $ cd ..; tar -zxvf KVM-tool-*.tgz; rm KVM-tool-*.tgz 
+</pre>
+
+  <li>Create KVM root-filesystem.
+<pre>  $ cd img 
+  $ qemu-img create DebSqz-Mini.img 2G 
+  $ kvm -cdrom ../Resize/debian-6.0.2.1-amd64-netinst.iso DebSqz-Mini.img -m 512M
+</pre>
+Partition the image as: /boot and /
+  <p> Give 512M to boot, turn on its boot flag, use ext2 filesystem format. The rest 
+      for / partition, use ext4  filesystem format. Install only the minimal packages 
+      offered by the installation menu, but must include openssh-server, since we 
+      need to login the VM via <b>ssh</b>.</p>
+
+  <li>Configure VM
+<pre>  $ cd ../bin 
+  $ ls -lia Config-Kvm* 
+<code>  # Notice the three files are the same. When invoke them by different names,
+  # we can configure image files for different OSes.
+  # Also, as far as I remembered, newer Debian VM need to run the command
+  # sudo ./recover70rules. Otherwise, next time eth0 is no longer available. 
+</code>  $ ./Config-Kvm 
+<code>  # We use this script to configure ../Resize/Debian-Gparted.img. 
+</code>  $ Config-Kvm ../img/DebSqz-Mini.img ak-102 192.168.1.? eth0 1
+  $ start-ak*-1 
+<code>  # login KVM as cloud, and in KVM
+</code>  $ su
+  # ./recover70rules 
+  # halt 
+  $ start-ak-*-1-AsDaemon
+  $ xs ak102
+<code>  ;; After login, type exit.
+</code>  $ stop-ak-*-restore-lan-1</pre></ol>
+</ol>
+
+<h1><a href="Lab1-assignment.html">Lab 1: Assignment</a></h1>
+
+
+</BODY>
+</HTML>

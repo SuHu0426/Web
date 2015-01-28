@@ -1,0 +1,216 @@
+<a name="VirtIo"></a>virtio</h4>
+
+
+<P> Add the sid distribution to /etc/apt/sources.list file in our VM, update 
+  and upgrade our system packages as usual.  Apparently, the <b>virtio</b> 
+  support is only available on the unstable version of Debian, (Not in 
+  Debian Lenny).  Unfortunately, the transition is too smooth! I think you 
+  won't feel any difference.   Otherwise, you may realize that we are in the 
+  VM world!  If new version of system damages your machine, no harm done!  
+  If we also add sid distribution to /etc/apt/sources.list file in our Debian 
+  based physical host, we guarantee that our kvm will be the newest verion.
+ 
+<P> One more benefit of VM: You may always try out the new environment before 
+  you commit yourself to the unknown future.  This is also the reason that in 
+  the /etc/apt/sources.list file of our VM, we tempt to include <b>sid</b> in 
+  our package repository entry.  The other reason is that we do need this if 
+  the needed library versions of Debian and Ubuntu are different, we settle 
+  for using library in sid, e.g. sometime ago the libltdl used by guile caused 
+  guile [in VM] failing to start.)    <b>Note: (06/10/2012)</b> For a long time, 
+  software packages in Debian Sid are always included in our Debian based VMs, 
+  so far so good, except it takes long time to system upgrade our VM image.
+
+<PRE>
+ $ cd /src4/KVM/Resize 
+ $ cp Debian-Gparted.img Deb-Virtio.img 
+ $ cd ../bin 
+ # Suggestion: hostname: gv Tap: 9, IP: HostIP+50, login, execute recover70rules
+ # and disable "iface eth0 inet dhcp" line in /etc/network/interfaces file.
+ # Then stop Vm and recover lan and restart gv, hopefully, we get eth0 correctly.
+ $ Config-Kvm ../Resize/Deb-Virtio.img ... 
+ # Booting the new VM in the foreground, and remotely login it.  Since we keep up
+ # our pace with Debian sid, the next 4 steps no longer needed.
+ # $ cp /etc/apt/sources.list /tmp 
+ # $ emacs /tmp/sources.list& 
+ # $ diff /tmp/sources.list /etc/apt/sources.list
+< deb http://140.120.7.21/debian/ sid main contrib
+ # $ sudo cp /tmp/sources.list  /etc/apt/ 
+ $ sudo aptitude update; sudo aptitude safe-upgrade  
+ $ sudo aptitude clean 
+ $ deborphan 
+ # If there are orphaned packages, purge them via
+ # sudo dpkg -P `deborphan` 
+ $ df # 71% of disk space is used.
+ # Virtio modules are available.
+ $ find /lib/modules -name "*virtio*"
+/lib/modules/3.0.0-1-amd64/kernel/drivers/char/virtio_console.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/char/hw_random/virtio-rng.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/virtio
+/lib/modules/3.0.0-1-amd64/kernel/drivers/virtio/virtio_pci.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/virtio/virtio_ring.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/virtio/virtio_balloon.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/virtio/virtio.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/block/virtio_blk.ko
+/lib/modules/3.0.0-1-amd64/kernel/drivers/net/virtio_net.ko
+/lib/modules/3.0.0-1-amd64/kernel/net/9p/9pnet_virtio.ko
+ $ ls -l /etc/initramfs-tools/modules
+-rw-r--r-- 1 root root 246 Jul 14 10:35 /etc/initramfs-tools/modules
+ $ sudo emacs /etc/initramfs-tools/modules 
+ $ ls -l  /etc/initramfs-tools/modules*
+-rw-r--r-- 1 root root 298 Aug 18 09:48 /etc/initramfs-tools/modules
+-rw-r--r-- 1 root root 246 Jul 14 10:35 /etc/initramfs-tools/modules~
+ $ sudo mv /etc/initramfs-tools/modules~ /etc/initramfs-tools/modules.orig  
+ $ diff /etc/initramfs-tools/modules /etc/initramfs-tools/modules.orig
+12,16d11
+< virtio
+< virtio_pci
+< virtio_ring
+< virtio_net
+< virtio_blk
+ # Before system can boot from hard disk, it needs minimal modules about your 
+ # hardware, such as hard disk, cpu, etc.  These minimal modules are prepared 
+ # in the initrd.img.  At early kernel booting stage, this is read to discover 
+ # more details about your system.  Visit the following anchor for reference:
+ # <a href="http://fish/~hsu/Topic-OS-1-2011.html#InitRd">initrd</a>
+ $ ls -l /boot/init*
+-rw-r--r-- 1 root root 9675845 Aug 18 08:54 /boot/initrd.img-3.0.0-1-amd64
+ $ sudo update-initramfs -u
+update-initramfs: Generating /boot/initrd.img-3.0.0-1-amd64
+ $ ls -l /boot/init*
+-rw-r--r-- 1 root root 9675892 Aug 18 09:59 /boot/initrd.img-3.0.0-1-amd64
+ $ lsmod >OldLoadedModules
+ # Shutdown the VM, and reboot
+ $ lsmod >NewLoadedModules
+ # Pay attention to the newly loaded virtio* modules, the five we added above.
+ $ diff OldLoadedModules NewLoadedModules
+ # Shutdown the VM.  According to Old Howto, in the /boot/grub/device.map and 
+ # /boot/grub/menu.list files, need to change device name string "/dev/sda" to 
+ # "/dev/vda".  New syntax does not use this physical device name anymore.
+ # We now will enable virtio_net and virtio_block from our start-VM script:
+ $ diff start-gv-9-Virtio start-gv-9
+25c25
+< kvm -net vde,vlan=0,sock=/src3/KVM/network-4204 -net nic,model=virtio,vlan=0,macaddr=1c:6f:65:9b:e0:cf -m 512M -monitor unix:/src3/KVM/network-4204/MonSock,server,nowait -drive file=../Resize/Deb-Virtio.img,if=virtio &
+---
+> kvm -net vde,vlan=0,sock=/src3/KVM/network-4204 -net nic,vlan=0,macaddr=1c:6f:65:9b:e0:cf -m 512M -monitor unix:/src3/KVM/network-4204/MonSock,server,nowait -hda ../Resize/Deb-Virtio.img &
+ # Restart the VM via this new script.  Feel any difference?  Frankly, no.  But,
+ # benchmark should tell you the truth.  
+</PRE>
+
+ <b>Vhost overview (06/18/2012):</b>
+
+  <P> The vhost drivers in Linux provide in-kernel virtio device emulation. 
+Normally the QEMU userspace process emulates I/O accesses from the guest. 
+Vhost puts virtio emulation code into the kernel, taking QEMU userspace out 
+of the picture. This allows device emulation code to directly call into kernel 
+subsystems instead of performing system calls from userspace.
+
+<PRE>
+ # First, do make sure the above virtio business is working correctly. 
+ # On kvm image, add "modprobe vhost-net" line to /etc/rc.local so that while
+ # kvm booting, the vhost-net module will be loaded. 
+ # Make sure vhost-net module is available.  Debian Squeeze has no such module, yet.
+ $ find /lib/modules -name "*vhost*"
+/lib/modules/3.2.0-2-amd64/kernel/drivers/vhost
+/lib/modules/3.2.0-2-amd64/kernel/drivers/vhost/vhost_net.ko
+ # On physical host
+ $ sudo modprobe vhost-net
+ $ ls -l /dev/vho*
+crw------- 1 root root 10, 59 Jun 18 13:49 /dev/vhost-net
+ $ sudo chmod 666 /dev/vhost-net
+ # Without mode changing, we see the following error messages, since we start kvm as 
+ # an ordinary user, not su or root!
+ # kvm: -netdev tap,id=tap10,ifname=tap10,vhost=on: vhost-net requested but could not be initialized
+ # kvm: -netdev tap,id=tap10,ifname=tap10,vhost=on: Device 'tap' could not be initialized
+ #############################################
+ # May use vhostOn.sh to turn on the vhost-net support on physical host:
+ $ cat vhostOn.sh 
+#! /bin/bash
+
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+
+sudo modprobe vhost-net
+sudo chmod 666 /dev/vhost-net
+ #############################################
+ # Then edit the script start-gv-10-Virtio as follows:
+ $ diff start-gv-10-Virtio start-gv-10-Virtio.orig
+23c23
+< vde_switch -mod 644 -sock=/src3/KVM/network-3433 -mgmt /src3/KVM/network-3433/vde_switch.mgmt -daemon </dev/null >/dev/null
+---
+> vde_switch -tap tap10 -mod 644 -sock=/src3/KVM/network-3433 -mgmt /src3/KVM/network-3433/vde_switch.mgmt -daemon </dev/null >/dev/null
+25,26c25
+< # ",script=no": Don't execute /etc/kvm/kvm-ifup script, since we don't use bridge.
+< kvm -net vde,vlan=0,sock=/src3/KVM/network-3433 -net nic,model=virtio,netdev=tap10,vlan=0,macaddr=00:25:90:22:e6:03  -netdev tap,id=tap10,ifname=tap10,script=no,vhost=on -m 512M -monitor unix:/src3/KVM/network-3433/MonSock,server,nowait -drive file=../Resize/Deb-Virtio.img,if=virtio &
+---
+> kvm -net vde,vlan=0,sock=/src3/KVM/network-3433 -net nic,model=virtio,vlan=0,macaddr=00:25:90:22:e6:03 -m 512M -monitor unix:/src3/KVM/network-3433/MonSock,server,nowait -drive file=../Resize/Deb-Virtio.img,if=virtio &
+ # After starting start-gv-10-Virtio,
+ $ ps -ef | grep vhost
+hsu       4627     1  1 13:52 pts/0    00:00:21 kvm -net vde,vlan=0,sock=/src3/KVM/network-3433 -net nic,model=virtio,netdev=tap10,vlan=0,macaddr=00:25:90:22:e6:03 -netdev tap,id=tap10,ifname=tap10,vhost=on -m 512M -monitor unix:/src3/KVM/network-3433/MonSock,server,nowait -drive file=../Resize/Deb-Virtio.img,if=virtio
+root      4636     2  0 13:52 ?        00:00:00 [vhost-4627]
+hsu       4824  3238  0 14:14 pts/0    00:00:00 grep vhost
+ $ ps l -p 2
+F   UID   PID  PPID PRI  NI    VSZ   RSS WCHAN  STAT TTY        TIME COMMAND
+1     0     2     0  20   0      0     0 ?      S    ?          0:00 [kthreadd]
+ # We see the warning message: "Warning: vlan 0 with no nics".  It is printed by 
+ # net_check_clients(void) function (in net.c file), but the network seems to be 
+ # doing just fine! <a href="http://fossies.org/dox/qemu-1.1.0-1/net_8c_source.html" 
+ # target="newwindow">qemu/net.c</a>
+</PRE>
+
+<b>Note: </b> 
+  <OL>
+    <LI>  <b>Note: (08/19/2011)</b> 
+
+   <P> A not-yet released technique:
+   <a href="http://www.linux-kvm.org/page/VhostNet">VhostNet</a> effectively 
+   reduces 4 system calls for virtio module, hence performance is improved, 
+   a lot. So they say.  We enabled it while compiling our own qemu-kvm package. 
+
+   <P> We have resolved questions about <b>virtio-net</b> module successfully. Still, 
+       there are questions about <b>virtio-scsi</b> and <b>virtio-usb</b>.  We need 
+       new version of Linux Kernel, (say, 3.4.?).  Let us wait and see.
+
+<TABLE>
+<TR><TD><a href="http://blog.vmsplice.net/2011/09/qemu-internals-vhost-architecture.html" 
+      target="newwindow">vhost architecture </a>&nbsp;&nbsp;
+    <TD><a href="http://www.linux-kvm.com/content/how-maximize-virtio-net-performance-vhost-net" 
+      target="newwindow">Maximize Virtio-net Performance</a>&nbsp;&nbsp;
+    <TD><a href="http://wiki.qemu.org/Features/VirtioSCSI" 
+      target="newwindow">Virtio SCSI</a>&nbsp;&nbsp;
+<TR><TD><a href="http://www.linux-kvm.com/" 
+      target="newwindow">Kvm News</a>&nbsp;&nbsp;
+    <TD><a href="http://people.gnome.org/~markmc/qemu-networking.html" 
+      target="newwindow">QEMU Networking</a>
+    <TD><a href="http://www.linux-kvm.com/content/virtio-scsi" 
+      target="newwindow">VirtioSCSI on kernel 3.4?</a>
+<TR><TD><a href="" 
+      target="newwindow"></a>
+    <TD><a href="" 
+      target="newwindow"></a>
+    <TD><a href="" 
+      target="newwindow"></a>
+</TABLE>
+
+<h2>Old</h2>
+<pre>
+ $ sudo emacs /etc/initramfs-tools/modules 
+ $ sudo mv /etc/initramfs-tools/modules~ /etc/initramfs-tools/modules.orig  
+ $ diff /etc/initramfs-tools/modules /etc/initramfs-tools/modules.orig
+12,16d11
+< virtio
+< virtio_pci
+< virtio_ring
+< virtio_net
+< virtio_blk
+
+kvm \
+-net vde,vlan=0,sock=/src3/KVM/network-4204 \
+-net nic,model=virtio,vlan=0,macaddr=1c:6f:65:9b:e0:cf \
+-m 512M -monitor unix:/src3/KVM/network-4204/MonSock,server,nowait \
+-drive file=../Resize/Deb-Virtio.img,if=virtio,boot=on &
+</pre>

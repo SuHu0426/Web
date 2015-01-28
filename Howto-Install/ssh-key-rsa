@@ -1,0 +1,12 @@
+PC1$ ssh-keygen -t rsa
+PC1$ scp id_rsa.pub PC2:/tmp
+PC2$ cd .ssh
+PC2$ cat /tmp/id_rsa.pub >> authorized_keys
+PC2$ cat id_rsa.pub >> authorized_keys
+
+
+PC2$ ssh-keygen -t rsa
+PC2$ scp id_rsa.pub PC1:/tmp
+PC1$ cd .ssh
+PC1$ cat /tmp/id_rsa.pub >> authorized_keys
+PC1$ cat id_rsa.pub >> authorized_keys

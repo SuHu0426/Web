@@ -1,0 +1,1053 @@
+<html>
+  <head>
+    <title>Homework check</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/2.1.1/jquery.js"></script>
+    <script>
+    jQuery(document).ready(function() {
+	var setPreviewSize = function() {
+	    $("iframe#PreView").attr('height', 0 );
+	    var $pvsizew = $(document).width() - 630;
+	    var $pvsizeh = $(document).height() - 170;
+	    $("iframe#PreView").attr('width', $pvsizew );
+	    $("iframe#PreView").attr('height', $pvsizeh );
+	    return;
+	}
+	$("td.IPaddr").click(function() {
+	    var $port = $(this).next('td').text();
+	    var $url = "http://" + $(this).text() + ":" + $port;
+	    $("iframe#PreView").attr('src', $url);
+	    parseCode($url);
+	    setPreviewSize();
+	});
+	$("td.httpPort").click(function() {
+	    var $port = $(this).text();
+	    var $url = "http://" + $(this).prev('td').text() + ":" + $port;
+	    $("iframe#PreView").attr('src', $url);
+	    getSrc($url);
+	    //parseCode($url);
+	    setPreviewSize();
+	    //console.debug($url);
+	});
+	
+	$("iframe#PreView").load(function() {
+	    getSrc();
+	});
+
+	var getSrc = function ($url) {
+	    //var $SrcCode = $("iframe#PreView").contents().find("html").html();
+	    /*
+	    $.ajax({
+		type: 'post',
+		url: $url,
+		data: {
+		    content: $(document).html();
+		}
+	    });
+	    */
+	    var $SrcCode = $.post($SrcCode, document.documentElement.outerHTML);
+	    console.debug($SrcCode);
+	    //$("div#SrcCode").html($SrcCode);
+	}
+	var parseCode = function (o){
+	    console.debug(o);
+	    $.get (o.href,
+		   function(code){
+		       code=code.replace(/&/mg,'&#38;');
+		       code=code.replace(/</mg,'&#60;');
+		       code=code.replace(/>/mg,'&#62;');
+		       code=code.replace(/\"/mg,'&#34;');
+		       code=code.replace(/\t/g,'  ');
+		       code=code.replace(/\r?\n/g,'<br>');
+		       code=code.replace(/<br><br>/g,'<br>');
+		       code=code.replace(/ /g,'&nbsp;');
+		       $("div#SrcCode").html("");
+		       $("div#SrcCode").html(code);
+		   }
+		  );
+	}
+
+	$(window).resize(function() {
+	    setPreviewSize();
+	});
+	var sethw1_Record = function() {
+	    var $Record_hw1 = ["✔"];
+	    $Record_hw1[1] = "✔";
+            $Record_hw1[5] = "✔";
+	    $Record_hw1[6] = "✔";
+	    $Record_hw1[7] = "✔";
+	    $Record_hw1[8] = "✔";
+	    $Record_hw1[10] = "✔";
+	    $Record_hw1[17] = "✔";
+	    $Record_hw1[20] = "✔";
+	    $Record_hw1[21] = "✔";
+	    $Record_hw1[22] = "✔";
+	    $Record_hw1[23] = "✔";
+	    $Record_hw1[25] = "✔";
+	    $Record_hw1[26] = "✔";
+	    $Record_hw1[27] = "✔";
+	    $Record_hw1[28] = "✔";
+	    $Record_hw1[29] = "✔";
+	    $Record_hw1[30] = "✔";
+	    $Record_hw1[32] = "✔";
+	    $Record_hw1[33] = "✔";
+	    $Record_hw1[35] = "✔";
+	    $Record_hw1[36] = "✔";
+	    $Record_hw1[37] = "✔";
+	    $Record_hw1[38] = "✔";
+	    $Record_hw1[39] = "✔";
+	    $Record_hw1[40] = "✔";
+	    $Record_hw1[44] = "✔";
+	    $Record_hw1[45] = "✔";
+	    $Record_hw1[46] = "✔";
+	    $Record_hw1[47] = "✔";
+	    $Record_hw1[48] = "✔";
+	    $Record_hw1[49] = "✔";
+	    $Record_hw1[50] = "✔";
+	    $Record_hw1[53] = "✔";
+	    $Record_hw1[54] = "✔";
+	    $Record_hw1[55] = "✔";
+	    $Record_hw1[57] = "✔";
+	    $Record_hw1[59] = "✔";
+	    $Record_hw1[61] = "✔";
+	    $Record_hw1[63] = "✔";
+	    $Record_hw1[64] = "✔";
+	    $Record_hw1[65] = "✔";
+	    $Record_hw1[66] = "✔";
+	    $Record_hw1[67] = "✔";
+	    $Record_hw1[68] = "✔";
+	    $Record_hw1[69] = "✔";
+	    $Record_hw1[72] = "✔";
+	    $Record_hw1[74] = "✔";
+	    $Record_hw1[75] = "✔";
+	    $Record_hw1[76] = "✔";
+	    $Record_hw1[77] = "✔";
+	    $Record_hw1[80] = "✔";
+	    $Record_hw1[82] = "✔";
+	    $Record_hw1[83] = "✔";
+	    $Record_hw1[84] = "✔";
+	    $Record_hw1[88] = "✔";
+	    $Record_hw1[92] = "✔";
+	    $Record_hw1[93] = "✔";
+	    $Record_hw1[94] = "✔";
+	    var $Total = $("td.hw1").length;
+	    $.each($Record_hw1, function( i, val ) {
+		$("td.hw1:eq(" + i + ")").text(val);
+	    });
+
+	    //console.debug($Total);
+	    return;
+	}
+	var sethw2_Record = function() {
+	    var $Record_hw2 = ["?"];
+	    $Record_hw2[1] = "✔";
+	    $Record_hw2[5] = "✔ M$ Word";
+	    $Record_hw2[6] = "✔ M$ Word";
+	    $Record_hw2[7] = "✔ M$ Word";
+	    $Record_hw2[8] = "✔ M$ Word";
+	    $Record_hw2[10] = "✔";
+	    $Record_hw2[17] = "";
+	    $Record_hw2[20] = "純文字檔";
+	    $Record_hw2[21] = "✔";
+	    $Record_hw2[22] = "純文字檔";
+	    $Record_hw2[23] = "✔";
+	    $Record_hw2[25] = "✔";
+	    $Record_hw2[26] = "✔";
+	    $Record_hw2[27] = "✔";
+	    $Record_hw2[28] = "✔";
+	    $Record_hw2[29] = "純文字檔";
+	    $Record_hw2[30] = "✔ 未排版";
+	    $Record_hw2[32] = "✔";
+	    $Record_hw2[33] = "純文字檔";
+	    $Record_hw2[35] = "純文字檔";
+	    $Record_hw2[36] = "✔";
+	    $Record_hw2[37] = "";
+	    $Record_hw2[38] = "✔";
+	    $Record_hw2[39] = "純文字檔";
+	    $Record_hw2[40] = "純文字檔";
+	    $Record_hw2[44] = "純文字檔";
+	    $Record_hw2[45] = "純文字檔";
+	    $Record_hw2[46] = "✔";
+	    $Record_hw2[47] = "✔";
+	    $Record_hw2[48] = "純文字檔";
+	    $Record_hw2[49] = "✔";
+	    $Record_hw2[50] = "✔";
+	    $Record_hw2[53] = "✔ 未排版";
+	    $Record_hw2[54] = "✔";
+	    $Record_hw2[55] = "純文字檔";
+	    $Record_hw2[57] = "✔";
+	    $Record_hw2[59] = "";
+	    $Record_hw2[63] = "✔";
+	    $Record_hw2[64] = "✔ 未排版";
+	    $Record_hw2[65] = "✔ 未排版";
+	    $Record_hw2[66] = "✔";
+	    $Record_hw2[67] = "✔ 未排版";
+	    $Record_hw2[68] = "✔";
+	    $Record_hw2[69] = "✔";
+	    $Record_hw2[72] = "純文字檔";
+	    $Record_hw2[74] = "純文字檔";
+	    $Record_hw2[75] = "純文字檔";
+	    $Record_hw2[76] = "差一點囉";
+	    $Record_hw2[77] = "✔";
+	    $Record_hw2[80] = "";
+	    $Record_hw2[82] = "✔";
+	    $Record_hw2[83] = "純文字檔";
+	    $Record_hw2[84] = "✔";
+	    $Record_hw2[88] = "✔ M$ Word";
+	    $Record_hw2[92] = "純文字檔";
+	    $Record_hw2[93] = "純文字檔";
+	    $Record_hw2[94] = "";
+	    var $Total = $("td.hw2").length;
+	    $.each($Record_hw2, function( i, val ) {
+		$("td.hw2:eq(" + i + ")").text(val);
+	    });
+	    return;
+	}
+
+	sethw1_Record();
+	sethw2_Record();
+    });
+
+    </script>
+    <style>
+      table {
+      border: 3px solid black;
+      border-collapse:collapse;
+      }
+      th {
+      background-color:yellow; 
+      }
+      th, td {
+      border: 2px solid black;
+      text-align: center;
+      }
+      #col1, #col2 {
+      width: 110px;
+      }
+      #col3, #col4 {
+      width: 65px;
+      } 
+      #col5 {
+      width: 60px;
+      }
+      #col6 {                                                                                      
+      width: 90px;
+      }
+      .container {
+      overflow: hidden;
+      }
+      .left {
+      float: left;
+      width: 600px;
+      }
+      .right {
+      margin: 0 0px;
+      }
+      iframe {
+      margin: 0 0px;
+      overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Virtualization via UML homework</h1>
+    <p>連線方式請參閱 <a href="http://snmlab.cs.nchu.edu.tw/CloudLab/Lab0.html" target="_blank">Login Server from Windows</a> 或 <a href="http://www.cs.nchu.edu.tw/~snmlab/OpenSystem1-2014/HowtoLoginServer.html" target="_blank">遠端連線與上傳檔案至伺服器教學</a></p>
+    <p>網頁結果預覽請點擊 IP 或 http port。</p>
+    <p>雖然 word 有轉換成 html 的功能，但是建議大家不要使用，因為轉換出來的原始碼十分醜陋，而且這樣不就沒學習到怎麼製作網頁了嗎?大家可以利用 <a href="http://www.w3schools.com/html/default.asp" target="_blank">W3School</a> 等教學網站學習如何撰寫網頁。</p>
+    <a href="http://140.120.7.21/LectureNotes/Diaries/OpenSystem1Diary-2014.html#HomeWorkDue" target="_blank">HomeWork Due</a>
+    <br>
+
+    <div class="container">
+      <div class="left">
+	<table>
+	  <colgroup>
+	    <col id="col1">
+	    <col id="col2">
+	    <col id="col3">
+	    <col id="col4">
+	    <col id="col5">
+	    <col id="col6">
+	  </colgroup>
+	  <tbody>
+	    <tr>
+	      <th>學號</th>
+	      <th>IP</th>
+	      <th>http port</th>
+	      <th>ssh port</th>
+	      <th>Web Server</th>
+	      <th>心得</th>
+	    </tr>
+	    <tr>
+	      <td>Test</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18096</td>
+	      <td class="sshPort">12296</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4097053038</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18001</td>
+	      <td class="sshPort">12201</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053002</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18002</td>
+	      <td class="sshPort">12202</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053029</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18003</td>
+	      <td class="sshPort">12203</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053037</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18004</td>
+	      <td class="sshPort">12204</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053114</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18005</td>
+	      <td class="sshPort">12205</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053117</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18006</td>
+	      <td class="sshPort">12206</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053127</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18007</td>
+	      <td class="sshPort">12207</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099053135</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18008</td>
+	      <td class="sshPort">12208</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099054037</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18009</td>
+	      <td class="sshPort">12209</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099054042</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18010</td>
+	      <td class="sshPort">12210</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099056011</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18011</td>
+	      <td class="sshPort">12211</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099056021</td>
+	      <td class="IPaddr">140.120.16.71</td>
+	      <td class="httpPort">18012</td>
+	      <td class="sshPort">12212</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099056023</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18013</td>
+	      <td class="sshPort">12213</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099056035</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18014</td>
+	      <td class="sshPort">12214</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099056039</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18015</td>
+	      <td class="sshPort">12215</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4099056049</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18016</td>
+	      <td class="sshPort">12216</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053011</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18017</td>
+	      <td class="sshPort">12217</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053036</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18018</td>
+	      <td class="sshPort">12218</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053037</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18019</td>
+	      <td class="sshPort">12219</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053045</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18020</td>
+	      <td class="sshPort">12220</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053048</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18021</td>
+	      <td class="sshPort">12221</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053145</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18022</td>
+	      <td class="sshPort">12222</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100053147</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18023</td>
+	      <td class="sshPort">12223</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100056011</td>
+	      <td class="IPaddr">140.120.16.72</td>
+	      <td class="httpPort">18024</td>
+	      <td class="sshPort">12224</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100056038</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18025</td>
+	      <td class="sshPort">12225</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100056039</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18026</td>
+	      <td class="sshPort">12226</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100056040</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18027</td>
+	      <td class="sshPort">12227</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4100056045</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18028</td>
+	      <td class="sshPort">12228</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053001</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18029</td>
+	      <td class="sshPort">12229</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053005</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18030</td>
+	      <td class="sshPort">12230</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053006</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18031</td>
+	      <td class="sshPort">12231</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053007</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18032</td>
+	      <td class="sshPort">12232</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053008</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18033</td>
+	      <td class="sshPort">12233</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053010</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18034</td>
+	      <td class="sshPort">12234</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053011</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18035</td>
+	      <td class="sshPort">12235</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053014</td>
+	      <td class="IPaddr">140.120.16.73</td>
+	      <td class="httpPort">18036</td>
+	      <td class="sshPort">12236</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053015</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18037</td>
+	      <td class="sshPort">12237</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053016</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18038</td>
+	      <td class="sshPort">12238</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053017</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18039</td>
+	      <td class="sshPort">12239</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053018</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18040</td>
+	      <td class="sshPort">12240</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053019</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18041</td>
+	      <td class="sshPort">12241</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053020</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18042</td>
+	      <td class="sshPort">12242</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053021</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18043</td>
+	      <td class="sshPort">12243</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053022</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18044</td>
+	      <td class="sshPort">12244</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053026</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18045</td>
+	      <td class="sshPort">12245</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053027</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18046</td>
+	      <td class="sshPort">12246</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053028</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18047</td>
+	      <td class="sshPort">12247</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053030</td>
+	      <td class="IPaddr">140.120.16.74</td>
+	      <td class="httpPort">18048</td>
+	      <td class="sshPort">12248</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053031</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18049</td>
+	      <td class="sshPort">12249</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053032</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18095</td>
+	      <td class="sshPort">12295</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053033</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18051</td>
+	      <td class="sshPort">12251</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053034</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18052</td>
+	      <td class="sshPort">12252</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053036</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18053</td>
+	      <td class="sshPort">12253</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053038</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18054</td>
+	      <td class="sshPort">12254</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053039</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18055</td>
+	      <td class="sshPort">12255</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053042</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18056</td>
+	      <td class="sshPort">12256</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053043</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18057</td>
+	      <td class="sshPort">12257</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053044</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18058</td>
+	      <td class="sshPort">12258</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053045</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18059</td>
+	      <td class="sshPort">12259</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053048</td>
+	      <td class="IPaddr">140.120.16.75</td>
+	      <td class="httpPort">18060</td>
+	      <td class="sshPort">12260</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053050</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18061</td>
+	      <td class="sshPort">12261</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053106</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18062</td>
+	      <td class="sshPort">12262</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053107</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18063</td>
+	      <td class="sshPort">12263</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053108</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18064</td>
+	      <td class="sshPort">12264</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053113</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18065</td>
+	      <td class="sshPort">12265</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053114</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18066</td>
+	      <td class="sshPort">12266</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053115</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18067</td>
+	      <td class="sshPort">12267</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053116</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18068</td>
+	      <td class="sshPort">12268</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053117</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18069</td>
+	      <td class="sshPort">12269</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053118</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18070</td>
+	      <td class="sshPort">12270</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053119</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18071</td>
+	      <td class="sshPort">12271</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053120</td>
+	      <td class="IPaddr">140.120.16.76</td>
+	      <td class="httpPort">18072</td>
+	      <td class="sshPort">12272</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053122</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18073</td>
+	      <td class="sshPort">12273</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053125</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18074</td>
+	      <td class="sshPort">12274</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053126</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18075</td>
+	      <td class="sshPort">12275</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053127</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18076</td>
+	      <td class="sshPort">12276</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053128</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18077</td>
+	      <td class="sshPort">12277</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053129</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18078</td>
+	      <td class="sshPort">12278</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053130</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18079</td>
+	      <td class="sshPort">12279</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053131</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18080</td>
+	      <td class="sshPort">12280</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053133</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18081</td>
+	      <td class="sshPort">12281</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053135</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18082</td>
+	      <td class="sshPort">12282</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053136</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18083</td>
+	      <td class="sshPort">12283</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053137</td>
+	      <td class="IPaddr">140.120.16.77</td>
+	      <td class="httpPort">18084</td>
+	      <td class="sshPort">12284</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053138</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18085</td>
+	      <td class="sshPort">12285</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053139</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18086</td>
+	      <td class="sshPort">12286</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053140</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18087</td>
+	      <td class="sshPort">12287</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053141</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18088</td>
+	      <td class="sshPort">12288</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053142</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18089</td>
+	      <td class="sshPort">12289</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053143</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18090</td>
+	      <td class="sshPort">12290</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053144</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18091</td>
+	      <td class="sshPort">12291</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053148</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18092</td>
+	      <td class="sshPort">12292</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053149</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18093</td>
+	      <td class="sshPort">12293</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	    <tr>
+	      <td>4101053150</td>
+	      <td class="IPaddr">140.120.16.78</td>
+	      <td class="httpPort">18094</td>
+	      <td class="sshPort">12294</td>
+	      <td class="hw1">&nbsp;</td>
+	      <td class="hw2">&nbsp;</td>
+	    </tr>
+	  </tbody>
+	</table>
+      </div>
+      <div class="right">
+	<iframe id="PreView" frameborder="0" seamless></iframe>
+	<div id="SrcCode"></div>
+      </div>
+    </div>
+
+    <address>
+      <a href="mailto:cssu@csmail.nchu.edu.tw"></a>
+    </address>
+  </body>
+</html>

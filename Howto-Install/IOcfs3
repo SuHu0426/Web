@@ -1,0 +1,438 @@
+    1  mkdir /mnt/tmp
+    2  exit
+    3  mount /dev/sda1 /mnt/tmp
+    4  cd /mnt/tmp/
+    5  ls
+    6  nano  grub/menu.lst
+    7  ls
+    8  nano /boot/grub/menu.lst
+    9  ls
+   10  shutdown -r
+   11  shutdown -r now
+   12  ls
+   13  ifconfig 
+   14  sudo monut /dev/sda1 /mnt/tmp
+   15  sudo mount /dev/sda1 /mnt/tmp
+   16  cd /mnt/tmp/
+   17  ls
+   18  cd ..
+   19  sudo umount /mnt/tmp/
+   20  sudo mount /dev/sda2 /mnt/tmp
+   21  cd tmp/
+   22  ls
+   23  cd /etc/
+   24  ls
+   25  cp host* /tmp
+   26  cp network/interfaces /tmp
+   27  ls
+   28  ls -l
+   29  cd ..
+   30  cd /mnt/tmp/
+   31  ls
+   32  cd etc/
+   33  cp host* /tmp
+   34  cp network/interfaces /tmp
+   35  cp rc.local /tmp
+   36  ls
+   37  exit
+   38  ls
+   39  umount /mnt/tmp
+   40  ls
+   41  exit
+   42  apt-get install openssh
+   43  apt-get install openssh-server
+   44  exit
+   45  apt-get install xfonts-intl-chinese*
+   46  fc-cache -v
+   47  ls
+   48  scp ac15:/src3/UML/ch* .
+   49  exit
+   50  ls
+   51  more chinese\
+   52  install xfonts-intl-arabic
+   53  exit
+   54  cp /tmp/host* /etc
+   55  cp /tmp/interfaces /etc/network/.
+   56  ls
+   57  apt-get install xfonts-intl-asian
+   58  apt-get install xfonts-intl-european
+   59  apt-get install ttf-arphic-newsung
+   60  apt-get install gcin
+   61  im-switch -z zh_TW -s gcin
+   62  /etc/init.d/gdm restart
+   63  shutdown -r now
+   64  aptitude install loacles
+   65  cd /etc/apt/
+   66  ;s
+   67  ls
+   68  nano sources.list
+   69  aptitude update
+   70  aptitude install locales 
+   71  dpkg-reconfigure locales
+   72  shutdown -r now
+   73  dpkg-reconfigure locales
+   74  wget http://cle.linux.org.tw/fonts/cwttf/deb/ttf-cwtex-center-cwfs_1.0-1_all.deb
+   75  dpkg -i ttf-cwtex-center-cwming_1.0-1_all.deb
+   76  dpkg -i ttf-cwtex-center-cwyen_1.0-1_all.deb
+   77  fc-cache -v
+   78  echo $?
+   79  exit
+   80  rm *.deb
+   81  ls
+   82  exit
+   83  apt-get install sudo
+   84  shutdiwn -r now
+   85  shutdown -r now
+   86  exit
+   87  ls
+   88  mount /dev/sda2 /mnt/tmp
+   89  cd /mnt/tmp
+   90  ls
+   91  exit
+   92  mkdir UML
+   93  mkdir KVM
+   94  chown hsu:hsu *
+   95  ls
+   96  apt-get install kvm qemu
+   97  apt-get install uml-utilities
+   98  modprobe kvm-amd
+   99  adduser hsu kvm
+  100  exit
+  101  cp /tmp/sources.list /etc/apt/.
+  102  apt-get update
+  103  exit
+  104  apt-get install user-mode-linux
+  105  ls
+  106  cd /src3/UML
+  107  ls
+  108  exit
+  109  ifconfig 
+  110  ls
+  111  cd bin/
+  112  ls
+  113  more start-kvm14
+  114  exit
+  115  nano /etc/sudoers 
+  116  exirt
+  117  exit
+  118  ls
+  119  nano /etc/ssh/ssh_config 
+  120  ls
+  121  exit
+  122  su hsu
+  123  exit
+  124  mount /dev/sda8 /mnt/tmp
+  125  exit
+  126  tar xvjf linux-2.6.30.4.tar.bz2 -C /usr/src/kernels/
+  127  mkdir /usr/src/kernels/
+  128  tar xvjf linux-2.6.30.4.tar.bz2 -C /usr/src/kernels/
+  129  apt-get install ncurses-dev
+  130  make mrproper
+  131  cd /usr/src/kernels/linux-2.6.30.4/
+  132  make mrproper
+  133  make menuconfig
+  134  make help
+  135  make clean
+  136  make bzImage
+  137  make menuconfig
+  138  make bzImage
+  139  cp su.config .config
+  140  make bzImage
+  141  make modules
+  142  ls
+  143  make modules_install
+  144  make install
+  145  ls /boot/
+  146  exit
+  147  make mrproper
+  148  cd /usr/src/
+  149  ls
+  150  cd kernels/
+  151  ls
+  152  cd linux-2.6.30.4/
+  153  ls
+  154  make mrproper
+  155  make clean
+  156  cp /boot/config-`uname -r` ./.config
+  157  make menuconfig
+  158  make
+  159  ls
+  160  make-kpkg clean
+  161  apt-get install make-kpkg
+  162  apt-get install kernel-package ncurses-dev bzip2 module-init-tools initramfs-tools procps fakeroot
+  163  make-kpkg clean
+  164  export CONCURRENCY_LEVEL=8
+  165  make-kpkg --rootcmd fakeroot --initrd --revision=custom.001 kernel_image kerne
+  166  make-kpkg --rootcmd fakeroot --initrd --revision=custom.001 kernel_image kernel_headers
+  167  cd ..
+  168  ls
+  169  dpkg -i *deb
+  170  emacs /boot/grub/menu.lst
+  171  nano /boot/grub/menu.lst
+  172  exit
+  173  fdisk /dev/sda
+  174  exit
+  175  modprobe aoe
+  176  ls /dev/etherd/
+  177  ls
+  178  ls /dev/etherd/
+  179  ls /dev/etherd/\
+  180  more inet/
+  181  mount /dev/etherd/e1.2p1 /mnt/tmp
+  182  umount /mnt/tmp
+  183  mount /dev/etherd/e1.2p1 /mnt/tmp
+  184  cd /mnt/tmp/
+  185  ls
+  186  ls -l
+  187  exit
+  188  umount /mnt/tmp
+  189  modprobe aoe
+  190  ls /dev/etherd/
+  191  modprobe aoe
+  192  ls /dev/etherd/
+  193  modprobe aoe
+  194  ls /dev/etherd/
+  195  mount /dev/etherd/e1.2 /mnt/tmp
+  196  ls /mnt/tmp
+  197  df
+  198  ls /mnt/tmp
+  199  sudo umount /mnt/tmp
+  200  ls /mnt/tmp
+  201  ls /dev/etherd/
+  202  modprobe aoe
+  203  ls /dev/etherd/
+  204  mount /dev/etherd/e1.2p1 /mnt/tmp
+  205  mount /dev/etherd/e1.2 /mnt/tmp
+  206  ls /mnt/mtp
+  207  ls /mnt/tmp/
+  208  df
+  209  touch /mnt/tmp/88
+  210  ls /dev/etherd/
+  211  ls
+  212  df
+  213  sudo umount /mnt/tmp
+  214  df
+  215  sudo umount /mnt/tmp
+  216  df
+  217  sudo mount /dev/etherd/e1.2 /mnt/tmp
+  218  ls /mnt/tmp/
+  219  ls
+  220  cd /mnt/tmp
+  221  ls
+  222  dd if=/dev/zero of=test bs=1M count=7000
+  223  ls -l
+  224  rm test
+  225  sudo umount /mnt/tmp
+  226  cd ..
+  227  sudo umount /mnt/tmp
+  228  df
+  229  ls /dev/etherd/
+  230  ls -l /dev/etherd/
+  231  ls
+  232  ls -l
+  233  ls -l /tmp/
+  234  ls -l tmp/
+  235  ls -l
+  236  mount /dev/etherd/e1.2 /mnt/tmp
+  237  cd tmp/
+  238  ls
+  239  touch 888
+  240  ls
+  241  ls -l
+  242  cd ..
+  243  umount /mnt/tmp
+  244  mount /dev/etherd/e1.2 /mnt/tmp
+  245  cd tmp/
+  246  ls
+  247  cd ..
+  248  umount /mnt/tmp
+  249  mount /dev/etherd/e1.2 /mnt/tmp
+  250  cd tmp/
+  251  ls
+  252  touch 9999852
+  253  touch 9999852546
+  254  ls -l
+  255  rm 999555
+  256  rm 999
+  257  ls -l
+  258  modprobe aoe
+  259  ls -l
+  260  exit
+  261  umount /mnt/tmp/
+  262  ls
+  263  mount /dev/etherd/e1.2 /mnt/tmp
+  264  cd  /mnt/tmp/
+  265  ls -l
+  266  touch 999555
+  267  touch 8546321
+  268  ls -l
+  269  mkdir 8854645
+  270  cd ..
+  271  umount tmp/
+  272  mount /dev/etherd/e1.2 /mnt/tmp
+  273  ls tmp/
+  274  mkfs.ext3 /dev/etherd/e1.2
+  275  ps -C mount
+  276  mkfs.ext3 /dev/etherd/e1.2
+  277  rm /dev/etherd/*
+  278  modprobe aoe
+  279  ls -l /dev/etherd/
+  280  ls -l
+  281  ls -l /dev/etherd/
+  282  modprobe aoe
+  283  ls -l /dev/etherd/
+  284  modprobe -r aoe
+  285  modprobe aoe
+  286  modprobe -h
+  287  modprobe --h
+  288  man modprobe 
+  289  modprobe -c
+  290  modprobe aoe
+  291  ls -l /dev/etherd/
+  292  modprobe aoe -r
+  293  ps -C aoe
+  294  umount /mnt/tmp
+  295  modprobe aoe -r
+  296  modprobe aoe
+  297  ls -l /dev/etherd/
+  298  pvscan
+  299  pvcreate
+  300  partprobe
+  301  pvcreate
+  302  ls
+  303  exit
+  304  cd /home/hsu
+  305  ls
+  306  pvscan
+  307  partprobe
+  308  pvscan
+  309  apt-get install lvm2
+  310  apt-get install lvm2
+  311  pvscan
+  312  pvscan
+  313  df
+  314  ls /dev/sda*
+  315  ls -l /dev/sda*
+  316  ls
+  317  pvcreate /dev/etherd/e1.1p{1,2,3}
+  318  ls
+  319  pvdisplay 
+  320  pvscan 
+  321  vgcreate -s 64M hsu /dev/etherd/e1.1p{1,2,3}
+  322  lvcreate -L 10G -n hsulv /dev/hsu
+  323  df
+  324  mkfs.ext3 /dev/hsu/hsulv 
+  325  mount /dev/hsu/hsulv /mnt/tmp
+  326  df
+  327  umount /mnt/tmp
+  328  lvresize +L 150G /dev/hsu/hsulv 
+  329  lvresize -L 150G /dev/hsu/hsulv 
+  330   mount /dev/hsu/hsulv /mnt/tmp
+  331  df
+  332  df
+  333  umount /mnt/tmp
+  334  lvresize -L 200G /dev/hsu/hsulv 
+  335   mount /dev/hsu/hsulv /mnt/tmp
+  336  df
+  337  umount /mnt/tmp
+  338  lvresize -L lvdisplay200G /dev/hsu/hsulv 
+  339  lvdisplay
+  340  lvdisplay
+  341  mount /dev/hsu/hsulv /mnt/tmp
+  342  df
+  343  lvresize -L 5G /dev/hsu/hsulv 
+  344  df
+  345  dumpe2fs /dev/hsu/hsulv 
+  346  df
+  347  dumpe2fs /dev/hsu/hsulv 
+  348  resize2fs /dev/hsu/hsulv 
+  349  df
+  350  lvresize -L 200G /dev/hsu/hsulv 
+  351  dumpe2fs /dev/hsu/hsulv 
+  352  resize2fs /dev/hsu/hsulv 
+  353  df /mnt/tmp
+  354  resize2fs /dev/hsu/hsulv 
+  355  df /mnt/tmp
+  356  lvresize -L 100G /dev/hsu/hsulv 
+  357  dumpe2fs /dev/hsu/hsulv 
+  358  resize2fs /dev/hsu/hsulv 
+  359  resize2fs /dev/hsu/hsulv 
+  360  e2fsck -f /dev/hsu/hsulv
+  361  df
+  362  df /mnt/tmp
+  363  mount /dev/hsu/hsulv /mnt/tmp
+  364  df /mnt/tmp
+  365  dumpe2fs /dev/hsu/hsulv 
+  366  df
+  367  lvresize -L 110G /dev/hsu/hsulv 
+  368  dumpe2fs /dev/hsu/hsulv 
+  369  df /mnt/tmp
+  370  lvresize -L 100G /dev/hsu/hsulv 
+  371  dumpe2fs /dev/hsu/hsulv 
+  372  df /mnt/tmp
+  373  resize2fs /dev/hsu/hsulv 
+  374  e2fsck -f /dev/hsu/hsulv
+  375  resize2fs /dev/hsu/hsulv 
+  376  mount /dev/hsu/hsulv /mnt/tmp
+  377  df /mnt/tmp
+  378  lvresize -L 200G /dev/hsu/hsulv 
+  379  dumpe2fs /dev/hsu/hsulv 
+  380  resize2fs /dev/hsu/hsulv 
+  381  df /mnt/tmp
+  382  resize2fs /dev/hsu/hsulv 
+  383  df /mnt/tmp
+  384  lvresize -L 10G /dev/hsu/hsulv 
+  385  dumpe2fs /dev/hsu/hsulv 
+  386  resize2fs /dev/hsu/hsulv 
+  387  umount /mnt/tmp
+  388  resize2fs /dev/hsu/hsulv 
+  389  e2fsck -f /dev/hsu/hsulv
+  390  e2fsck -f /dev/hsu/hsulv
+  391  e2fsck -f /dev/hsu/hsulv
+  392  e2fsck -f /dev/hsu/hsulv
+  393  ls
+  394  modprobe aoe -r
+  395  lvremove /dev/hsu/hsulv 
+  396  modprobe aoe -r
+  397  ls
+  398  pvscan
+  399  pvdisplay
+  400  vgdisplay
+  401  lvdisplay
+  402  pedisplay
+  403  pvdisplay
+  404  exit
+  405  more /sbin/o2cb_ctl 
+  406  ls /sbin/o2cb_ctl
+  407  o2cb_ctl lc14
+  408  o2cb_ctl -h
+  409  o2cb_ctl -V
+  410  o2cb_ctl -H
+  411  /etc/init.d/o2cb online ocfs2.
+  412  /etc/init.d/o2cb online ocfs2
+  413  more /etc/sysconfig/network
+  414  /etc/init.d/o2cb status
+  415  exit
+  416  /etc/init.d/ocfs2 stop
+  417  /etc/init.d/o2cb stop
+  418  /etc/init.d/o2cb restart
+  419  /etc/init.d/o2cb load
+  420  /etc/init.d/o2cb status
+  421  /etc/init.d/o2cb restart
+  422  /etc/init.d/o2cb status
+  423  /etc/init.d/o2cb load
+  424  /etc/init.d/o2cb status
+  425  /etc/init.d/o2cb online
+  426  umount /mnt/tmp
+  427  df
+  428  nano /etc/ocfs2/
+  429  nano /etc/ocfs2/cluster.conf 
+  430  nano /etc/hosts
+  431  scp /etc/hosts ac11:/tmp
+  432  ocfs2console 
+  433  modprobe -r aoe
+  434  history 
+  435  history | tee /SuLin/IOcfs
+  436  exit
+  437  ls
+  438  history > SuLin/IOcfs

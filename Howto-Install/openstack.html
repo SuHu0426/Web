@@ -1,0 +1,116 @@
+<html>
+<head><title>OpenStack Installation Guide </title></head>
+<body>
+<pre>
+;; For Debian
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Installing the Cloud Controller
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+$ sudo apt-get install python-software-properties
+;; Install the messaging queue server, RabbitMQ.
+$ sudo apt-get install -y rabbitmq-server
+;; Now, install the Python dependencies. 
+$ sudo apt-get install -y python-greenlet python-mysqldb 
+;; Install the required nova- packages, 
+;; and dependencies should be automatically installed.
+$ sudo apt-get -y install libvirt-dev libvirt-bin
+$ sudo mkdir /var/lib/libvirt/qemu/ /var/cache/libvirt/qemu/ 
+$ sudo apt-get -f install
+$ sudo apt-get install -y nova-common nova-doc python-nova nova-api \
+       nova-network nova-objectstore nova-scheduler nova-compute
+;; Install the supplemental tools such as euca2ools and unzip.
+$ sudo apt-get install -y euca2ools unzip
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Setting up the SQL Database (MySQL) on the Cloud Controller
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; First you can set environments with a "pre-seed" line 
+;; to bypass all the installation prompts, running this as root:
+$ sudo bash
+# MYSQL_PASS=nova
+# NOVA_PASS=notnova
+# cat << MYSQL_PRESEED | debconf-set-selections
+> mysql-server-5.1 mysql-server/root_password password $MYSQL_PASS
+> mysql-server-5.1 mysql-server/root_password_again password $MYSQL_PASS
+> mysql-server-5.1 mysql-server/start_on_boot boolean true
+> MYSQL_PRESEED
+# exit
+$ sudo apt-get install mysql-server
+;; Edit /etc/mysql/my.cnf 
+$ sudo sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
+$ sudo service mysql restart
+;; To configure the MySQL database, create the nova database: 
+$ MYSQL_PASS=nova
+$ NOVA_PASS=notnova
+$ sudo mysql -uroot -p$MYSQL_PASS -e 'CREATE DATABASE nova;'
+;; Update the DB to give user ‘nova’@’%’ full control of the nova database:
+$ sudo mysql -uroot -p$MYSQL_PASS -e "GRANT ALL PRIVILEGES ON *.* TO \
+	'nova'@'%' WITH GRANT OPTION;"
+$ sudo mysql -uroot -p$MYSQL_PASS -e "SET PASSWORD FOR 'nova'@'%' = \
+        PASSWORD('$NOVA_PASS');"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Installing the Compute Node
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; If you use FlatManager as your network manager,
+;; there are some additional networking changes to
+;; ensure connectivity between your nodes and VMs.
+;; If you chose VlanManager or FlatDHCP,
+;; you may skip this section because they are set up for you automatically.
+;;
+;; Compute defaults to a bridge device named ‘br100’.
+;; This needs to be created and somehow integrated into your network.
+;; To keep things as simple as possible,
+;; have all the VM guests on the same network as the VM hosts (the compute nodes).
+;; To do so, set the compute node’s external IP address to be on the bridge
+;; and add eth0 to that bridge. To do this,
+;; edit your network interfaces configuration to look like the following example: 
+< begin /etc/network/interfaces >
+# The loopback network interface
+auto lo
+iface lo inet loopback
+# Networking for OpenStack Compute
+auto br100
+iface br100 inet dhcp
+bridge_ports        eth0
+bridge_stp           off
+bridge_maxwait   0
+bridge_fd            0
+< end /etc/network/interfaces >
+$ sudo /etc/init.d/networking restart
+;; If you use flat networking,
+;; you must manually insert the IP address into the 'fixed_ips'
+;; table in the nova database.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Restart All Relevant Services on the Compute Node
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; For Ubuntu
+;; restart libvirt-bin; restart nova-network; restart nova-compute;
+;; restart nova-api; restart nova-objectstore; restart nova-scheduler
+$ sudo /etc/init.d/libvirt-bin restart
+$ sudo /etc/init.d/nova-network restart
+$ sudo /etc/init.d/nova-compute restart
+$ sudo /etc/init.d/nova-api restart
+$ sudo /etc/init.d/nova-objectstore restart
+$ sudo /etc/init.d/nova-scheduler restart
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Setting Flags in the /etc/nova/nova.conf File
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+$ sudo addgroup nova
+$ sudo adduser hsu nova
+$ sudo chown -R root:nova /etc/nova
+$ sudo chmod 640 /etc/nova/nova.conf
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Post-Installation Configuration for OpenStack Compute
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Setting Up OpenStack Compute Environment on the Compute Node
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+$ sudo nova-manage db sync
+$ sudo nova-manage user admin hsu
+$ sudo nova-manage project create MyProject hsu
+$ sudo nova-manage network create 192.168.0.0/24 1 256
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Creating Certifications
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+</pre>
+</body>
+</html>

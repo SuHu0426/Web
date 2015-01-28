@@ -1,0 +1,25 @@
+<HTML>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Dropbox for Debian</TITLE>
+  <link type="text/css" rel="stylesheet" href="style.css" />
+</HEAD>
+<BODY>
+<h2><a href="http://www.nevermind.co.nz/2011/04/07/installing-dropbox-on-debian-sid/">Dropbox</a></h2>
+<h2>安裝步驟</h2>
+<OL>
+  <h3><li>安裝相依套件.</h3>
+<pre>$ sudo aptitude install libnautilus-extension-dev checkinstall
+$ sudo aptitude install python-docutils
+</pre>
+  <h3><li>下載安裝 Dropbox.</h3>
+<pre>$ wget http://www.dropbox.com/download?dl=packages/nautilus-dropbox-0.6.9.tar.bz2
+$ tar xjvf nautilus-dropbox-*
+$ cd nautilus-dropbox-*
+$ ./configure
+$ make
+$ sudo checkinstall make install
+</pre>
+</OL>
+</BODY>
+</HTML>

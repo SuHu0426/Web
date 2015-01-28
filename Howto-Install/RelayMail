@@ -1,0 +1,5 @@
+$ sudo aptitude install cyrus-common-2.2
+$ sudo aptitude install procmail
+$ sudo aptitude install postfix
+$ sudo aptitude install imaptool
+

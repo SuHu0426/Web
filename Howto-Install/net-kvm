@@ -1,0 +1,11 @@
+qemu-img create Debian-test.img 8G
+sudo chmod 666 /dev/net/tun
+sudo tunctl -u hsu -t tap0
+sudo ifconfig tap0 140.120.8.114 netmask 255.255.255.255 up
+sudo sysctl net.ipv4.ip_forward=1
+sudo sysctl net.ipv4.conf.tap0.proxy_arp=1
+sudo arp -Ds 140.120.8.214 eth0 pub
+sudo route add -host 140.120.8.214 dev tap0
+vde_switch -tap tap0 -mod 644 -sock=/src3/KVM/network-12274 -mgmt /src3/KVM/network-12274/vde_switch.mgmt -daemon </dev/null >/dev/null
+vdekvm -net vde,vlan=0,sock=/src3/KVM/network-12274 -net nic,vlan=0,macaddr=00:e0:81:99:18:0d -hda ./Debian-test.img -cdrom /video/ISOs/debian-testing-amd64-i386-powerpc-netinst.iso &
+

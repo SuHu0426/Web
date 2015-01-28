@@ -1,0 +1,420 @@
+<OL>
+  <LI><a href="http://www.itworld.com/openflow" target="newwindow">OpenFlow News from 
+      itworld</a>
+  <LI><a href="http://www.sdncentral.com/comprehensive-list-of-open-source-sdn-projects/" 
+      target="newwindow">SdnCentral: OpenSource Sdn Projects</a>&nbsp;&nbsp;
+      <a href="http://www.sdncentral.com/listings/" 
+      target="newwindow">Sdn Directories</a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+  <LI><a href="" 
+      target="newwindow"></a>
+</OL>
+
+<a name="OpenFlowSdnBigData"></a><h3>OpenFlow, SDN and Big data 
+<a href="http://ravistechblog.wordpress.com/2012/11/23/openflow-sdn-and-big-data/" 
+target="newwindow">(Source Origin)</a></h3>
+<div class="info">
+<span class="date">November 23, 2012</span> &nbsp;Ravi
+		</div>
+		<div class="content">
+<p><img src="http://ravistechblog.files.wordpress.com/2012/11/openflow.jpg" 
+height="212" width="300">
+
+<P><a href="http://www.openflow.org/wp/learnmore/">OpenFlow</a> promised a way out 
+of the tyranny in a world dominated by proprietary networking vendors like Cisco, 
+Juniper, Alcatel and others.  It offered the promise of traffic engineering using 
+low-cost hardware and a way to design your network in a deterministic fashion rather 
+than have to over-provision everything for the worst case scenario.  In jargon-speak 
+OpenFlow  allows "separation of the control plane from the data plane."</p>
+
+<p>What this means to you and me is that we can now take functions like access control 
+lists (ACL) that were handled by the routers/switches and move that intelligence into 
+Java software running in a virtual machine.  To do all these wonderful things all you 
+need is:</p>
+
+<ul>
+  <li>OpenFlow controller</li>
+  <li>OpenFlow enabled switch</li>
+</ul>
+
+<p>Vendors who make OpenFlow compliant switches include Brocade, HP, Juniper, Dell, 
+Extreme Networks, Arista and IBM.  Carriers who deploy OpenFlow in their networks 
+today include <a href="http://gigaom.com/cloud/verizon-shows-off-openflows-benefits-for-carriers/">Verizon</a>.</p>
+
+<p>Software Defined Networking (SDN) is the latest buzzword which sends shivers down 
+the spines of the big router/switch vendors who made billions of dollars selling 
+proprietary firmware based routers and switches.  The stifling world they thrust upon 
+us of access routers, aggregation routers, layer 3 routers and WAN routers, millions 
+of lines of code for each router, roadmaps that stretch into the next 10 years -  may 
+all become a thing of the past thanks to the unrelenting march of technologies like 
+SDN.</p>
+
+<p>How do you visualize SDN?  Think of this new architecture as being modular and 
+neatly layered like an IKEA shelf, with the data-plane layer at the bottom, control 
+plane above it and the application plane on top:</p>
+
+<ul>
+  <li>The data-plane layer switches can be of two types: OpenFlow Hypervisor switches 
+      and OpenFlow physical switches.</li>
+  <li>The control plane could feature commercially available controllers like Big 
+      Switch "Big network controller".</li>
+  <li>The application plane is where you would have SDN applications, cloud 
+      orchestration and other business applications.</li>
+</ul>
+
+<p>Players in the emerging SDN space include vendors like Nicira and Big Switch 
+   Networks.</p>
+
+<ul>
+  <li><a href="http://nicira.com/">Nicira</a> who made available via open source 
+      their <i>vSwitch Open vSwitch</i></li>
+  <li><a href="http://www.bigswitch.com/">Big Switch Networks</a> who made available 
+      via open source their OpenFlow controller 
+<a href="http://www.bigswitch.com/blog/2012/01/11/announcing-floodlight-an-open-source-openflow-controller">"Floodlight"</a> under the Apache 2 license.</li>
+  <li><a href="http://www.midokura.com/">Midokura</a> who virtualize the network stack 
+      of OpenFlow with their MidoNet</li>
+</ul>
+
+<p>So what did the legacy networking and virtualization vendors do?  As the adage goes 
+   - If you can't build it in-house then at least acquire it so you regain some nominal 
+   measure of control.  This scenario was acted out recently when:</p>
+
+<ul>
+  <li>VMware acquired Nicira for $1.2B</li>
+  <li>Brocade acquired Vyatta for an undisclosed amount</li>
+  <li>Cisco acquired Cloupia for $125M and Meraki for $1.2B</li>
+</ul>
+
+<p>That's enough about the vendors in the space.   If I am a user how do I benefit 
+   from SDN?</p>
+
+<p>Benefits of SDN to enterprise customers:</p>
+
+<ul>
+  <li>The ability to squeeze more VMs into you existing rack servers results in 
+      driving down your power and cooling costs.  This  in turn mean more CapEx savings 
+      and OpEX savings (due to fewer trouble tickets) especially in an enterprise cloud 
+      environment.</li>
+</ul>
+
+<p>Fidelity and Goldman Sachs are rumored to be customers of Big Switch Networks.</p>
+
+<p>Benefits of SDN to cloud service providers:</p>
+
+<ul>
+  <li>A way to virtualize your network
+  <ul>
+    <li>If you are benefiting from virtualizing servers using VMware or
+ Citrix technology why stop there?  Why not go down a level 
+and virtualize the underlying network of proprietary switches and 
+routers and treat them like an un-differentiated pool of resources?</li>
+    <li>A programmatic way to control your infrastructure:
+    <ul>
+      <li>If you are a telecom service provider you now have a way to move 
+away from the proprietary architectures of Cisco, Juniper, Alcatel which
+ requires a vendor's programmer to program your routers.  You can 
+now have your own telecom engineers do the 
+programming blissfully oblivious to the make/model of the 
+underlying router.</li>
+      <li>Better orchestration of cloud services.
+      <ul>
+        <li>Rapid provisioning including scale-up and scale-down.</li>
+      </ul></li>
+    </ul></li>
+  </ul></li>
+</ul>
+
+<p>In the service provider market these can quickly become key business differentiators. 
+   Cloud providers like Amazon, Google, Facebook, MSN, Yahoo, Rackspace take advantage 
+   of the benefits of SDN today.  Traditional services providers like 
+   <a href="http://www.nttdata.com/global/en/news-center/global/2012/060801.html">NTT 
+   are also adopters of SDN</a>.</p>
+
+<p>If you are still with me you might wonder: I get all this OpenFlow, SDN business but 
+   what pray tell does all this have to do with Hadoop and big data?  For starters, 
+   Infoblox has proven that Hadoop performance can be accelerated using OpenFlow 
+   enabled Ethernet switches instead of using pricier InfiniBand or other interconnects. 
+   As <a href="http://www.sdncentral.com/sdn-blog/soft-switch-erlang-stu-bailey-infoblox/2012/08/">Stuart Bailey, CTO of Infoblox</a>
+   says "Imagine a single programmer routinely having 10,000 cores and their associated 
+   networks to write Big Data applications!  SDN enables new industrial applications 
+   like Big Data analysis in the same way the PC brought spreadsheets and word 
+   processors into the enterprise."</p>
+
+<p>If you wish to explore this area further look into 
+<a href="http://www.cs.rice.edu/%7Eeugeneng/papers/HotSDN12.pdf">papers like these 
+from IBM on how you can program your network at run-time for big data applications</a>. 
+To learn more about <a href="http://i.dell.com/sites/doccontent/business/large-business/en/Documents/Dell-Networking-SDN-POV.pdf">SDN itself 
+look into papers like this one from Dell</a>.  If you happen to be an HP shop you'll 
+want to catch up on HP's solutions for SDN  <a href="#HpSdnSolu">I</a>  and 
+<a href="#HpVirNetSolu">II</a>.  So you see in the end big data has tangible benefits 
+from this move towards SDN regardless of who makes your underlying network hardware.</p>
+
+
+
+<a name="HpSdnSolu"></a><h3 class="entry-title">HP Throws Down the Gauntlet in the 
+SDN Arena 
+<a href="http://www.sdncentral.com/products-technologies/hp-throws-down-the-gauntlet-in-the-sdn-arena/2012/10/">(Source Origin)</a></h3>
+
+<div class="entry-meta">
+ By: Mark Leary Posted: Oct. 10, 2012</div>
+
+<p><img src="http://cdn.sdncentral.com/wp-content/uploads/2012/10/HP-Throws-Down-the-Gauntlet.jpg"></p>
+
+<p>Because our industry is full of naysayers, let's do a preemptive strike on the 
+negatives. Is <a href="http://www.sdncentral.com/listings/hp" target="_blank">HP's</a> 
+new SDN solution available now? No. It is in beta and will not likely be ready for 
+general release until mid-next year. Will HP's SDN solution work with all HP 
+networking devices? No. Twenty-three 
+<a href="http://www.sdncentral.com/listings/open-networking-foundation" 
+target="_blank">OpenFlow</a>-enabled HP switch models are included. Will HP's SDN 
+solution include networking devices from other vendors? No. Testing will focus on 
+the now 23 HP <a href="http://www.sdncentral.com/listings/open-networking-foundation">OpenFlow</a>-enabled 
+devices. (Note: In all fairness to HP, OpenFlow-enabled devices are few and far between 
+in production networks. Don't blame HP for not looking for needles in haystacks.) Has 
+HP got this SDN thing all figured out with respect to performance... and reliability... 
+and security... and interoperability... and manageability... and all those other things 
+that make our networks whole? No. But then again, who has? And isn't that what beta 
+testing is all about? Is HP providing a wealth of killer SDN apps as part of its new 
+solution? No. Announced are three diverse and potentially high-impact apps. As for more 
+apps... Stay tuned. The beta will absorb and prove out others as they come - and come 
+they will.</p>
+
+<p>So what's the big deal about HP's SDN announcements this week? Here's a quick Top 
+5 list from my view:</p>
+
+<p>1.  They involve real products operating in real networks. With a no-charge software 
+update, in-place HP switches can be migrated to this new SDN model. Update the switch 
+software and install HP's SDN controller and you have a functioning SDN environment - 
+no programs to write, no wholesale swap-outs to make, no third party dependencies.</p>
+
+<p>2.  They enable incremental adoption. HP's new SDN solution can be deployed as an 
+"SDN Island" in a sea of traditional non-SDN networking segments and devices.  You want 
+to try out SDN without a complete network overhaul? Go ahead. Apply it in your data 
+center... or your campus... or your private cloud. Network advancements offered in 
+manageable increments are always a good thing.</p>
+
+<p>3.  They involve both HP and third party applications. HP isn't just throwing out 
+its controller and <a href="http://www.sdncentral.com/sdn-blog/new-sdncentral-resource-sdn-apis-and-sdn-sdks/2012/10/" 
+target="_blank">APIs </a> and hoping people work  together to strengthen enforcement 
+and speed reaction. Another app comes from CERN and focuses on load balancing. In 
+essence, it offers load balancing for load balancers - an important function in this 
+day of Big Data where east-west traffic is creating far more problems in data centers 
+than north-south end user exchanges.</p>
+
+<p>4.  They include both product AND SDN-focused support services. In the early stages 
+of adoption, SDN success will hinge as much on process as it does product. SDN 
+introduces new technologies, new design considerations, new management responsibilities, 
+and yes, even new problems. Suppliers that make it easy to understand, conceive, deploy, 
+and tune their respective SDN solution will not only drive success for themselves, but 
+also the SDN movement overall. Here, HP is offering pre- and post-deployment services 
+(e.g., staff training, baseline evaluations, and network optimization) that will give 
+its solution the best chance to deliver on its promise.</p>
+
+<p>5.  The heart of HP's new SDN solution - Virtual Application Networks SDN Controller 
+- provides for some nice configuration flexibility. This is a must for SDN environments. 
+Just as no two networks look alike, no two SDNs will look alike either. The controller 
+is available as a software package and as a software/hardware system. Given this, you 
+can surmise that the controller hardware is a rather straightforward server design. At 
+least, for now. who knows what future SDN requirements hold in store for controller 
+design? For high availability configurations, multiple controllload an be used in an 
+active-active state, load sharing in normal circumstances and failing over when bad 
+things happen. In addition, HP's SDN controller can take on multiple application 
+personalities simultaneously. While the betas will aid capacity analysis in this 
+scenario, the ability to readily serve new applications as needs arise - and as 
+applications roll out - will be very beneficial to the operator looking to do more and 
+more with their SDN.</p>
+
+<p>For all those hoping for the best from SDN solutions and suppliers, feel free to 
+add to the list. And for you naysayers, we can always do with a few more criticisms. 
+The SDN movement is the better off for it, quite frankly. Just beware if you're an 
+SDN supplier looking to throw stones at HP. People in glass houses...</p>
+<div>
+
+<p><strong>Guest Blogger Disclaimer:</strong></p>
+
+<p><em>The views, opinions and positions expressed within these guest posts are those 
+of the author alone and do not represent those of </em> 
+<a href="http://sdncentral.com/" target="_blank"><em>SDNCentral.com</em></a><em> and
+ SDNCentral, LLC. The accuracy, completeness and validity of any statements made within 
+this article are not guaranteed. We accept no liability for any errors, omissions or 
+representations. The copyright of this content belongs to the author and any liability 
+with regards to infringement of intellectual property rights remains with them.</em></p>
+
+<p><!--?xml version="1.0" encoding="UTF-8" standalone="no"?--></p>
+
+<p><strong>Checkout more from our Guest Bloggers:</strong><br>
+</p>
+
+<ul class="display-posts-listing">
+  <li><a href="http://www.sdncentral.com/sdn-blog/breaking-down-barriers-with-sdn/2012/12/">Breaking Down Barriers with SDN</a> (12/14/2012)</li>
+  <li><a href="http://www.sdncentral.com/guest-blog-posts/does-mpls-make-sense-in-cloud-data-centers/2012/12/">New Take on SDN:  Does MPLS Make Sense in Cloud Data Centers?</a> (12/11/2012)</li>
+  <li><a href="http://www.sdncentral.com/sdn-blog/top-5-popular-posts/2012/11/">A Look Back At SDNCentral's Top 5 Popular Posts</a> (11/21/2012)</li>
+  <li><a href="http://www.sdncentral.com/sdn-blog/sdn-controller-as-saas/2012/11/">Can an SDN Controller Run as SaaS?</a> (11/20/2012)</li>
+  <li><a href="http://www.sdncentral.com/guest-blog-posts/sdn-permeates-ethernet-expo-conference-in-nyc/2012/11/">SDN Permeates Ethernet Expo Conference in NYC</a> (11/18/2012)</li>
+</ul><p></p>
+
+
+<a name="HpVirNetSolu"></a><h3>HP Virtual Application Networks 
+<a href="http://www.denaliai.com/hp/default.aspx?svpage=networking_products-van">(Source 
+Origin)</a></h3>
+<div class="clsSVContent">
+<h4>Enterprise Software Defined Networks (SDN)</h4>
+
+<P>HP Virtual Application Network is a complete, end-to-end software defined networking 
+solution to enable businesses to create a scalable, agile, and secure network that 
+empowers IT staff and streamline business operations. With Virtual Application Networks, 
+businesses can focus on connecting users to business applications and on the quality of 
+experience-rather than on the details of configuring the network, device by device.<br>
+Virtual application networks based on HP FlexNetwork architecture delivers:<br>
+
+<ul>
+  <li>Dynamic and rapid deployment of cloud applications</li>
+  <li>Increase IT efficiency with services orchestration</li>
+  <li>Business agility and scalable service</li>
+</ul>
+
+<P>Together, HP FlexNetwork architecture and Virtual Application Networks create a 
+unified platform through a programmable end-to-end control plane for dynamic and rapid 
+deployment of cloud applications and services giving the agility business need.<br>
+
+<img src="http://hp.sharedvue.net/sharedvue/images/flexnetwork-architecture.jpg" 
+alt="" style="margin: 0px 0px 8px;" border="0" width="450" height="317"><br>
+
+<P>Virtual Application Networks are built on the tenants of application 
+characterization, network abstraction and automated orchestration to and ensure 
+consistent provisioning of resources to meet the service level expected by users.<br>
+
+<ul>
+  <li>Application Characterizations: Create consistency, reliability &amp; repeatability across entire the network infrastructure</li>
+  <li>Network Abstraction: Create multitenant, on-demand, topology &amp; device-independent provisioning</li>
+  <li>Automated Orchestration: Orchestrate using templates, user service levels &amp; policy for dynamic application delivery</li>
+</ul>
+
+<br>
+<P>With Virtual Application Networks you can spend more time connecting users to 
+applications and less time on managing complex infrastructure.<br>
+
+<h5>Virtual application network solutions</h5>
+
+<P>Virtual Application networks is comprised of end-to-end software defined
+ networking (SDN) solutions that enable organizations to apply business 
+logic to network behavior and technologies that enable network 
+orchestration with advanced infrastructure management to create a 
+dynamic, reliable, agile network.<br>
+<h5>Virtual Application Networks SDN Controller</h5>
+
+<P>The HP Virtual Application Networks SDN Controller is the center-piece 
+of the SDN architecture. The controller offers a dynamic control plane 
+with the intelligence to automate and program the network to enable 
+network agility.
+
+<ul>
+  <li>Full support for the <a href="http://www.denaliai.com/hp/default.aspx?svpage=networking_products-openflow&amp;sid=930bc492545f16a266cf17854aebbfe0">OpenFlow</a> protocol</li>
+  <li>Open APIs to enable third party SDN Application Development</li>
+  <li>Extensible, Scalable, Resilient controller architecture</li>
+</ul>
+
+<br>
+<h5>SDN Applications</h5>
+<h5>Virtual Cloud Network</h5>
+
+<P>Designed as a unique software defined networking application that runs 
+on the HP Virtual Application Networks SDN controller to provide public 
+cloud service providers network scalable automation and it allows 
+enterprise to securely connect to the cloud and apply their own 
+'identity' to their cloud environment.
+
+<ul>
+  <li>Scalable Automation - reduces the number of points in the network 
+which must be automated each time a new provisioning request comes in</li>
+  <li>Low Risk Automation - limit the points of the network which are automated to low risk areas</li>
+  <li>Scalable Multi-Tenancy - come up with a straightforward way to scale beyond traditional network hardware limits</li>
+</ul>
+
+<h5>Sentinel Security </h5>
+
+<P>Enables you to automate, real-time network security in enterprise and 
+cloud networks leveraging a unique software defined networking 
+application that runs on the HP Virtual Application Networks.
+
+<ul>
+  <li>Real-time threat protection - with a cloud-connected database 
+leveraging the HP DVLabs reputation database, the application can 
+protect from over 700,000 malicious sites including spyware, botnets and
+ malware.</li>
+  <li>Eliminates - limit the points of the network which are automated to low risk areas</li>
+  <li>Scalable Multi-Tenancy - come up with a straightforward way to scale beyond traditional network hardware limits</li>
+</ul><br>
+
+<h5>Enabling Technologies </h5>
+<h5>Virtual Application Networks Manager for IMC</h5>
+
+<P>Allows you to accelerate application deployment through rapid provisioning and automation of network policy enforcement.
+
+<ul>
+  <li>Reduced provisioning errors through connection profile templates</li>
+  <li>Automated orchestration of templates rather than VM-by-VM and box-by-box configuration and management</li>
+  <li>Faster deployment of private cloud environments</li>
+</ul>
+
+<P>For more information: <a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking-hp-intelligent-management-center-van-manager-software-datasheet&amp;sid=930bc492545f16a266cf17854aebbfe0">HP Intelligent Management Center Virtual Application Network Manager Software Datasheet</a><br>
+<h5>Ethernet Virtual Interconnect and Multi-tenant Device context</h5>
+
+<P>EVI: Allows you to simply connect multiple data centers with single 
+touch deployment and enable all the computer resources in multiple data 
+centers to be linked within minutes rather than months<br>
+
+<ul>
+  <li>Delivers long distance workload mobility and long distance disaster recovery, or business continuance</li>
+  <li>Reduces by up to 80% and faster vMotion recovery times that are up to 5 times faster than physical platforms</li>
+</ul>
+
+<P>Multitenant Device context allows you to virtualize one physical switch into up to four logical switches
+
+<ul>
+  <li>Reduced number of physical platforms by up to 75% leading to CapEx and OpEx reductions</li>
+  <li>Increased resiliency with complete isolation of tenants</li>
+  <li>Simplified management and operations</li>
+  <li>Secure operating environment for all tenants</li>
+</ul>
+
+<br>
+<P><a href="http://www.denaliai.com/hp/default.aspx?svpage=networking_products-dci&amp;sid=930bc492545f16a266cf17854aebbfe0">Read more about EVI and MDC</a>.<br>
+<strong>Preparing the network for the cloud</strong> <br>
+<img src="http://hp.sharedvue.net/sharedvue/images/networking-virtual-app-networks.jpg" 
+alt="" style="margin: 0px 0px 8px; border: 1px solid rgb(153, 153, 153);" border="0" 
+width="460" height="275"><br>
+
+<h4>Resources</h4>
+
+<ul>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking-virtual-application-networks-overview-faqs&amp;sid=930bc492545f16a266cf17854aebbfe0">Virtual Application Networks Overview FAQs</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_van_brochure&amp;sid=930bc492545f16a266cf17854aebbfe0">Virtual Application Networks Brochure</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_van_factsheet&amp;sid=930bc492545f16a266cf17854aebbfe0">Virtual Application Networks Fact Sheet</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_van_whitepaper&amp;sid=930bc492545f16a266cf17854aebbfe0">ESG HP Virtual Application Networks</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_orchestrate_brochure&amp;sid=930bc492545f16a266cf17854aebbfe0">Virtual Application Networks - Orchestrate</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_flexfabric_reference_wp&amp;sid=930bc492545f16a266cf17854aebbfe0">HP FlexFabric Reference Architecture Overview</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_api_whitePaper&amp;sid=930bc492545f16a266cf17854aebbfe0">HP Intelligent Management Center Extended APIs (eAPIs) Business white paper</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking_van_demo&amp;sid=930bc492545f16a266cf17854aebbfe0">HP Virtual Application Networks Demo</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking-deliver-hp-virtual-application-networks&amp;sid=930bc492545f16a266cf17854aebbfe0">Deliver HP Virtual Application Networks</a></li>
+  <li><a href="http://www.denaliai.com/hp/default.aspx?svpage=whyhp_resources-access---networking-realizing-the-power-of-sdn-with-hp-virtual-application-networks&amp;sid=930bc492545f16a266cf17854aebbfe0">Realizing the power of SDN with HP Virtual Application Networks</a></li>
+</ul>

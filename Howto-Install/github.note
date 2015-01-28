@@ -1,0 +1,25 @@
+git clone https://github.com/SuHu0426/Web.git
+or
+git init
+
+git config --global user.name "suhu0426"
+git config --global user.email "cssu@csmail.nchu.edu.tw"
+git config --global color.ui true
+git config --list
+
+git branch gh-pages
+git checkout gh-pages
+git rm -rf .
+git status
+git add .
+git status
+git commit
+git push
+
+nano .gitignore
+.DS_Store
+*.swp
+log/*.log
+*~
+
+

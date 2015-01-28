@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Debian Apache CloudStack Installation Guide</TITLE>
+    <link type="text/css" rel="stylesheet" href="/css/precode.css" />
+  </head>
+  <body>
+    <h1>Debian Apache CloudStack Installation Guide</h1>
+    <h2>Reference: <a href="http://cloudstack.apache.org/" target="_blank">Apache CloudStack</a></h2>
+    <h2>Reference: <a href="http://docs.cloudstack.apache.org/projects/cloudstack-installation/en/latest/" target="_blank">CloudStack Installation Documentation</a></h2>
+    <h2>Reference: <a href="http://docs.cloudstack.apache.org/projects/cloudstack-installation/en/latest/building_from_source.html" target="_blank">Building from Source</a></h2>
+    <h2>Pre Process</h2>
+    <ol>
+      <li><a href="/Howto-Install/OracleJava.html" target="_blank">Install Oracle Java</a>
+      <li><a href="/Howto-Install/Maven3.html" target="_blank">Install Maven 3</a>
+      <li>Install dependency packages
+	<pre>sudo aptitude install python-software-properties ant debhelper tomcat6 libws-commons-util-java genisoimage python-mysqldb libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java</pre>
+    </ol>
+    <h2>Building package Process</h2>
+    <ol>
+      <li><a href="http://cloudstack.apache.org/downloads.html" target="_blank">Download</a> CloudStack source code
+      <li>Use maven to install
+	<pre>tar xjvf apache-cloudstack-*-src.tar.bz2
+cd apache-cloudstack-*
+mvn -P deps
+$ echo $?
+<code>0</code></pre>
+	<li>Ignore the build dependency openjdk-7-jdk and maven3
+	  <pre>dpkg-buildpackage -uc -us -d
+ls -l ../*.deb
+<code>-rw-r--r-- 1 jssu jssu  42034768 Aug 20 22:42 cloudstack-agent_4.4.0-snapshot_all.deb
+-rw-r--r-- 1 jssu jssu  70056634 Aug 20 22:43 cloudstack-awsapi_4.4.0-snapshot_all.deb
+-rw-r--r-- 1 jssu jssu     63364 Aug 20 22:43 cloudstack-cli_4.4.0-snapshot_all.deb
+-rw-r--r-- 1 jssu jssu  45023502 Aug 20 22:41 cloudstack-common_4.4.0-snapshot_all.deb
+-rw-r--r-- 1 jssu jssu     63332 Aug 20 22:43 cloudstack-docs_4.4.0-snapshot_all.deb
+-rw-r--r-- 1 jssu jssu 162754846 Aug 20 22:42 cloudstack-management_4.4.0-snapshot_all.deb
+-rw-r--r-- 1 jssu jssu  40713684 Aug 20 22:42 cloudstack-usage_4.4.0-snapshot_all.deb</code>
+cd ..
+</pre>
+    </ol>
+    <h2>Installation Process</h2>
+    <ol>
+      <li> Insalll dependency packages and cloudstack
+	<pre>sudo aptitude install openjdk-7-jre libcommons-daemon-java libvirt0 libvirt-bin ebtables vlan jsvc ipset python-libvirt libmysql-java python-paramiko augeas-tools
+sudo dpkg -i *.deb
+<code>Preparing to unpack cloudstack-agent_4.4.0-snapshot_all.deb ...
+Unpacking cloudstack-agent (4.4.0-snapshot) over (4.4.0-snapshot) ...
+Setting up cloudstack-agent (4.4.0-snapshot) ...
+Upgrade succeed
+/var/lib/dpkg/info/cloudstack-agent.postinst: line 44: /etc/init.d/libvirt-bin: No such file or directory
+dpkg: error processing package cloudstack-agent (--install):
+ subprocess installed post-installation script returned error exit status 1
+Errors were encountered while processing:
+ cloudstack-agent</code></pre>
+      <li>Modify /var/lib/dpkg/info/cloudstack-agent.postinst. Change /etc/init.d/libvirt-bin to /etc/init.d/libvirtd and then fix the installation
+	<pre>sudo apt-get -f install
+<code>Setting up cloudstack-agent (4.4.0-snapshot) ...
+Upgrade succeed
+[ ok ] Restarting libvirt management daemon: /usr/sbin/libvirtd. </code></pre>
+    </ol>
+
+    <h2>Management Server Installation</h2>
+    <ol>
+      <li>Install NTP.
+	<pre>sudo aptitude install openntpd</pre>
+      <li>Install the Management Server on the First Host
+	<pre>sudo dpkg -i cloudstack-management_*-snapshot_all.deb </pre>
+    </ol>
+
+    <h2>Install the database server</h2>
+    <ol>
+      <li>Install MySQL from the package repository of your distribution:
+	<pre>sudo aptitude install mysql-server</pre>
+      <li>Create a file /etc/mysql/conf.d/cloudstack.cnf.
+	<pre>sudo nano /etc/mysql/conf.d/cloudstack.cnf
+<code>[mysqld]
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections=350
+log-bin=mysql-bin
+binlog-format = 'ROW'</code></pre>
+      <li>Start or restart MySQL to put the new configuration into effect.
+	<pre>sudo service mysql restart</pre>
+      <li>Set up the database. The following command creates the “cloud” user on the database.
+	<ul>
+	  <li>In dbpassword, specify the password to be assigned to the “cloud”
+	    user. You can choose to provide no password although that is not
+	    recommended.</li>
+	  <li>In deploy-as, specify the username and password of the user
+	    deploying the database. In the following command, it is assumed
+	    the root user is deploying the database and creating the “cloud”
+	    user.</li>
+	  <li>(Optional) For encryption_type, use file or web to indicate the
+	    technique used to pass in the database encryption password.
+	    Default: file. See <a class="reference internal" href="#about-password-key-encryption"><em>About Password and Key Encryption</em></a>.</li>
+	  <li>(Optional) For management_server_key, substitute the default key
+	    that is used to encrypt confidential parameters in the CloudStack
+	    properties file. Default: password. It is highly recommended that
+	    you replace this with a more secure value. See
+	    <a class="reference internal" href="#about-password-key-encryption"><em>About Password and Key Encryption</em></a>.</li>
+	  <li>(Optional) For database_key, substitute the default key that is
+	    used to encrypt confidential parameters in the CloudStack
+	    database. Default: password. It is highly recommended that you
+	    replace this with a more secure value. See
+	    <a class="reference internal" href="#about-password-key-encryption"><em>About Password and Key Encryption</em></a>.</li>
+	  <li>(Optional) For management_server_ip, you may explicitly specify
+	    cluster management server node IP. If not specified, the local IP
+	    address will be used.</li>
+	</ul>
+	<pre>cloudstack-setup-databases cloud:${dbpassword}@${ip address mysql server} \
+--deploy-as=root:${password} \
+-e ${encryption_type} \
+-m ${management_server_key} \
+-k ${database_key} \
+-i ${management_server_ip}
+<code>Mysql user name:cloud                                                           [ OK ]
+Mysql user password:******                                                      [ OK ]
+Mysql server ip:127.0.0.1                                                       [ OK ]
+Mysql server port:3306                                                          [ OK ]
+Mysql root user name:root                                                       [ OK ]
+Mysql root user password:******                                                 [ OK ]
+Checking Cloud database files ...                                               [ OK ]
+Checking local machine hostname ...                                             [ OK ]
+Checking SELinux setup ...                                                      [ OK ]
+Detected local IP address as 192.168.180.3, will use as cluster management server node IP[ OK ]
+Preparing /etc/cloudstack/management/db.properties                              [ OK ]
+Applying /usr/share/cloudstack-management/setup/create-database.sql             [ OK ]
+Applying /usr/share/cloudstack-management/setup/create-schema.sql               [ OK ]
+Applying /usr/share/cloudstack-management/setup/create-database-premium.sql     [ OK ]
+Applying /usr/share/cloudstack-management/setup/create-schema-premium.sql       [ OK ]
+Applying /usr/share/cloudstack-management/setup/server-setup.sql                [ OK ]
+Applying /usr/share/cloudstack-management/setup/templates.sql                   [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_db.sql                  [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_schema.sql              [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_multipart.sql           [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_index.sql               [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_multipart_alter.sql     [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_bucketpolicy.sql        [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_policy_alter.sql        [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_offering.sql            [ OK ]
+Applying /usr/share/cloudstack-bridge/setup/cloudbridge_offering_alter.sql      [ OK ]
+Processing encryption ...                                                       [ OK ]
+Finalizing setup ...                                                            [ OK ]
+
+CloudStack has successfully initialized database, you can check your database configuration in /etc/cloudstack/management/db.properties</code></pre>
+      <li>If you are running the KVM hypervisor on the same machine with the Management Server, edit /etc/sudoers and add the following line:
+	<pre>Defaults:cloud !requiretty</pre>
+      <li>Now that the database is set up, you can finish configuring the OS for the Management Server. This command will set up iptables, sudoers, and start the Management Server.
+	<pre>sudo cloudstack-setup-management
+<code>Starting to configure CloudStack Management Server:
+Configure sudoers ...         [OK]
+Configure Firewall ...        [OK]
+Configure CloudStack Management Server ...[OK]
+CloudStack Management Server setup is Done!
+</code></pre>
+    </ol>
+    <h2>Using the Management Server as the NFS Server</h2>
+    <li>
+      <pre>sudo aptitude install nfs-kernel-server</pre>
+    <li>On the Management Server host, create two directories that you will use for primary and secondary storage. For example:
+      <pre>sudo mkdir -p /export/primary
+sudo mkdir -p /export/secondary</pre>
+    <li>To configure the new directories as NFS exports, edit /etc/exports.
+      <pre>sudo nano /etc/exports
+	<code>/export  *(rw,async,no_root_squash,no_subtree_check)</code></pre>
+    <li>Export the /export directory.
+      <pre>sudo exportfs -a</pre>
+    <li>Edit the /etc/sysconfig/nfs file.
+      <pre>
+  
+  </pre>
+    <h2>Configuring your CloudStack Installation</h2>
+ 
+  </body>
+</html>

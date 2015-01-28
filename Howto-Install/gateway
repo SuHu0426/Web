@@ -1,0 +1,13 @@
+On ac15 (gateway)
+$ diff /etc/sysctl.conf /etc/sysctl.conf.orig
+28c28
+< net.ipv4.ip_forward=1
+---
+> #net.ipv4.ip_forward=1
+
+# route add -net 192.168.0.0/24 gw 192.168.0.1
+
+On ac14 (client)
+# route add -net 192.168.0.0/24 gw 192.168.0.1
+
+write to /etc/rc.local

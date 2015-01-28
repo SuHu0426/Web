@@ -1,0 +1,1250 @@
+
+<html>
+  <head><title>Storage Virtualization Essentials</title></head>
+  <body>
+
+<OL>
+  <LI><a href="#StorageVirtualizationEssentials">Storage Virtualization Essentials</a>
+  <LI><a href="#ImportanceStorageVirt">Importance of Storage Virtualization</a>
+  <LI><a href="#StorageVirtualizationOptions">Storage Virtualization Options</a>
+  <LI><a href="#BenefitsDrawbacks">Storage virtualization technology benefits and 
+       drawbacks</a>
+  <LI><a href="#StorageVirtualizationSolutions">Storage virtualization solutions 
+       explained</a>
+  <LI><a href="#MakeMostOfVirt">Storage virtualization solutions help make the most of 
+       virtualization</a>
+  <LI><a href="#BenifitDasNasSan">DAS vs. NAS vs. SAN: Which is best</a>
+  <LI><a href="#SANStorage">Storage architecture choices: SANs</a>
+  <LI><a href="#SANDesign">Storage Area Network Design</a>
+</OL>
+
+<a name="StorageVirtualizationEssentials"></a><h3>Getting Ready for Cloud Computing: Storage Virtualization Essentials
+<a href="http://msptv.net/whitepapers/CP-OperationsStorageEssentials-Dec2011.pdf">(Source 
+Origin)</a></h3>
+
+<P> Storage virtualization is one of the big reasons private cloud infrastructures 
+are so efficient and scalable. To capitalize fully on the benefits of virtual 
+storage, however, cloud computing service providers must have a working knowledge 
+of several potentially unfamiliar technologies and techniques.  This white paper 
+introduces readers to key storage virtualization concepts and explores best practices 
+for configuring and maintaining a virtual storage infrastructure. It draws heavily on 
+input from these storage experts:  
+
+<OL>
+  <LI> Jeff Boles, senior analyst and director of validation services, Taneja 
+       Group Inc. (www.tanejagroup.com) 
+
+  <LI> Greg Schulz, founder and senior analyst, The Server and Storage 
+       I/O Group (www.storageio.com)
+</OL>
+
+
+<h4>Definition and Benefits of Storage Virtualization</h4>
+
+<P> Virtual storage solutions enable multiple servers to share a common data 
+repository. That allows companies to manage data centrally and utilize disk space 
+efficiently instead of maintaining dozens of underused hard drives in separate 
+locations. In addition, storage virtualization improves storage performance by 
+letting multiple disks serve workloads simultaneously.  By equipping private 
+clouds to store data in several places, so that the failure of one or even 
+several disks doesn't produce data loss, virtual storage solutions enhance data 
+protection as well.  In fact, private cloud computing would be all but impossible 
+without consolidated, virtual storage. The ability to spawn new virtual servers 
+rapidly and migrate them to new host devices on the fly are both central to how 
+private clouds keep availability and scalability high. Neither would be possible 
+without centralized storage.
+
+<h4>Understanding Essential Virtual Storage Concepts</h4>
+
+<P> A basic comprehension of fundamental technologies and terminology is critical 
+to implementing successful virtual storage environments. Among the most important 
+concepts to know are these:
+
+<OL>
+  <LI> <h5>Protocols</h5>
+
+<P> Most storage virtualization solutions use storage-area network <b>(SAN)</b> 
+technology to store block-level data and network-attached storage <b>(NAS)</b> 
+technology to store files. SANs typically employ one of the following two protocols 
+to connect and manage storage assets:
+
+  <OL>
+    <LI> Fibre Channel. The oldest and still generally fastest SAN protocol, Fibre 
+         Channel is also usually the most expensive, since it relies on dedicated 
+         cabling and requires specialized technical skills.
+
+    <LI> iSCSI. SANs that use the iSCSI protocol tend to be more cost-effective than 
+         Fibre Channel SANs, because iSCSI runs on existing network infrastructure 
+         and is based on familiar Small Computer Systems Interface (SCSI) technology.
+  </OL>
+
+
+<P> NAS solutions typically use the Network File System (NFS) protocol, which allows 
+servers and desktops to access files over a LAN or WAN much the way PCs access files 
+on a local hard drive.
+
+  <LI> <h5>Performance</h5>
+
+<P> As a rule, virtual storage solutions perform faster than conventional storage 
+architectures. To collect all of the performance benefits storage virtualization makes 
+possible, however, organizations must carefully measure the performance needs of their 
+servers and the performance capabilities of their storage systems. The metric used to 
+express those measurements is called "input/output operations per second," or IOPS. 
+Put simply, IOPS quantifies the number of read and write commands a given disk can 
+perform each second. Technicians can use a variety of benchmarking and performance 
+monitoring tools to calculate their IOPS requirements and capacity.
+
+  <LI> <h5>Hard Drive Technologies</h5>
+
+<P> Broadly speaking, storage virtualization solutions use some combination of two 
+kinds of hard drive: disk based and solid state. Solid-state drives (SSDs) tend to be 
+faster than diskbased drives but also cost more. 
+
+<P> A similar dynamic distinguishes the two interface technologies that most virtual 
+storage systems use to transfer data to and from hard drives: Serial Attached SCSI 
+(SAS) and Serial Advanced Technology Attachment (SATA). In general, SAS drives offer 
+speedier performance than SATA drives but are also more expensive.
+
+<P> <Em>Determining capacity requirements is partly artwork, partly common sense, and 
+partly dependent on the technology you're going to use."</Em>
+
+<P>Jeff Boles<br>
+Taneja Group Inc.
+
+<P> <Em>To get performance right, you've really got to understand the customer's needs. 
+If you've got enough budget you can make things blazingly fast, but is it going to be
+cost-effective?"</Em>
+
+<P>Greg Schulz<br>
+The Server and Storage I/O Group 
+
+  <LI> <h5>Tiered Storage</h5>
+
+
+<P> Most well-designed storage virtualization environments utilize a "tiered" 
+architecture, in which frequently used data resides on fast SSDs or SAS drives and 
+less regularly accessed records sit on slower but more economical SATA drives. The 
+end result is an optimal blend of performance and cost-effectiveness.
+
+  <LI> <h5>Caches</h5>
+
+<P> Well-made storage virtualization systems keep the most heavily used applications 
+and files in a separate repository called a cache. Typically built with solid-state 
+memory chips or hard drives that execute read and write operations faster than 
+spinning disks, caches can significantly accelerate a storage system's performance.
+
+  <LI> <h5>Redundancy Technologies</h5>
+
+<P> Many storage virtualization solutions rely on Redundant Array of Independent Disk 
+(RAID) technology to protect data from loss due to mechanical failures. RAID systems
+store identical copies of data on multiple hard drives, so that data remains available 
+even if one or more of those drives crashes.
+
+<P> RAID systems have a significant weakness, however: All of their hard drives 
+typically reside on the same host server.  If that host machine breaks, applications 
+could lose access to critical data. As a result, the latest virtual storage systems 
+employ Redundant Array of Independent Node (RAIN) technology rather than RAID. RAIN 
+systems disperse data not only across multiple disks, but across multiple servers as 
+well. That keeps data continuously available even if several servers go down at once.
+
+  <LI> <h5>Data Copying Technologies</h5>
+
+<P> As powerful as they are, redundancy technologies like RAID and RAIN alone can't 
+fully protect data in storage virtualization systems. Backing up data as well is 
+essential.
+
+<P> Sophisticated virtual storage implementations use two key technologies to 
+streamline that task:</P> 
+
+   <UL>
+     <LI> Data mirroring: Storage virtualization solutions equipped with data mirroring 
+          write data in two or more places simultaneously every time users save changes. 
+          This creates an up-to-the-minute backup copy and minimizes data loss when 
+          primary storage systems fail.
+
+     <LI> Snapshots: A snapshot captures the complete contents of a storage system at 
+          a given point in time. Snapshots enable companies to reset specific files and 
+          databases or an entire storage environment to one of several earlier states 
+          if data becomes corrupted.
+   </UL>
+</OL>
+
+<h4>Sizing a Virtual Storage Environment</h4>
+
+The first step in deploying a storage virtualization solution should be thoroughly 
+analyzing your client's network infrastructure and then answering the following 
+questions:
+
+<OL>
+  <LI> What applications will your customer be hosting on their private cloud and 
+how much 
+disk space do those applications consume? This will help you calculate the client's
+storage capacity needs.
+
+  <LI> What are the performance requirements of the customer's applications, in IOPS? 
+       This will help you select appropriate disk arrays and design an effective 
+       tiering strategy.
+
+  <LI> How much downtime can your client tolerate? This will help you set their 
+       "recovery time objective," or RTO.
+
+  <LI> How many minutes' or hours' worth of information can your client afford to 
+       lose in the event of a system failure or disaster? This will help you set 
+       their "recovery point objective," or RPO.  
+</OL>
+
+
+<P> Collect as much hard, statistical data about your client's current needs as 
+possible, using either their network management software or a remote monitoring and 
+management solution. In addition, gather as much historical data about disk space and 
+performance requirements as is available.  Comparing figures from a year ago to their 
+present-day equivalents will help you more accurately gauge how quickly your customer's 
+needs are growing, so you can provision their private cloud appropriately for its 
+first six to 12 months of use without overcharging them for resources they're unlikely 
+to require in the near term.
+
+<h4>Business Continuity and Disaster Recovery Basics</h4>
+
+<P> Though redundant by nature, storage virtualization solutions are as vulnerable to 
+catastrophic hardware failure and natural disasters as any other storage environment. 
+Furnishing them with complete and dependable disaster recovery and business continuity 
+capabilities is therefore essential.
+
+<OL>
+  <LI> <h5>Disaster Recovery</h5>
+
+<P> Disaster recovery technologies help companies meet their RPO targets by backing 
+up data on a regular basis. Service providers should always make certain that the 
+virtual storage environment supporting a private cloud does the following:
+
+  <OL>
+    <LI> Uses redundancy technologies such as RAIN and RAID to minimize exposure to 
+         data loss.
+
+    <LI> Continuously mirrors data locally in real time as changes occur.
+
+    <LI> Continuously mirrors data to a secure, remote location as well. This process 
+         should employ 256-bit AES encryption techniques to protect data both in transit 
+         over the Internet and "at rest" offsite.
+
+    <LI> Creates snapshots on a frequent and consistent basis.
+  </OL>
+
+  <LI> <h5>Business Continuity</h5>
+
+<P> Simply having a backup copy of data somewhere won't restore companies to operational 
+readiness if the device that data normally resides on has been damaged. Business 
+continuity technologies help clients reach their RTO targets by getting them up and 
+running again quickly after a hardware loss. For example, state-of-the-art private 
+clouds have the ability to create a virtual image of a failed server that your 
+customer can use until replacement hardware has been deployed.
+</OL>
+
+<h4>Managing a Virtual Storage Environment</h4>
+
+<P> Though a well-designed private cloud makes extensive use of automation to lighten 
+administrative burdens, disciplined management of its virtual storage infrastructure 
+remains important just the same. In particular, be sure to perform these two tasks 
+regularly:
+
+   <UL>
+     <LI> Monitor disk space consumption trends, to ensure you always add capacity 
+          well before existing space runs out.
+
+     <LI> Monitor performance for signs of deterioration. If a virtual storage 
+          environment appears to be slowing down, you may need to modify its tiering 
+          strategy or make greater use of faster SAS drives and SSDs.  
+
+          <P>Of course, identifying capacity and performance patterns will be easier 
+          if you have an initial set of figures to make comparisons with, so be sure 
+          to capture baseline capacity and performance measurements before putting 
+          your client's private cloud into production.
+   </UL>
+
+<P> <Em>Storage virtualization can be a great resource-pooling tool, but it can also 
+give you visibility into the storage infrastructure that can help you make better 
+decisions down the road."</Em>
+
+<P>Jeff Boles<br>
+Taneja Group Inc.
+
+
+<h4>Conclusion</h4>
+
+<P> Many newcomers to private cloud computing have little experience with storage 
+virtualization. Yet knowing how to configure and maintain an efficient virtual 
+storage infrastructure is indispensable to deploying successful private cloud 
+solutions.
+
+<P> Becoming proficient in storage virtualization takes time, but mastering the 
+concepts and techniques described in this white paper is a good way to get started. 
+Over time, and with the benefit of hands-on experience, you'll be sure to acquire all 
+of the know-how you need to fine-tune performance, minimize wasted disk space, and 
+maximize storage system availability.
+
+
+<h5>MSP Roundtable Group</h5>
+
+<TABLE>
+<TR><TH>Brett Beveridge: <TD>Founder & CEO, Symbits
+<TR><TH>Mike Cooch:  <TD>President, Kutenda, Online Marketing, SEO, EMS for MSP companies
+<TR><TH>Randy Knutson:  <TD>President, Symbits
+<TR><TH>Arlin Sorensen:  <TD>CEO/Partner, Heartland Technology Solutions
+<TR><TH>Pat Taylor:  <TD>Executive Director, NASBA and President, Atypical Business
+<TR><TH>Ken Thoreson:  <TD>President, Acumen Management Group Ltd.
+<TR><TH>Cecilia Galvin:  <TD>Executive Editor, ChannelPro-SMB
+<TR><TH>Michael Siggins:  <TD>Editor and Publisher, ChannelPro-SMB
+</TABLE>
+
+
+<P>Written by Rich Freeman
+on behalf of ChannelPro-SMB
+
+MSPtv Studios, One Williamsburg Place, Warrendale, PA 15086<br>
+
+<a name="ImportanceStorageVirt"></a><h3>The Importance of Storage Virtualization 
+<a href="http://www.networkcomputing.com/virtualization/232901311?itc=nwc_trk_ts_inline" 
+target="newwindow">(Source Origin)</a></h3>
+	<h4 class="byline">
+<span class="date">Posted by </span>
+Steve Wexler <!-- on -->
+<br>
+<span class="date">May 02, 2012</span>
+	</h4>
+
+<p class="firstP"><i>With IT budgets expected to decrease 0.6% in 2012 in North America 
+and data still growing in the <a href="http://www.networkcomputing.com/storage-networking-management/232601498?itc=nwc_trk_ts_inline">10% to 24% range</a>, 
+storage virtualization has become a necessity, not a luxury.
+</i></p>
+
+<p><i>In the first of a two-part series, </i>Network Computing examines the various 
+places within the IT infrastructure where storage virtualization can take place, 
+including servers and disk arrays, and via physical and virtual appliances. 
+
+
+<p> Virtualizing storage can increase disk utilization and administration flexibility, 
+and improve disaster recovery and business continuity, notes Howard Marks, founder and 
+chief scientist at DeepStorage.net, a storage and networking consultancy, and a frequent 
+contributor to <i>Network Computing</i> and <i>InformationWeek</i>. From thin 
+provisioning to replication to federation, virtualization options can make your storage 
+more supple and responsive, and free you from vendor lock-in, he writes in a new 
+<i>InformationWeek</i> report, <i>Strategy: Storage Virtualization Guide</i>.
+</p>
+
+<p> Storage virtualization is not new. According to the 
+<a href="http://www.informationweek.com/news/storage/systems/232600953" 
+target="_blank"> 2012 InformationWeek State of Storage survey</a>, 31% of storage 
+professionals use some kind of storage virtualization.  Marks says if we define 
+storage virtualization as any technology that presents storage in a new configuration, 
+then we've all been virtualizing storage for many years. 
+</p>
+
+<p> Many storage virtualization features that were once available in only dedicated 
+storage virtualization products are now part of most disk arrays. Storage 
+virtualization appliances are typically responsible for other tasks, such as 
+heterogeneous replication and federation. These devices sit in-line in front of arrays 
+and create a common interface for hosts, allowing administrators to mix and match the 
+protocols and arrays that sit behind the appliances. 
+</p>
+
+<p> "There's no one aspect [of storage virtualization] that's most important," Marks 
+says. "What ends up happening is an organization has a particular problem like 
+migration or replication. They add the virtualization platform and then start using 
+the other features. Or someone decides they like to decouple the management 
+virtualization features from the back-end hardware to either have a single management 
+interface or save money so they design an architecture with virtualization appliances 
+or volume managers and dumb storage on the back end."			 	 
+	</p>
+
+<p class="firstP"> Storage virtualization was initially introduced via the volume 
+manager, which allowed a user to slice and dice a hard drive into multiple volumes. 
+Over time it evolved to include functions like RAID, thin provisioning and snapshots. 
+Marks says most operating systems include volume managers that can create RAID sets 
+and divide them into volumes. 
+</p>
+
+<p> The most common platform for external storage virtualization is the dedicated 
+storage appliance, which sits in the SAN data path between host servers and storage 
+arrays. Because data access passes through the appliance, most organizations will 
+deploy appliances in redundant pairs or clusters so the failure of one appliance 
+won&#8217;t cut off access to the storage system. 
+
+<p> Storage vendors have developed software called virtual storage appliances (VSAs). 
+These perform some of the same functions as physical appliances but are instead 
+delivered as a virtual machine that runs on a hypervisor. Because many of the most 
+interesting hypervisor features, such as live migration and high availability, require 
+some sort of shared storage, VSAs make these features available to branch offices and
+ SMB server rooms that can&#8217;t justify the cost and complexity of traditional SANs.
+</p>
+
+<p> Virtualizing storage in the array can bring the advantages of storage virtualization 
+to the data center without the complication of additional appliances. Simplifying 
+migration is one of the biggest reasons to implement storage virtualization, so the 
+appliance approach, which can be used with any storage system, is probably more 
+appropriate for most users. 
+</p>
+
+<a name="StorageVirtualizationOptions"></a><h3>Storage Virtualization Options: The Pros And Cons 
+<a href="http://www.networkcomputing.com/virtualization/storage-virtualization-options-the-pros/232901447" 
+target="newwindow">(Source Origin)</a></h3>
+	<h4 class="byline">
+<span class="date">Posted by </span>
+Steve Wexler <!-- on -->
+<br>
+<span class="date">May 04, 2012</span>
+	</h4>
+
+<p class="firstP"> In the second of a two-part series on storage virtualization and 
+based on a new InformationWeek report, <i>Strategy: Storage Virtualization Guide, 
+Network Computing</i> takes a closer look at the pros and cons of the available storage 
+virtualization options. Part 1, <a href="#ImportanceStorageVirt">The Importance Of 
+Storage Virtualization</a>," examined the various places within the IT infrastructure 
+where storage virtualization can take place, including servers and disk arrays, and 
+via physical and virtual appliances.</p>
+
+<p> One could assume that the dynamic duo of EMC and its majority-owned VMware, the 
+leaders in storage and virtualization, respectively, would have an unfair advantage 
+in storage virtualization. Not so, says Howard Marks, founder and chief scientist at 
+DeepStorage.net, a storage and networking consultancy, and a frequent contributor to 
+<i>Network Computing</i> and <i>InformationWeek</i>. 
+
+<p> "Storage virtualization and server virtualization are separate, and EMC is more 
+focused on building features into the storage platforms than in VPLEX," he states. 
+"That said, VMware and the other hypervisor vendors are adding storage virtualization 
+features to the hypervisors. Storage vMotion is, after all, automated migration, and 
+VMware SRM's replication is hardware-agnostic." 
+</p>
+
+<p> Solid-state disks (SSDs) have started showing up in storage virtualization vendors' 
+lineups to accelerate storage access. A number of vendors, including FalconStor NSS 
+and NexentaStor, can use flash in the virtualization appliance as a cache, while others, 
+like IBM's SAN Volume Controller (SVC) and DataCore's SANsymphony, will combine SSDs 
+and disks to create storage pools with automated sub-LUN tiering between the SSD and 
+disk.
+</p>
+
+<p> Storage federation, which is EMC's VPLEX claim to fame and available in IBM's SVC, 
+extends the data protection aspect of data replication to turn a set of independent 
+disk arrays into a single federated storage system across multiple data centers. 
+Federation goes two steps further than the data protection provided by conventional 
+replication, Marks says: It allows access to the volume at both the primary and 
+secondary systems, and maintains the same volume identity across multiple systems.
+ Virtual machines and the applications that run on top of them can be moved from site 
+to site in a federation system. 
+</p>
+
+<p> Evolving from the popular Veritas Volume Manager, Symantec's Storage Foundation has 
+added snapshots, thin provisioning, multipath management, SSD acceleration and just 
+about any other storage management feature you can think of, notes Marks. VMware 
+vSphere doesn't include a volume manager, per se, but many of its storage features, 
+such as thin provisioning, solve the same problems as more traditional storage 
+virtualization options.
+</p>
+
+<p> Dedicated storage appliances such as EMC's VPLEX, IBM's SVC and FalconStor's NSS 
+combine storage virtualization software with industry-standard x86 servers. Marks says 
+others, like NetApp's V-Series, use custom hardware, while DataCore's SANsymphony-V is 
+a software product that runs on Windows Server.
+</p>
+
+<p> A more recent development is the introduction of the virtual storage appliance 
+(VSA), software that performs some of the same functions as a physical appliance but 
+is instead delivered as a virtual machine that runs on a hypervisor. Marks says there's 
+a wide range of functionality in the VSAs available today--StarWind, Openfiler and 
+NexentaStor are virtual server versions of the vendor's software that was originally 
+designed to turn a physical server into iSCSI targets or unified storage systems. 
+Others, like StorMagic and VMware VSA, were designed specifically for the hypervisor 
+environment, while some, such as EMC and NetApp, have limited-use or 
+limited-distribution VSAs that emulate their hardware storage systems.
+</p>
+
+<p> The bottom line, says Marks, is whether it's implemented as a dedicated appliance 
+or as a feature of a storage array or hypervisor, storage virtualization can make 
+both you and your storage system more efficient.  It can make your life easier through 
+transparent migration and a consistent user interface across multiple storage systems. 
+Or it can reduce the amount of extra storage you keep around just in case, by boosting 
+your storage utilization through thin provisioning and snapshots.
+</p>
+
+<p>
+<i>Learn more about <a href="http://pro.networkcomputing.com/asset/8797/strategy-storage-virtualization-guide.html?cid=nwc_trk_ts_inline">Strategy: 
+Storage Virtualization Guide</a> by subscribing to Network Computing Pro 
+Reports (free, registration required).</i>			 	 
+	</p>
+
+<p> Further Reading: <a href="#BenefitsDrawbacks" 
+target="newwindow">Storage virtualization technology benefits and drawbacks</a><br>
+
+
+<a name="BenefitsDrawbacks"></a><h3>Storage virtualization technology benefits and 
+drawbacks
+<a href="http://searchvirtualstorage.techtarget.com/report/Storage-virtualization-technology-benefits-and-drawbacks" 
+target="newwindow">(Source Origin)</a></h3>
+</div>
+<div id="articleToolbar">
+<div id="byline">
+<span class="author"></span>
+</div>
+
+<p>Managing multiple storage devices can be difficult and time-consuming, so many IT 
+managers turn to <a href="http://searchstorage.techtarget.co.uk/feature/A-guide-to-storage-virtualization">storage
+virtualization technology</a> for data storage management. Storage virtualization can 
+hide the complexity of a storage-area network (SAN) by pooling together multiple storage 
+devices so they look like they're just one storage device. Reducing the complexity of 
+a SAN can often help IT administrators perform backup tasks more easily. Plus, 
+<a href="http://searchstorage.techtarget.com/guides/All-in-One-Buying-Guides">storage
+virtualization software</a> can often reduce costs and help with overall storage 
+infrastructure problems.</p>
+
+<p>But despite the <a href="http://searchstoragechannel.techtarget.com/feature/The-benefits-of-storage-virtualization">benefits
+of storage virtualization</a>, many IT administrators are slow to implement the 
+technology because the transition from a non-virtualized to a virtualized environment 
+isn't always a smooth process.  Professional services are often needed to analyze 
+vendor products and help IT managers with the complex transition.</p>
+
+<p> SearchStorage.com has compiled its top four articles and guides on storage 
+virtualization technology to help you get a better grasp on its benefits and drawbacks. 
+Read our essential guide on storage virtualization to see how it can cut costs and 
+increase storage efficiency. Take a closer look at the Storwize V7000, one of the new 
+storage virtualization products on the market, and then see how block-based storage 
+virtualization is working for three users. Finally, learn about the most important 
+factors you should consider when implementing storage virtualization in your 
+environment.</p>
+
+<P> <a href="http://searchvirtualstorage.techtarget.com/tutorial/Storage-virtualization-essentials-Cut-costs-and-increase-storage-efficiency"><b>&nbsp;Storage
+virtualization essentials: Cut costs and increase storage efficiency</b></a></p>
+
+<p> Storage virtualization isn't as popular as server virtualization because many IT 
+administrators have a hard time deciding where storage virtualization should go. Should 
+you put it in the hosts, networks or arrays? In addition, once you decide on a storage 
+virtualization vendor, you're usually stuck with them for the long run. However, storage 
+virtualization can lower equipment costs and solve many storage infrastructure issues. 
+This guide takes an in-depth look at the technology, offers a buying guide and vendor 
+comparison, and explains how storage virtualization can help with disaster recovery. 
+Read our full guide on <a href="http://searchvirtualstorage.techtarget.com/tutorial/Storage-virtualization-essentials-Cut-costs-and-increase-storage-efficiency">storage
+virtualization</a> essentials.</p>
+
+<P> <a href="http://searchstorage.techtarget.com/news/1521561/IBM-launches-Storwize-V7000-storage-virtualization-platform"><b>&nbsp;IBM
+launches Storwize V7000 storage virtualization platform</b></a></p>
+
+<p>IBM recently launched its Storwize V7000 midrange storage virtualization technology 
+system, which uses the code stack from IBM's SAN Volume Controller (SVC) block storage 
+virtualization device, the user interface from its XIV enterprise system and the DS8000 
+platform's RAID stack. Features include a 2U controller and expansion enclosures, and 
+the ability to hold 6 Gbps SAS drives and 300 GB solid-state drives (SSDs). Learn more 
+about the features and functions of the Storwize <a href="http://searchstorage.techtarget.com/news/1521561/IBM-launches-Storwize-V7000-storage-virtualization-platform">V7000
+</a>in this article.</p>
+
+<P> <a href="http://searchvirtualstorage.techtarget.com/report/Block-based-storage-virtualization-project-guide"><b>&nbsp;Block-based
+storage virtualization project guide</b></a></p>
+
+<p> The main goal of block-based storage virtualization is to simplify storage 
+management, but how well does it do that? SearchStorage.com looked at three different 
+storage virtualization technology projects to give you a sense of the challenges 
+associated with storage virtualization, how difficult a storage virtualization 
+implementation can be, and how the workload is divided between staff and consultants. 
+Explore our <a href="http://searchvirtualstorage.techtarget.com/report/Block-based-storage-virtualization-project-guide">block-based
+storage virtualization</a> project guide.</p>
+
+<P> <a href="http://searchvirtualstorage.techtarget.com/feature/Storage-virtualization-projects-Factors-to-consider-when-implementing-storage-virtualization"><b>&nbsp;Storage
+virtualization projects: Factors to consider when implementing storage 
+virtualization</b></a></p>
+
+<p> Storage virtualization technology creates an abstraction layer, often making data 
+migration easier for users. Read this story to find out what factors to consider when 
+implementing <a href="http://searchvirtualstorage.techtarget.com/feature/Storage-virtualization-projects-Factors-to-consider-when-implementing-storage-virtualization">storage
+virtualization products</a>.</p>
+
+
+<h4>More News and Tutorials</h4>
+<h4>Articles</h4>
+<ul class="listTypeTooltip">
+    <li><span class="tooltipText" title="IBM adds Storwize V7000 midrange storage 
+virtualization platform, but it doesn't include data compression acquired from Storwize; 
+also rolls out DS8800 enterprise system."></span>
+<a href="http://searchstorage.techtarget.com/news/1521561/IBM-launches-Storwize-V7000-storage-virtualization-platform">IBM 
+launches Storwize V7000 storage virtualization platform</a></li>
+    <li><span class="tooltipText" title="IBM Storwize V3700 gives SMBs the ability 
+to virtualize internal storage, plus one-way data migration, thin provisioning and 
+auto-tiering."></span>
+<a href="http://searchvirtualstorage.techtarget.com/news/2240170274/IBM-adds-Storwize-V3700-entry-level-storage-virtualization-array">IBM adds 
+Storwize V3700 entry-level storage virtualization array</a></li>
+    <li><span class="tooltipText" title="With the Storwize V7000 Unified array, IBM 
+enters the multiprotocol storage market; Big Blue also improves its auto-tiering 
+software capabilities across arrays and data centers."></span>
+<a href="http://searchstorage.techtarget.com/news/2240100771/IBM-adds-Storwize-V7000-Unified-array-for-multiprotocol-storage">IBM 
+adds Storwize V7000 Unified array for multiprotocol storage</a></li>
+    <li><span class="tooltipText" title="Discover why auto tiering could make expensive 
+SSDs a more viable option, and about improvements to sub-LUN auto tiering and available 
+auto-tiering options."></span>
+<a href="http://searchsolidstatestorage.techtarget.com/feature/Auto-tiering-software-set-to-boost-adoption-of-SSDs">Auto-tiering 
+software set to boost adoption of SSDs</a></li>
+    <li><span class="tooltipText" title="Listen to the top headlines of the week 
+from the Storage Media Group, starting with the release of the IBM Storwize v7000 
+unified storage array."></span>
+<a href="http://searchstorage.techtarget.com/podcast/Week-in-review-podcast-New-IBM-Storwize-array-released-more-headlines">Week 
+in review podcast: New IBM Storwize array released; more headlines</a></li>
+    <li><span class="tooltipText" title="With desktop and server virtualisation driving 
+the market, midrange SAN vendors boost solid-state and spinning-disk options to bring 
+enterprise-like performance."></span>
+<a href="http://www.computerweekly.com/feature/Midrange-SAN-vendors-boost-solid-state-and-drive-options">Midrange 
+SAN vendors boost solid-state and drive options</a></li>
+    <li><span class="tooltipText" title="This week's Storage Radio podcast discusses 
+Hitachi's entry into the solid-state market with an Accelerated Flash storage module 
+for Hitachi VSP."></span>
+<a href="http://searchstorage.techtarget.com/podcast/Storage-Radio-Hitachi-VSP-offers-Accelerated-Flash-storage-module">Storage 
+Radio: Hitachi VSP offers Accelerated Flash storage module</a></li>
+    <li><span class="tooltipText" title="SolarWinds Storage Manager 5.0.1 monitors 
+storage and virtualization systems, identifies performance bottlenecks and reports on 
+storage performance across the infrastructure."></span>
+<a href="http://searchstorage.techtarget.com/feature/SolarWinds-Inc-Storage-Manager-501">SolarWinds 
+Inc. Storage Manager 5.0.1</a></li>
+    <li><span class="tooltipText" title="Headlines: IBM debuts its first Storwize 
+product - a storage virtualization system that doesn't include Storwize data compression 
+- and upgraded its enterprise storage array; and Quantum finishes refreshing its DXi 
+dedupe line."></span>
+<a href="http://searchstoragechannel.techtarget.com/news/1521822/IBM-to-ship-Storwize-system-without-compression-Quantum-completes-dedupe-line-overhaul">IBM 
+to ship Storwize system without compression; Quantum completes dedupe line 
+overhaul</a></li>
+    <li><span class="tooltipText" title="Our podcast outlines pros and cons of storage 
+virtualization technology, as well as how to choose between file-based and block-based 
+storage virtualization."></span>
+<a href="http://searchvirtualstorage.techtarget.com/Storage-virtualization-technology-pros-and-cons">Storage 
+virtualization technology pros and cons</a></li>
+</ul>
+ 
+
+<a name="StorageVirtualizationSolutions"></a><h3>Storage virtualization solutions explained 
+<a href="http://searchstoragechannel.techtarget.com/feature/Storage-virtualization-solutions-explained">(Source Origin)</a></h3>
+<p><b>By Stephen J. Bigelow, Senior Technology Writer</b></p>
+
+<p><i>This article is part of the 
+<a href="http://searchitchannel.techtarget.com/feature/Virtualization-technologies-explained">Virtualization
+Explained</a> series. For more information, check out our related articles on 
+<a href="http://searchsystemschannel.techtarget.com/feature/Server-virtualization-explained">server
+virtualization</a> and 
+<a href="http://searchsystemschannel.techtarget.com/feature/Application-virtualization-solutions-explained">application
+virtualization</a>.</i></p>
+
+<p> Inefficient storage utilization and unnecessary storage purchases have led to the 
+adoption of storage virtualization solutions, which use abstraction to separate physical 
+disk space from the logical assignment of that space. Virtualization allows the storage 
+available on multiple systems (often SAN storage subsystems) to be aggregated so that 
+disk space forms a single logical resource.  The virtualized storage pool is then 
+provisioned for use by users, servers and applications.</p>
+
+<p> The basic premise of storage virtualization solutions is not new. Disk storage has 
+long relied on partitioning to organize physical disk tracks and sectors into clusters, 
+and then abstract clusters into logical drive partitions (e.g., the C: drive). This 
+allows the operating system to read and write data to the local disks without regard to 
+the physical location of individual bytes on the disk platters.</p>
+
+<p>Virtualization brings efficiency to the storage environment. By pooling storage 
+resources into a single resource, administrators can manage all of the space included 
+in the pool regardless of its location. This allows for much better storage utilization, 
+often reaching 80% or better. Storage management is also easier since virtualized 
+storage can be managed from a single administrative console -- a storage administrator 
+can see utilization trends and growth patterns more clearly and make better upgrade or 
+capacity planning decisions. Virtualized storage can be thinly provisioned, or even 
+dynamically provisioned (increasing or decreasing the size of a LUN) as needed.</p>
+
+
+<p> Virtualized storage is also flexible. Once storage space is decoupled from a 
+physical disk or storage array, it's simple to migrate and copy that virtual storage 
+between systems or geographic locations. For example, a virtual LUN can be migrated 
+from an older storage system to a newer one for better performance without making any 
+adjustments to the application. Similarly, a virtual LUN can be copied to another local 
+storage system for backup purposes, or replicated to an off-site storage location for 
+disaster recovery purposes.</p>
+
+<p>There are numerous elements involved in storage virtualization solutions. They can be
+implemented within the storage array itself using products like the 
+<a target="_blank" href="http://www.hds.com/products/storage-systems/universal-storage-platform-v.html">Universal
+Storage Platform V from Hitachi Data Systems (HDS)</a> or the 
+<a target="_blank" href="http://www.equallogic.com/products/view.aspx?id=2819">EqualLogic
+PS family from Dell</a>, or through dedicated appliances like the <a target="_blank" 
+href="http://www.lefthandnetworks.com/vsa.aspx">Virtual SAN Appliance (VSA) for VMware 
+from LeftHand Networks</a>. There are also software-based storage virtualization 
+products, such as the <a target="_blank" 
+href="http://www.datacore.com/products/prod_SANsymphony.asp">SANsymphony
+software from DataCore Software</a>, <a target="_blank" 
+href="http://www.emc.com/products/detail/software/invista.htm">Invista software from 
+EMC Corp</a>. or the <a target="_blank" 
+href="http://www.symantec.com/business/theme.jsp?themeid=virtualization">Veritas Virtual
+Infrastructure from Symantec Corp</a>.. There are numerous other products available to 
+implement storage virtualization -- each with its own unique features and pros and cons. 
+Solution providers face the challenge of matching each customer's needs with the most 
+suitable virtualization product.</p>
+
+<p><b>What are the issues or limitations with storage virtualization?</b></p>
+
+<p>Entry costs and learning curves are the first issues for smaller businesses. Client 
+costs usually start with a network assessment and deployment of any appropriate network 
+upgrades for the LAN (e.g., moving some elements of the LAN from 1 Gigabit Ethernet to 
+10 GigE) or SAN. Higher storage utilization often means higher storage traffic from 
+users and higher migration traffic between storage systems, so ensuring network 
+readiness is always the first consideration for a solution provider.</p>
+
+<p> Solution providers must also consider the interoperability of virtualization products
+within the customer's storage environment. "If you have heterogeneous storage vendors 
+in the mix, there's an ambition for everyone to support everyone else's equipment," said 
+Keith Norbie, director of storage and virtualization at <a target="_blank" 
+href="http://www.nexusmn.com/">Nexus Information Systems</a> in Plymouth, Minn. 
+"The question is, how well does that work?"</p>
+
+<p> While there can be significant benefits to virtualizing a heterogeneous storage 
+environment, Norbie cautions that it's not always possible. Often, solution providers 
+face performance and support issues during a heterogeneous storage virtualization 
+project. It may be necessary to avoid virtualization on some storage systems until a 
+future technology refresh cycle allows the client to implement a more 
+virtualization-friendly storage platform.</p>
+
+<p> Once assessments and upgrades have been completed, costs then move to the deployment,
+configuration and testing of storage virtualization products. Training should also be 
+provided so that customers can work within the virtualized environment. Losing the 
+relationship between data and physical storage can be disorienting, and customers need 
+to understand how to use new storage management tools. Many solution providers ease 
+their customers' entry into virtualization by deploying the technology in phases -- 
+starting with a single storage system or application, refining the deployment and 
+systematically extending the virtualization to other storage over
+time.</p><!-- Begin Related Topics (earlier called Tags) include -->
+
+
+
+<h4>More News and Tutorials</h4>
+<h4>Articles</h4>
+<ul class="listTypeTooltip">
+    <li><span class="tooltipText" title="While the merits of storage virtualization have been widely argued in recent years, users are now coming around to the notion that virtualization is a worthy and real technology. This tech roundup has the latest on virtualization."></span><a href="http://searchvirtualstorage.techtarget.com/news/997243/Tech-Roundup-Virtualization">Tech Roundup: Virtualization</a></li>
+    <li><span class="tooltipText" title="Storage virtualization experts opine on virtual storage technology in these book excerpts from &lt;i&gt;Storage Virtualization: Technologies for Simplifying Data Storage and Management&lt;/i&gt;."></span><a href="http://searchstoragechannel.techtarget.com/feature/Storage-virtualization-technology-observations">Storage virtualization technology observations</a></li>
+    <li><span class="tooltipText" title="Although the technology has acquired much importance in recent times, selecting a solution for storage virtualization is nothing less than a challenge."></span><a href="http://searchdatacenter.techtarget.in/tip/Tips-for-storage-virtualization-solution-evaluation">Tips for storage virtualization solution evaluation</a></li>
+    <li><span class="tooltipText" title="Let me discard host-based deployments upfront. Host-based storage virtualization was the first virtualization product..."></span><a href="http://searchvirtualstorage.techtarget.com/feature/Where-should-storage-virtualization-be-done-Host-network-array">Where should storage virtualization be done -- Host, network, array?</a></li>
+    <li><span class="tooltipText" title="Contemplating storage virtualization technology for your organization? Keeping these storage virtualization basics in mind will streamline your journey."></span><a href="http://searchdatacenter.techtarget.in/tip/Storage-virtualization-technology-and-its-associated-groundwork">Storage virtualization technology and its associated groundwork</a></li>
+    <li><span class="tooltipText" title="Storage virtualization is proving to be one of the most requested services from storage customers. Learn about the top five ways to enhance storage virtualization in this podcast."></span><a href="http://searchstoragechannel.techtarget.com/podcast/Podcast-Five-ways-to-enhance-your-clients-storage-virtualization">Podcast: Five ways to enhance your client's storage virtualization</a></li>
+    <li><span class="tooltipText" title="Few technologies are more confusing than storage virtualization. Without a guide to explain the different storage virtualization solutions, storage administrators who want to deploy this technology will be lost."></span><a href="http://www.computerweekly.com/feature/A-guide-to-storage-virtualization">A guide to storage virtualization (computerweekly)</a></li>
+    <li><span class="tooltipText" title="Few technologies are more confusing than storage virtualization. Without a guide to explain the different storage virtualization solutions, storage administrators who want to deploy this technology will be lost."></span><a href="http://searchvirtualstorage.techtarget.com/feature/A-guide-to-storage-virtualization">A guide to storage virtualization</a></li>
+    <li><span class="tooltipText" title="Discover the best practices for implementing desktop virtualization and learn how to improve customers' virtual desktop performance through server and network monitoring."></span><a href="http://searchsystemschannel.techtarget.com/feature/Desktop-virtualization-implementation-best-practices">Desktop virtualization implementation best practices</a></li>
+    <li><span class="tooltipText" title="This SearchServerVirtualization.com guide introduces you to Server virtualization, explains best practices and pitfalls to avoid and provides troubleshooting help and advice. You'll find virtualization articles, definitions, tips, white papers, ex..."></span><a href="http://searchservervirtualization.techtarget.com/tutorial/Server-virtualization-Getting-started-guide">Server virtualization: Getting started guide</a></li>
+				</ul>
+
+
+<a name="MakeMostOfVirt"></a><h3>Storage virtualization solutions help make the most of virtualization 
+<a href="http://searchvirtualstorage.techtarget.com/news/2240169260/Storage-virtualization-solutions-help-make-the-most-of-virtualization" 
+target="newwindow">(Source Origin)</a></h3>
+<div id="byline">
+<span class="author">
+	<a href="http://searchwinit.techtarget.com/contributor/Stephen-J-Bigelow" class="author">Stephen J. Bigelow</a>
+	</span>
+<span class="publishDate">Published: 24 Oct 2012</span>
+		</div>
+
+<div class="aside extraInfo floatAlt">
+<h4 style=" text-align: center;">Gartner stat</h4>
+
+<p>In 2012, 58% of installed x86 workloads are running in a VM. By 2015, 77% of installed x86
+workloads are expected to be running in a VM</p>
+
+<p>The pace of virtualization has not slowed. More VMs have been deployed in 2011 than in 2001
+through 2009 combined</p>
+</div>
+
+<p>ORLANDO, Fla. -- Server virtualization allows much higher rates of system usage, but the
+resulting increases in network traffic pose significant challenges for enterprise storage. The
+simple "single server, single network port" paradigm has largely been displaced by servers running
+multiple workloads and using numerous network ports for communication, resiliency and storage
+traffic.</p>
+
+<p>Virtual workloads are also stressing storage for tasks, including desktop instances, backups,
+disaster recovery (DR), and test and development.</p>
+
+
+<p>At Gartner Symposium/ITxpo here this week, <a href="http://www.gartner.com/AnalystBiography?authorId=10016" target="_blank">Stanley Zaffos</a>, a
+Gartner research vice president, outlined the implications of server virtualization on storage and
+explained how <a href="http://searchvirtualstorage.techtarget.com/tutorial/Storage-virtualization-essentials-Cut-costs-and-increase-storage-efficiency">storage
+virtualization solutions</a>, the right approach, and the proper tool set can help organizations
+mitigate the impact on enterprise storage.</p>
+
+<p><b>Consider using </b><a href="http://searchstorage.techtarget.com/definition/storage-virtualization"><b>storage
+virtualization</b></a><b>.</b> Zaffos urges organizations to deploy storage virtualization as a
+means of better storage practice, and he underscores core benefits of the technology:</p>
+
+<ul>
+<li>Storage virtualization supports storage consolidation/pooling, allowing all storage to be
+"seen" and treated as a single resource. This avoids orphaned storage, improves storage utilization
+and mitigates storage costs by reducing the need for new storage purchases. The benefits of storage
+consolidation increase with the amount of storage being managed.</li>
+
+<li>Storage virtualization supports agile and thin provisioning, allowing organizations to create
+larger logical storage areas than the actual disk space allocated. This also reduces storage costs
+because a business does not need to purchase all of the physical storage up front -- simply add
+more storage as the allocated space fills up. Later tools may allow dynamic provisioning where the
+logical volume size can be scaled up or down on demand. Management and capacity planning is
+important here.</li>
+
+<li>Storage virtualization supports <a href="http://searchunifiedcommunications.techtarget.com/definition/QoS-Quality-of-Service">quality
+of service</a> (QoS) features that enhance storage functions. For example, <a href="http://searchstorage.techtarget.com/podcast/Auto-tiering-an-important-technology-in-todays-storage-industry">auto-tiering</a>
+can automatically move data from faster and more expensive storage to slower and less expensive
+storage (and back) based on access patterns. Another feature is prioritization, where some data is
+given I/O priority over other data.</li>
+</ul>
+
+<p><b>Consider using solid-state drives (SSDs).</b> One of the gating issues for storage is the lag
+time caused by mechanical delays that are unavoidable in conventional hard-disk technologies. This
+limits storage performance, and the effects are exacerbated for virtual infrastructures where I/O
+streams are randomly mixed together and funneled across the network to the storage array, creating
+lots of disk activity. Storage architects often opt to create large disk groups. By including many
+spindles in the same group, the mechanical delays are effectively spread out and minimized because
+one disk is writing/reading a portion of the data while other disks are seeking. Zaffos points to
+SSDs as a means of reducing spindle count and supplying much higher IOPS for storage tasks.</p>
+
+<p><b>Plan the move to virtualization carefully.</b> Data center architects must develop a vision
+of their infrastructure and operation as they embrace virtualization. Zaffos suggested IT
+professionals start by identifying and quantifying the impact server virtualization, data growth
+and the need for 24/7 operation will have on the storage infrastructure and services.</p>
+
+<div class="aside extraInfo ">
+
+<p>Next, determine what you actually need to accomplish and align storage services with the
+operational abilities and physical infrastructure. For example, if you need to emphasize
+backup/restoration capabilities, support data analytics, or handle desktop virtualization, it's
+important to be sure that the infrastructure can support those needs. If not, you may need to
+upgrade or make architectural changes to support those capabilities.</p>
+
+<p>When making decisions for virtualization, Zaffos notes the difference between strategic and
+tactical issues. Strategic decisions create lock-in, and tactical decisions yield short-term
+benefits. For example, the move to thin provisioning is a tactical decision, but the choice to use
+replication like SRDF would be a strategic decision.</p>
+
+<p><b>Use available tools.</b> Storage virtualization benefits from tools that can optimize storage
+activity. Zaffos points to examples including VMware <a href="http://searchvirtualstorage.techtarget.com/tip/vSphere-Storage-I-O-Control-What-it-does-and-how-to-configure-it">Storage
+I/O Control</a> (SIOC) and <a href="http://searchvirtualstorage.techtarget.com/definition/vStorage-APIs-for-Array-Integration-VAAI">vStorage
+APIs for Array Integration</a> (VAAI). SIOC essentially provides storage administrators with I/O
+and bandwidth throttling, along with I/O prioritization. This allows administrators to allocate
+resources to high-priority workloads and minimize the effects of other I/O-heavy (but less
+critical) workloads. By comparison, VAAI allows storage developers to integrate array products with
+vSphere, enabling features like full copy, block zeroing and hardware-assisted locking.</p>
+
+<p>Ultimately, Zaffos notes that storage virtualization solutions can be a key enabling technology
+for server and desktop virtualization -- both of which place extreme demands on the storage
+infrastructure. But, he said, the move to storage virtualization takes a thorough understanding of
+the benefits, careful planning to ensure proper alignment with business and technical needs, and
+judicious use of storage technologies like tiers and SSD.</p><!-- Begin Related Topics (earlier called Tags) include -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="tags">
+ <strong>Related Topics:</strong>
+		
+
+	       <a href="http://searchvirtualstorage.techtarget.com/resources/SAN-Virtualization-and-SAN-Storage-Consolidation">SAN Virtualization and SAN Storage Consolidation</a>,
+
+		
+
+	       <a href="http://searchvirtualstorage.techtarget.com/resources/Data-Storage-Solutions-for-a-Virtual-Environment">Data Storage Solutions for a Virtual Environment</a>,
+
+		
+<a href="http://searchvirtualstorage.techtarget.com/tags">VIEW ALL TOPICS</a>
+</div>
+
+<P>
+	
+<a href="http://www.google.com.tw/search?hl=zh-TW&lr=&tbs=qdr%3Ay&q=storage+virtualization+-Windows+-VMware&oq=storage+virtualization+-Windows+-VMware&gs_l=serp.3...48702.52986.0.54978.8.8.0.0.0.0.36.262.8.8.0...0.0...1c.1.st5-W-7CwQ0"
+target="newwindow">storage virtualization -Windows -VMware</a><br>
+
+<a name="BenifitDasNasSan"></a><h3>DAS vs. NAS vs. SAN: Which is best for virtual 
+storage? 
+<a href="http://searchstorage.techtarget.com.au/tip/DAS-vs-NAS-vs-SAN-Which-is-best-for-virtual-storage">(Source Origin)</a></h3>
+</div>
+<div id="articleToolbar">
+<div id="byline">
+<span class="author">Chris Evans, Contributor</span>
+</div>
+</div>
+
+<P> Data center consolidation and cost reduction have driven the steady adoption of 
+virtual server technologies in enterprise data storage environments. The major 
+players (Microsoft, VMware and Xen) all provide support for using direct-attached 
+storage (DAS), network-attached storage (NAS) or storage area networks (SANs). This 
+article provides tips on how to decide which data storage technology is best for 
+your virtual environment: DAS, NAS, or SAN, and the pros and cons of each.
+
+<h4>Direct-attached storage</h4>
+
+<p>Direct-attached storage can be deployed in a number of forms; it could be disks 
+deployed directly in the server chassis or as an external storage enclosure plugging 
+directly into a SCSI/SAS card on the server's internal bus. Either way, DAS has the 
+following pros and cons:</p>
+
+<ul>
+  <li><b>DAS is less expensive than NAS and SAN</b>. If plugged directly into the 
+    server, the cost may be as simple as purchasing hard drives, which today have a 
+    capacity of up to 2 TB.</li>
+
+  <li><b>DAS is not shareable.</b> By definition, DAS is dedicated to the server 
+    that it's connected to. Because of this, the resources can't easily be shared 
+    with another server, especially if hard drives plug directly into the server 
+    chassis. Limited sharing may represent a serious drawback in larger virtual server 
+    deployments where physical servers are "clustered" to the storage in order to
+    provide local resiliency through features such as VMware's VMotion, which doesn't 
+    work unless storage is sharable.</li>
+
+  <li><b>DAS is not scalable.</b> Scalability is restricted in several areas. First, 
+    the enclosure itself will usually be limited in size and therefore in storage 
+    capacity. Second, connectivity into the server will be limited by the number of 
+    expansion slots available to accommodate SCSI and SAS cards.</li>
+
+  <li><b>DAS does not have the performance of NAS and SAN solutions.</b> Performance 
+    is a significant factor in delivering a high throughput virtual server 
+    environment.</li>
+
+  <li><b>DAS doesn't offer advanced features like remote replication and snapshots.</b> 
+    Keep in mind, however, that while these features are good to have, they may not be 
+    necessary in your virtual environment.</li>
+</ul>
+
+<p>So when is direct-attached storage a better solution than a storage area network 
+or network-attached storage? Clearly if cost is an issue, DAS offers the best price 
+point. You should also consider DAS if advanced features such as remote replication 
+or high performance/scalability aren't required in your virtual environment. For 
+example, DAS combined with an internal RAID card used in a branch location where only 
+one physical server is deployed, would be a great solution.</p>
+
+<h4>Network-attached storage</h4>
+
+<p>Networked-attached storage provides connectivity to the virtual server through a 
+TCP/IP connection and storage access is provided at the file level. NAS pros and cons 
+include:</p>
+
+<ul>
+  <li><b>NAS is shareable.</b> Resources may be shared by multiple ESX deployments. 
+    This is a key benefit when using clustered virtual environments and features such 
+    as VMotion.</li>
+
+  <li><b>NAS is scalable in terms of capacity and performance.</b> For larger virtual 
+    deployments, performance becomes a big issue. The concentration of I/O into a 
+    small number of LUNs can potentially result in throughput bottlenecks. This is 
+    especially likely with advanced features of NAS.</li>
+
+  <li><b>NAS provides advanced features such as thin provisioning, replication and 
+      snapshots.</b> For many virtual environments, these features are particularly 
+      beneficial. Thin provisioning can be used to limit the amount of real storage 
+      provided to virtual hosts, which will not use all of the storage they are 
+      presented with. Snapshots allow virtual machine images to be captured for data
+      backup or used for cloning, where multiple virtual images are created from a 
+      single "gold master" image. The combination of thin provisioning and snapshots 
+      offers the opportunity to create hundreds of virtual machines for very little 
+      storage cost. This is an extremely efficient provisioning method for development 
+      or on-demand environments.</li>
+
+  <li><b>NAS abstracts storage management from the server.</b> This means the virtual 
+      machine images can be managed (and subsequently backed up) as a file system.</li>
+
+  <li><b>NAS can be costly.</b> Despite the cost, the range of NAS devices on the 
+      market is extremely wide -- from small four-disk devices to multi-petabyte 
+      hardware configurations.</li>
+</ul>
+
+<h4>Storage area networks in a virtual environment</h4>
+
+<p>Storage area networks provide connectivity to the virtual server using either the 
+Fibre Channel (FC) or iSCSI protocols. SAN storage has the following pros and cons:</p>
+
+<ul>
+  <li><b>SAN storage is sharable.</b> Resources may be easily shared between multiple 
+      virtual server hardware devices. This is important in clustered virtual server 
+      environments.</li>
+
+  <li><b>SANs are highly scalable, both from a capacity and performance perspective.</b> 
+      For large deployments of virtual servers, scalability is extremely important and 
+      the whole premise of SAN is to provide high levels of scale.</li>
+
+  <li><b>SAN storage provides synchronous replication.</b> Synchronous replication 
+      isn't typically available on NAS implementations, and for many environments, 
+      this may be a key requirement for a disaster recovery strategy.</li>
+
+  <li><b>SAN environments are highly resilient.</b> SAN environments are well equipped 
+      with dual fabrics, HBAs and highly available storage arrays.</li>
+</ul>
+
+<h4>What type of storage best fits your virtual environment?</h4>
+
+<p>Everyone has different needs and requirements for their virtual environments. 
+Choose DAS if cost is an issue, your virtual environment is small and if your 
+environment doesn't require advanced features like data replication. Choose NAS or 
+SAN if you are building large-scale virtual environments. NAS is the better option 
+if you require the ability to clone large numbers of virtual hosts. However, SAN will 
+be a better fit if you require the highest levels of availability and resiliency. 
+Whichever platform you choose, we can expect virtual servers to form a major part of
+all IT deployments in the future.</p>
+
+
+<a name="SANStorage"></a><h3>Storage architecture choices: SANs 
+<a href="http://searchstoragechannel.techtarget.com/feature/Storage-architecture-choices-SANs">(Source Origin)</a></h3>
+</div>
+<b>By Yuval Shavit, Features Writer</b><p></p>
+
+<p><a href="http://searchstoragechannel.techtarget.com/resources/Storage-Area-Network-SAN">Storage area networks (SANs)</a>,
+ which were once available only to large enterprises that could afford 
+to pay steep premiums for the best storage, are increasingly moving 
+downstream. SANs combine the benefits of shared storage with those of <a href="http://searchstorage.techtarget.com/definition/direct-attached-storage">direct-attached storage (DAS)</a>,
+ and newer technologies make them affordable even for small businesses. 
+This article will explore why storage area network (SAN) devices may be 
+right for your clients.</p>
+
+<h4>Storage acronyms: SAN, NAS and DAS</h4>
+
+<p>The three main ways of connecting storage to servers are SANs, <a href="http://searchstoragechannel.techtarget.com/resources/Network-Attached-Storage-NAS">network-attached storage (NAS)</a>
+ and DAS. With DAS, which is the most basic form of the three, the drive
+ connects directly to the server and is often even in the same 
+enclosure. Because DAS is simple to install and requires no large, 
+IT-level planning, it's still what many small businesses rely on, said 
+Paul Franco, executive vice president at <a href="http://www.zibiz.com/" target="_blank">Zibiz Data Management</a>, a storage consultancy in Ronkonkoma, N.Y.</p>
+
+<p>SANs and NAS both separate data storage from servers, allowing 
+servers to share those resources. NAS devices have their own file 
+system, so they work best as file servers. SANs give block-level access 
+and appear to computers as normal drives, so they work better for 
+applications such as databases. Companies start needing databases once 
+they reach about 100 users, which is why even small businesses are 
+starting to look into storage area networks, Franco said. SANs are often
+ faster than NAS systems, too.</p>
+
+<h4>Benefits of SANs</h4>
+
+<p>Why storage area networks? Depending on how many servers your client 
+has, a SAN can offer significant advantages over a DAS array for each 
+server. Consolidating storage devices will save your clients money by 
+allowing them to buy capacity according to what the entire company 
+needs, as opposed to having each server work with its own disk array, 
+much of which may go unused. Provisioning tools can let your client 
+dynamically allocate space -- instead of giving a server 10 GB in 
+anticipation of growth in five years, an IT manager can give it 2 or 3 
+GB and increase that as needed, Franco said.</p>
+
+
+<!-- CONTENT COMPONENT :47779-->
+<table border="0" cellpadding="0" cellspacing="0" align="left">
+<tbody><tr>
+<td colspan="2"><img src="Storage-SANs_files/spacer.gif" width="1" height="7"></td>
+</tr>
+<tr>
+<td colspan="2"><img src="Storage-SANs_files/spacer.gif" width="1" height="7"></td>
+</tr>
+</tbody></table>
+
+<!-- CONTENT COMPONENT :47779-->
+<p>Because SANs can consist of several physically separate drives or 
+arrays, they also offer replication and disaster recovery features. For 
+instance, you can set up two SANs with automatic, real-time replication.
+ If the primary SAN goes down for any reason, the system will 
+automatically fail over to the second.</p>
+
+<p>SANs also complement <a href="http://searchsystemschannel.techtarget.com/feature/Channel-Explained-Virtualization">server virtualization</a>.
+ One of the features of some virtualization software is the ability to 
+move images between physical servers on the fly, without downtime. This 
+requires the two servers to share the same storage device -- both so 
+they can access the same data and to serve as a medium for the <a href="http://searchservervirtualization.techtarget.com/definition/virtual-machine">virtual machine</a> (VM) image.</p>
+
+<h4>Cost of SANs</h4>
+
+<p>A traditional SAN works on a <a href="http://searchstoragechannel.techtarget.com/resources/Fibre-Channel-Storage-Area-Network-SAN">Fibre Channel (FC)</a>
+ network. The wires may be either fiber-optic or copper, but since even 
+the copper FC wires are different than Ethernet cables, all FC-connected
+ SANs require a separate, dedicated network.</p>
+
+<p>Fibre Channel equipment is expensive; the wires, which are often 
+optical, can cost $100 to $200 each, and each server's FC adapter will 
+cost another $400 to $1,000, said <a href="http://searchstoragechannel.techtarget.com/news/1284189/iSCSI-SANs-Benefits-challenges-and-reseller-opportunities">Henry Baltazar</a>, storage analyst for <a href="http://www.the451group.com/" target="_blank">The 451 Group</a>
+ in San Francisco. This extra infrastructure makes up the bulk of the 
+cost for SANs that use FC, which is why storage area networks have 
+traditionally been reserved for larger companies while smaller companies
+ have had to go sans SANs.</p>
+
+<p>But <a href="http://searchstoragechannel.techtarget.com/resources/iSCSI-SAN-IP-Storage">iSCSI</a>,
+ a variant on the SCSI interface that runs over IP, can eliminate those 
+costs by connecting your SAN devices over your existing LAN. Your client
+ will still need to make a few adjustments, such as configuring a <a href="http://searchnetworking.techtarget.com/definition/virtual-LAN">virtual LAN (VLAN)</a>
+ for the SAN drives to ensure that they get all the bandwidth they need;
+ your role should include helping the client with this implementation 
+work. An entry-level iSCSI-attached SAN can cost as little as $10,000 
+and are typically easy enough to self-configure, Franco said.</p>
+
+<p>In the <a href="http://searchstoragechannel.techtarget.com/feature/Fibre-Channel-and-iSCSI-Dueling-storage-networking-protocols">next installment</a>
+  of our Hot Spot Tutorial on SAN design services, we'll take a closer 
+look at the comparison between Fibre Channel and iSCSI, as well as a new
+ technology, <a href="http://searchitchannel.techtarget.com/news/1296979/Tech-Watch-Emerging-FCoE-spec-to-extend-life-of-Fibre-Channel-SANs">Fibre Channel over Ethernet (FCoE)</a>, that's on the horizon.</p><b></b>
+
+
+<a name="SANDesign"></a><h3>Key considerations in developing a storage area network 
+design 
+<a href="http://searchstoragechannel.techtarget.com/feature/Key-considerations-in-developing-a-storage-area-network-design" 
+target="newwindow">(Source Origin)</a></h3>
+
+<div id="articleBody">
+<b>By Yuval Shavit, Features Writer</b><p></p>
+
+<p><a href="http://searchstoragechannel.techtarget.com/resources/Storage-Area-Network-SAN">Storage area networks (SANs)</a>
+let several servers share storage resources and are often used in situations that 
+require high performance or shared storage with block-level access, like virtualized 
+servers and clustered databases.  Although SANs started out as a high-end technology 
+used only in large enterprises, cheaper SANs are now affordable even for small and 
+medium-sized businesses (SMBs). In earlier installments of this Hot Spot  Tutorial, 
+we examined <a href="#SANStorage">what benefits SANs offer</a> 
+over other storage architectural choices, as well as the two main storage networking 
+protocols, <a href="http://searchstoragechannel.techtarget.com/feature/Fibre-Channel-and-iSCSI-Dueling-storage-networking-protocols">Fibre Channel and iSCSI</a>.  
+In this installment, we'll look at the main considerations you should keep in mind when 
+putting together a storage area network design.</p>
+
+<h4>Uptime and availability</h4>
+
+<p>Because several servers will rely on a SAN for all of their data, it's important 
+to make the system very reliable and eliminate any single points of failure, said 
+Paul Franco, executive vice president at <a href="http://www.zibiz.com/" 
+target="_blank">Zibiz Data Management</a>, a Ronkonkoma, N.Y., storage consultancy. 
+Most SAN hardware vendors offer redundancy within each unit -- like dual power 
+supplies, internal controllers and emergency batteries -- but you should make sure 
+that redundancy extends all the way to the server, Franco said.</p>
+
+<a name="IPRedundancy"></a><p>In a typical storage area network design, each storage 
+device connects to a switch that then connects to the servers that need to access 
+the data. To make sure this path isn't a point of failure, your client should buy two 
+switches for the SAN network. 
+Each storage unit should connect to both switches, as should each server. If either 
+path fails, software can fail over to the other. Some programs will handle that 
+failover automatically, but cheaper software may require you to enable the failover 
+manually, Franco said. You can also configure the program to use both paths if they're 
+available, for load balancing.</p>
+
+<p>But you should also consider how the drives themselves are configured, Franco said. 
+RAID technology spreads data among several disks -- a technique called 
+<a href="http://searchstorage.techtarget.com/definition/disk-striping" 
+target="newwindow">striping</a> -- and can add 
+<a href="http://searchstorage.techtarget.com/definition/parity" 
+target="newwindow">parity</a> checks so that if any one disk fails, its content can 
+be rebuilt from the others. There are several types of RAID, but the most common in 
+SAN designs are levels 5, 6 and 1+0, Franco said.</p>
+
+
+
+<!-- CONTENT COMPONENT :48656-->
+<p>RAID 5 stripes data across every disk in the unit except one, which 
+is used to store parity information that can be used to rebuild any 
+drive that needs to be replaced. RAID 6 adds a second disk for redundant
+ parity. This protects your client's data in case a second drive breaks 
+during the first disk's rebuild, which can take up to 24 hours for a 
+terabyte, Franco said. RAID 1+0 stripes data across a series of disks 
+without any parity checks, which is very fast, but mirrors each of those
+ disks to a second set of striped disks for redundancy.</p>
+
+<h4>Capacity and scalability</h4>
+
+<p>A good storage area network design should not only accommodate your 
+client's current storage needs, but it should also be scalable so that 
+your client can upgrade the SAN as needed throughout the expected 
+lifespan of the system. You should consider how scalable the SAN is in 
+terms of storage capacity, number of devices it supports and speed, said
+ Greg Schulz, founder and senior analyst with <a href="http://www.storageio.com/" target="_blank">The StorageIO Group</a>, a Stillwater, Minn., consulting firm.</p>
+
+<p>Because a SAN's switch connects storage devices on one side and 
+servers on the other, its number of ports can affect both storage 
+capacity and speed, Schulz said. By allowing enough ports to support 
+multiple, simultaneous connections to each server, switches can multiply
+ the bandwidth to servers. On the storage device side, you should make 
+sure you have enough ports for redundant connections to existing storage
+ units, as well as units your client may want to add later.</p>
+
+<p>One feature of storage area network design that you should consider is <a href="http://searchstoragechannel.techtarget.com/tip/How-thin-provisioning-improves-virtual-machine-performance">thin provisioning</a> of storage. Thin provisioning tricks servers into thinking a given volume within a SAN, known as a <a href="http://searchstorage.techtarget.com/definition/logical-unit-number">logical unit number (LUN)</a>,
+ has more space than it physically does. For instance, an operating 
+system (OS) that connects to a given LUN may think the LUN is 2 TB, even
+ though you have only allocated 250 GB of physical storage for it, 
+Schulz said.</p>
+
+<p>Thin provisioning allows you to plan for future growth without your 
+client having to buy all of its expected storage hardware up front. In a
+ typical "fat provisioning" model, each LUN's capacity corresponds to 
+physical storage. That means that your client will have to buy as much 
+space as it anticipates needing for the next few years, Schulz said. 
+While it's possible to allocate a smaller amount of space for now and 
+transfer its data to a larger provision as needed, that process is slow 
+and could result in downtime for your client.</p>
+
+<p>Thin provisioning allows you to essentially overbook a SAN's storage,
+ promising a total capacity to the LUNs that is greater than the SAN 
+physically has. As those LUNs fill up and start to reach the system's 
+physical capacity, you can add more units to the SAN -- often in a 
+hot-swappable way, Franco said. But because this approach to storage 
+area network design requires more maintenance down the road, it's best 
+for stable environments where a client can fairly accurately predict how
+ each LUN's storage needs will grow, Schulz said.</p>
+
+<h4>Security</h4>
+
+<p>With several servers able to share the same physical hardware, it 
+should be no surprise that security plays an important role in a storage
+ area network design. Your client will want to know that servers can 
+only access data if they're specifically allowed to. If your client is 
+using <a href="http://searchstoragechannel.techtarget.com/resources/iSCSI-SAN-IP-Storage">iSCSI</a>,
+ which runs on a standard Ethernet network, it's also crucial to make 
+sure outside parties won't be able to hack into the network and have raw
+ access to the SAN.</p>
+
+<p>Most of this security work is done at the SAN's switch level, Franco said. <a href="http://searchstorage.techtarget.com/definition/zoning">Zoning</a>
+ allows you to give only specific servers access to certain LUNs, much 
+as a firewall allows communication on specific ports for a given IP 
+address. If any outward-facing application needs to access the SAN, like
+ a website, you should configure the switch so that only that server's 
+IP address can access it, Franco said.</p>
+
+<p>If your client is using <a href="http://searchsystemschannel.techtarget.com/feature/Channel-Explained-Virtualization">virtual servers</a>, the storage area network design will also need to make sure that each <a href="http://searchservervirtualization.techtarget.com/definition/virtual-machine">virtual machine (VM)</a>
+ has access only to its LUNs, Schulz said. Virtualization complicates 
+SAN security because you cannot limit access to LUNs by physical 
+controllers anymore -- a given controller on a physical server may now 
+be working for several VMs, each with its own permissions. To restrict 
+each server to only its LUNs, set up a virtual adapter for each virtual 
+server. This will let your physical adapter present itself as a 
+different adapter for each VM, with access to only those LUNs that the 
+virtualized server should see.</p>
+
+<h4>Replication and disaster recovery</h4>
+
+<p>With so much data stored on a SAN, your client will likely want you 
+to build disaster recovery into the system. SANs can be set up to 
+automatically mirror data to another site, which could be a failsafe SAN
+ a few meters away or a <a href="http://searchstoragechannel.techtarget.com/resources/Disaster-Recovery-and-Business-Continuity">disaster recovery (DR)</a> site hundreds or thousands of miles away.</p>
+
+<p>If your client wants to build <a href="http://searchstorage.techtarget.com/definition/mirror">mirroring</a>
+ into the storage area network design, one of the first considerations 
+is whether to replicate synchronously or asynchronously. Synchronous 
+mirroring means that as data is written to the primary SAN, each change 
+is sent to the secondary and must be acknowledged before the next write 
+can happen.</p>
+
+<p>While this ensures that both SANs are true mirrors, synchronization 
+introduces a bottleneck. If the secondary site has a latency as high as 
+even 100 to 200 milliseconds (msec), your system will slow down as the 
+primary SAN has to wait for each confirmation, Schulz said. Although 
+there are other factors, latency is often related to distance; 
+synchronous replication is generally possible up to about 6 miles, 
+Franco said.</p>
+
+<p>The alternative is to asynchronously mirror changes to the secondary 
+site. You can configure this replication to happen as quickly as every 
+second, or every few minutes or hours, Schulz said. While this means 
+that your client could permanently lose some data, if the primary SAN 
+goes down before it has a chance to copy its data to the secondary, your
+ client should make <a href="http://searchstoragechannel.techtarget.com/feature/Weigh-your-backup-and-DR-technology-options">calculations based on its recovery point objective (RPO)</a> to determine how often it needs to mirror. </p><!-- Begin Related Topics (earlier called Tags) include -->
+
+</body></html>

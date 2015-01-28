@@ -1,0 +1,555 @@
+<html>
+  <head>
+    <title>Open vSwitch</title>
+    <link type="text/css" rel="stylesheet" href="style.css" />
+</head>
+<body>
+<h1><a href="http://openvswitch.org/">Open vSwitch</a></h1>
+    <h3>2013 Wheezy <a href="http://www.pixelchaos.net/2012/11/16/linux-kvm-openvswitch-on-debian-wheezy/">source</a></h3>
+<pre>
+Add source mirror to sources.list
+$ more /etc/apt/sources.list
+<code>deb http://mirror.cs.nchu.edu.tw/debian wheezy main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/debian wheezy-proposed-updates main contrib
+deb-src http://opensource.nchc.org.tw/debian wheezy main contrib
+</code></pre>
+
+<pre>$ sudo aptitude update; sudo aptitude safe-upgrade
+$ sudo aptitude install build-essential module-assistant git
+$ sudo apt-get build-dep openvswitch
+$ sudo aptitude install graphviz libtool
+$ git clone git://git.openvswitch.org/openvswitch
+$ cd openvswitch
+$ dpkg-buildpackage -b
+$ echo $?
+$ cd ..
+$ sudo aptitude install racoon ipsec-tools python-twisted-web dkms uuid-runtime
+</pre>
+Kernel version 3.11 or newer versions:
+<pre>$ sudo dpkg -i openvswitch-switch_*_amd64.deb openvswitch-common_*_amd64.deb \
+        openvswitch-datapath-source_*.deb openvswitch-datapath-dkms_*_all.deb \
+        openvswitch-test_*_all.deb openvswitch-pki_*_all.deb \
+        openvswitch-ipsec_*_amd64.deb python-openvswitch_*_all.deb
+$ lsmod | grep openvswitch
+<code>openvswitch            63837  0
+vxlan                  30915  1 openvswitch
+gre                    12957  1 openvswitch
+libcrc32c              12426  1 openvswitch
+</code></pre>
+Kernel version below 3.11:
+<pre>$ sudo dpkg -i openvswitch-switch_*_amd64.deb openvswitch-common_*_amd64.deb \
+        openvswitch-datapath-source_*.deb openvswitch-datapath-dkms_*_all.deb \
+        openvswitch-test_*_all.deb ovsdbmonitor_*_all.deb \
+        openvswitch-ipsec_*_amd64.deb python-openvswitch_*_all.deb \
+        openvswitch-controller_*_amd64.deb openvswitch-pki_*_all.deb
+$ sudo module-assistant auto-install openvswitch-datapath
+$ lsmod | grep openvswitch
+<code>openvswitch            62681  0
+gre                    12531  1 openvswitch
+</code></pre>
+
+    <h3>VXLAN and Gre tunnel</h3>
+<pre>
+# br0 is internel bridge
+# On host1
+$ sudo ovs-vsctl add-port br0 vx0 -- set interface vx0 type=vxlan options:remote_ip=${host2IP}
+# On host2
+$ sudo ovs-vsctl add-port br0 vx0 -- set interface vx0 type=vxlan options:remote_ip=${host1IP}
+# Remove
+$ sudo ovs-vsctl del-port vx0
+</pre>
+<pre>
+# On host1
+$ sudo ovs-vsctl add-port br0 gre0 -- set interface gre0 type=vxlan options:remote_ip=${host2IP}
+# On host2
+$ sudo ovs-vsctl add-port br0 gre0 -- set interface gre0 type=vxlan options:remote_ip=${host1IP}
+# Remove
+$ sudo ovs-vsctl del-port gre0
+</pre>
+
+    <h3>Controller</h3>
+<pre>$ git clone http://github.com/noxrepo/pox
+$ cd pox
+$ more README
+<code>POX is a network controller written in Python.
+
+POX officially requires Python 2.7 (though much of it will work fine
+fine with Python 2.6), and should run under Linux, Mac OS, and Windows.
+You can place a pypy distribution alongside pox.py (in a directory
+named "pypy"), and POX will run with pypy (this can be a significant
+performance boost!).
+
+POX currently communicates with OpenFlow 1.0 switches and includes
+special support for Open vSwitch.
+
+pox.py boots up POX. It takes a list of module names on the command line,
+locates the modules, calls their launch() function (if it exists), and
+then transitions to the "up" state.
+
+Modules are looked for everywhere that Python normally looks, plus the
+"pox" and "ext" directories.  Thus, you can do the following:
+
+./pox.py forwarding.l2_learning
+
+You can pass options to the modules by specifying options after the module
+name.  These are passed to the module's launch() funcion.  For example,
+to set the address or port of the controller, invoke as follows:
+
+./pox.py openflow.of_01 --address=10.1.1.1 --port=6634
+
+pox.py also supports a few command line options of its own which should
+be given first:
+--verbose      print stack traces for initialization exceptions
+--no-openflow  don't start the openflow module automatically
+</code>$ cd /usr/local/bin
+$ sudo ln -s /src3/OpenvSwitch/pox/pox.py
+</pre>
+    
+    <h3>FlowVisor</h3>
+<pre>$ git clone git://github.com/OPENNETWORKINGLAB/flowvisor.git
+$ sudo aptitude install ant openjdk-6-jdk
+$ cd flowvisor
+$ make
+$ make doc
+$ sudo adduser flowvisor
+$ sudo make fvuser=flowvisor fvgroup=flowvisor install
+<code>...
+Installation prefix (/usr/local):
+Install to different root directory ()
+...
+Enter password for account 'fvadmin' on the flowvisor:
+...
+</code></pre>
+    
+    <h3>Examples</h3>
+<pre>$ pox.py --verbose openflow.of_01 --port=6634 forwarding.l2_learning
+$ sudo ovs-vsctl set-controller br1 tcp:127.0.0.1
+$ sudo ovs-vsctl show
+<code>0e337a5e-5e01-4ba7-8007-1cbacf4689d5
+    Bridge "br0"
+        Port "eth0"
+            Interface "eth0"
+        Port "br0"
+            Interface "br0"
+                type: internal
+        Port tapOMV
+            Interface tapOMV
+    Bridge "br1"
+        Controller "tcp:127.0.0.1"
+        Port "eth1"
+            Interface "eth1"
+        Port "br1"
+            Interface "br1"
+                type: internal
+    ovs_version: "1.11.90"
+</code>$ sudo ovs-vsctl del-controller br1
+</pre>
+    
+    <hr>
+
+    <h3>Open vSwitch 1.7.0</h3>
+<pre>
+$ sudo mkdir /src3/OpenvSwitch
+$ sudo chown jssu:jssu /src3/OpenvSwitch
+$ cd /src3/OpenvSwitch
+$ wget http://openvswitch.org/releases/openvswitch-1.7.0.tar.gz
+$ tar zxvf openvswitch-1.7.0.tar.gz 
+$ cd openvswitch-1.7.0/
+$ ./configure --with-linux=/lib/modules/`uname -r`/build CONFIG_TUN=yes
+$ make
+$ sudo make install
+$ sudo mkdir -p /usr/local/var/run/openvswitch
+$ sudo insmod datapath/linux/openvswitch.ko
+$ mkdir -p /usr/local/etc/openvswitch
+$ sudo ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+$ sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+                     --remote=db:Open_vSwitch,manager_options \
+                     --private-key=db:SSL,private_key \
+                     --certificate=db:SSL,certificate \
+                     --bootstrap-ca-cert=db:SSL,ca_cert \
+                     --pidfile --detach
+$ sudo ovs-vsctl --no-wait init
+$ sudo ovs-vswitchd --pidfile --detach
+$ sudo ovs-vsctl add-br br0
+$ sudo ovs-vsctl add-port br0 eth0
+
+$ kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+</pre>
+<h3>Installation (old)</h3>
+<pre>
+$ cd /src4/KVM
+$ sudo aptitude install autoconf uml-utilities build-essential pkg-config libssl-dev
+$ sudo aptitude install python-jsonpipe python-qt4 python-zope.interface python-twisted-conch
+# $ mv ~/Downloads/openvswitch-1.4.1.tar.gz .
+$ wget http://openvswitch.org/releases/openvswitch-1.4.1.tar.gz
+$ tar zxvf openvswitch-1.4.1.tar.gz
+$ rm openvswitch-1.4.1.tar.gz
+$ mv openvswitch-1.4.1 openvswitch
+$ cd openvswitch
+$ ./configure --with-linux=/lib/modules/`uname -r`/build CONFIG_TUN=yes
+$ make
+$ sudo make install
+$ sudo mkdir -p /usr/local/var/run/openvswitch
+  </pre>
+Load kernel modules with "insmod".
+<pre>
+$ sudo insmod datapath/linux/openvswitch_mod.ko
+$ dmesg | grep "Open vSwitch"
+[84094.179344] openvswitch_mod: Open vSwitch switching datapath 1.4.1, built Mar 31 2012 20:37:23  
+$ lsmod | grep "openvswitch"
+openvswitch_mod        67907  0 
+  </pre>
+Initialize the configuration database using ovsdb-tool, e.g.:
+<pre>
+$ sudo mkdir -p /usr/local/etc/openvswitch
+$ sudo ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+  </pre>
+<h3>Startup</h3>
+Before starting ovs-vswitchd itself, you need to start its configuration database, ovsdb-server.
+<pre>
+$ sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+                    --remote=db:Open_vSwitch,manager_options \
+                    --private-key=db:SSL,private_key \
+                    --certificate=db:SSL,certificate \
+                    --bootstrap-ca-cert=db:SSL,ca_cert \
+                    --pidfile --detach
+  </pre>
+Initialize the database using ovs-vsctl.
+<pre>
+$ sudo ovs-vsctl --no-wait init
+  </pre>
+Start the main Open vSwitch daemon.
+<pre>
+$ sudo ovs-vswitchd --pidfile --detach
+Sep 24 10:36:37|00001|reconnect|INFO|unix:/usr/local/var/run/openvswitch/db.sock: connecting...
+Sep 24 10:36:37|00002|reconnect|INFO|unix:/usr/local/var/run/openvswitch/db.sock: connected
+  </pre>
+Stop the Open vSwitch daemons.
+<pre>
+$ sudo kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+  </pre>
+Create a bridge
+<pre>
+$ sudo ovs-vsctl add-br br0
+$ sudo ovs-vsctl add-port br0 eth0
+$ sudo ovs-vsctl show
+a09ea244-910a-4dc2-ba18-969d2ea884f9
+  Bridge "br0"
+      Port "br0"
+          Interface "br0"
+              type: internal
+      Port "eth0"
+          Interface "eth0"
+$ sudo ifconfig br0 up
+$ sudo ifconfig br0 down
+  </pre>
+<h3>Scripts</h3>
+<pre>
+$ cd ../bin/
+$ more ovs-start
+<code>
+#! /bin/bash
+sudo insmod /src4/KVM/openvswitch/datapath/linux/openvswitch_mod.ko
+sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+    --remote=db:Open_vSwitch,manager_options \
+    --private-key=db:SSL,private_key \
+    --certificate=db:SSL,certificate \
+    --bootstrap-ca-cert=db:SSL,ca_cert \
+    --pidfile --detach
+sudo ovs-vsctl --no-wait init
+sudo ovs-vswitchd --pidfile --detach
+sudo ovs-vsctl add-br br0
+sudo ovs-vsctl add-port br0 eth0
+sudo ovs-vsctl show
+sudo ifconfig eth0 0.0.0.0
+sudo ifconfig br0 192.168.0.2
+sudo route add default gw 192.168.0.254
+</code></pre>
+<hr>
+<pre>
+$ more ovs-stop
+<code>
+#! /bin/bash
+sudo ovs-vsctl del-port br0 eth0
+sudo ovs-vsctl del-br br0
+sudo ovs-vsctl show
+sudo ifconfig eth0 192.168.0.2
+sudo route add default gw 192.168.0.254
+sudo kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+sudo rmmod openvswitch_mod 
+</code></pre>
+<hr>
+<pre>
+$ more TAP-start
+<code>
+#! /bin/bash
+Bridge='br0'
+HostIP=`ifconfig ${Bridge} | grep "Bcast" | sed 's/^[ \t]*inet addr://' | sed 's/[ \t]*Bcast:.*$//'`
+sudo ifconfig $1 ${HostIP} netmask 255.255.255.255 up
+sudo ovs-vsctl add-port ${Bridge} $1
+</code></pre>
+<hr>
+<pre>
+$ more TAP-stop
+<code>
+#! /bin/bash
+Bridge='br0'
+sudo ifconfig $1 down
+sudo ovs-vsctl del-port ${Bridge} $1
+</code></pre>
+<pre>$ chmod +x ovs-start ovs-stop TAP-start TAP-stop</pre>
+<hr>
+<pre>
+$ more start-VM
+<code>
+#! /bin/bash
+
+# Don't Edit, File automatically generated by Config-KVM script
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+
+echo "Starting VM: ovs-VM..., mem=1024M"
+mkdir /src4/KVM/network-ovs
+sudo kvm -name ovs-VM -m 1024M -localtime \
+  -net nic,macaddr=6c:f0:49:17:96:a6 \
+  -net tap,script=/src4/KVM/bin/TAP-start,downscript=/src4/KVM/bin/TAP-stop \
+  -monitor unix:/src4/KVM/network-ovs/MonSock,server,nowait \
+  -usb -usbdevice tablet -k en-us \
+  -hda /src4/KVM/Resize/Debian-Mini.img \
+  -daemonize
+</code></pre>
+<hr>
+<pre>
+$ more stop-VM
+<code>
+#! /bin/bash
+
+# Don't Edit, File automatically generated by Config-KVM script
+
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+       fi
+fi
+
+echo "system_powerdown" | sudo socat - unix-connect:/src4/KVM/network-ovs/MonSock
+echo "Please wait 5 seconds."
+sleep 5
+
+sudo rm -rf /src4/KVM/network-ovs
+</code>
+</pre>
+<pre>$ rm *~
+$ chmod +x start-VM stop-VM
+$ ovs-start
+$ start-VM</pre>
+<hr>
+<pre>
+  $ more Config-Kvm-ovs
+<code>
+#! /bin/bash
+
+if [ $# != 4 ]
+  then echo "$0 OS.img hostname VM-IP Ether-card"
+  exit 1
+elif [ ! -f $1 ]
+  then echo "OS image: $1 does not exist."
+  exit 2
+elif [ ! -d /mnt/tmp ] 
+ then echo "Mount point /mnt/tmp does not exist, create it first."
+ exit 3
+fi
+
+# We also need to test hostname, VM-IP, Ether-card are legal ones.
+
+KvmScript="start-${2}"
+StopAndRestoreLan="stop-${2}-restore-lan"
+DeclAutoGen="# Don't Edit, File automatically generated by Config-KVM script" 
+
+# We need to get the Ip of the assigned ether card and its MAC address and get a 
+# fake MAC address for our VM.
+HostIP=`ifconfig $4 | grep "Bcast" | sed 's/^[ \t]*inet addr://' | sed 's/[ \t]*Bcast:.*$//'`
+PREFIX=`ifconfig $4 | grep "HWaddr" | sed 's/^[be][rt].[0-9]*.*Link.*HWaddr //' | cut -d':' -f 1-3`
+F4=`od -An -N1 -x /dev/random | sed 's/^\ 00//'`
+F5=`od -An -N1 -x /dev/random | sed 's/^\ 00//'`
+F6=`od -An -N1 -x /dev/random | sed 's/^\ 00//'`
+FakeMac=$PREFIX:${F4}:${F5}:${F6}
+
+echo " I got current IP: ${HostIP}, FakeMac: ${FakeMac}"
+
+echo "$2" >hostname
+echo "127.0.0.1       localhost.localdomain localhost" >hosts
+# Without the next line, "$ hostname --fqdn" can't produce the correct hostname.
+echo "127.0.1.1       $2" >>hosts
+echo "" >>hosts
+echo "# The following lines are desirable for IPv6 capable hosts" >>hosts
+echo "# \(added automatically by netbase upgrade\)" >>hosts
+echo "" >>hosts
+
+echo "::1 ip6-localhost ip6-loopback" >>hosts
+echo "fe00::0 ip6-localnet" >>hosts
+echo "ff00::0 ip6-mcastprefix" >>hosts
+echo "ff02::1 ip6-allnodes" >>hosts
+echo "ff02::2 ip6-allrouters" >>hosts
+echo "ff02::3 ip6-allhosts" >>hosts
+
+
+string=`basename $0`
+Offset=`file $1`
+Offset=`echo -n ${Offset##*startsector }`
+Offset=`echo -n ${Offset%%,*}`
+Offset=`expr ${Offset} '*' 512`
+Gateway=`ip route list`
+Gateway=`echo -n ${Gateway#*default via }`
+Gateway=`echo -n ${Gateway%% dev*}`
+
+echo "We need your root passwd for mounting $1:"
+sudo mount -o loop,offset=${Offset} $1 /mnt/tmp
+
+# Apparently, Debian adopts the lousy Ubuntu ether device rename policy.  We are forced 
+# to empty the /etc/udev/rules.d/70*net* file!!  Otherwise, next time we boot our VM, 
+# its ether device name will be wrong!
+
+WHOAMI=`whoami`
+sudo cp hostname /mnt/tmp/etc/hostname
+sudo cp /etc/resolv.conf /mnt/tmp/etc
+sudo cp hosts /mnt/tmp/etc/hosts
+sudo cp recover70rules /mnt/tmp/home/${WHOAMI}
+sudo cp ../DebianNetFiles/Empty70NetFile /mnt/tmp/home/${WHOAMI}
+
+# Bring up ether interface and route packets to host in /etc/rc.local
+cp ../DebianNetFiles/rc.local.kvm rc.local
+cat &lt;&lt;EOF >interfaces
+auto lo eth0
+iface lo inet loopback
+iface eth0 inet static
+      address ${3}
+      netmask 255.255.255.0
+      gateway ${Gateway}
+      dns-nameservers 140.120.13.1 140.120.1.2
+EOF
+cat &lt;&lt;'EOF' >modules
+virtio
+virtio_pci
+virtio_ring
+virtio_net
+virtio_blk
+EOF
+echo "# route add default gw ${HostIP}" >>rc.local
+echo "" >>rc.local
+ 
+echo "exit 0" >>rc.local
+sudo cp rc.local /mnt/tmp/etc/rc.local
+sudo chmod 755 /mnt/tmp/etc/rc.local
+sudo mv /mnt/tmp/etc/network/interfaces /mnt/tmp/etc/network/interfaces.orig
+sudo cp interfaces /mnt/tmp/etc/network/interfaces
+sudo mv /etc/initramfs-tools/modules /etc/initramfs-tools/modules.orig
+sudo cp modules /etc/initramfs-tools/modules
+sudo mv /mnt/tmp/etc/ssh/ssh_config /mnt/tmp/etc/ssh/ssh_config.orig 
+sudo mv /mnt/tmp/etc/ssh/sshd_config /mnt/tmp/etc/ssh/sshd_config.orig 
+sudo cp ../DebianNetFiles/ssh_config /mnt/tmp/etc/ssh
+sudo cp ../DebianNetFiles/sshd_config /mnt/tmp/etc/ssh
+sudo mv /mnt/tmp/etc/apt/sources.list /mnt/tmp/etc/apt/sources.list.orig
+sudo cp ../DebianNetFiles/sources.list /mnt/tmp/etc/apt  
+
+if [ -f /mnt/tmp/etc/udev/rules.d/70-persistent-net.rules ]
+then echo "Fix 70-persistent-net"
+    sudo rm /mnt/tmp/etc/udev/rules.d/70-persistent-net.rules
+fi
+
+sudo umount /mnt/tmp
+
+# Next three files are no longer needed and rc.local does not exist for Minix
+rm -f rc.local hostname hosts interfaces modules
+
+# Preparing Host Network Configuration Script
+SrcDir=`dirname $(pwd)`
+SockDir=${SrcDir}/network-$$
+echo SockDir=${SockDir}
+
+cat &lt;&lt;EOF >${KvmScript}
+#! /bin/bash
+
+${DeclAutoGen}
+if [ \$EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ \$? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+
+echo "Starting VM: ${2}..., mem=1024M"
+mkdir ${SockDir}
+EOF
+
+cp ${KvmScript} ${KvmScript}-AsDaemon
+cat &lt;&lt;EOF >>${KvmScript}
+sudo kvm -name $2 -m 1024M -localtime \\
+  -net nic,macaddr=${FakeMac},model=virtio \\
+  -net tap,script=/src4/KVM/bin/start-TAP,downscript=/src4/KVM/bin/stop-TAP \\
+  -monitor unix:${SockDir}/MonSock,server,nowait \\
+  -usb -usbdevice tablet -k en-us \\
+  -drive index=0,media=disk,if=virtio,file=$1 \\
+  -daemonize
+EOF
+
+cat &lt;&lt;EOF >>${KvmScript}-AsDaemon
+sudo screen -S $2 -d -m kvm -name $2 -m 1024M -localtime \\
+  -net nic,macaddr=${FakeMac},model=virtio \\
+  -net tap,script=/src4/KVM/bin/start-TAP,downscript=/src4/KVM/bin/stop-TAP \\
+  -monitor unix:${SockDir}/MonSock,server,nowait \\
+  -usb -usbdevice tablet -k en-us \\
+  -drive index=0,media=disk,if=virtio,file=$1 \\
+  -curses -daemonize
+EOF
+
+# Preparing Restore Lan Script
+cat &lt;&lt;EOF >${StopAndRestoreLan}
+#! /bin/bash
+
+${DeclAutoGen}
+
+if [ \$EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ \$? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+       fi
+fi
+
+echo "system_powerdown" | sudo socat - unix-connect:${SockDir}/MonSock
+echo "Please wait 5 seconds."
+sleep 5
+
+sudo rm -rf ${SockDir}
+
+EOF
+
+chmod 755 ${KvmScript} ${KvmScript}-AsDaemon ${StopAndRestoreLan} 
+</code></pre>
+
+<h1>Openflow control</h1>
+<pre>
+$ sudo ovs-vsctl set-controller br0 tcp:0.0.0.0:6633
+$ sudo ovs-ofctl show br0
+$ sudo ovs-ofctl dump-flows br0
+$ sudo ovs-ofctl add-flow br0 "table=0 ip dl_type=0x0800 nw_proto=6 tp_dst=80 nw_dst=140.120.15.180 idle_timeout=0  action=mod_nw_dst:192.168.180.10,normal"
+$ sudo ovs-ofctl add-flow br0 "table=0 ip dl_type=0x0800 nw_proto=6 tp_dst=80 nw_src=192.168.180.10 idle_timeout=0  action=mod_nw_src:140.120.15.180,normal"
+$ sudo ovs-ofctl del-flows br0
+
+</pre>
+
+
+<address>
+<a href="mailto:lagnua@gmail.com">ChiSheng Su</a>
+</address>
+</body>
+</html>

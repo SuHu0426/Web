@@ -1,0 +1,12 @@
+cp config/make.def.template config/make.dep
+edit config/make.dep
+
+     MPIF77 = mpif77
+     FMPI_LIB  = -L/usr/lib -lmpi
+     FMPI_INC = -I/usr/lib/openmpi/include/
+     MPICC = mpicc
+     CMPI_LIB  = -L/usr/lib -lmpi
+     CMPI_INC = -I/usr/lib/openmpi/include/
+     CC	= gcc -g
+
+     

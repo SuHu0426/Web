@@ -1,0 +1,122 @@
+####==========####
+hsu@Amath-Client10:~$ su
+Amath-Client10:/home/hsu# vblade 1 2 eth1 /dev/hsu/hsulv &
+[1] 7395
+Amath-Client10:/home/hsu# pid 7395: e1.2, 104857600 sectors O_RDWR
+
+####==========####
+hsu@Amath-Client14:~$ sudo modprobe aoe aoe_iflist=eth1 
+hsu@Amath-Client14:~$ sudo apt-get install ocfs2-tools
+hsu@Amath-Client14:~$ ls -l /sbin/mkfs.ocfs2 
+-rwxr-xr-x 1 root root 144888 2008-11-22 01:01 /sbin/mkfs.ocfs2
+
+####==========####
+hsu@Amath-Client14:~$ sudo nano /etc/ocfs2/cluster.conf
+
+node:
+	ip_port = 7777
+	ip_address = 140.120.8.114
+	number = 0
+	name = Amath-Client14
+	cluster = ocfs2
+node:
+        ip_port = 7777
+        ip_address = 140.120.8.111
+        number = 1
+        name = Amath-Client11
+        cluster = ocfs2
+
+node:
+        ip_port = 7777
+        ip_address = 140.120.8.112
+        number = 2
+        name = Amath-Client11
+        cluster = ocfs2
+
+cluster:
+	node_count = 3
+	name = ocfs2
+
+hsu@Amath-Client14:~$ scp /etc/ocfs2/cluster.conf ac11:/tmp
+hsu@Amath-Client14:~$ scp /etc/ocfs2/cluster.conf ac12:/tmp
+hsu@Amath-Client14:~$ sudo /etc/init.d/o2cb load
+hsu@Amath-Client14:~$ sudo /etc/init.d/o2cb online
+
+####==========####
+hsu@Amath-Client12:~$ sudo apt-get install ocfs2-tools
+hsu@Amath-Client12:~$ sudo mv /tmp/cluster.conf /etc/ocfs2/.
+hsu@Amath-Client12:~$ sudo modprobe aoe aoe_iflist=eth1
+hsu@Amath-Client12:~$ sudo mount /dev/etherd/e1.2 /mnt/tmp
+mount.ocfs2: Unable to access cluster service while trying initialize cluster
+hsu@Amath-Client12:~$ sudo /etc/init.d/o2cb load
+hsu@Amath-Client12:~$ sudo /etc/init.d/o2cb online
+Setting cluster stack "o2cb": OK
+Starting O2CB cluster ocfs2: OK
+hsu@Amath-Client12:~$ sudo mount /dev/etherd/e1.2  /mnt/tmp
+hsu@Amath-Client12:~$ ls /mnt/tmp
+999  dd  lost+found
+
+do same step at ac11
+
+####==========####
+make bug...
+At ac13
+hsu@Amath-Client13:~$ more /etc/ocfs2/cluster.conf 
+node:
+	ip_port = 7777
+	ip_address = 140.120.8.113
+	number = 0
+	name = Amath-Client13
+	cluster = ocfs2
+cluster:
+	node_count = 1
+	name = ocfs2
+
+hsu@Amath-Client13:~$ sudo modprobe aoe aoe_iflist=eth1
+hsu@Amath-Client13:~$ sudo /etc/init.d/o2cb load
+hsu@Amath-Client13:~$ sudo /etc/init.d/o2cb online
+hsu@Amath-Client13:~$ sudo mount /dev/etherd/e1.2  /mnt/tmp
+
+do create file and remove file at ac14 and ac13
+
+at ac14 
+hsu@Amath-Client14:~$ ls -l /mnt/tmp/dd
+ls: cannot access /mnt/tmp/dd/tt~: Permission denied
+total 4
+-rw-r--r-- 1 hsu hsu  0 2009-08-27 12:34 999
+-rw-r--r-- 1 hsu hsu  0 2009-08-27 12:34 999eqwe
+-rw-r--r-- 1 hsu hsu 23 2009-08-27 12:31 tt
+-????????? ? ?   ?    ?                ? tt~
+
+at ac13
+hsu@Amath-Client13:~$ ls -l /mnt/tmp/dd
+ls: cannot access /mnt/tmp/dd/tt~: Permission denied
+total 4
+-rw-r--r-- 1 hsu hsu  0 2009-08-27 00:34 999
+-rw-r--r-- 1 hsu hsu  0 2009-08-27 00:34 999eqwe
+-rw-r--r-- 1 hsu hsu 23 2009-08-27 00:31 tt
+-????????? ? ?   ?    ?                ? tt~
+
+at ac11
+hsu@Amath-Client11:~$ ls -l /mnt/tmp/dd
+ls: cannot access /mnt/tmp/dd/tt~: Permission denied
+total 4
+-rw-r--r-- 1 hsu hsu  0 2009-08-27 12:34 999
+-rw-r--r-- 1 hsu hsu  0 2009-08-27 12:34 999eqwe
+-rw-r--r-- 1 hsu hsu 23 2009-08-27 12:31 tt
+-????????? ? ?   ?    ?                ? tt~
+
+
+####==========####
+##load the driver on boot
+
+$ sudo emacs /etc/default/o2cb
+
+O2CB_ENABLED=true
+
+##With everything working you should add the partition to your fstab and ensure both o2cb and ocfs2 are set to start at boot.
+
+/sbin/chkconfig o2cb on
+/sbin/chkconfig ocfs2 on
+
+

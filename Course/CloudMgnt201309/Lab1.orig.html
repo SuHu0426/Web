@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html>
+	<HEAD>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<TITLE>Virtual Technelogy: Kernel-based Virtual Machine (KVM)</TITLE>
+		<link type="text/css" rel="stylesheet" href="/css/style_2013.css" />
+		<script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+		<script>
+			var HostIP = [];
+			jQuery(document).ready(function() {
+								   $.ajax({
+										  url:'getIP.php',
+										  type: 'get',
+										  dataType:'html'
+										  }).done(function (result) {
+												  $("input#hostIP").val("");
+												  $("input#hostIP").val(result);
+												  //console.debug(result);
+												  HostIP = result.split('.');
+												  var tailIP = parseInt(HostIP[3], 10) + 100;
+												  $("input#guestIP").val("");
+												  $("input#guestIP").val(HostIP[0] + '.' + HostIP[1] + '.' + HostIP[2] + '.' + tailIP);
+												  });
+								   $(".ipbtn").click(function() {
+													 $("."+$(this).prev("input").attr("id")).html('<font color="red">'+$(this).prev("input").val()+'</font>');
+													 });
+								   //====== input#hostIP Text numeric ======//
+								   jQuery(".ipinput").keydown(function () {
+															  if ( event.keyCode == 46 || event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 27 ||
+																  // Allow: Ctrl+A
+																  (event.keyCode == 65 && event.ctrlKey === true) ||
+																  // Allow: home, end, left, right
+																  (event.keyCode >= 35 && event.keyCode <= 39)) {
+															  // let it happen, don't do anything
+															  return;
+															  }
+															  else if ( event.keyCode == 13 ){
+															  // Allow: Enter key submit jump
+															  tracknum = $(".ipinput").val();
+															  Play();
+															  }
+															  else {
+															  // Ensure that it is a number and stop the keypress
+															  if (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57) && (event.keyCode < 96 || event.keyCode > 105 )) {
+															  event.preventDefault();
+															  }
+															  }
+															  });
+								   //====== End input#hostIP Text numeric ======//
+								   
+								   });
+			</script>
+	</HEAD>
+	<BODY>
+		<h1>Lab 1: Virtual Technelogy: Kernel-based Virtual Machine (KVM)</h1>
+		<h2>實驗描述</h2>
+		本實驗示範如何運用 Kernel-based Virtual Machine (KVM) 建立虛擬叢集環境.
+		<h2>實驗環境</h2>
+		理學大樓 1002 教室
+		<table border=2>
+			<tr><td width="100">	<th width="320">Cloud-A01 ～ Cloud-D12</tr>
+			<tr><th>CPU			<td align="right">AMD Phenom&trade; II X6 1065T Processor</tr>
+			<tr><th>Memory		<td align="right">8G</tr>
+			<tr><th>Disk spaces	<td align="right">500G、500G</tr>
+			<tr><th>O.S.			<td align="right">Debian squeeze</tr>
+		</table>
+		<br />
+		理學大樓 821 機房
+		<table border=2>
+			<tr><td width="100">	<th width="320">CSIE-Cloud01 ～ CSIE-Cloud06</tr>
+			<tr><th>CPU			<td align="right">AMD Opteron&trade; Processor 6128 * 2 <br> (total 16 cpu cores)</tr>
+			<tr><th>Memory		<td align="right">32G</tr>
+			<tr><th>Disk spaces	<td align="right">500G、500G、1T</tr>
+			<tr><th>O.S.			<td align="right">Debian wheezy</tr>
+		</table>
+		<table border=2>
+			<tr><td width="100">	<th width="320">CSIE-Cloud07、CSIE-Cloud08</tr>
+			<tr><th>CPU			<td align="right">AMD Opteron&trade; Processor 6234 * 2<br> (total 24 cpu cores)</tr>
+			<tr><th>Memory		<td align="right">32G</tr>
+			<tr><th>Disk spaces	<td align="right">500G、500G、1T</tr>
+			<tr><th>O.S.			<td align="right">Debian wheezy</tr>
+		</table>
+		<br />
+		實習機器
+		<table border=2>
+			<tr><td width="100">	<th width="320">CSIE-Student*、CSIE-Work*</tr>
+			<tr><th>CPU			<td align="right">AMD Opteron&trade; Processor 6128<br> (total 4 cpu cores)</tr>
+			<tr><th>Memory		<td align="right">4G</tr>
+			<tr><th>Disk spaces	<td align="right">40G</tr>
+			<tr><th>O.S.			<td align="right">Debian wheezy</tr>
+		</table>
+		
+		<h2>安裝實作</h2>
+		<p>本實作內容以 step-by-step 方式寫作，盡可能地讓同學們以複製貼上方式完成指令輸入。
+		<p>練習完本實作之後，同學們應可以 shell script 方式建立虛擬機器。
+		
+		<h2>環境參數</h2>
+		<p>Server IP address: <input type="text" id="serverIP" class="ipinput" value="192.168.0.254"/><input type="button" id="submit_serverIP" class="ipbtn" value="apply"/></p>
+		<p>Host IP address: <input type="text" id="hostIP" class="ipinput"/><input type="button" id="submit_hostIP" class="ipbtn" value="apply"/></p>
+		<p>Guest IP address: <input type="text" id="guestIP" class="ipinput"/><input type="button" id="submit_guestIP" class="ipbtn" value="apply"/></p>
+		
+		<ol type="I">
+			<h3><li>安裝 Kernel-based virtual machine, KVM, 前的準備工作.</h3>
+			
+			<ul>
+				<li>登入各組之機器
+					<div class="console"><div class="dol">ssh -X cloud@<span class="serverIP"><font color="red">Server-IP</font></span></div></div>
+					</li>
+				<li>Check hardware virtualization support, and then install KVM.
+					<div class="console"><div class="dol">egrep '(vmx|svm)' --color=always /proc/cpuinfo</div></div>
+<div class="out">flags		: fpu de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush
+mmx fxsr sse sse2 ht syscall nx lm nopl pni cx16 popcnt hypervisor lahf_lm cmp_legacy <span style="color: red">svm</span> abm sse4a
+</div>
+				</li>
+				<li>安裝 KVM 及相關套件
+					<div class="console">
+						<div class="dol">sudo aptitude update</div>
+						<div class="dol">sudo aptitude install qemu-kvm qemu-utils vde2 uml-utilities socat screen</div>
+					</div>
+					<p><span style="color: red">註：</span>kvm 套件已經被 qemu-kvm 取代，往後已無須安裝 kvm。
+				</li>
+				<li>載入 kernel module
+					<div class="console"><div class="dol">lsmod | grep kvm
+					</div></div>
+<div class="out">kvm_amd                47218  0
+kvm                   287662  1 kvm_amd
+</div>
+					<p>若沒有自動載入模組則手動載入
+					<div class="console"><div class="dol">sudo modprobe kvm_amd
+					</div></div>
+					<p>將帳號加入 kvm 群組後重新登入
+					<div class="console"><div class="dol">sudo adduser cloud kvm
+					</div></div>
+<div class="out">Adding user `cloud' to group `kvm' ...
+Adding user cloud to group kvm
+Done.
+</div>
+					<div class="console">
+						<div class="dol">exit</div>
+						<div class="dol">ssh -X cloud@<span class="serverIP"><font color="red">Server-IP</font></span></div>
+					</div>
+				</li>
+				<li>Prepare for VM.
+					<div class="console">
+						<div class="dol">mkdir KVM; cd KVM</div>
+						<div class="dol">tar zxvf ../KVM-tool-*.tgz</div>
+					</div>
+					</ul>
+			</li>
+			</li>
+			<h3><li>使用預先建置好的 image (template) 來進行佈署.</h3>
+			<ul>
+				<div class="console">
+					<div class="dol">cd img</div>
+					<div class="dol">cp ~/Debian-sid.img.gz VM-01.img.gz</div>
+					<div class="dol">gunzip VM-01.img.gz</div>
+					<div class="dol">echo $?</div>
+				</div>
+<div class="out">0</div>
+				
+				<li>Configure VM, we use Config-Kvm script to configure ../img/VM-01.img.
+					<div class="console">
+						<div class="dol">cd ../bin</div>
+						<div class="dol">Config-Kvm </div>
+					</div>
+<div class="out">./Config-Kvm OS.img hostname VM-IP Ether-card [TAP-No]
+TAP-No is optional, if need tap to be different from tap0.
+</div>
+					</li>
+					<li>查看目前網路設定
+						<div class="console"><div class="dol">ifconfig
+						</div></div>
+<div class="out">eth0      Link encap:Ethernet  HWaddr ac:16:2d:*:*:*
+inet addr:140.120.*.*  Bcast:140.120.*.*  Mask:255.255.255.0
+inet6 addr: fe80::ae16:2dff:fed3:3293/64 Scope:Link
+UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+RX packets:697283 errors:0 dropped:0 overruns:0 frame:0
+TX packets:1211491 errors:0 dropped:0 overruns:0 carrier:0
+collisions:0 txqueuelen:1000
+RX bytes:513941018 (490.1 MiB)  TX bytes:1657385567 (1.5 GiB)
+eth0:0    Link encap:Ethernet  HWaddr ac:16:2d:*:*:*
+inet addr:192.168.0.1  Bcast:192.168.0.255  Mask:255.255.255.0
+UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+lo        Link encap:Local Loopback
+inet addr:127.0.0.1  Mask:255.0.0.0
+inet6 addr: ::1/128 Scope:Host
+UP LOOPBACK RUNNING  MTU:16436  Metric:1
+RX packets:161692 errors:0 dropped:0 overruns:0 frame:0
+TX packets:161692 errors:0 dropped:0 overruns:0 carrier:0
+collisions:0 txqueuelen:0
+RX bytes:1576366920 (1.4 GiB)  TX bytes:1576366920 (1.4 GiB)
+</div>
+						</li>
+						<li>使用 IP Alias 建立虛擬網段
+							<div class="console"><div class="dol">sudo ifconfig eth0:0 192.168.0.1 netmask 255.255.255.0 up</div></div>
+							<p>由於每次開機都會用到 IP Alias，所以我們將指令寫進 /etc/rc.local，如此一來每次開機就會先執行.
+							<div class="console"><div class="dol">more /etc/rc.local</div></div>
+<div class="out"><span style="color: #008800; font-style: italic">#!/bin/sh -e</span>
+<span style="color: #008800; font-style: italic">#</span>
+<span style="color: #008800; font-style: italic"># rc.local</span>
+<span style="color: #008800; font-style: italic">#</span>
+<span style="color: #008800; font-style: italic"># This script is executed at the end of each multiuser runlevel.</span>
+<span style="color: #008800; font-style: italic"># Make sure that the script will &quot;exit 0&quot; on success or any other</span>
+<span style="color: #008800; font-style: italic"># value on error.</span>
+<span style="color: #008800; font-style: italic">#</span>
+<span style="color: #008800; font-style: italic"># In order to enable or disable this script just change the execution</span>
+<span style="color: #008800; font-style: italic"># bits.</span>
+<span style="color: #008800; font-style: italic">#</span>
+<span style="color: #008800; font-style: italic"># By default this script does nothing.</span>
+ifconfig eth0:0 192.168.0.1 netmask 255.255.255.0 up
+<span style="color: #AA22FF">exit </span>0</div>
+							<div class="console"><div class="dol">Config-Kvm ../img/VM-01.img vm-01 192.168.0.11 eth0:0</div></div>
+<div class="out">Mount point /mnt/tmp does not exist, create it first.</div>
+							<div class="console">
+								<div class="dol">sudo mkdir /mnt/tmp</div>
+								<div class="dol">Config-Kvm ../img/VM-01.img vm-01 192.168.0.11 eth0:0</div>
+							</div>
+<div class="out">I got current IP: 192.168.0.1, FakeMac: 78:e3:b5:*:*:*
+SockDir=/home/cloud/KVM/network-2161 OPTIONS=-tap tap0 -mod 644 -sock=/home/cloud/KVM/netw
+ork-2161 -mgmt /home/cloud/KVM/network-2161/vde_switch.mgmt
+</div>
+							<div class="console"><div class="dol">ls -l *vm-01*</div></div>
+<div class="out">-rwxr-xr-x 1 cloud cloud 1122 Oct  7 16:53 start-vm-01
+-rwxr-xr-x 1 cloud cloud 1152 Oct  7 16:53 start-vm-01-AsDaemon
+-rwxr-xr-x 1 cloud cloud 1879 Oct  7 16:53 stop-vm-01-restore-lan
+</div>
+							<div class="console"><div class="dol">start-vm-01</div></div>
+							</li>
+							<li>登入測試<br />
+								Login VM as cloud, and then <span style="color: red">in the VM</span> type following commands.
+								<p><span style="color: red">注意：</span>下列指令務必下在虛擬機器中，否則會將實體機器關閉！
+								<div class="console">
+									cloud@vm-01:~$ ifconfig<br/>
+									cloud@vm-01:~$ sudo init 0
+								</div>
+								</li>
+								<li>關閉 VM 並且回復網路
+									<div class="console">
+										<div class="dol">stop-vm-01-restore-lan</div>
+										<div class="dol">ps -C kvm</div>
+									</div>
+									</ul>
+			</li>
+			</li>
+			<h3><li>手動建立 KVM 檔案系統範本</h3>
+			
+			<ul>
+				<li>建立虛擬磁碟
+					<div class="console">
+						<div class="dol">cd ~/KVM/img</div>
+						<div class="dol">qemu-img create DebSqz-Mini.img 2G</div>
+					</div>
+<div class="out">Formatting 'DebSqz-Mini.img', fmt=raw size=2147483648 </div>
+					</li>
+					<li>安裝作業系統
+						<p>Partition the image as: <b>/boot</b> and <b>/</b><br />
+						Give 512M to boot, turn on its boot flag, use ext2 filesystem format. The rest
+						for / partition, use ext4  filesystem format. Install only the minimal packages
+						offered by the installation menu, but must include openssh-server, since we
+						need to login the VM via <b>ssh</b>.</p>
+						<div class="console"><div class="dol">kvm -cdrom ~/debian-6.0.4-amd64-netinst.iso -m 512M <span style="color: red">-boot d</span> DebSqz-Mini.img&amp;
+							</div></div>
+							<p><span style="color: red">-boot d</span> 表示優先以光碟機開機。-boot 參數使用方式：</p>
+<div class="out">-boot [order=drives][,once=drives][,menu=on|off]
+[,splash=sp_name][,splash-time=sp_time]
+'drives': floppy (a), hard disk (c), CD-ROM (d), network (n)
+'sp_name': the file's name that would be passed to bios as logo picture, if menu=on
+'sp_time': the period that splash picture last if menu=on, unit is ms
+</div>
+							<h4>安裝系統時連線速度很慢怎麼辦？</h4>
+							<p><span style="color: red">註：</span>使用 X-window X11 forward 來顯示 QEMU 視窗雖然效果比較好，
+							但是消耗的頻寬也比較大。如果在家連線到學校速度太慢難以忍受，可以試著使用 VNC 來連線安裝。
+							<ul>
+							<li>以 VNC 遠端連線安裝
+							<div class="console">
+								<div class="dol">sudo aptitude install tightvncserver</div>
+								<div class="dol">kvm -cdrom ~/debian-6.0.4-amd64-netinst.iso -m 512M -boot d <span style="color: red">-vnc :1</span> DebSqz-Mini.img &amp;</div>
+							</div>
+							<p>接著在自己電腦上使用 vnc 連線軟體連線至 <span class="serverIP"><font color="red">Server-IP</font></span>:5901
+							<p>各平台的 VNC client 端<a href="http://www.tightvnc.com/download-old.php" target="_blank">下載</a>
+							<!--<li>以純文字模式來安裝
+							<div class="console"><div class="dol">kvm -cdrom ~/debian-6.0.4-amd64-netinst.iso -m 512M <span style="color: red">-curses</span> DebSqz-Mini.img </div></div>
+							-->
+							</ul>
+							<h4>手動建立的虛擬機器如何關機？</h4>
+							<ul>
+							<li>以 Root 身份來關機</li>
+							<p>由於 Debian 文字模式預設是不安裝 sudo 的，因此我們需先切換至 root 方能關閉虛擬機器。
+							<div class="console">debian:~<div class="dol">su</div>
+							debian:~<div class="adm">halt</div>
+</div>
+							</ul>
+							<li><a href="DebianInstall-VM.html" target="_blank">VM 安裝過程</a>
+							</ul>
+							<h3><li>KVM 使用參數</h3>
+							<p>在 Linux 環境下大多數的指令，我們可以用以下方式來查詢使用方法。
+							<ul>
+							<li>man - an interface to the on-line reference manuals
+							<div class="console"><div class="dol">man kvm</div></div>
+							<li>help - 通常在指令後面加上 -h, -help, --help 即會列印出簡單說明。
+							<div class="console"><div class="dol">kvm --help</div>
+							</ul>
+							
+							<h3><li>Shell scripts 說明</h3>
+							
+							<ul>
+							<li>start-vm-01 在前景執行。會彈出 x-window 視窗，可以正常顯示圖形介面。
+							<li>start-vm-01-AsDaemon 在背景執行。加上 -curses 參數，並且以 screen 放至背景執行，在系統穩定後通常以這種方式執行。
+							<li>stop-vm-01-restore-lan 將虛擬機器關閉，並且回復網路狀態。
+							<br />
+							<div class="console"><div class="dol">more start-vm-01</div></div>
+							<div class="out"><span style="color: #008800; font-style: italic">#! /bin/bash</span>
+							
+							<span style="color: #008800; font-style: italic"># Don&#39;t Edit, File automatically generated by Config-KVM script</span>
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$EUID</span> -ne 0 <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo <span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Super User passwd, please:&quot;</span>
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$?</span> -ne 0 <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then  </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Sorry, need su privilege!&quot;</span>
+							<span style="color: #AA22FF">exit </span>1
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							
+							sudo chmod 666 /dev/net/tun
+							sudo tunctl -u cloud -t tap0
+							sudo ifconfig tap0 192.168.0.1 netmask 255.255.255.255 up
+							sudo iptables --table nat -A POSTROUTING --out-interface eth0:0 -j MASQUERADE
+							sudo iptables -A FORWARD --in-interface tap0 -j ACCEPT
+							sudo chmod 666 /dev/net/tun <span style="color: #008800; font-style: italic"># First time only get 660</span>
+							sudo sysctl net.ipv4.ip_forward<span style="color: #666666">=</span>1
+							sudo sysctl net.ipv4.conf.tap0.proxy_arp<span style="color: #666666">=</span>1
+							sudo arp -Ds 192.168.0.11 eth0:0 pub
+							sudo route add -host 192.168.0.11 dev tap0
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Starting vde_switch...&quot;</span>
+							vde_switch -tap tap0 -mod 644 -sock<span style="color: #666666">=</span>/home/cloud/KVM/network-2161 -mgmt /home/cloud/KVM/network-2161/vde_switch.mgmt -daemon &lt;/dev/null &gt;/dev/null
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Starting VM: vm-01..., mem=512M&quot;</span>
+							kvm -net vde,vlan<span style="color: #666666">=</span>0,sock<span style="color: #666666">=</span>/home/cloud/KVM/network-2161 -net nic,vlan<span style="color: #666666">=</span>0,macaddr<span style="color: #666666">=</span>ac:16:2d:*:*:* -m 512M -monitor unix:/home/cloud/KVM/network-2161/MonSock,server,nowait -hda ../img/VM-01.img &amp;
+						</div></div>
+						
+						
+						<div class="console"><div class="dol">diff start-vm-01 start-vm-01-AsDaemon
+						</div></div>
+						<div class="out">25c25
+							&lt; kvm -net vde,vlan=0,sock=/home/cloud/KVM/network-2161 -net nic,vlan=0,macaddr=ac:16:2d:*
+								:*:* -m 512M -monitor unix:/home/cloud/KVM/network-2161/MonSock,server,nowait -hda ../img/lab1/
+								VM-01.img &amp;
+								---
+								&gt; screen -S vm-01 -d -m kvm -net vde,vlan=0,sock=/home/cloud/KVM/network-2161 -net nic,vla
+								n=0,macaddr=ac:16:2d:*:*:* -m 512M -monitor unix:/home/cloud/KVM/network-2161/MonSock,serv
+								er,nowait -curses -hda ../img/VM-01.img &amp;
+								</div>
+								<li>將被放到背景的執行緒喚回前景
+								<div class="console"><div class="dol">screen -ls
+								</div></div>
+								<div class="out">
+								</div>
+								<div class="console"><div class="dol">screen -r vm-01
+								C-a C-d     (detach)      Detach screen from this terminal.
+								</div></div>
+								
+								
+								<div class="console"><div class="dol">more stop-vm-01-restore-lan</div>
+								<div class="out"><span style="color: #008800; font-style: italic">#! /bin/bash</span>
+								
+								<span style="color: #008800; font-style: italic"># Don&#39;t Edit, File automatically generated by Config-KVM script</span>
+								
+								
+								<span style="color: #008800; font-style: italic">#############################################################</span>
+								IsThereTapDevice<span style="color: #666666">()</span>
+								<span style="color: #666666">{</span>
+								<span style="color: #AA22FF">declare </span>int <span style="color: #B8860B">i</span><span style="color: #666666">=</span>0;
+								<span style="color: #AA22FF; font-weight: bold">for </span>devices in <span style="color: #BB4444">`</span>find /sys/class/net -type l -name <span style="color: #BB4444">&quot;tap*&quot;`</span>
+								<span style="color: #AA22FF; font-weight: bold">do</span>
+								<span style="color: #666666">((</span>i++<span style="color: #666666">))</span>;
+								<span style="color: #AA22FF; font-weight: bold">done</span>
+								
+								<span style="color: #AA22FF; font-weight: bold">   if</span> <span style="color: #666666">[</span> <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">i</span><span style="color: #AA22FF; font-weight: bold">}</span> -gt 0 <span style="color: #666666">]</span>
+								<span style="color: #AA22FF; font-weight: bold">then </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Yes&quot;</span>
+								<span style="color: #AA22FF; font-weight: bold">else </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;No&quot;</span>
+								<span style="color: #AA22FF; font-weight: bold">fi</span>
+								<span style="color: #666666">}</span>
+								<span style="color: #008800; font-style: italic">#############################################################</span>
+								
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$EUID</span> -ne 0 <span style="color: #666666">]</span>
+								<span style="color: #AA22FF; font-weight: bold">then </span>sudo <span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Super User passwd, please:&quot;</span>
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$?</span> -ne 0 <span style="color: #666666">]</span>
+								<span style="color: #AA22FF; font-weight: bold">then  </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Sorry, need su privilege!&quot;</span>
+								<span style="color: #AA22FF">exit </span>1
+								<span style="color: #AA22FF; font-weight: bold">fi</span>
+								<span style="color: #AA22FF; font-weight: bold">fi</span>
+								
+								<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;system_powerdown&quot;</span> | socat - unix-connect:/home/cloud/KVM/network-2161/MonSock
+								<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Please wait 10 seconds.&quot;</span>
+								sleep 10
+								
+								ping -c 3 192.168.0.11
+								
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$?</span> -eq 0 <span style="color: #666666">]</span>
+								<span style="color: #AA22FF; font-weight: bold">then </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;vm-01 still alive, shut it down.  Enter passwd twice!&quot;</span>
+								ssh -t cloud@192.168.0.11 <span style="color: #BB4444">&#39;sudo init 0&#39;</span>
+								<span style="color: #AA22FF; font-weight: bold">else </span>rm -f /home/cloud/KVM/network-2161/MonSock
+								<span style="color: #AA22FF; font-weight: bold">fi</span>
+								
+								<span style="color: #008800; font-style: italic"># Killing the vde_switch daemon</span>
+								<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&#39;Stopping swich lan&#39;</span>
+								sudo pkill -f <span style="color: #BB4444">&quot;vde_switch -tap tap0 -mod 644 -sock=/home/cloud/KVM/network-2161 -mgmt /home/cloud/KVM/network-2161/vde_switch.mgmt&quot;</span>
+								<span style="color: #008800; font-style: italic"># Removing the sockets if need be</span>
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> -S /home/cloud/KVM/network-2161/ctl <span style="color: #666666">]</span>; <span style="color: #AA22FF; font-weight: bold">then </span>rm /home/cloud/KVM/network-2161/ctl; <span style="color: #AA22FF; font-weight: bold">fi</span>
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> -S /home/cloud/KVM/network-2161/vde_switch.mgmt <span style="color: #666666">]</span>; <span style="color: #AA22FF; font-weight: bold">then </span>rm /home/cloud/KVM/network-2161/vde_switch.mgmt; <span style="color: #AA22FF; font-weight: bold">fi</span>
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> -d /home/cloud/KVM/network-2161 <span style="color: #666666">]</span>; <span style="color: #AA22FF; font-weight: bold">then </span>rm -rf /home/cloud/KVM/network-2161; <span style="color: #AA22FF; font-weight: bold">fi</span>
+								<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Restore lan...&quot;</span>
+								sudo sysctl net.ipv4.conf.tap0.proxy_arp<span style="color: #666666">=</span>0
+								sudo ifconfig tap0 192.168.0.1 down
+								sudo iptables --table nat -D POSTROUTING --out-interface eth0:0 -j MASQUERADE
+								sudo iptables -D FORWARD --in-interface tap0 -j ACCEPT
+								<span style="color: #008800; font-style: italic"># sudo route del -host 192.168.0.11 dev tap0</span>
+								<span style="color: #008800; font-style: italic"># sudo arp -d 192.168.0.11</span>
+								sudo tunctl -d tap0
+								
+								<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #BB4444">`</span>IsThereTapDevice<span style="color: #BB4444">`</span> <span style="color: #666666">=</span> <span style="color: #BB4444">&quot;No&quot;</span> <span style="color: #666666">]</span>
+								<span style="color: #AA22FF; font-weight: bold">then </span>sudo chmod 600 /dev/net/tun
+								sudo sysctl net.ipv4.ip_forward<span style="color: #666666">=</span>0
+								<span style="color: #AA22FF; font-weight: bold">fi</span>
+						</div></div>
+						
+						
+						
+						<div class="console"><div class="dol">more Config-Kvm</div></div>
+						<div class="out"><span style="color: #008800; font-style: italic">#! /bin/bash</span>
+							
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$# </span>!<span style="color: #666666">=</span> 4 -a <span style="color: #B8860B">$# </span>!<span style="color: #666666">=</span> 5 <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;$0 OS.img hostname VM-IP Ether-card [TAP-No]&quot;</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;    TAP-No is optional, if need tap to be different from tap0.&quot;</span>
+							<span style="color: #AA22FF">exit </span>1
+							<span style="color: #AA22FF; font-weight: bold">elif</span> <span style="color: #666666">[</span> ! -f <span style="color: #B8860B">$1</span> <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;OS image: $1 does not exist.&quot;</span>
+							<span style="color: #AA22FF">exit </span>2
+							<span style="color: #AA22FF; font-weight: bold">elif</span> <span style="color: #666666">[</span> ! -d /mnt/tmp <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span><span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;Mount point /mnt/tmp does not exist, create it first.&quot;</span>
+							<span style="color: #AA22FF">exit </span>3
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							
+							<span style="color: #008800; font-style: italic"># We also need to test hostname, VM-IP, Ether-card are legal ones.</span>
+							
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> <span style="color: #B8860B">$# </span>-eq 5 <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span><span style="color: #B8860B">TAP</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;tap${5}&quot;</span>
+							<span style="color: #B8860B">KvmScript</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;start-${2}-${5}&quot;</span>
+							<span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;stop-${2}-restore-lan-${5}&quot;</span>
+							<span style="color: #AA22FF; font-weight: bold">else </span><span style="color: #B8860B">TAP</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;tap0&quot;</span>
+							<span style="color: #B8860B">KvmScript</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;start-${2}&quot;</span>
+							<span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;stop-${2}-restore-lan&quot;</span>
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							
+							<span style="color: #B8860B">DeclAutoGen</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;# Don&#39;t Edit, File automatically generated by Config-KVM script&quot;</span>
+							
+							<span style="color: #008800; font-style: italic"># We need to get the Ip of the assigned ether card and its MAC address and get a </span>
+							<span style="color: #008800; font-style: italic"># fake MAC address for our VM.</span>
+							<span style="color: #B8860B">HostIP</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>ifconfig <span style="color: #B8860B">$4</span> | grep <span style="color: #BB4444">&quot;Bcast&quot;</span> | sed <span style="color: #BB4444">&#39;s/^[ \t]*inet addr://&#39;</span> | sed <span style="color: #BB4444">&#39;s/[ \t]*Bcast:.*$//&#39;`</span>
+							<span style="color: #B8860B">PREFIX</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>ifconfig <span style="color: #B8860B">$4</span> | grep <span style="color: #BB4444">&quot;HWaddr&quot;</span> | sed <span style="color: #BB4444">&#39;s/^eth[0-9]*.*Link.*HWaddr //&#39;</span> | cut -d<span style="color: #BB4444">&#39;:&#39;</span> -f 1-3<span style="color: #BB4444">`</span>
+							<span style="color: #B8860B">F4</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>od -An -N1 -x /dev/random | sed <span style="color: #BB4444">&#39;s/^\ 00//&#39;`</span>
+							<span style="color: #B8860B">F5</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>od -An -N1 -x /dev/random | sed <span style="color: #BB4444">&#39;s/^\ 00//&#39;`</span>
+							<span style="color: #B8860B">F6</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>od -An -N1 -x /dev/random | sed <span style="color: #BB4444">&#39;s/^\ 00//&#39;`</span>
+							<span style="color: #B8860B">FakeMac</span><span style="color: #666666">=</span><span style="color: #B8860B">$PREFIX</span>:<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">F4</span><span style="color: #AA22FF; font-weight: bold">}</span>:<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">F5</span><span style="color: #AA22FF; font-weight: bold">}</span>:<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">F6</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot; I got current IP: ${HostIP}, FakeMac: ${FakeMac}&quot;</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;$2&quot;</span> &gt;hostname
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;127.0.0.1       localhost.localdomain localhost&quot;</span> &gt;hosts
+							<span style="color: #008800; font-style: italic"># Without the next line, &quot;$ hostname --fqdn&quot; can&#39;t produce the correct hostname.</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;127.0.1.1       $2&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;# The following lines are desirable for IPv6 capable hosts&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;# \(added automatically by netbase upgrade\)&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;hosts
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;::1 ip6-localhost ip6-loopback&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;fe00::0 ip6-localnet&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;ff00::0 ip6-mcastprefix&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;ff02::1 ip6-allnodes&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;ff02::2 ip6-allrouters&quot;</span> &gt;&gt;hosts
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;ff02::3 ip6-allhosts&quot;</span> &gt;&gt;hosts
+							
+							<span style="color: #B8860B">string</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>basename <span style="color: #B8860B">$0</span><span style="color: #BB4444">`</span>
+							<span style="color: #B8860B">Offset</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>file <span style="color: #B8860B">$1</span><span style="color: #BB4444">`</span>
+							<span style="color: #B8860B">Offset</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span><span style="color: #AA22FF">echo</span> -n <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">Offset</span>##*startsector <span style="color: #AA22FF; font-weight: bold">}</span><span style="color: #BB4444">`</span>
+							<span style="color: #B8860B">Offset</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span><span style="color: #AA22FF">echo</span> -n <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">Offset</span>%%,*<span style="color: #AA22FF; font-weight: bold">}</span><span style="color: #BB4444">`</span>
+							<span style="color: #B8860B">Offset</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>expr <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">Offset</span><span style="color: #AA22FF; font-weight: bold">}</span> <span style="color: #BB4444">&#39;*&#39;</span> 512<span style="color: #BB4444">`</span>
+							
+							sudo mount -o loop,offset<span style="color: #666666">=</span><span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">Offset</span><span style="color: #AA22FF; font-weight: bold">}</span> <span style="color: #B8860B">$1</span> /mnt/tmp
+							
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> ! -d /mnt/tmp/src2 <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo mkdir /mnt/tmp/src2
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							
+							<span style="color: #008800; font-style: italic"># Apparently, Debian adopts the lousy Ubuntu ether device rename policy.  We are forced </span>
+							<span style="color: #008800; font-style: italic"># to empty the /etc/udev/rules.d/70*net* file!!  Otherwise, next time we boot our VM, </span>
+							<span style="color: #008800; font-style: italic"># its ether device name will be wrong!</span>
+							
+							<span style="color: #B8860B">WHOAMI</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>whoami<span style="color: #BB4444">`</span>
+							sudo cp hostname /mnt/tmp/etc/hostname
+							sudo cp /etc/resolv.conf /mnt/tmp/etc
+							sudo cp hosts /mnt/tmp/etc/hosts
+							sudo cp recover70rules /mnt/tmp/home/<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">WHOAMI</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							sudo cp ../DebianNetFiles/Empty70NetFile /mnt/tmp/home/<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">WHOAMI</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #008800; font-style: italic"># Bring up ether interface and route packets to host in /etc/rc.local</span>
+							cp ../DebianNetFiles/rc.local.kvm rc.local
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;rc.local
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;exit 0&quot;</span> &gt;&gt;rc.local
+							sudo cp rc.local /mnt/tmp/etc/rc.local
+							sudo chmod 755 /mnt/tmp/etc/rc.local
+							
+							cat <span style="color: #BB4444">&lt;&lt;EOF &gt;interfaces</span>
+							<span style="color: orange">auto lo eth0</span>
+							<span style="color: orange">iface lo inet loopback</span>
+							<span style="color: orange">iface eth0 inet static</span>
+							<span style="color: orange">      address ${3}</span>
+							<span style="color: orange">      netmask 255.255.255.0</span>
+							<span style="color: orange">      gateway ${HostIP}</span>
+							<span style="color: orange">      dns-nameservers 140.120.13.1 140.120.1.2</span>
+							<span style="color: orange">EOF</span>
+							
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> ! -f /mnt/tmp/etc/ssh/ssh_config.orig <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo mv /mnt/tmp/etc/ssh/ssh_config /mnt/tmp/etc/ssh/ssh_config.orig
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> ! -f /mnt/tmp/etc/ssh/sshd_config.orig <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo mv /mnt/tmp/etc/ssh/sshd_config /mnt/tmp/etc/ssh/sshd_config.orig
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> ! -f /mnt/tmp/etc/apt/sources.list.orig <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo mv /mnt/tmp/etc/apt/sources.list /mnt/tmp/etc/apt/sources.list.orig
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> ! -f /mnt/tmp/etc/network/interfaces.orig <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo mv /mnt/tmp/etc/network/interfaces /mnt/tmp/etc/network/interfaces.orig
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							<span style="color: #AA22FF; font-weight: bold">if</span> <span style="color: #666666">[</span> -f /mnt/tmp/etc/udev/rules.d/70-persistent-net.rules <span style="color: #666666">]</span>
+							<span style="color: #AA22FF; font-weight: bold">then </span>sudo rm /mnt/tmp/etc/udev/rules.d/70-persistent-net.rules
+							<span style="color: #AA22FF; font-weight: bold">fi</span>
+							
+							sudo cp ../DebianNetFiles/ssh_config   /mnt/tmp/etc/ssh
+							sudo cp ../DebianNetFiles/sshd_config  /mnt/tmp/etc/ssh
+							sudo cp ../DebianNetFiles/sources.list /mnt/tmp/etc/apt
+							sudo cp interfaces /mnt/tmp/etc/network/interfaces
+							sudo umount /mnt/tmp
+							
+							<span style="color: #008800; font-style: italic"># Next three files are no longer needed and rc.local does not exist for Minix</span>
+							rm -f rc.local hostname hosts interfaces
+							
+							<span style="color: #008800; font-style: italic"># Preparing Host Network Configuration Script</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;#! /bin/bash&quot;</span> &gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;${DeclAutoGen}&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ \$EUID -ne 0 ]&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;   then sudo echo \&quot;Super User passwd, please:\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;        if [ \$? -ne 0 ]&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;          then  echo \&quot;Sorry, need su privilege!\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;                exit 1&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;        fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo chmod 666 /dev/net/tun&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo tunctl -u `whoami` -t ${TAP}&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo ifconfig ${TAP} ${HostIP} netmask 255.255.255.255 up&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo iptables --table nat -A POSTROUTING --out-interface $4 -j MASQUERADE&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo iptables -A FORWARD --in-interface ${TAP} -j ACCEPT&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo chmod 666 /dev/net/tun # First time only get 660&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo sysctl net.ipv4.ip_forward=1&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo sysctl net.ipv4.conf.${TAP}.proxy_arp=1&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo arp -Ds $3 $4 pub&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo route add -host $3 dev ${TAP}&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;echo \&quot;Starting vde_switch...\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #B8860B">SrcDir</span><span style="color: #666666">=</span><span style="color: #BB4444">`</span>dirname <span style="color: #AA22FF; font-weight: bold">$(</span><span style="color: #AA22FF">pwd</span><span style="color: #AA22FF; font-weight: bold">)</span><span style="color: #BB4444">`</span>
+							<span style="color: #B8860B">SockDir</span><span style="color: #666666">=</span><span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">SrcDir</span><span style="color: #AA22FF; font-weight: bold">}</span>/network-<span style="color: #B8860B">$$</span>
+							<span style="color: #B8860B">OPTIONS</span><span style="color: #666666">=</span><span style="color: #BB4444">&quot;-tap ${TAP} -mod 644 -sock=${SockDir} -mgmt ${SockDir}/vde_switch.mgmt&quot;</span>
+							<span style="color: #AA22FF">echo </span><span style="color: #B8860B">SockDir</span><span style="color: #666666">=</span><span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">SockDir</span><span style="color: #AA22FF; font-weight: bold">}</span> <span style="color: #B8860B">OPTIONS</span><span style="color: #666666">=</span><span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">OPTIONS</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;vde_switch $OPTIONS -daemon &lt;/dev/null &gt;/dev/null&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;echo \&quot;Starting VM: ${2}..., mem=512M\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							cp <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span> <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>-AsDaemon
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;kvm -net vde,vlan=0,sock=${SockDir} -net nic,vlan=0,macaddr=${FakeMac} -m 512M -monitor unix:${SockDir}/MonSock,server,nowait -hda $1 &amp;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;screen -S $2 -d -m kvm -net vde,vlan=0,sock=${SockDir} -net nic,vlan=0,macaddr=${FakeMac} -m 512M -monitor unix:${SockDir}/MonSock,server,nowait -curses -hda $1 &amp;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>-AsDaemon
+							
+							<span style="color: #008800; font-style: italic"># Preparing Restore Lan Script</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;#! /bin/bash&quot;</span> &gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;${DeclAutoGen}&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							cat &lt;&lt;<span style="color: #BB4444">&#39;MyFunc&#39;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: orange">#############################################################</span>
+							<span style="color: orange">IsThereTapDevice()</span>
+							<span style="color: orange">  {</span>
+							<span style="color: orange">   declare int i=0;</span>
+							<span style="color: orange">   for devices in `find /sys/class/net -type l -name &quot;tap*&quot;`</span>
+							<span style="color: orange">     do</span>
+							<span style="color: orange">       ((i++));</span>
+							<span style="color: orange">     done</span>
+							
+							<span style="color: orange">   if [ ${i} -gt 0 ]</span>
+							<span style="color: orange">     then echo &quot;Yes&quot;</span>
+							<span style="color: orange">   else echo &quot;No&quot;</span>
+							<span style="color: orange">   fi</span>
+							<span style="color: orange">  }</span>
+							<span style="color: orange">#############################################################</span>
+							
+							<span style="color: orange">MyFunc</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ \$EUID -ne 0 ]&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;   then sudo echo \&quot;Super User passwd, please:\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;        if [ \$? -ne 0 ]&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;          then  echo \&quot;Sorry, need su privilege!\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;                exit 1&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;        fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;echo \&quot;system_powerdown\&quot; | socat - unix-connect:${SockDir}/MonSock&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;echo \&quot;Please wait 10 seconds.\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sleep 10&quot;</span>  &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span>  &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;ping -c 3 $3&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ \$? -eq 0 ]&quot;</span>  &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;  then echo \&quot;$2 still alive, shut it down.  Enter passwd twice!\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;       ssh -t ${USER}@$3 &#39;sudo init 0&#39;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;else rm -f ${SockDir}/MonSock&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;# Killing the vde_switch daemon&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;echo &#39;Stopping swich lan&#39;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo pkill -f \&quot;vde_switch ${OPTIONS}\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;# Removing the sockets if need be&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ -S ${SockDir}/ctl ]; then rm ${SockDir}/ctl; fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ -S ${SockDir}/vde_switch.mgmt ]; then rm ${SockDir}/vde_switch.mgmt; fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ -d ${SockDir} ]; then rm -rf ${SockDir}; fi&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;echo \&quot;Restore lan...\&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo sysctl net.ipv4.conf.${TAP}.proxy_arp=0&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo ifconfig ${TAP} ${HostIP} down&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo iptables --table nat -D POSTROUTING --out-interface $4 -j MASQUERADE&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo iptables -D FORWARD --in-interface ${TAP} -j ACCEPT&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #008800; font-style: italic"># It seems the next two lines are not necessary, we comment them out.</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;# sudo route del -host $3 dev ${TAP}&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;# sudo arp -d $3&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;sudo tunctl -d ${TAP}&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;if [ \`IsThereTapDevice\` = \&quot;No\&quot; ] &quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;    then sudo chmod 600 /dev/net/tun&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;         sudo sysctl net.ipv4.ip_forward=0&quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							<span style="color: #AA22FF">echo</span> <span style="color: #BB4444">&quot;fi &quot;</span> &gt;&gt;<span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+							
+							chmod 755 <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span> <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">KvmScript</span><span style="color: #AA22FF; font-weight: bold">}</span>-AsDaemon <span style="color: #AA22FF; font-weight: bold">${</span><span style="color: #B8860B">StopAndRestoreLan</span><span style="color: #AA22FF; font-weight: bold">}</span>
+						</div>
+						
+						</ul>
+			</ul>
+			
+			
+			<h3><li>Resize image</h3>
+			<p>我們所製作的檔案系統範本大小為 2G，這是許昌旺老師經過多年使用經驗所訂定下來的大小，可以將常用軟體全部放入並且不會浪費太多空間。由於是作為檔案系統範本使用，一切應以精簡為原則。真正使用虛擬機器來提供服務時，2G 就顯得太小家子氣，不敷使用了。這個時候，我們可以使用 image resize 來調整所需大小，以供存放大量資料。
+			<ol>
+				<li>複製一個映像檔來作 image resizing.
+					<div class="console"><div class="dol">cd ~/KVM/img
+						$ cp DebSqz-Mini.img VM-resized.img</div></div>
+					<li>變更虛擬硬碟的大小
+						<div class="console"><div class="dol">qemu-img resize VM-resized.img 4G
+						</div><div class="out">Image resized.
+						</div><div class="console">$ fdisk -l VM-resized.img
+						</div><div class="out">
+							Disk VM-resized.img: 4294 MB, 4294967296 bytes
+							255 heads, 63 sectors/track, 522 cylinders, total 8388608 sectors
+							Units = sectors of 1 * 512 = 512 bytes
+							Sector size (logical/physical): 512 bytes / 512 bytes
+							I/O size (minimum/optimal): 512 bytes / 512 bytes
+							Disk identifier: 0x000d8946
+							
+							Device Boot      Start         End      Blocks   Id  System
+							VM-resized.img1   *        2048      999423      498688   83  Linux
+							VM-resized.img2          999424     4192255     1596416   83  Linux
+						</div>
+						</div>
+						<li>使用 network block device, nbd 將虛擬硬碟轉換 (connect) 成 block device 形式
+							<div class="console"><div class="dol">sudo modprobe nbd max_part=8
+								$ ls -l /dev/nbd*
+							</div><div class="out">brw-rw---T 1 root disk 43,   0 Oct 17 16:50 /dev/nbd0
+								brw-rw---T 1 root disk 43,  16 Oct 17 16:50 /dev/nbd1
+								brw-rw---T 1 root disk 43, 160 Oct 17 16:50 /dev/nbd10
+								brw-rw---T 1 root disk 43, 176 Oct 17 16:50 /dev/nbd11
+								brw-rw---T 1 root disk 43, 192 Oct 17 16:50 /dev/nbd12
+								brw-rw---T 1 root disk 43, 208 Oct 17 16:50 /dev/nbd13
+								brw-rw---T 1 root disk 43, 224 Oct 17 16:50 /dev/nbd14
+								brw-rw---T 1 root disk 43, 240 Oct 17 16:50 /dev/nbd15
+								brw-rw---T 1 root disk 43,  32 Oct 17 16:50 /dev/nbd2
+								brw-rw---T 1 root disk 43,  48 Oct 17 16:50 /dev/nbd3
+								brw-rw---T 1 root disk 43,  64 Oct 17 16:50 /dev/nbd4
+								brw-rw---T 1 root disk 43,  80 Oct 17 16:50 /dev/nbd5
+								brw-rw---T 1 root disk 43,  96 Oct 17 16:50 /dev/nbd6
+								brw-rw---T 1 root disk 43, 112 Oct 17 16:50 /dev/nbd7
+								brw-rw---T 1 root disk 43, 128 Oct 17 16:50 /dev/nbd8
+								brw-rw---T 1 root disk 43, 144 Oct 17 16:50 /dev/nbd9
+							</div><div class="console">$ sudo qemu-nbd -c /dev/nbd0 VM-resized.img
+								$ ls -l /dev/nbd0*
+							</div><div class="out">brw-rw---T 1 root disk 43, 0 Oct 17 16:51 /dev/nbd0
+								brw-rw---T 1 root disk 43, 1 Oct 17 16:51 /dev/nbd0p1
+								brw-rw---T 1 root disk 43, 2 Oct 17 16:51 /dev/nbd0p2
+							</div>
+							</div>
+							<li>調整 Partition table
+								<ol type="a">
+									<li>基礎版，以圖形化操作介面, <a href="http://gparted.sourceforge.net/" target="_blank">Gparted</a> 來作 image resizing.
+										<ul>
+											<li>安裝 Gparted
+												<div class="console"><div class="dol">sudo aptitude update
+													$ sudo aptitude install gparted
+												</div></div>
+												<li>使用 Gparted 開啟虛擬硬碟來編輯
+													<div class="console"><div class="dol">gksudo gparted /dev/nbd0
+													</div></div>
+													<p><span style="color: red">註：</span>如果開啟時發現圖示顯示不正常，重新開啟一次就會恢復了。</p>
+													<img src="img/lab1/gp01.png" /><br />
+													<p>選擇第二個分割區，按下調整按鈕。</p>
+													<img src="img/lab1/gp02.png" /><br />
+													<p>將分割區容量拉到最大，我們將多出來的空間全部給它。</p>
+													<img src="img/lab1/gp03.png" /><br />
+													<p>確認無誤後按下 Resize/Move</p>
+													<img src="img/lab1/gp04.png" /><br />
+													<p>接著按下 Apply 將變更儲存至硬碟</p>
+													<img src="img/lab1/gp05.png" /><br />
+													<div class="console"><div class="dol">fdisk -l VM-resized.img
+													</div><div class="out">
+														Disk VM-resized.img: 4294 MB, 4294967296 bytes
+														255 heads, 63 sectors/track, 522 cylinders, total 8388608 sectors
+														Units = sectors of 1 * 512 = 512 bytes
+														Sector size (logical/physical): 512 bytes / 512 bytes
+														I/O size (minimum/optimal): 512 bytes / 512 bytes
+														Disk identifier: 0x000d8946
+														
+														Device Boot      Start         End      Blocks   Id  System
+														VM-resized.img1   *        2048      999423      498688   83  Linux
+														VM-resized.img2          999424     8388607     3694592   83  Linux
+													</div><div class="console">$ sudo qemu-nbd -d /dev/nbd0
+													</div><div class="out">/dev/nbd0 disconnected
+													</div>
+													</div>
+													</ul>
+										<li>進階版，以文字模式, sfdisk 來操作.
+											<ul>
+												<li>同樣地，先複製一個 image 來擴充
+													<div class="console"><div class="dol">cp DebSqz-Mini.img VM-cmd-resized.img
+														$ sudo qemu-nbd -c /dev/nbd1 VM-cmd-resized.img
+														$ ls -l /dev/nbd1*
+													</div><div class="out">brw-rw---T 1 root disk 43,  16 Oct 17 17:39 /dev/nbd1
+														brw-rw---T 1 root disk 43, 160 Oct 17 16:50 /dev/nbd10
+														brw-rw---T 1 root disk 43, 176 Oct 17 16:50 /dev/nbd11
+														brw-rw---T 1 root disk 43, 192 Oct 17 16:50 /dev/nbd12
+														brw-rw---T 1 root disk 43, 208 Oct 17 16:50 /dev/nbd13
+														brw-rw---T 1 root disk 43, 224 Oct 17 16:50 /dev/nbd14
+														brw-rw---T 1 root disk 43, 240 Oct 17 16:50 /dev/nbd15
+														brw-rw---T 1 root disk 43,  17 Oct 17 17:39 /dev/nbd1p1
+														brw-rw---T 1 root disk 43,  18 Oct 17 17:39 /dev/nbd1p2
+													</div>
+													<li>檢查硬碟是否有誤，若有則進行修復
+														<pre>
+															<div class="console">$ sudo e2fsck -f -y -v /dev/nbd1p2
+															</div><div class="out">e2fsck 1.42.5 (29-Jul-2012)
+																Pass 1: Checking inodes, blocks, and sizes
+																Pass 2: Checking directory structure
+																Pass 3: Checking directory connectivity
+																Pass 4: Checking reference counts
+																Pass 5: Checking group summary information
+																
+																25144 inodes used (25.18%, out of 99840)
+																16 non-contiguous files (0.1%)
+																38 non-contiguous directories (0.2%)
+																# of inodes with ind/dind/tind blocks: 0/0/0
+																Extent depth histogram: 22930/4
+																145850 blocks used (36.54%, out of 399104)
+																0 bad blocks
+																1 large file
+																
+																20517 regular files
+																2314 directories
+																12 character device files
+																25 block device files
+																2 fifos
+																411 links
+																2264 symbolic links (2160 fast symbolic links)
+																1 socket
+																------------
+																25546 files
+															</div><div class="console">$ echo $?
+															</div><div class="out">0
+															</div><div class="console">$ sudo qemu-nbd -d /dev/nbd1
+															</div><div class="out">/dev/nbd1 disconnected
+															</div><div class="console">$ qemu-img resize VM-cmd-resized.img 4G
+														</div>
+														<li>查詢硬碟分割資訊，Blocks 為單位顯示。
+															<pre>
+																</div><div class="console">$ sfdisk -l -uB VM-cmd-resized.img
+																</div><div class="out">Disk VM-cmd-resized.img: cannot get geometry
+																	
+																	Disk VM-cmd-resized.img: 522 cylinders, 255 heads, 63 sectors/track
+																	Units = blocks of 1024 bytes, counting from 0
+																	
+																	Device Boot   Start       End    #blocks   Id  System
+																	VM-cmd-resized.img1   <span style="color: red">*</span>     <span style="color: red">1024</span>    499711     <span style="color: red">498688</span>   83  Linux
+																	VM-cmd-resized.img2       <span style="color: red">499712</span>   2096127    1596416   83  Linux
+																	VM-cmd-resized.img3            0         -          0    0  Empty
+																	VM-cmd-resized.img4            0         -          0    0  Empty
+																</div><div class="console">$ sfdisk -uB --force VM-cmd-resized.img &lt;&lt;EOF
+																	1024,498688,,+
+																	499712
+																	0,0;
+																	0,0;
+																	EOF
+																</div><div class="out">Warning: VM-cmd-resized.img is not a block device
+																	Disk VM-cmd-resized.img: cannot get geometry
+																	
+																	Disk VM-cmd-resized.img: 522 cylinders, 255 heads, 63 sectors/track
+																	Old situation:
+																	Units = blocks of 1024 bytes, counting from 0
+																	
+																	Device Boot   Start       End    #blocks   Id  System
+																	VM-cmd-resized.img1   *     1024    499711     498688   83  Linux
+																	VM-cmd-resized.img2       499712   2096127    1596416   83  Linux
+																	VM-cmd-resized.img3            0         -          0    0  Empty
+																	VM-cmd-resized.img4            0         -          0    0  Empty
+																	New situation:
+																	Units = blocks of 1024 bytes, counting from 0
+																	
+																	Device Boot   Start       End    #blocks   Id  System
+																	VM-cmd-resized.img1   *     1024    499711     498688   83  Linux
+																	VM-cmd-resized.img2       499712   4194303    3694592   83  Linux
+																	VM-cmd-resized.img3            0         -          0    0  Empty
+																	VM-cmd-resized.img4            0         -          0    0  Empty
+																	Warning: partition 1 does not end at a cylinder boundary
+																	Warning: partition 2 does not start at a cylinder boundary
+																	Warning: partition 2 does not end at a cylinder boundary
+																	end of partition 2 has impossible value for cylinders: 522 (should be in 0-521)
+																	Successfully wrote the new partition table
+																	
+																	Re-reading the partition table ...
+																	BLKRRPART: Inappropriate ioctl for device
+																	
+																	If you created or changed a DOS partition, /dev/foo7, say, then use dd(1)
+																	to zero the first 512 bytes:  dd if=/dev/zero of=/dev/foo7 bs=512 count=1
+																	(See fdisk(8).)
+																</div><div class="console">$ echo $?
+																</div><div class="out">0
+																</div><div class="console">$ sudo qemu-nbd -c /dev/nbd1 VM-cmd-resized.img
+																	$ ls -l /dev/nbd1p*
+																</div><div class="out">brw-rw---T 1 root disk 43, 17 Oct 17 17:49 /dev/nbd1p1
+																	brw-rw---T 1 root disk 43, 18 Oct 17 17:49 /dev/nbd1p2
+																</div><div class="console">$ sudo e2fsck -f -y -v /dev/nbd1p2
+																</div><div class="out">e2fsck 1.42.5 (29-Jul-2012)
+																	Pass 1: Checking inodes, blocks, and sizes
+																	Pass 2: Checking directory structure
+																	Pass 3: Checking directory connectivity
+																	Pass 4: Checking reference counts
+																	Pass 5: Checking group summary information
+																	
+																	25144 inodes used (25.18%, out of 99840)
+																	16 non-contiguous files (0.1%)
+																	38 non-contiguous directories (0.2%)
+																	# of inodes with ind/dind/tind blocks: 0/0/0
+																	Extent depth histogram: 22930/4
+																	145850 blocks used (36.54%, out of 399104)
+																	0 bad blocks
+																	1 large file
+																	
+																	20517 regular files
+																	2314 directories
+																	12 character device files
+																	25 block device files
+																	2 fifos
+																	411 links
+																	2264 symbolic links (2160 fast symbolic links)
+																	1 socket
+																	------------
+																	25546 files
+																</div>
+															<li>使用 resize2fs 調整分割區大小，雖然我們將分割表調大了，但是實際上 superblock 並沒有更新，因此需要重新調整。
+																<pre>
+																	<div class="console">$ sudo resize2fs /dev/nbd1p2
+																	</div><div class="out">resize2fs 1.42.5 (29-Jul-2012)
+																		Resizing the filesystem on /dev/nbd1p2 to 923648 (4k) blocks.
+																		The filesystem on /dev/nbd1p2 is now 923648 blocks long.
+																	</div><div class="console">$ sudo qemu-nbd -d /dev/nbd1
+																	</div><div class="out">/dev/nbd1 disconnected</div>
+																</div>
+																</ul>
+											</ol>
+								
+								<li>移除不用的 module，節約系統資源。
+									<pre>
+										<div class="console">$ sudo rmmod nbd
+										</div>
+									</div>
+									
+									
+			</ol>
+			<!--
+			 <h1><a href="Lab1-assignment.html">Lab 1: Assignment</a></h1>
+			 -->
+			<h1>References</h1>
+			<ol>
+				<li><a href="http://cdimage.debian.org/debian-cd/6.0.6/amd64/iso-cd/" target="_blank">Debian 安裝光碟下載 (下載 debian-6.0.6-amd64-netinst.iso 或是 debian-6.0.6-amd64-xfce+lxde-CD-1.iso )</a>
+					<li><a href="http://140.120.15.179/Howto-Install/HPL.html" target="_blank">HPL Note</a>
+						<li><a href="http://snmlab.cs.nchu.edu.tw/course_download.asp?id=375">KVM-tool-Cloud</a>
+							<li><a href="http://www.linux-kvm.org/page/Main_Page" target="_blank">KVM Main Page</a>
+								<li><a href="http://140.120.7.20/KVM-tool/MyKvmNotes.html#KvmSrc" target="_blank">KVM Compilation</a>
+									<li><a href="http://amm/KVM-tool/MyKvmNotes.html#KvmTemplate" target="_blank">KVM Template Creation</a>
+										<li><a href="http://www.linux-kvm.org/page/Virtio" target="_blank">KVM Virtio</a>
+											<li><a href="http://vde.sourceforge.net/" target="_blank">VDE - Virtual Distributed Ethernet</a>
+												<li><a href="env.html" target="_blank">實習環境的建置</a>
+													</ol>
+			
+	</BODY>
+</html>

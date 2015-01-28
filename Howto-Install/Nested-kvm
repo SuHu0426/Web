@@ -1,0 +1,7 @@
+$ sudo modprobe -r kvm_amd
+$ sudo modprobe kvm_amd nested=1
+$ dmesg | grep kvm
+kvm: Nested Virtualization enabled
+
+$ kvm -cpu host -drive file=Nested-KVM.img,if=virtio,cache=none,index=0 -m 1024 -usb -usbdevice tablet
+

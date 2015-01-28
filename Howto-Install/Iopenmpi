@@ -1,0 +1,24 @@
+   libopenmpi-dev (1.2.7~rc2-2)
+#   libopenmpi1 (1.2.7~rc2-2)
+   openmpi-bin (1.2.7~rc2-2)
+#   openmpi-common (1.2.7~rc2-2)
+gcc 
+g++ 
+#g77 
+gfortran
+libatlas-base-dev
+libatlas-test
+libblas-dev 
+libblas-doc
+
+
+$ cd HPL/linpack
+$ sudo mkdir /usr/lib/atlas
+$ sudo cp libblas.a /usr/lib/atlas
+$ cd hpl/
+$ make arch=LinuxGeneric
+$ sudo make install  arch=LinuxGeneric
+
+
+export OMPI_MCA_btl=self,sm,tcp
+

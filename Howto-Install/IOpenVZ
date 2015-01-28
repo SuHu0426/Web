@@ -1,0 +1,110 @@
+sudo emacs /etc/apt/sources.list
+
+	deb http://DEBIAN-MIRROR/debian/ testing main
+	deb http://DEBIAN-MIRROR/debian-security/ testing/updates main
+
+sudo emacs /etc/apt/apt.conf
+
+	APT::Cache-Limit "100000000";
+
+sudo emacs /etc/apt/preferences
+
+	Package: *
+	Pin: release a=etch
+	Pin-Priority: 700
+
+	Package: *
+	Pin: release a=lenny
+	Pin-Priority: 650
+
+sudo aptitude install linux-image-2.6.26-2-openvz-amd64 
+sudo apt-get install linux-image-2.6.26-2-amd64 
+sudo apt-get install vzctl vzquota 
+sudo apt-get install libatm1
+
+
+These parameters are stored in /etc/sysctl.conf file. 
+[...]
+
+# On Hardware Node we generally need
+# packet forwarding enabled and proxy arp disabled
+
+net.ipv4.conf.default.forwarding=1
+net.ipv4.conf.default.proxy_arp = 0
+net.ipv4.ip_forward=1
+
+# Enables source route verification
+net.ipv4.conf.all.rp_filter = 1
+
+# Enables the magic-sysrq key
+kernel.sysrq = 1
+
+# TCP Explict Congestion Notification
+#net.ipv4.tcp_ecn = 0
+
+# we do not want all our interfaces to send redirects
+net.ipv4.conf.default.send_redirects = 1
+net.ipv4.conf.all.send_redirects = 0
+
+[...]
+
+  sudo mv /etc/sysctl.conf /etc/sysctl.conf.orig
+  scp ac10:/etc/sysctl.conf /tmp
+  sudo cp /tmp/sysctl.conf  /etc/sysctl.conf
+
+
+
+sudo sysctl -p
+sudo ln -s /var/lib/vz /vz 
+Amath-Client11:/var/lib# /etc/init.d/vz start
+OpenVZ already running..failed
+Amath-Client11:/var/lib# update-rc.d vz defaults 98
+ System startup links for /etc/init.d/vz already exist.
+
+
+
+##### HERE 1 is CTID #####
+sudo vzctl create 1 --ostemplate HPL
+sudo vzctl set 1 --hostname vz11-1 --save
+sudo vzctl set 1 --ipadd 140.120.8.211 --save
+sudo vzctl set 1 --nameserver 140.120.1.2 --save
+sudo vzctl set 1 --privvmpages 65536:69632 --save   # memory size
+sudo vzctl start 1
+sudo vzctl enter 1
+sudo vzctl stop 1
+sudo vzctl destroy 1
+
+# Configuring 
+$ cd /src3
+$ sudo mkdir VZ
+$ sudo chown hsu:hsu VZ
+$ cd VZ
+$ mkdir template root private
+$ cd template
+$ mkdir cache
+$ sudo ln -s /src3/VZ /vz
+
+$ sudo emacs /etc/vz/conf/4.conf 
+OSTEMPLATE="debian-5.0"
+
+$ sudo emacs /etc/vz/vz.conf
+## Template parameters
+TEMPLATE=/src3/VZ/template
+## Defaults for VEs
+VE_ROOT=/src3/VZ/root/$VEID
+VE_PRIVATE=/src3/VZ/private/$VEID
+## IPTABLES="ipt_REJECT ipt_tos ipt_limit ipt_multiport iptable_filter iptable_mangle ipt_TCPMSS ipt_tcpmss ipt_ttl ipt_length"
+IPTABLES="ip_tables ipt_REJECT ipt_tos ipt_limit ipt_multiport iptable_filter iptable_mangle ipt_TCPMSS ipt_tcpmss ipt_ttl ipt_length ip_conntrack ip_conntrack_ftp ip_conntrack_irc ipt_LOG ipt_conntrack ipt_helper ipt_state iptable_nat ip_nat_ftp ip_nat_irc ipt_TOS"
+
+
+
+HPL1-15:/# last
+reboot   system boot  2.6.26-2-openvz- Tue Apr 14 13:20 - 01:44  (12:23)    
+reboot   system boot  2.6.26-2-openvz- Tue Apr 14 13:18 - 13:19  (00:01)    
+hsu      tty0                          Mon Apr 13 14:01 - crash  (23:17)    
+hsu      tty0                          Mon Apr 13 14:01 - 14:01  (00:00)    
+reboot   system boot  2.6.26           Mon Apr 13 13:59 - 13:19  (23:20)    
+hsu      tty0                          Mon Apr 13 06:08 - crash  (07:51)    
+hsu      tty0                          Mon Apr 13 06:08 - 06:08  (00:00)    
+reboot   system boot  2.6.26           Mon Apr 13 06:08 - 13:19 (1+07:11)   
+hsu      pts/0        192.168.0.2      Sun Apr 12 12:45 - 12:46  (00:00)    

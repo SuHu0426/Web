@@ -1,0 +1,179 @@
+<html>
+  <head>
+    <title>Porting Notes</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2013.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+  </head>
+  <body>
+    <h1>Porting Notes</h1>
+    <h2>Xorg</h2>
+    <h3>Change Resolution (xrandr)</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install linux-headers-amd64</div>
+      <div class="dol">xrandr -q</div>
+      <div class="dol">xrandr --newmode "1920x1080" 173.00  1920 2048 2248 2576  1080 1083 1088 1120 -HSync +VSync</div>
+      <div class="dol">xrandr --addmode VGA-0 "1920x1080"</div>
+      <div class="dol">xrandr --output VGA-0 --mode "1920x1080"</div>
+    </div>
+    <h3>Dual Screen</h3>
+    <div class="console">
+      <div class="dol">xrandr --output HDMI-0 --mode 1920x1080 --output DVI-0 --mode 1920x1080 --right-of HDMI-0</div>
+    </div>
+    <hr>
+    <h2>Profile</h2>
+    <h3>.profile</h3>
+    <div class="console">
+      <div class="out">&#35; if running bash
+if [ -n "$BASH_VERSION" ]; then
+    &#35; include .bashrc if it exists
+    if [ -f "$HOME/.bashrc" ]; then
+	. "$HOME/.bashrc"
+    fi
+fi
+
+PATH=.:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+export  PATH</div>
+    </div>
+    <h3>.bashrc</h3>
+    <div class="console">
+      <div class="dol">diff .bashrc .bashrc.orig</div>
+      <div class="out">46c46
+&lt; force_color_prompt=yes
+---
+&gt; &#35;force_color_prompt=yes
+60c60
+&lt;     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u\[\033[00m\]@\[\033[35m\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+---
+&gt;     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+111,112d110
+&lt; PATH=.:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+&lt; export  PATH</div>
+    </div>
+    <h3>Emacs</h3>
+    <p>版面配色</p>
+    <div class="console">
+      <div class="dol">sudo aptitude install emacs-goodies-el</div>
+      <div class="dol">diff .emacs .emacs.orig</div>
+      <div class="out">13,18d12
+&lt; (require 'color-theme)
+&lt; (color-theme-initialize)
+&lt; (eval-after-load "color-theme"
+&lt;   '(progn
+&lt;      (color-theme-initialize)
+&lt;      (color-theme-hober)))</div>
+    </div>
+    <p>php-mode</p>
+    <div class="console">
+      <div class="dol">cd .emacs.d</div>
+      <div class="dol">wget http://php-mode.svn.sourceforge.net/svnroot/php-mode/tags/php-mode-1.5.0/php-mode.el</div>
+      <div class="dol">EDIT .emacs</div>
+      <div class="out">;;set php-mode
+(autoload 'php-mode "~/.emacs.d/php-mode" "Major mode for editing php code." t)
+(add-to-list 'auto-mode-alist '("\\.php$" . php-mode))
+(add-to-list 'auto-mode-alist '("\\.inc$" . php-mode))</div>
+    </div>
+    <h3>Reverse Mouse Scrolling</h3>
+    <div class="console">
+      <div class="dol">echo "pointer = 1 2 3 5 4 6 7 8 9 10 11 12" &gt; .Xmodmap</div>
+      <div class="dol">xmodmap .Xmodmap</div>
+    </div>
+    <hr>
+    <h2>Media Key Binding</h2>
+    <h3>LXDE (openbox)</h3>
+    <div class="console">
+      <div class="dol">emacs ~/.config/openbox/lxde-rc.xml&</div>
+      <div class="dol">C-s &lt;!-- Keybindings for running applications --&gt;</div>
+      <div class="out">    &lt;!-- Keybindings for audio volume --&gt;
+    &lt;keybind key="XF86AudioLowerVolume"&gt;
+      &lt;action name="Execute"&gt;
+	&lt;execute&gt;amixer -q set Master 1- unmute&lt;/execute&gt;
+      &lt;/action&gt;
+    &lt;/keybind&gt;
+    &lt;keybind key="XF86AudioRaiseVolume"&gt;
+      &lt;action name="Execute"&gt;
+	&lt;execute&gt;amixer -q set Master 1+ unmute&lt;/execute&gt;
+      &lt;/action&gt;
+    &lt;/keybind&gt;
+    &lt;keybind key="XF86AudioMute"&gt;
+      &lt;action name="Execute"&gt;
+	&lt;execute&gt;amixer -q set Master toggle&lt;/execute&gt;
+      &lt;/action&gt;
+    &lt;/keybind&gt;</div>
+      <div class="dol">mv ~/.config/openbox/lxde-rc.xml~ ~/.config/openbox/lxde-rc.xml.orig</div>
+    </div>
+    <hr>
+    <h2>Synchronize Directory</h2>
+    <h3>Rsync</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install rsync</div>
+      <div class="dol">rsync -rltvp --delete -e "ssh -p 22 -l user" Source_Host:/backup/Dropbox/ /backup/Dropbox/</div>
+    </div>
+    <h3>Unison 雙向同步</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install unison</div>
+      <div class="dol">ssh -t host2 sudo aptitude install unison</div>
+      <div class="dol">unison</div>
+      <div class="dol">ssh host2 unison</div>
+      <div class="dol">emacs .unison/default.prf &</div>
+      <div class="out">&#35; Unison preferences file
+root = /backup
+root = ssh://host2//backup
+path = Dropbox
+auto = true
+batch = true
+maxthreads = 500
+owner = true
+group = true
+perms = -1
+repeat = 1
+retry = 3
+sshargs = -C
+xferbycopying = true
+silent = true
+fastcheck = true
+log = true
+logfile = /home/user/.unison/unison.log</div>
+    <div class="dol">mv .unison/default.prf~ .unison/default.prf.orig</div>
+    <div class="dol">unison &</div>
+    </div>
+    <hr>
+    <h2>中文輸入、亂碼解決</h2>
+    <h3>hime</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install hime im-switch</div>
+      <div class="dol">im-switch -s hime</div>
+    </div>
+    <h3>emacs (ibus)</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install ibus ibus-chewing python-xlib</div>
+      <div class="dol">ibus-daemon -d</div>
+    </div>
+    <p>下載 <a href="https://launchpad.net/ibus.el">ibus.el</a> - IBus client for GNU Emacs</p>
+    <div class="console">
+      <div class="dol">tar zxvf ibus-el-0.3.2.tar.gz</div>
+      <div class="dol">cp -a ibus-el-0.3.2 ~/.emacs.d/</div>
+      <div class="dol">edit .emacs</div>
+      <div class="out">;;set ibus-el
+ (add-to-list 'load-path "~/.emacs.d/ibus-el-0.3.2")
+ (require 'ibus)
+ (add-hook 'after-init-hook 'ibus-mode-on)</div>
+    </div>
+    <h3>中文字體</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install fonts-cwtex-heib ttf-wqy-microhei xfonts-intl-chinese-big xfonts-intl-chinese</div>
+    </div>
+    <h3>中文啟動軟體</h3>
+    <div class="console">
+      <div class="dol">cd /usr/share/applications</div>
+      <div class="dol">sudo sed -i 's/Exec=/Exec=env LANG=zh_TW.UTF-8 /g' softwares.desktop</div>
+      <div class="dol">sudo aptitude search zh-tw</div>
+      <div class="dol">sudo aptitude install softwares-l10n-zh-tw</div>
+    </div>
+
+    <hr>
+    <address>
+      <a href="mailto:cssu@csmail.nchu.edu.tw">SuHu</a>
+    </address>
+  </body>
+</html>

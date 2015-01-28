@@ -1,0 +1,80 @@
+<html>
+	<head>
+		<title>KMLN Installation Guide</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<link type="text/css" rel="stylesheet" href="/css/style_2013.css" />
+		<script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+	</head>
+	<body>
+		<h1>KMLN</h1>
+		<h2>2013-08 KMLN-ovs</h2>
+		
+<div class="console">
+<div class="dol">mkdir kmln-ovs</div>
+<div class="dol">cd kmln-ovs</div>
+<div class="dol">tar zxvf ~/kmln-ovs-2013-7-25.tgz</div>
+<div class="dol">sudo apt-get install uml-utilities vde2 qemu-utils socat</div>
+<div class="dol">sudo aptitude install xalan</div>
+<div class="dol">wget http://ftp.twaren.net/Unix/Web/apache//xerces/c/3/binaries/xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz</div>
+<div class="dol">tar zxvf xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz</div>
+<div class="dol">cd xerces-c-3.1.1-x86_64-linux-gcc-3.4</div>
+<div class="dol">sudo cp -r bin/ doc/ include/ lib/ /usr/local</div>
+<div class="dol">sudo ./kmln-ove setup</div>
+</div>
+<div class="out">Do you want to set up MLN for your user or for the entire system?
+1 - Single user (Default)
+2 - Entire system (Need to be root)
+3 - MLN frontend for distributed management (Need to be root)
+4 - MLN daemon backend for distributed management (Need to be root)
+[1]: 3
+</div>
+<div class="out">What would you like the default install prefix to be? [ /opt/mln ] : /src4/kmln-ovs
+</div>
+<div class="console">
+<div class="dol">sudo cp -r DTD/ /etc/mln/</div>
+</div>
+<h2>Edit /etc/mln/mln.conf</h2>
+		<h2>KMLN</h2>
+<div class="out">
+$ sudo mkdir /src4/mln
+$ sudo chown hsu:hsu /src4/mln
+$ cd /src4/mln
+$ scp jssu:`pwd`/kmln .
+$ sudo ./kmln setup
+2 - Entire system (Need to be root)
+[ /opt/mln ] : /src4/mln
+Do you want to install User-Mode Linux? [N/y]: n
+[ /root/mln/projects ]  : /src4/mln/projects
+[ /root/mln/files ]  : /src4/mln/files
+[ /root/mln/templates ]  : /src4/mln/templates
+$ sudo chown -R jssu:jssu *
+;; Install KVM
+$ sudo apt-get install uml-utilities vde2 kvm qemu-utils socat
+;; For Server
+install xerces
+Download from http://xerces.apache.org/xerces-c/download.cgi
+$ tar zxvf xerces-c-3.1.1-x86_64-linux-gcc-3.4.tar.gz 
+$ sudo cp -r xerces-c-3.1.1-x86_64-linux-gcc-3.4/* /usr/local/
+$ sudo apt-get install xalan 
+Edit /etc/mln/mln.conf
+;; For Clients
+default_kernel /usr/local/bin/linux.uml
+default_modules /usr/local/lib/uml/lib/modules/3.0.0/
+service_host gg
+daemon_allow 140.120.15.179
+;; For Server
+default_kernel /usr/local/bin/linux.uml
+default_modules /usr/local/lib/uml/lib/modules/3.0.0/
+service_host jssu
+daemon_listen_address 140.120.15.180
+daemon_status_query gg2
+$ sudo mkdir /etc/mln/DTD
+$ scp jssu:/etc/mln/DTD/* /tmp
+$ sudo mv /tmp/kmln.dtd /tmp/xml2mln.xsl /tmp/xml2svg.xsl /etc/mln/DTD/
+$ cd templates/
+$ scp jssu:`pwd`/* .
+;; For Clinets
+$ sudo kmln daemon -D /var/run/mln.pid
+</div>
+</body>
+</html>

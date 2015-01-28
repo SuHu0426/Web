@@ -1,0 +1,55 @@
+$ wget http://downloads.sourceforge.net/project/vnuml/vnuml/1.8.9/vnuml_1.8.9.orig.tar.gz?r=http%3A%2F%2Fneweb.dit.upm.es%2Fvnumlwiki%2Findex.php%2FDownload&ts=1295190240&use_mirror=nchc
+$ mv vnuml_1.8.9.orig.tar.gz\?r\=http\:%2F%2Fneweb.dit.upm.es%2Fvnumlwiki%2Findex.php%2FDownload  vnuml_1.8.9.orig.tar.gz
+$ tar zxvf vnuml_1.8.9.orig.tar.gz 
+$ cd vnuml-1.8.9/
+$ ./configure
+$ which genisoimage 
+$ cd /usr/bin/
+$ sudo ln -s /usr/bin/genisoimage mkisofs
+$ cd /src3/VNUML/
+$ cd vnuml-1.8.9/
+$ ./configure --with-build_modules
+$ ./configure --with-build_modules --with-perl-modules-installroot=/usr/share/perl5
+$ sudo chown pigwei:pigwei /dev/net/tun
+$ ./configure --with-build_modules --with-perl-modules-installroot=/usr/share/perl5 --prefix=/src4/VNUML
+$ make
+$ sudo make install
+
+$ wget http://www.dit.upm.es/vnuml/download/scripts/root-fs-installer
+$ sudo mkdir /usr/share/vnuml
+$ sudo mkdir /usr/share/vnuml/filesystems
+$ sudo perl root-fs-installer
+$ sudo chown -R jssu:jssu /usr/share/vnuml
+
+$ vnumlparser.pl -V
+Can't locate XML/DOM.pm in @INC (@INC contains: /usr/share/perl5 /etc/perl /usr/local/lib/perl/5.10.1 /usr/local/share/perl/5.10.1 /usr/lib/perl5 /usr/lib/perl/5.10 /usr/share/perl/5.10 /usr/local/lib/site_perl .) at /usr/local/bin/vnumlparser.pl line 128.
+$ sudo apt-get install vlan xterm bridge-utils screen
+$ sudo apt-get install libxml-perl libxml-regexp-perl libxml-dom-perl libxml-checker-perl libterm-readkey-perl
+$ sudo apt-get install libnetaddr-ip-perl libnet-pcap-perl libexception-class-trycatch-perl liberror-perl
+$ wget http://jungla.dit.upm.es/~vnuml/download/perl-modules/Net-IPv4Addr-0.10.tar.gz
+$ wget http://jungla.dit.upm.es/~vnuml/download/perl-modules/Math-Base85-0.2.tar.gz
+$ wget http://jungla.dit.upm.es/~vnuml/download/perl-modules/Net-IPv6Addr-0.2.tar.gz
+$ tar zxvf Net-IPv4Addr-0.10.tar.gz
+$ cd Net-IPv4Addr-0.10
+$ perl Makefile.PL
+$ make
+$ sudo make install
+$ cd ..
+$ tar zxvf Math-Base85-0.2.tar.gz
+$ cd Math-Base85-0.2
+$ perl Makefile.PL
+$ make
+$ sudo make install
+$ cd ..
+$ tar zxvf Net-IPv6Addr-0.2.tar.gz 
+$ cd Net-IPv6Addr-0.2
+$ perl Makefile.PL
+$ make
+$ sudo make install
+$ vnumlparser.pl -V
+This is vnumlparser.pl version: 1.8.9 (22/05/2009)
+Fermin Galan Marquez. galan@dit.upm.es
+
+
+
+

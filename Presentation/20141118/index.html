@@ -1,0 +1,189 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>OepnFlow Switch Specification</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2014.css" />
+</head>
+<body>
+  <h1><a href="https://www.opennetworking.org/images/stories/downloads/sdn-resources/onf-specifications/openflow/openflow-spec-v1.4.0.pdf">OpenFlow Switch Specification v1.4.0</a></h1>
+  <h2>OpenFlow Ports</h2>
+  <ol>
+    <li>ingress port
+    <li>output port
+  </ol>
+  <h3>Standard Ports</h3>
+  <ol>
+    <li>Physical Ports
+      <p>hardware interface of the switch</p>
+    <li>Logical Ports
+      <p>higher level abstractions that may be defined inthe switch using non-OpenFlow methods (e.g. link aggregation groups, tunnels, lookback interfaces).</p>
+    <li>Reserved Ports
+      <p>specify generic forwarding actions
+	<ul>
+	  <li><i>Required:</i> <b>ALL</b>
+	  <li><i>Required:</i> <b>CONTROLLER</b>
+	  <li><i>Required:</i> <b>TABLE</b>
+	  <li><i>Required:</i> <b>IN_PORT</b>
+	  <li><i>Required:</i> <b>ANY</b>
+	  <li><i>Optional:</i> <b>LOCAL</b>
+	  <li><i>Optional:</i> <b>NORMAL</b>
+	  <li><i>Optional:</i> <b>FLOOD</b>
+	</ul>
+  </ol>
+
+  
+  <h2>OpenFlow Tables</h2>
+  <ol>
+    <li>Flow Tables
+    <li>Groups Tables
+  </ol>
+  <img src="img/flowtable.png"><br>
+  <img src="img/flowmatch.png"><br>
+
+
+  <ol>
+    <li><h3>Pipeline Processing</h3>
+      <ul>
+	<li>OpenFlow-only
+	  <p>Switches support only OpenFlow operation, in those switches all packets are processed by the OpenFlow pipeline, and can not be processed otherwise.</p>
+	<li>OpenFlow-hybrid
+	  <p>Switches support both OpenFlow operation and <i>normal</i> Ethernet switching operation.</p>
+      </ul>
+      <p>The flow tables of an OpenFlow switch are sequentially numbered, starting at 0. Pipeline processing always starts at the first flow table: the packet is first matched against flow entries of <span style="color: red;">flow table 0</span>.</p>
+      <p>A flow entry can only direct a packet to a flow table number which is greater than its own flow table number, in other words pipeline processing can only <span style="color: red;">go forward and not backward</span>.</p>
+      <p>If the matching flow entry does not direct packets to another flow table, pipeline processing stops at this table.</p>
+      <p>If a packet does not match a flow entry in a flow table, this is a table miss.
+      </p>
+    <li><h3>Flow Table</h3>
+      <p>A flow table consists of flow entries.<br>
+	<img src="img/flowentry.png"></p>
+      <ul>
+	<li><b>match fields:</b> to match against packets.
+	<li><b>priority:</b> matching precedence of the flow entry.
+	<li><b>counters:</b> updated when packets are matched.
+	<li><b>instructions:</b> to modify the action set or pipeline processing.
+	<li><b>timeouts:</b> maximum amount of time or idle time before flow is expired by the switch.
+	<li><b>cookie:</b> opaque data value chosen by the controller.
+      </ul>
+      <p>A flow table entry is identified by its match fields and priority: the <span style="color: red;">match fields</span> and <span style="color: red;">priority</span> taken together identify a unique flow entry in the flow table. The flow entry that wildcards all fields (all fields omitted) and has priority equal to 0 is called the table-miss flow entry.</p>
+
+    <li><h3>Matching</h3>
+      <img src="img/flowchart_pkt.png"><br>
+
+    <li><h3>Table-miss</h3>
+      <p>Every flow table must support a table-miss flow entry to process table misses. The table-miss flow entry specifies how to process packets unmatched by other flow entries in the flow table
+	<ul>
+	  <li>send packets to the controller,
+	  <li>drop packets,
+	  <li>direct packets to a subsequent table.
+	</ul>
+      </p>
+      <p>If the table-miss flow entry does not exist, by default packets unmatched by flow entries are <span style="color: red;">dropped (discarded)</span>.</p>
+
+    <li><h3>Flow Removal</h3>
+      <ul>
+	<li>request of the controller
+	<li>switch flow expiry mechanism
+	  <ul>
+	    <li>idle_timeout
+	    <li>hard_timeout
+	  </ul>
+	<li>optional switch eviction mechanism
+	  
+      </ul>
+
+    <li><h3>Group Table</h3>
+      <img src="img/grouptableentry.png"><br><br>
+      <ul>
+	<li><b>group identifier</b>: a 32 bit unsigned integer uniquely identifying the group
+	<li><b>group type</b>: to determine group semantics
+	<li><b>counters</b>: updated when packets are processed by a group
+	<li><b>action buckets</b>: an ordered list of action buckets, where each action bucket contains a set of actions to execute and associated parameters
+      </ul>
+      <h4>Group Types</h4>
+      <ul>
+	<li><i>Required:</i> <b>all</b>: Execute all buckets in the group.
+	  <p>multicast or broadcast forwarding</p>
+	<li><i>Optional:</i> <b>select</b>: Execute one bucket in the group.
+	  <p>hash on some user-configured tuple or simple round robin</p>
+	<li><i>Required:</i> <b>indirect</b>: Execute the one defined bucket in this group. This group supports only a single bucket.
+	  <p>Allows multiple flow entries or groups to point to a common group identifier, supporting faster, more efficient convergence (e.g. next hops for IP forwarding).</p>
+	<li><i>Optional:</i> <b>fast failover</b>: Execute the first live bucket.
+	  <p>If no buckets are live, packets are dropped.</p>
+      </ul>
+
+
+    <li><h3>Meter Table</h3>
+      <p>A meter table consists of meter entries, defining <span style="color: red;">per-flow meters</span>. Per-flow meters enable OpenFlow to implement various simple QoS operations, such as rate-limiting, and can be combined with per-port queues to implement complex QoS frameworks, such as DiffServ.</p>
+      <p>A meter measures the rate of packets assigned to it and enables controlling the rate of those packets. Meters are attached directly to flow entries (as opposed to queues which are attached to ports). Any flow entry can specify a meter in its instruction set.</p>
+      <img src="img/meterentry.png"><br><br>
+      <ul>
+	<li>meter identifier: a 32 bit unsigned integer uniquely identifying the meter
+	<li>meter bands: an unordered list of meter bands, where each meter band specifies the rate of the band and the way to process the packet
+	<li>counters: updated when packets are processed by a meter
+      </ul>
+
+      <h4>Meter Bands</h4>
+      <img src="img/meterband.png"><br><br>
+      <ul>
+	<li><b>band type</b>: defines how packet are processed
+	  <ul>
+	    <li><i>Optional:</i> <b>drop</b>: drop (discard) the packet. Can be used to define a rate limiter band.
+	    <li><i>Optional:</i> <b>dscp remark</b>: increase the drop precedence of the DSCP field in the IP header of the packet. Can be used to define a simple DiffServ policer.
+	  </ul>
+	<li><b>rate</b>: used by the meter to select the meter band, defines the lowest rate at which the band can apply
+	<li><b>counters</b>: updated when packets are processed by a meter band
+	<li><b>type specific arguments</b>: some band types have optional arguments
+      </ul>
+
+    <li><h3>Counters</h3>
+      <img src="img/counters.png">
+
+    <li><h3>Instructions</h3>
+      <ul>
+	<li><i>Optional Instruction:</i> <b>Meter meter id</b>: Direct packet to the specified meter.
+	<li><i>Optional Instruction:</i> <b>Apply-Actions action(s)</b>: Applies the specific action(s) immediately, without any change to the Action Set.
+	<li><i>Optional Instruction:</i> <b>Clear-Actions</b>: Clears all the actions in the action set immediately.
+	<li><i>Required Instruction:</i> <b>Write-Actions action(s)</b>: Merges the specified action(s) into the current action set.
+	<li><i>Optional Instruction</i>: <b>Write-Metadata metadata / mask</b>: Writes the masked metadata value into the metadata field.
+	<li><i>Required Instruction:</i> <b>Goto-Table next-table-id</b>: Indicates the next table in the processing pipeline. 
+      </ul>
+      <p>The instruction set associated with a flow entry contains a maximum of one instruction of each type.</p>
+      <h4>execute order</h4>
+      <p><i>Meter</i> -> <i>Apply-Actions</i> -> <i>Clear-Actions</i> -> <i>Write-Actions</i> -> <i>Goto-Table</i></p>
+  </ol>
+
+  <li><h3>Action Set</h3>
+  <li><h3>Action List</h3>
+  <li><h3>Actions</h3>
+    <ul>
+      <li>Required Action: Output. The Output action forwards a packet to a specified OpenFlow port.
+      <li>Optional Action: Set-Queue. The set-queue action sets the queue id for a packet.
+      <li>Required Action: Drop. There is no explicit action to represent drops.
+      <li>Required Action: Group. Process the packet through the specified group.
+      <li>Optional Action: Push-Tag/Pop-Tag.<br>
+	<img src="img/pushpop1.png"><br>
+	<img src="img/pushpop2.png"><br>
+      <li>Optional Action: Set-Field. The various Set-Field actions are identified by their field type and modify the values of respective header fields in the packet.
+      <li>Optional Action: Change-TTL. The various Change-TTL actions modify the values of the IPv4 TTL, IPv6 Hop Limit or MPLS TTL in the packet.<br>
+	<img src="img/changettl.png"><br>
+    </ul>
+
+    <h2><a href="http://www.slideshare.net/US-Ignite/open-flow-extensions-mack-crane">OpenFlow Extentions</a></h2>
+    <table border="1">
+      <tr><td><img src="img/p2.png"></td>
+      <tr><td><img src="img/p3.png"></td>
+      <tr><td><img src="img/p12.png"></td>
+      <tr><td><img src="img/p14.png"></td>
+    </table>
+
+    <img src="img/arch.png">
+    <!-- 頁底 -->
+<div id="footer" style="width: 100%; clear: left;" align="center">
+  <hr>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+</body>
+</html>
