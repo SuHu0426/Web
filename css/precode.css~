@@ -1,0 +1,37 @@
+pre {
+	font-size:1.2em; 
+	line-height:1.4em;
+	overflow:auto;
+	background: #f0f0f0 ;
+	border: 1px solid #ccc;
+	margin-left:5px;
+	margin-top:0px;
+	padding: 5px 5px 5px 5px;
+	width: 98%;
+}
+
+pre code {
+	font-size:12pt; 
+	line-height:1.4em;
+	overflow:auto;
+	color: black;
+	background: bisque url(/css/Code_BG.gif) left top repeat-y;
+	border:1px solid #000000;
+	margin:0px 5px 0px 0px;
+	padding: 5px 5px 5px 15px;
+	width: 98%;
+	display: block;
+}
+code {
+	font-size:12pt; 
+	line-height:1.4em;
+	overflow:auto;
+	color: black;
+	background: bisque;
+	border:1px solid #CC3300;
+	margin-left:10px;
+	margin-top:5px;
+	padding: 10px 10px 10px 10px;
+	width: 90%;
+	display: block;
+}
