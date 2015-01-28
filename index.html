@@ -4,35 +4,14 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/javascripts/jquery-ui-1.10.3/themes/cupertino/jquery-ui.css" />
-    <script src="javascripts/jquery-2.0.3.min.js"></script>
+    <script src="/javascripts/jquery-2.0.3.min.js"></script>
     <script type="text/javascript" src="/javascripts/jquery-ui-1.10.3/ui/jquery-ui.js"></script>
-    <script>
-    $(function() {
-      $( "#tabs" ).tabs();
-    });
-    </script>
     <script type="text/javascript">
+$(function() {
+    $( "#tabs" ).tabs();
+});
     jQuery(document).ready(function(){
-	$.ajax({
-	    url : "/log/numcus.txt",
-	    dataType: "text",
-	    success : function(data){
-		$("#numcus").text("");
-		$("#numcus").html(data);
-	    }
-	});
-	setInterval(function(){
-	    $(".stf").fadeOut("slow");
-	    $.ajax({
-		url : "/log/numcus.txt",
-		dataType: "text",
-		success : function(data){
-		    $("#numcus").text("");
-		    $("#numcus").html(data);
-		}
-	    });
-	},60000);
-    });
+}
     </script>
     <style>
 /*
@@ -69,12 +48,12 @@
 	  <script type="text/javascript" src="javascripts/canvasTime.js"></script>
 	  <!-- End clock -->
 	<td valign="top">
-	  <!-- Info frame -->
+	  <!-- 
 	  <iframe name="clientDetect_frame" id="if-clientDetect"
 		  seamless="seamless" scrolling="no" frameborder="no" allowtransparency="true"
 		  border="0" marginwidth="0" marginheight="0"
 		  src="clientDetect.php"></iframe>
-	  <!-- End Info frame -->
+	  -->
 	<td valign="top"> Number of customer(s): <span id="numcus"></span>
     </table>
 
