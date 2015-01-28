@@ -1,9 +1,0 @@
-.marquee {
-    white-space: nowrap;
-    overflow:-webkit-marquee;
-    width: 99%;
-    -webkit-marquee-direction:left;
-    -webkit-marquee-speed:slow;
-    -webkit-marquee-style:scroll;
-    -webkit-marquee-repetition:infinite;
-}
