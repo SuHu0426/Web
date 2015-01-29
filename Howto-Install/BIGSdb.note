@@ -260,5 +260,15 @@ bigsdb_test_isolates=# ALTER TABLE isolates ADD year int;
 bigsdb_test_isolates=# \q
 $ exit
 
+<!-- ----------------------------------------------------------- -->
+
+Database-specific configuration
+
+$ cd /etc/bigsdb/
+$ sudo mkdir /etc/bigsdb/dbases
+
+
+<!-- ----------------------------------------------------------- -->
+
 
 
