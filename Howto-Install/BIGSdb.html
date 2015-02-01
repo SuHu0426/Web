@@ -98,7 +98,9 @@ IO::String is up to date (1.08).
 <h3><a href="http://perlmaven.com/perl-cgi-script-with-apache2" target="bigsdb">Apache perl CGI</a></h3>
 <pre>
 $ sudo mkdir /var/www/cgi-bin
-# Add the following lines after the DocumentRoot line:
+</pre>
+<p>Add the following lines after the DocumentRoot line:</p>
+<pre>
 $ sudo nano /etc/apache2/sites-enabled/000-default.conf
         ScriptAlias /cgi-bin/ /var/www/cgi-bin/
         &lt;Directory "/var/www/cgi-bin"&gt;
