@@ -195,6 +195,7 @@ $ sudo service postgresql restart
 $ sudo useradd -s /bin/sh bigsdb
 $ cd /home/cdc/bigsdb_1.10.1
 $ sudo su postgres
+$ createdb bigsdb_jobs
 $ psql -f sql/jobs.sql bigsdb_jobs
 postgres=# ALTER ROLE bigsdb WITH PASSWORD 'bigsdb';
 postgres=# \q
