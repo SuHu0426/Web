@@ -36,13 +36,13 @@ Would you like to configure as much as possible automatically? [yes]
 What approach do you want?  (Choose 'local::lib', 'sudo' or 'manual')
  [local::lib] sudo
  
-cpan[1]> install DBI 
+cpan[1]&gt; install DBI 
   /usr/bin/make -- NOT OK
-cpan[2]> quit
+cpan[2]&gt; quit
 $ sudo aptitude install build-essential 
 $ perl -MCPAN -e shell
-> install DBI
-> install DBD-Pg 
+&gt; install DBI
+&gt; install DBD-Pg 
 Warning: Cannot install DBD-Pg, don't know what it is.
 Try the command
 
@@ -50,19 +50,19 @@ Try the command
 
 to find objects with matching identifiers.
 
-> install DBD::Pg
+&gt; install DBD::Pg
 Enter a valid PostgreSQL postgres major version number 9
 Enter a valid PostgreSQL postgres minor version number 4   
 Enter a valid PostgreSQL postgres patch version number 165
 You need to install postgresql-server-dev-X.Y for building a server-side
 extension or libpq-dev for building a client-side application.
 ^C
-> quit
+&gt; quit
 $ dpkg -l |grep postgresql
 $ sudo aptitude install libpq-dev
 $ perl -MCPAN -e shell
-> install DBD::Pg
-> install XML::Parser::perlSAX 
+&gt; install DBD::Pg
+&gt; install XML::Parser::perlSAX 
 Warning: Cannot install XML::Parser::perlSAX, don't know what it is.
 Try the command
 
@@ -70,29 +70,29 @@ Try the command
 
 to find objects with matching identifiers.
 
-> install XML::Parser::PerlSAX
+&gt; install XML::Parser::PerlSAX
 XML::Parser::PerlSAX is up to date (0.08).
 
-> install Log::Dispatch::File 
+&gt; install Log::Dispatch::File 
 
-> install Error
+&gt; install Error
 
-> install Config::Tiny
+&gt; install Config::Tiny
 
-> install Bio::Biblio
+&gt; install Bio::Biblio
 
-> install IO::String
+&gt; install IO::String
 IO::String is up to date (1.08).
 
-> install Data::UUID
+&gt; install Data::UUID
 
-> install List::MoreUtils
+&gt; install List::MoreUtils
 
-> install Time::Duration
+&gt; install Time::Duration
 
-> install Excel::Writer::XLSX 
+&gt; install Excel::Writer::XLSX 
 
-> install Parallel::ForkManager
+&gt; install Parallel::ForkManager
 </pre>
 <!-- ----------------------------------------------------------- -->
 <h3><a href="http://perlmaven.com/perl-cgi-script-with-apache2" target="bigsdb">Apache perl CGI</a></h3>
@@ -101,16 +101,16 @@ $ sudo mkdir /var/www/cgi-bin
 # Add the following lines after the DocumentRoot line:
 $ sudo nano /etc/apache2/sites-enabled/000-default.conf
         ScriptAlias /cgi-bin/ /var/www/cgi-bin/
-        <Directory "/var/www/cgi-bin">
+        &lt;Directory "/var/www/cgi-bin"&gt;
                 AllowOverride None
                 Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
                 Require all granted
-        </Directory>
+        &lt;/Directory&gt;
 
 $ sudo a2enmod cgi
 $ ls -l /etc/apache2/mods-enabled/ | grep cgi
-lrwxrwxrwx 1 root root 27 Jan 29 16:17 cgid.conf -> ../mods-available/cgid.conf
-lrwxrwxrwx 1 root root 27 Jan 29 16:17 cgid.load -> ../mods-available/cgid.load
+lrwxrwxrwx 1 root root 27 Jan 29 16:17 cgid.conf -&gt; ../mods-available/cgid.conf
+lrwxrwxrwx 1 root root 27 Jan 29 16:17 cgid.load -&gt; ../mods-available/cgid.load
 
 $ sudo service apache2 reload 
 $ sudo service apache2 restart
@@ -247,13 +247,13 @@ $ cd /etc/cron.hourly
 $ sudo nano cleanBIGSdb
 #!/bin/sh
 #Remove temp BIGSdb files from secure tmp folder older than 1 week.
-find /var/tmp/ -name '*BIGSdb_*' -type f -mmin +10080 -exec rm -f {} \; 2>/dev/null
+find /var/tmp/ -name '*BIGSdb_*' -type f -mmin +10080 -exec rm -f {} \; 2&gt;/dev/null
 
 #Remove .jnlp files from web tree older than 1 day
-find /var/www/tmp/ -name '*.jnlp' -type f -mmin +1440 -exec rm -f {} \; 2>/dev/null
+find /var/www/tmp/ -name '*.jnlp' -type f -mmin +1440 -exec rm -f {} \; 2&gt;/dev/null
 
 #Remove other tmp files from web tree older than 1 week
-find /var/www/tmp/ -type f -mmin +10080 -exec rm -f {} \; 2>/dev/null
+find /var/www/tmp/ -type f -mmin +10080 -exec rm -f {} \; 2&gt;/dev/null
 $ sudo chmod +x cleanBIGSdb 
 </pre>
 
