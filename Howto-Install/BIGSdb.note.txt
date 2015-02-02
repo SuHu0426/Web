@@ -115,7 +115,7 @@ drwxr-sr-x 5 root staff 4096 Jan 29 16:35 BIGSdb
 drwxrwsr-x 4 root staff 4096 Jan 29 15:04 python2.7
 drwxrwsr-x 3 root staff 4096 Jan 29 15:37 x86_64-linux-gnu
 $ sudo cp -r javascript /var/www/html/
-$ sudo cp bigsdb.css /var/www/html/
+$ sudo cp bigsdb.css jquery-ui.css /var/www/html/
 $ sudo cp -r images /var/www/html/
 $ sudo cp -r conf/ /etc/bigsdb
 $ sudo su postgres
@@ -270,6 +270,29 @@ $ sudo mkdir /etc/bigsdb/dbases
 
 
 <!-- ----------------------------------------------------------- -->
+
+$ sudo mkdir /etc/bigsdb/dbases/bigsdb_test_seqdef
+$ cd /etc/bigsdb/dbases/bigsdb_test_seqdef
+$ sudo cp ~/bigsdb_1.10.1/headers/*.html .
+$ sudo cp ~/bigsdb_1.10.1/xml/seqdef_config.xml config.xml
+$ sudo nano config.xml
+modify db="bigsdb_test_seqdef"
+add password="dbpasswd"
+
+$ sudo su postgres
+$ psql bigsdb_test_seqdef
+bigsdb_test_isolates=# INSERT INTO users (id, user_name, surname, first_name, email, affiliation, status, date_entered, datestamp, curator) VALUES (1, 'cdc', 'cdc', 'cdc', 'cssu@csmail.nchu.edu.tw', 'NCHU cdc', 'admin', 'now', 'now', 1 );
+bigsdb_test_isolates=# \q
+$ /home/cdc/bigsdb_1.10.1/scripts/maintenance/add_user.pl -a -d bigsdb_test_seqdef -n cdc -p 'password'
+
+$ psql bigsdb_test_isolates
+
+
+
+
+
+
+
 
 
 
