@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><title>Simulator GNS3 | IT Everything Center Share 
+               Knowledge</title>
+  </head>
+<body>
+
+<a name="InstallingGNS3"></a><h3>Installing GNS3 Network Simulator 
+<a href="http://itworkbooks.com/2015/01/09/installing-gns3-network-simulator/">(Source 
+Origin)</a></h3>
+
+			<div>
+				<div>
+
+Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+
+			<div>
+<h5><strong>Installing GNS3 Network Simulator.</strong></h5>
+
+<p><img src="http://blog.pluralsight.com//wp-content/uploads/2012/04/gns3-network-simulator-install_featured-image.jpg" alt="GNS3 Network Simulator Installation"></p>
+
+<p>There are two main ways that GNS3 can be
+ installed, either by using the all-in-one installer or by using one of 
+the standalone packages. The standalone packages are not installers but 
+simply an archive that can be extracted and run directly; this is a very
+ useful option for those who do not want to run through the installation
+ process. The option that will be covered in this article is the 
+installer which includes the installation of Dynamips, Qemu/Pemu, Putty,
+ VPCS, WinPcap and Wireshark.</p>
+
+<h4>GNS3 Installation</h4>
+
+<p>The installation of GNS3 is simple and 
+the different options to select are based on the specific configuration 
+of the target machine. The installation shown in this article will 
+install all required programs and assumes nothing has been previously 
+installed.</p>
+
+<p>The first thing to do is to obtain the GNS3 installer available at <a href="http://www.gns3.net/download/">http://www.gns3.net/download/</a>. Once this file is downloaded, click on the executable file as shown in Figure 1:</p>
+
+<p>Once the installer has been launched, the screen shown in Figure 2 will be displayed; once at this screen press the Next button.</p>
+
+<p><img title="Click on the GNS3 Installation Executable" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-1.jpg" alt="Click on the GNS3 Installation Executable"></p>
+
+<p>The next screen will display the license information to install GNS3 
+and its associated programs.  If the terms are agreeable press the I
+ Agree button.</p>
+
+<p> </p>
+
+<p><img title="GNS3 License Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-3.jpg" alt="GNS3 License Screen"></p>
+
+<p>The next screen will allow the user to 
+select a Start Menu folder name to insert the associated GNS3 shortcuts 
+into; most people just leave this at the default of GNS3.  Once a 
+name has been selected you will press the Next button.</p>
+
+<p><img title="Start Menu Name Selection" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-4.jpg" alt="Start Menu Name Selection"></p>
+
+<p>The next screen will allow the user to 
+customize the installation by selecting which components will be 
+installed; select the components that are required for the specific 
+installation and press the Next button.</p>
+
+<p><img title="GNS3 Component Selection" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-5.jpg" alt="GNS3 Component Selection"></p>
+
+<p>The next screen will allow the user to 
+select where the GNS3 programs and most of its components will be 
+installed. Select the appropriate path and press the Install button.</p>
+
+<p><img title="GNS3 Install Location" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-6.jpg" alt="GNS3 Install Location"></p>
+
+<p>If WinPcap was selected to be installed,
+ the next few screens will be shown as the WinPcap installer is 
+completed.  Once this screen is shown, press the Next button. If 
+WinPcap was not selected move to Figure 11.</p>
+
+<p><img title="WinPcap Installer Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-7.jpg" alt="WinPcap Installer Screen"></p>
+
+<p>Read the next screen and press the Next button.</p>
+
+<p><img title="WinPcap Installer Setup Wizard Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-8.jpg" alt="WinPcap Installer Setup Wizard Screen"></p>
+
+<p>The next screen will display the license
+ information to install WinPcap.  If the terms are agreeable press 
+the I Agree button.</p>
+
+<p><img title="WinPcap License Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-9.jpg" alt="WinPcap License Screen"></p>
+
+<p>On the next screen select whether the WinPcap driver will be automatically started at boot. This is typical.</p>
+
+<p><img title="WinPcap Driver on Startup" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-10.jpg" alt="WinPcap Driver on Startup"></p>
+
+<p>Once the installer has finished it will display the final screen shown in Figure 11, press the Finish button.</p>
+
+<p><img title="WinPcap Installer Finish" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-11.jpg" alt="WinPcap Installer Finish"></p>
+
+<p>If Wireshark was selected to be 
+installed, the next few screens will be shown as the Wireshark installer
+ is completed; once this screen is shown press the Next button. If 
+Wireshark was not selected move to Figure 21.</p>
+
+<p><img title="Wireshark Installer Setup Wizard Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-12.jpg" alt="Wireshark Installer Setup Wizard Screen"></p>
+
+<p>The next screen will display the license
+ information to install Wireshark.  If the terms are agreeable 
+press the I Agree button.</p>
+
+<p><img title="Wireshark License Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-13.jpg" alt="Wireshark License Screen"></p>
+
+<p>The next screen will allow the user to 
+customize the installation by selecting which components will be 
+installed; select the components that are required for the specific 
+installation and press the Next button.</p>
+
+<p><img title="Wireshark Component Selection" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-14.jpg" alt="Wireshark Component Selection"></p>
+
+<p>The next screen will ask which shortcuts
+ to install as part of the Wireshark installation and ask if a number of
+ different file associations should be associated to Wireshark. Select 
+the wanted options and press the Next button.</p>
+
+<p><img title="Wireshark Additional Tasks" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-15.jpg" alt="Wireshark Additional Tasks"></p>
+
+<p>The next screen will allow the user to 
+select where Wireshark will be installed. Select the appropriate path 
+and press the Next button.</p>
+
+<p><img title="Wireshark Install Location" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/figure-16.jpg" alt="Wireshark Install Location"></p>
+
+<p>The next screen will ask if WinPcap 
+should be installed as well.  Since WinPcap was probably already 
+installed first by the GNS3 installer, this option will probably not be 
+selected; once done press the Install button.</p>
+
+<p><img title="Install WinPCap (Wireshark Installer)" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-17.jpg" alt="Install WinPCap (Wireshark Installer)"></p>
+
+<p>At this point the Wireshark installer will start as shown in Figure 17.</p>
+
+<p><img title="Wireshark Installing" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-18.jpg" alt="Wireshark Installing"></p>
+
+<p>Once the Wireshark installation is complete the screen shown in Figure 18 will be displayed; once done press the Next button.</p>
+
+<p><img title="Wireshark Installation Complete" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-19.jpg" alt="Wireshark Installation Complete"></p>
+
+<p>At the next screen <strong>don't</strong> select the Run Wireshark option (this is because the GNS3 installer is still running) and press the Finish button.</p>
+
+<p><img title="Completing the Wireshark Installation" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-20.jpg" alt="Completing the Wireshark Installation"></p>
+
+<p>The next screen will show that the installation of GNS3 is proceeding.</p>
+
+<p><img title="GNS3 Installation Proceeding" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-21.jpg" alt="GNS3 Installation Proceeding"></p>
+
+<p>Once the GNS3 installation is complete the screen shown in Figure 21 will be displayed; once done press the Next button.</p>
+
+<p><img title="GNS3 Installation Complete" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-22.jpg" alt="GNS3 Installation Complete"></p>
+
+<p>The last screen in the installation process is shown in Figure 22; at this screen it is possible to run GNS3 for the first time.</p>
+
+<p><img title="GNS3 Setup Complete" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-23.jpg" alt="GNS3 Setup Complete"></p>
+
+<h4>Summary</h4>
+
+<p>Once the installation is complete, the 
+user has the ability to use all of the GNS3 capabilities. A couple of 
+other articles will be written as a follow-up to display the way that 
+these different capabilities can be used to help in studying for Cisco 
+based courses.</p>
+
+	<h5><em>Related</em></h5>
+<div><p><a title="GNS3 Initial Configuration
+
+GNS3 Initial Configuration. Overview With the introduction of dynamips as a Cisco IOS emulation tool, it is now possible to emulate almost any Cisco IOS image in a simulated hardware environment. Of course the main problem with dynamips was that it was a CLI tool that required a lot of..." href="http://itworkbooks.com/2015/01/09/gns3-initial-configuration/">GNS3 Initial Configuration</a> In "Category"</p>
+
+<p><a title="Using the GNS3 Network Simulator
+
+Using the GNS3 Network Simulator. Today we will be taking a closer look at another network simulator that can be used by candidates while preparing for their Cisco exams. The Packet Tracer, by Cisco, is a really cool tool for CCNA candidates, but it really can't be used by candidates..." href="http://itworkbooks.com/2015/01/09/using-the-gns3-network-simulator/">Using the GNS3 Network Simulator</a> In "IT-Networking"</p>
+
+<p><a title="GNS3 Configuration Emulated Ethernet Switch
+
+GNS3 Configuration Emulated Ethernet Switch. Overview Now that the basics have been covered for the set up of GNS3 in the previous articles it is time to take a look at how to use its capabilities to emulate a real environment. This article will take a look at the configuration..." href="http://itworkbooks.com/2015/01/09/gns3-configuration-emulated-ethernet-switch/">GNS3 Configuration Emulated Ethernet Switch</a> In "IT-Networking"</p></div></div></div>			</div>
+
+			<div>
+<a href="http://itworkbooks.com/category/category/">Category</a>, <a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>
+				<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div></div>
+
+			<div>
+				<a href="http://itworkbooks.com/2015/01/09/prepare-for-your-cisco-exams-with-cisco-packet-tracer/" rel="prev"><- Prepare for Your Cisco Exams with Cisco Packet Tracer</a>				<a href="http://itworkbooks.com/2015/01/09/gns3-initial-configuration/" rel="next">GNS3 Initial Configuration 
+-></a>			</div>
+			<div></div>
+
+		</div>
+
+		<div id="comments">
+
+
+
+<h3><strong>GNS3 Configuration Emulated Ethernet 
+Switch.</strong> 
+<a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">(Source Origin)</a></h3>
+
+<h3><strong>Overview</strong></h3>
+
+<p>Now that the basics have been covered for the <a title="Basic GNS3 Configuration" href="#InstallingGNS3">set up of GNS3</a>
+ in the previous articles it is time to take a look at how to use its 
+capabilities to emulate a real environment. This article will take a 
+look at the configuration of GNS3 using a emulated Ethernet switch.</p>
+
+<h3>GNS3 Ethernet Switch Capabilities</h3>
+
+<p>The Ethernet switch that will be used by
+ GNS3 is part of the Dynagen package that is used by GNS3 to emulate 
+routers. While not the equivalent to a Cisco Catalyst switch it can be 
+configured in a number of different ways that allow support for most 
+common scenarios. Some of these capabilities include the ability to 
+perform Ethernet Switching (if that wasn't obvious), as well as support 
+for access VLANS, 802.1Q tagged VLANs and QinQ (Stacked) VLANs. Other 
+than direct management, these are the features that make up a basic 
+managed switch.</p>
+
+<h2>GNS Lab Configuration</h2>
+<p>The configuration of a lab that utilizes
+ the emulated Ethernet switch functionality is rather simple once the 
+configuration of the individual devices has been completed. The 
+following figures will walk through the setup of a basic GNS3 lab using 
+three routers and a single Ethernet switch with default settings that 
+include all devices on the same VLAN (1).</p>
+
+<p>Figure 1 shows the beginning configuration of the lab by dragging each of the devices from the Nodes Types pane to the Map pane.</p>
+
+<p><img class="alignleft  wp-image-34830" title="Beginning Map Configuration" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-1.jpg" alt="Beginning Map Configuration" height="383" width="577"></p>
+
+<p><em>Figure 1 - Beginning Map Configuration</em></p>
+
+<p>For this example, three different 
+routers will be used, each of which have been dragged to the Map pane 
+and configured with 2 Fast Ethernet interfaces.</p>
+
+<p><img class="alignleft  wp-image-34831" title="Completed Router Map Configuration" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-2.jpg" alt="Completed Router Map Configuration" height="385" width="580"></p>
+
+<p><em>Figure 2 - Completed Router Map Configuration</em></p>
+
+<p>The next figure shows the configuration 
+of a Ethernet switch that has been dragged over to the Map pane. For 
+this example the default configuration will be used but it is important 
+to know where the different options could be configured if needed.</p>
+
+<p><img class="alignleft  wp-image-34832" title="Configuring GNS3" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-3.jpg" alt="Configuring GNS3" height="384" width="578"></p>
+
+<p><em>Figure 3 - Configuring a GNS3/Dynagen Ethernet Switch</em></p>
+
+<p>To configure these options Right-Click 
+the switch and select the Configure menu option. Once this has been done
+ the screen shown in Figure 4 will be displayed. From here you will 
+select the Ethernet switch name from the left pane.</p>
+
+<p><img class="alignleft  wp-image-34833" title="Ethernet Switch" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-4_002.jpg" alt="Ethernet Switch" height="422" width="580"></p>
+
+<p><em>Figure 4 - Ethernet Switch Node Configuration Screen</em></p>
+
+<p>From the next screen shown in Figure 5 
+the user can configure the Ethernet switch based on the requirements of 
+the specific lab. By default, there are 8 different switchports that 
+will be available that are all configured as access VLAN ports on VLAN 
+1. From this screen any specific switchport configuration could be 
+completed, setting up additional links between Map pane devices.</p>
+
+<p><img class="alignleft  wp-image-34834" title="Switchport Configuration" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-5_002.jpg" alt="Switchport Configuration" height="423" width="581"></p>
+
+<p><em>Figure 5 - Ethernet Switch Switchport Configuration</em></p>
+
+<p>Now that both the routers and the switch
+ have been configured it is time to configure the links between the 
+devices and the Ethernet switch. To do this select the Add a Link button
+ shown in Figure 6.</p>
+
+<p><img class="alignleft  wp-image-34835" title="Add a Link" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-6_002.jpg" alt="Add a Link" height="386" width="581"></p>
+
+<p><em>Figure 6 - Add a Link</em></p>
+
+<p>The next few figures show the 
+configuration of the links between the routers and the Ethernet switch 
+(Note: These figures utilize GNS3's manual link mode available under 
+Preferences).</p>
+
+<p><img class="alignleft  wp-image-34836" title="connecting r1" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-7_002.jpg" alt="Connecting R1" height="386" width="581"></p>
+
+<p><em>Figure 7 - Connecting R1</em></p>
+
+<p><img class="alignleft  wp-image-34837" title="to sw2" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-8.jpg" alt="To SW2" height="386" width="581"></p>
+
+<p><em>Figure 8 - To SW2</em></p>
+
+<p><img class="alignleft  wp-image-34838" title="Connecting R2" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-9.jpg" alt="Connecting R2" height="387" width="583"></p>
+
+<p><em>Figure 9 - Connecting R2</em></p>
+
+<p><img class="alignleft  wp-image-34839" title="SW2" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-10.jpg" alt="SW2" height="388" width="584"></p>
+
+<p><em>Figure 10 - To SW2</em></p>
+
+<p><img class="alignleft  wp-image-34840" title="Connecting R3" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-11.jpg" alt="Connecting R3" height="387" width="583"></p>
+
+<p><em>Figure 11 - Connecting R3</em></p>
+
+<p><img class="alignleft  wp-image-34841" title="To SW2 Again" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-12.jpg" alt="To SW2 Again" height="386" width="581"></p>
+
+<p><em>Figure 12 - To SW2</em></p>
+
+<p>Once all of the links have been configured, exit the Add a Link mode as shown in Figure 13.</p>
+
+<p><img class="alignleft  wp-image-34842" title="Exit Add a Link Mode" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-13_003.jpg" alt="Exit Add a Link Mode" height="385" width="580"></p>
+
+<p><em>Figure 13 - Exit Add a Link Mode</em></p>
+
+<p>At this point the lab is ready to be 
+started, which is shown in Figure 14. Once all of the devices are up and
+ running each of the routers can be configured the same as they would if
+ there were three physical routers connected to a physical Ethernet 
+switch.</p>
+
+<p><img class="alignleft  wp-image-34843" title="Completed and Running Emulation" src="http://blog.pluralsight.com//wp-content/uploads/2012/08/Figure-14_002.jpg" alt="Completed and Running Emulation" height="384" width="578"></p>
+
+<p><em>Figure 14 - Completed and Running Emulation</em></p>
+
+<h2>Summary</h2>
+<p>All things being equal, the 
+configuration of GNS3 is rather simple once the basics are covered and 
+the student has a couple different lab configurations under their belt. 
+The Ethernet switch functionality of GNS3/Dynagen is very simple and 
+straight forward but it is limited and this should be considered when 
+planning the lab topology. Hopefully the content of this article will 
+enable the reader/student the ability to get GNS3 up and running and 
+configured in the scenario being tested quickly and without much delay. 
+This way time can be be spent on learning the networking system and not 
+GNS3.</p>
+			</div>
+
+			<div class="post-meta">
+<a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>	<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div class="sep"></div>
+		</div>
+
+			<div id="post-1202" class="post-1202 post type-post status-publish format-standard hentry category-it-networking category-simulator-gns3 category-simulator-network-gns3ioupacket-tracer tag-gns3 tag-simulator">
+			<h2 class="title"><a href="http://itworkbooks.com/2015/01/09/gns3-basic-device-configuration/" rel="bookmark">GNS3 Basic Device&nbsp;Configuration</a></h2>
+			<div class="post-info">
+				<div>
+<a href="http://itworkbooks.com/2015/01/09/gns3-basic-device-configuration/#respond" title="Comment on GNS3 Basic Device&nbsp;Configuration">Leave a comment</a>
+Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork" rel="author">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+			<div class="content">
+				<h4 class="medium h4"><strong>GNS3 Basic Device Configuration.</strong></h4>
+
+<p>Once the initial <a style="color:#000000;" href="http://itworkbooks.com/2015/01/09/gns3-initial-configuration/">configuration of the Cisco IOS images </a>and
+ GNS3 preferences is complete, it is time to begin the process of 
+learning how to configure a device. As in real life, each device can be 
+configured with a specific amount of memory, disk, and modules. Each of 
+these will be covered in this article.</p>
+
+<h2>GNS3 Device Configuration</h2>
+<p>The process of configuring a device is 
+not overly complex; however it is important that the basic network 
+topology be worked out before starting configuration. This article is 
+only going to be configuring a single device so the topology is rather 
+simple; in this case a single 7206 device will be configured.</p>
+
+<p>The first step in the configuration of a
+ device is to add it to the GNS3 map.&nbsp;Figure 1 shows the 7200 
+device that will be used in this example.</p>
+
+<p><img class="alignleft  wp-image-32403" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-01.jpg" alt="Main GNS3 Map" height="383" width="577"></p>
+<p align="center">Figure 1 - Main GNS3 Map</p>
+
+<p>Figure 2 shows the process of dragging the 7200 from the node types pane to the main map pane.</p>
+
+<p><img class="alignleft  wp-image-32404" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-02.jpg" alt="Dragging a Device to the Map Pane" height="385" width="580"></p>
+<p align="center">Figure 2 - Dragging a Device to the Map Pane</p>
+
+<p>Once the device has been dragged over to the main GNS3 pane it will be displayed as shown in Figure 3.</p>
+
+<p><img class="alignleft  wp-image-32405" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-03.jpg" alt="Complete Map" height="378" width="580"></p>
+<p align="center">Figure 3 - Complete Map</p>
+
+<p>To configure the device it must be 
+right-clicked and the Configure option must be selected from the menu. 
+Figure 4 shows the menu that will be displayed when a device is 
+right-clicked.</p>
+
+<p><img class="alignleft  wp-image-32406" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-04.jpg" alt="Right-Clicked Menu" height="377" width="579"></p>
+<p align="center">Figure 4 - Right-Clicked Menu</p>
+
+<p>Once Configure is selected the Node configuration window shown in Figure 5 will be displayed.</p>
+
+<p><img class="alignleft  wp-image-32407" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-05.jpg" alt="Node Configuration Window" height="421" width="578"></p>
+<p align="center">Figure 5 - Node Configuration Window</p>
+
+<p>To configure the device select it from 
+the left pane. Figure 6 shows how the right pane changes when the device
+ is selected. The general options available for the selected device are 
+shown including any hardware options, depending on the platform. 
+&nbsp;In this case the 7200 platform midplane (how the modules connect 
+to the NPE) and NPE (processor card) are configured from this screen.</p>
+
+<p><img class="alignleft  wp-image-32408" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-06.jpg" alt="Device Configuration Node Window" height="434" width="576"></p>
+<p align="center">Figure 6 - Device Configuration Node Window</p>
+
+<p>The memories and disks tab offers the 
+ability configure the memory and disk allocation for the device. The 
+size of the RAM required depends on the specific image being used; 
+generally 256 Mbytes is sufficient for most images (to be sure, it can 
+be checked at Cisco's Feature Navigator Site (linkto: <a href="http://tools.cisco.com/ITDIT/CFN/jsp/index.jsp" rel="nofollow">http://tools.cisco.com/ITDIT/CFN/jsp/index.jsp</a>).
+ The typical default NVRAM size is 128 Kbytes and the size of the disk 
+depends on the specific requirements of the lab; generally a disk is not
+ required for a simple lab.</p>
+
+<p><img class="alignleft  wp-image-32415" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-071.jpg" alt="Device Memory and Disk Configuration" height="435" width="578"></p>
+<p align="center">Figure 7 - Device Memory and Disk Configuration</p>
+
+<p>Figure 8 shows the "Slots" tab; the 
+number of configurable slots that are available on each specific 
+platform will be shown. In this case the 7206 supports a total of 6 full
+ module slots and another slot that is part of the processor card (slot 
+0).</p>
+
+<p><img class="alignleft  wp-image-32414" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-08.jpg" alt="Device Slots Tab" height="438" width="582"></p>
+<p align="center">Figure 8 - Device Slots Tab</p>
+
+<p>Figure 9 shows the different options 
+that are available in Slot 0 of the 7200 platform; as stated before, the
+ options are limited because it is part of the processor card.</p>
+
+<p><img class="alignleft  wp-image-32410" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-09.jpg" alt="7200 Slot 0 Adapter Options" height="436" width="579"></p>
+<p align="center">Figure 9 - 7200 Slot 0 Adapter Options</p>
+
+<p>Figure 10 shows the different options 
+that are available on Slot 1 (which will be the same with Slot 2 through
+ Slot 6). From the options available, as shown in Figures 9 and 10, 
+select the modules that meet the network topology requirements of the 
+intended lab. For the purposes of this article it is not important.</p>
+
+<p><img class="alignleft  wp-image-32411" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-10.jpg" alt="7200 Slot 1 through Slot 6 Adapter Options" height="434" width="576"></p>
+<p align="center">Figure 10 - 7200 Slot 1 through Slot 6 Adapter Options</p>
+
+<p>The next tab allows the configuration of
+ the configuration register; for normal operation this is typically set 
+to 0x2102. The base MAC address can also be configured as well; this is 
+handy if you are testing a feature that uses this value.</p>
+
+<p><img class="alignleft  wp-image-32412" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-11.jpg" alt="Advanced Node Configuration Tab" height="432" width="574"></p>
+<p align="center">Figure 11 - Advanced Node Configuration Tab</p>
+
+<p>Once the configuration has been 
+completed, it is possible to see most of these options selected by 
+putting the mouse curser over the configured device as shown in Figure 
+12.</p>
+
+<p><img class="alignleft  wp-image-32413" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-12.jpg" alt="Configuration Summary" height="371" width="569"></p>
+<p align="center">Figure 12 - Configuration Summary</p>
+
+<h2>Summary</h2>
+<p>It is vital that to properly configure 
+GNS3 to emulate a topology that the topology is laid out first, whether 
+this is physically on paper or has been thought out mentally. While GNS3
+ will automatically select the appropriate adapters if links are created
+ on the map, it is often better with more complex topologies to manually
+ select the adapters to use on each device. Hopefully the content of 
+this article will help in performing these steps for future emulation 
+environments.</p>
+			</div>
+
+			<div class="post-meta">
+<a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>				<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div class="sep"></div>
+		</div>
+
+			<div id="post-1200" class="post-1200 post type-post status-publish format-standard hentry category-it-networking category-simulator-gns3 category-simulator-network-gns3ioupacket-tracer tag-gns3 tag-simulator">
+			<h2 class="title"><a href="http://itworkbooks.com/2015/01/09/basic-configuration-for-gns3-labs/" rel="bookmark">Basic Configuration for GNS3&nbsp;Labs</a></h2>
+			<div class="post-info">
+				<div>
+					<a href="http://itworkbooks.com/2015/01/09/basic-configuration-for-gns3-labs/#respond" title="Comment on Basic Configuration for GNS3&nbsp;Labs">Leave a comment</a>
+					Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork" rel="author">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+			<div class="content">
+				<h4 class="medium h4"><strong>Basic Configuration for GNS3 Labs.</strong></h4>
+
+<p><img class="attachment-post-thumbnail wp-post-image" src="http://blog.pluralsight.com//wp-content/uploads/2012/07/gns3-lab-basic-configuration_featured-image.jpg" alt="Configure a GNS3 Lab" height="125" width="485"></p>
+
+<p>Now that the process of configuring the device has been covered in the previous article, <a href="http://itworkbooks.com/2015/01/09/installing-gns3-network-simulator/">GNS3 Initial Configuration</a>,
+ this article will take a look at how to setup GNS3 with two devices and
+ then connect them together with a serial cable (virtually of course). 
+This article will also go over the process of establishing the IDLE PC 
+value.</p>
+
+<h2>GNS3 Basic Lab Configuration</h2>
+<p>For those just learning GNS3 it can be take a little time to figure 
+out exactly how it works. Since many people just learning GNS3 are also 
+just learning networking, it can be even harder. GNS3 was designed to 
+take some of the complexity out of emulating Cisco IOS environments 
+(among others). The other tools that are available (dynamips/dynagen) 
+are still used by GNS3, but are just configured and operated in the 
+background. The configuration of labs within GNS3 requires some basic 
+level GUI OS proficiency which most people already have.</p>
+
+<p>To begin with, it is best to first have an idea of what the topology 
+is going to look like. For this article the topology is going to connect
+ two 7206 routers together with a single serial link. The first step to 
+set this up is to drag the two 7200s from the nodes types pane to the 
+map pane. This process is shown in Figures 1-4 below:</p>
+
+<p><img class="alignleft  wp-image-32421" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-011.jpg" alt="Select the 7200 Series Router" height="394" width="605"></p>
+<p align="center">Figure 1 - Select the 7200 Series Router</p>
+
+<p><img class="alignleft  wp-image-32422" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-021.jpg" alt="Drag the First Router to the Map pane" height="396" width="608"></p>
+<p align="center">Figure 2 - Drag the First Router to the Map pane</p>
+
+<p><img class="alignleft  wp-image-32423" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-031.jpg" alt="Select the 7200 Series Router Again" height="395" width="606"></p>
+<p align="center">Figure 3 - Select the 7200 Series Router Again</p>
+
+<p><img class="alignleft  wp-image-32424" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-041.jpg" alt="Drag the Second Router to the Map pane" height="395" width="606"></p>
+<p align="center">Figure 4 - Drag the Second Router to the Map pane</p>
+
+<p>Now that the two routers have been placed on the map pane, the two 
+need to be connected together with a serial link. The Add a Link tool is
+ in the top navigation bar and resembles a cable connector, once it is 
+clicked the different types of link available are shown for selection. 
+In this case a serial link is going to be used to connect the two 
+devices. The selection of a Serial link is shown in Figure 5.</p>
+
+<p><img class="alignleft  wp-image-32425" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-051.jpg" alt="Add a Link Tool - Selecting Serial Link Type" height="395" width="606"></p>
+<p align="center">Figure 5 - Add a Link Tool - Selecting Serial Link Type</p>
+
+<p>Once the link type has been selected, connecting together devices is 
+as simple as clicking the first device and then clicking the second 
+device; this process is shown in Figure 6-8. Once the link has been 
+successfully created, the map pane will reflect the link between them 
+with red dots, these dots indicate that the interface is not enabled (in
+ this case the router has not been started yet.).</p>
+
+<p><img class="alignleft  wp-image-32426" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-061.jpg" alt="Select the First Device" height="394" width="605"></p>
+<p align="center">Figure 6 - Select the First Device</p>
+
+<p><img class="alignleft  wp-image-32427" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-072.jpg" alt="Select the Second Device" height="395" width="606"></p>
+<p align="center">Figure 7 - Select the Second Device</p>
+
+<p><img class="alignleft  wp-image-32428" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-081.jpg" alt="A Completed Serial Link" height="396" width="608"></p>
+<p align="center">Figure 8 - A Completed Serial Link</p>
+
+<p>Once all of the Serial links have been completed, the Add a Link tool
+ needs to be disabled; this is done by clicking on the Add a Link tool 
+again. When it is active, the thumbnail will change to a red X. Figure 9
+ shows the thumbnail that will need to be selected.</p>
+
+<p><img class="alignleft  wp-image-32429" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-091.jpg" alt="Disabling the Add a Link Tool" height="397" width="609"></p>
+<p align="center">Figure 9 - Disabling the Add a Link Tool</p>
+
+<p>Once you have disabled the Add a Link tool, the lab and the two 
+devices is complete. These following parts cover the steps required to 
+configure the IDLE PC value; the IDLE PC value is important as it 
+enables GNS3/dynamips to more efficiently use the host processor. 
+Without it, the process utilization of the host machine will often be at
+ 100%. To begin, a single device needs to be started and allowed to 
+completely boot up. Figures 10-12 show the process of starting R1 and 
+displaying the console. Watch the console until the device has been 
+completely booted up and no additional messages are being displayed.</p>
+
+<p><img class="alignleft  wp-image-32430" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-101.jpg" alt="Starting R1" height="395" width="606"></p>
+<p align="center">Figure 10 - Starting R1</p>
+
+<p><img class="alignleft  wp-image-32431" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-111.jpg" alt="Displaying R1's Console" height="394" width="605"></p>
+<p align="center">Figure 11 - Displaying R1's Console</p>
+
+<p><img class="alignleft  wp-image-32432" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-121.jpg" alt="Watch the Console" height="389" width="598"></p>
+<p align="center">Figure 12 - Watch the Console</p>
+
+<p>Once the device has booted up and is idle, the IDLE PC value can be 
+calculated. Figures 13 and 14 show the process of calculating the IDLE 
+PC value and selecting the best value. The best values that GNS3 
+believes will provide the least processor utilization are shown with a <strong>'*'</strong>, so select the one that provides the least processor utilization.</p>
+
+<p><img class="alignleft  wp-image-32433" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-13.jpg" alt="Calculating the IDLE PC Value" height="388" width="595"></p>
+<p align="center">Figure 13 - Calculating the IDLE PC Value</p>
+
+<p><img class="alignleft  wp-image-32434" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-14.jpg" alt="Select a Value with a '*'" height="387" width="595"></p>
+<p align="center">Figure 14 - Select a Value with a '*'</p>
+
+<h2>Summary</h2>
+<p>The process of calculating the IDLE PC only needs to be done once for
+ each router model type, once it is calculated it will automatically be 
+added to the configuration of all other similar models. Hopefully the 
+content of this article enables the reader to set up a simple lab and 
+become familiar with the process of using GNS3 and will help in future 
+studies.</p>
+			</div>
+
+			<div class="post-meta">
+								<a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>				<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div class="sep"></div>
+		</div>
+
+			<div id="post-1197" class="post-1197 post type-post status-publish format-standard hentry category-it-networking category-simulator-gns3 category-simulator-network-gns3ioupacket-tracer tag-gns3 tag-simulator">
+			<h2 class="title"><a href="http://itworkbooks.com/2015/01/09/using-the-gns3-network-simulator/" rel="bookmark">Using the GNS3 Network&nbsp;Simulator</a></h2>
+			<div class="post-info">
+				<div>
+					<a href="http://itworkbooks.com/2015/01/09/using-the-gns3-network-simulator/#respond" title="Comment on Using the GNS3 Network&nbsp;Simulator">Leave a comment</a>
+					Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork" rel="author">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+			<div class="content">
+				<h4 class="medium h4"><strong>Using the GNS3 Network Simulator.</strong></h4>
+
+<p>Today we will be taking a closer look at
+ another network simulator that can be used by candidates while 
+preparing for their Cisco exams.</p>
+
+<p>The Packet Tracer, by Cisco, is a really
+ cool tool for CCNA candidates, but it really can't be used by 
+candidates who are preparing for their professional and Expert level 
+certs. The scenarios and labs that are done at these levels are way too 
+complex.</p>
+
+<p>As a professional level candidate you have just 3 options that are available to you.</p>
+
+<p>You can invest the money to build your 
+own lab using real Cisco gear. However, this is the most expensive 
+option that not everyone can afford. Just the cost of the Cisco routers 
+and switches will be enough to make anyone scream, not to mention the 
+added charges to your electricity bill.</p>
+
+<p>Your second option would be to rent rack
+ time at one of the many vendors that provide this service. This is not a
+ bad option. It is way cheaper than building your own lab and you get to
+ practice on real equipment. The only down side to this is having to 
+schedule your lab for an available time.</p>
+
+<p>This might not seem like a big deal to 
+most, but for me, it really is as my mind works differently; I usually 
+have these phases that I like to call my "In the Zone" phases when I'm 
+so focused on my studies that I can't be bothered with whatever else is 
+going on around me. Having to schedule my lab time to a date that is 
+available and not exactly when I would like to do the lab (NOW!!!) can 
+be somewhat inconveniencing. The only available date might be at a time 
+when you just had a bad day, or you're really just not in the mood for 
+studying.</p>
+
+<p>This is where your third option come in really handy. It's called the <a href="http://www.gns3.net/download/" target="_blank">GNS3</a> network simulator.</p>
+
+<p><img class="alignright size-full wp-image-10150" title="GNS3 Network Simulator" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/gns3-network-simulator1.png" alt="GNS3 Network Simulator" height="100" width="300" align="right"></p>
+
+<h4>What is GNS3 Really About?</h4>
+
+<p>The GNS3 network simulator is free, open source software that can be downloaded and used by anyone. You can access the download <a href="http://www.gns3.net/download/" target="_blank">at this link</a>.</p>
+
+<p>GNS3 works by using real Cisco IOS images which are emulated using a program called <a href="http://itworkbooks.com/2015/01/09/how-to-configure-dynagen-and-gns3/">Dynamips.</a></p>
+
+<p>GNS3 is really like the GUI part of the 
+overall product. With this GUI, users get an easy to use interface that 
+allows them to build complex labs consisting of a variety of supported 
+Cisco routers.</p>
+
+<p>The program that does the real job of 
+emulating the routers using real IOS images is Dynamips. Most people 
+refer to this as the back-end to the whole operation whereas Dynagen is 
+referred to as the front-end. This is mainly because Dynagen 
+communicates with <a href="http://itworkbooks.com/2015/01/09/how-to-configure-dynagen-and-gns3/">Dynamips</a> using a <a href="http://en.wikipedia.org/wiki/Hypervisor" target="_blank">Hypervisor</a> -- all this put together helps to make the configuration process simpler.</p>
+
+<p>Now, take this added usability and throw
+ in the GUI provided by GNS3, and you've gotten yourself a really 
+powerful, easy to use simulator.</p>
+
+<p>&nbsp;</p>
+
+<h4>Some Supported GNS3 Features</h4>
+
+<p>GNS3 website lists the following as some of the features provided by the simulator:</p>
+<ul>
+<li>Design of high quality and complex network topologies</li>
+<li>Emulation of many Cisco router platforms and PIX firewalls</li>
+<li>Simulation of simple Ethernet, ATM and Frame Relay switches</li>
+<li>Connection of the simulated network to the real world</li>
+<li>Packet capture using Wireshark</li>
+</ul>
+<p><img class="alignright size-full wp-image-10142" title="GNS3" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/12.jpg" alt="GNS3" height="343" width="334" align="right"></p>
+
+<h4>GNS3 Supported Platforms</h4>
+
+<p>These are the current platforms supported by GNS3.</p>
+
+<p>As you can see from the table, you've got quite a list of devices that can be used with GNS3 to build your labs.</p>
+
+<p>This is definitely another great feature of this simulator.</p>
+
+<p>As you all know, with each different model of Cisco devices, you have more or less features supported by that model.</p>
+
+<p>These mostly range from the types of commands supported on the particular IOS you're running for that platform.</p>
+
+<p>&nbsp;</p>
+
+<h4>Using the GNS3 Network Simulator</h4>
+
+<p>Next, we're going to take a look at some screen shots so that you get an idea of what an actual lab looks like.</p>
+
+<p><img class="aligncenter  wp-image-10151" title="GNS3 Network Simulator" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Network-Simulator2.jpg" alt="GNS3 Network Simulator" height="444" width="596"></p>
+
+<p>This is the basic look of GNS3 when you 
+start the program. To the left of the image is where all the devices are
+ listed. From this area you would drag the devices you are going to use 
+for the particular lab to the work area -center of the screen.</p>
+
+<p><img class="aligncenter  wp-image-10158" title="GNS3 Network Simulator" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Network-Simulator3.jpg" alt="GNS3 Network Simulator" height="447" width="598"></p>
+
+<p>Here we have a shot of a Frame Relay lab consisting of 3 routers.</p>
+
+<p><img class="aligncenter  wp-image-10159" title="GNS3 Network Simulator" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Network-Simulator4.jpg" alt="GNS3 Network Simulator" height="448" width="617"></p>
+
+<p>Finally, you can see the results of issuing the show run command.</p>
+
+<p>&nbsp;</p>
+
+<h4>Some Final Considerations</h4>
+
+<p>There is definitely a lot that can be 
+done with the GNS3 network simulator. As you've seen from the screen 
+shots above, you're able to really configure your own labs using the 
+devices you need, thereby giving you exactly the required practice 
+needed for a particular Cisco exam.</p>
+
+<p>However, there are some drawbacks to 
+using GNS3. The main one being that you need your own Cisco IOS images 
+in order to make use of the simulator. GNS3 does not come with built-in 
+IOS images and explicitly states on the front of their page that users 
+must provide their own IOS images.</p>
+
+<p>In order for you to obtain IOS images 
+you will need a CCO account, after which you're able to download the 
+images directly from Cisco's website. We do not encourage getting these 
+images by any other means.</p>
+
+<p>Another drawback would be the amount of 
+CPU resources used by GNS3. Well, to be technically correct, it isn't 
+GNS3 that is actually using up the resources of your CPU. It's actually 
+Dynamips and this can be seen from your Task Manager in Windows.</p>
+
+<p>I've used GNS3 on a number of occasions 
+while preparing for different Cisco exams and when I wanted to test a 
+configuration in the lab before putting it into production. It's really a
+ good tool to have as an aspiring Cisco Engineer and as a network admin 
+in general.</p>
+
+<p>If you would like to learn more about 
+GNS3 and how to configure different labs using it, check out this 
+article that covers both <a href="http://itworkbooks.com/2015/01/09/how-to-configure-dynagen-and-gns3/">GNS3 and Dynagen configurations</a> or visit the <a href="http://www.gns3.net/" target="_blank">GNS3 website</a> where you'll find access to a number of documentations.</p>
+			</div>
+
+			<div class="post-meta">
+								<a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>				<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div class="sep"></div>
+		</div>
+
+			<div id="post-1194" class="post-1194 post type-post status-publish format-standard hentry category-it-networking category-simulator-gns3 category-simulator-network-gns3ioupacket-tracer tag-gns3 tag-simulator">
+			<h2 class="title"><a href="http://itworkbooks.com/2015/01/09/how-to-configure-dynagen-and-gns3/" rel="bookmark">How to Configure Dynagen and&nbsp;GNS3</a></h2>
+			<div class="post-info">
+				<div>
+					<a href="http://itworkbooks.com/2015/01/09/how-to-configure-dynagen-and-gns3/#respond" title="Comment on How to Configure Dynagen and&nbsp;GNS3">Leave a comment</a>
+					Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork" rel="author">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+			<div class="content">
+				<h4 class="medium h4"><strong>How to Configure Dynagen and GNS3.</strong></h4>
+
+<p>When studying for the many of the Cisco certifications it is best to get some amount of hands-on experience.</p>
+
+<p>For many students this may be possible 
+by simply doing their normal day-to-day jobs but for many more this 
+opportunity is not possible. In order to fill this void there are really
+ three main solutions: buy or rent Cisco equipment to interact with 
+directly, purchase a Cisco simulator or run one of the dynamips 
+emulation solutions.</p>
+
+<p>While buying the equipment will get you 
+hands-on experience, it does require a decent amount of upfront 
+investment and may not be required if your interests are simply to 
+understand basic Cisco configuration and technology.</p>
+
+<p>There are many good simulation solutions
+ out there (including one I worked on from Cisco Press), but the problem
+ with some of these solutions is flexibility. Many of these simulations 
+do quite well to simulate the environment but they are only programmed 
+to understand the commands required in their simulations and thus don't 
+scale well outside of this specific set of labs.</p>
+
+<h2>Dynamips Emulation Solutions</h2>
+<p>Dynamips is a solution which emulates 
+specific Cisco hardware; this is then used in concert with a real Cisco 
+IOS image. These emulations do seem to be the best of the available 
+solutions but there is a catch -- technically the use of an IOS image not
+ on a licensed Cisco device is a breach of the license (as far as I have
+ been told). Although to my knowledge, Cisco has not gone after anyone, 
+it should be noted. The IOS image must also be obtained through a source
+ other than those distributing the dynamips solutions as they can't 
+provide this image.</p>
+
+<h2>Learn the Basics of Dynagen and GNS3</h2>
+<p>At this time the two available dynamips solutions are Dynagen and GNS3.</p>
+
+<p>Dynagen utilizes a text based 
+configuration file which is used to specify the specific parameters to 
+be used. These parameters include the IOS image location, number and 
+name of the routers used, the specific interfaces emulated on each 
+router, and the specific connection configuration between the routers.</p>
+
+<p>Dynagen also provides access to a 
+simulated Ethernet or Frame Relay switch which can be used to connect 
+the various routers. These switches are simple emulations of the 
+switches and thus do not provide the functionality of a normal Cisco 
+switch.</p>
+
+<p>GNS3 takes this a step further by 
+allowing the user to build a lab via a Windows interface that looks 
+similar to Microsoft Visio or similar tools. GNS3 will build the text 
+configuration files for you and can be used later to utilize the same 
+lab structure.</p>
+
+<h2>Basic Dynagen Configuration</h2>
+<p>Just to get people familiar with the 
+Dynagen interface we will go over the configuration of a simple Dynagen 
+lab configuration. The first thing that must be done is to locate a copy
+ of Cisco IOS and to obtain a copy of Dynagen and install it.</p>
+
+<p>Now the following includes a simple two 
+router configuration which utilizes Frame Relay and Ethernet connections
+ to tie them together.</p>
+
+<p><img class="aligncenter size-full wp-image-9987" title="Simple two router configuration " src="http://blog.pluralsight.com//wp-content/uploads/2010/02/11.jpg" alt="Simple two router configuration " height="569" width="627"></p>
+
+<p>Now let's review the configuration:</p>
+<ul>
+<li>[localhost] specifies that dynamips 
+will be running on the local machine and utilize the default port of 
+7200. This can be changed to another IP address or port if dynamips is 
+not running locally.</li>
+<li>[[7200]] specifies the configuration to
+ be used for the emulated 7200 router. As of this writing dynamips 
+supports 2600 series (2610 to 2650XM, 2691), 3600 series (3620, 3640 and
+ 3660), 3700 series (3725, 3745) and 7200 routers.</li>
+<li>image = \Program Files\Dynamips\images\c7200-adventerprisek9-mz.124-15.T.unzip.bin specifies the location of the Cisco IOS image.</li>
+<li>npe = npe-400 specifies the type of 
+Network Processing Engine used by the emulated 7200 (This is essentially
+ the brain of the 7200 router).</li>
+<li>ram = 256 specifies the amount of RAM reserved for each instance of a 7200 router.</li>
+<li>slot0 = PA-C7200-IO-FE specifies the type of interface card which is emulated in slot0 of the 7200 router.</li>
+<li>slot1 = PA-4T specifies the type of interface card which is emulated in slot1 of the 7200 router.</li>
+<li>[[ROUTER R1]] specifies the configuration of a router named R1.</li>
+<li>F0/0 = S1 1 specifies that the F0/0 interface of the router will be connected to port 1 on switch S1.</li>
+<li>S1/0 = F1 1 specifies that the S1/0 interface of the router will be connected to port 1 on Frame Relay switch F1.</li>
+<li>model = 7200 specifies that this router
+ will emulate a 7200 router and will thus use the configuration 
+specified in that section as well.</li>
+<li>[[ROUTER R2]] specifies the configuration of a router named R2.</li>
+<li>F0/0 = S1 2 specifies that the F0/0 interface of the router will be connected to port 2 on switch S1.</li>
+<li>S1/0 = F1 2 specifies that the S1/0 interface of the router will be connected to port 2 on Frame Relay switch F1.</li>
+<li>model = 7200 specifies that this router
+ will emulate a 7200 router and will again use the configuration 
+specified in that section.</li>
+<li>[[ETHSW S1]] specifies the configuration of an Ethernet switch named S1</li>
+<li>1 = access 1 specifies that port 1 on the switch will be an access port and be in VLAN 1.</li>
+<li>2 = access 1 specifies that port 2 on the switch will be an access port and be in VLAN 1.</li>
+<li>[[FRSWF1]] specifies that configuration of a Frame Relay switch named F1</li>
+<li>1:101 = 2:201 specifies that port 1 on 
+the switch will connect using a DLCI of 101 and that it connects to port
+ 2 on the switch with a DLCI of 201.</li>
+</ul>
+<p>Of course much more complicated 
+configurations can be created in order to emulate a number of different 
+situations. All of the specific documentation can be found at the 
+Dynagen website.</p>
+
+<p>In order to gain access to the router instances you should use a telnet application like <a style="color:#000000;" href="http://www.chiark.greenend.org.uk/%7Esgtatham/putty/">putty</a>.
+ Using the above configuration, R1 would be accessed using the IP 
+Address 127.0.0.1 (localhost) and a port number of 2000. R2 would be 
+accessed using the same IP address and a port number of 2001 and so on.</p>
+
+<h2>Basic GNS3 Configuration</h2>
+<p>Now GNS3 takes advantage of the 
+interface of Dynagen and takes it a step further to make the creation of
+ the lab file easier. It also adds the ability to emulate other systems 
+including Cisco's PIX platform and Juniper's JUNOS but this will not be 
+covered in this article.</p>
+
+<p>Again with GNS you require a copy of Cisco IOS and a copy of <a href="http://www.gns3.net/">GNS3</a> and install it. Once this is complete run GNS3, this will bring up a screen like this:</p>
+
+<p><img class="aligncenter size-full wp-image-9988" title="GNS3" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Shot-1.jpg" alt="GNS3" width="600"></p>
+
+<p>You must then configure GNS3 with the 
+location of the IOS images so that it can reference them once the 
+topology is created. This option is located off the edit menu:</p>
+
+<p><img class="aligncenter size-full wp-image-9989" title="GNS3 - 2" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Shot-2.jpg" alt="GNS3 - 2" width="600"></p>
+
+<p><img class="aligncenter size-full wp-image-9990" title="GNS3 - 3" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Shot-3.jpg" alt="GNS3 - 3" width="600"></p>
+
+<p>Once in this configuration screen browse
+ to the IOS image; once selected, GNS3 will populate the Platform with 
+the available hardware options. From this screen you can also manually 
+set the IDLE PC parameter (not required but helpful to limit physical 
+memory use) and the Default device RAM parameter.</p>
+
+<p>Once this is completed you should take 
+the time to create the topology that is required using the devices on 
+the left pane. The following shows the same topology that was created in
+ the Dynagen section:</p>
+
+<p><img class="aligncenter size-full wp-image-9991" title="GNS3 - 4" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Shot-4.jpg" alt="GNS3 - 4" width="600"></p>
+
+<p>Once this is complete the dynamips can 
+be started by using the play button on the top tool bar, this starts all
+ devices and all interfaces will show as up (green):</p>
+
+<p><img class="aligncenter size-full wp-image-9992" title="GNS3 - 5" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Shot-5.jpg" alt="GNS3 - 5" width="600"></p>
+
+<p><img class="aligncenter size-full wp-image-9993" title="GNS3 - 6" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/GNS3-Shot-6.jpg" alt="GNS3 - 6" width="600"></p>
+
+<p>Accessing the routers through GNS3 is done by right clicking on the target device and selecting console.</p>
+
+<p>While every engineer is going to have 
+their preferences, both of these tools work well to emulate Cisco's IOS 
+and are extremely helpful in preparation for many of Cisco's 
+certification tests.</p>
+			</div>
+
+			<div class="post-meta">
+								<a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>				<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div class="sep"></div>
+		</div>
+
+			<div id="post-1188" class="post-1188 post type-post status-publish format-standard hentry category-category category-it-networking category-simulator-gns3 category-simulator-network-gns3ioupacket-tracer tag-gns3 tag-simulator">
+			<h2 class="title"><a href="http://itworkbooks.com/2015/01/09/gns3-initial-configuration/" rel="bookmark">GNS3 Initial Configuration</a></h2>
+			<div class="post-info">
+				<div>
+					<a href="http://itworkbooks.com/2015/01/09/gns3-initial-configuration/#respond" title="Comment on GNS3 Initial Configuration">Leave a comment</a>
+					Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork" rel="author">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+			<div class="content">
+				<h4 class="medium h4"><strong>GNS3 Initial Configuration.</strong></h4>
+
+<p><img class="attachment-post-thumbnail wp-post-image" src="http://blog.pluralsight.com//wp-content/uploads/2012/06/gns3-initial-configuration_featured-image.jpg" alt="GNS3 Initial Configuration Tutorial" height="119" width="462"></p>
+
+<h2>Overview</h2>
+<p>With the introduction of dynamips as a 
+Cisco IOS emulation tool, it is now possible to emulate almost any Cisco
+ IOS image in a simulated hardware environment. Of course the main 
+problem with dynamips was that it was a CLI tool that required a lot of 
+parameter knowledge. To make the configuration easier, the dynagen tool 
+was developed to provide an INI file-like configuration interface. For 
+most of the old school engineers out there this was familiar, and easy 
+to figure out and configure. GNS3 was developed to take the ease of the 
+configuration to a whole new level; this included a GUI-style interface 
+that most people familiar with Windows based systems understood (almost 
+anyone with a computer). GNS3 added additional abilities to the dynamips
+ platform including support for Cisco PIX and ASA as well as Junipers - 
+JunOS. This article is a second in a series of <a href="http://itworkbooks.com/2015/01/09/installing-gns3-network-simulator/">GNS3 configuration</a>
+ articles that aims to make the simulation of Cisco IOS environments 
+easier to understand and get those engineers out there looking to become
+ Cisco IOS proficient a stepping stone.</p>
+
+<h2>Dynamips/GNS3 Issues</h2>
+<p>Before this article goes any further, we
+ should point out that the only way to have either of these products 
+emulate a real IOS environment is to already have access to an existing 
+IOS image. Dynamips, dynagen and GNS3 don't include these images (this 
+is because the legality is in question). Before anyone can use these 
+products, they must obtain one of these images for the platform being 
+emulated. There are ways to get these legally (purchase a Cisco SMARTnet
+ contract or have an existing Cisco IOS device) and not so legally (look
+ online); this article will not condone or approve the method used in 
+obtaining this image. For the purposes of this article, an image for a 
+Cisco 7206 platform (7200) will be used.</p>
+
+<h2>GNS3 Initial Configuration</h2>
+<p>The main parts of the initial 
+configuration of GNS3 to ready it for Cisco IOS emulation is the 
+configuration of Cisco IOS images into GNS3 and the configuration of any
+ non-default preferences. The following group of figures will show the 
+different steps required to set up Cisco IOS images and walk through the
+ different preference options that can be configured when emulating 
+Cisco IOS.</p>
+
+<p>Figure 1 shows the main GNS3 screen.</p>
+
+<p><img class="alignleft  wp-image-32439" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-012.jpg" alt="Figure 1 - Main GNS3 Screen" height="410" width="617"></p>
+<p align="center">Figure 1 - Main GNS3 Screen</p>
+
+<p>Figure 2 shows the menu item to be selected to configure the Cisco IOS images.</p>
+
+<p><img class="alignleft  wp-image-32440" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-022.jpg" alt="Figure 2 - IOS Image Menu Path" height="407" width="613"></p>
+<p align="center">Figure 2 - IOS Image Menu Path</p>
+
+<p>Once the IOS images and hypervisors menu
+ option is selected, the screen shown in Figure 3 will be displayed. On 
+this screen the path to the IOS image can be selected by clicking the 
+browse button as shown.</p>
+
+<p><img class="alignleft  wp-image-32441" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-032.jpg" alt="Figure 3 - IOS Image Selection" height="456" width="612"></p>
+<p align="center">Figure 3 - IOS Image Selection</p>
+
+<p>Once the browse button is selected the 
+file selection window shown in Figure 4 will appear; browse to the 
+location of the image and select it and press the open button.</p>
+
+<p><img class="alignleft  wp-image-32442" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-042.jpg" alt="Figure 4 - File Selection Window" height="458" width="611"></p>
+<p align="center">Figure 4 - File Selection Window</p>
+
+<p>Typically, the Platform will auto 
+populate if the IOS filename remains within Cisco's naming convention 
+and the model options available will populate the Model dropdown box. As
+ shown in Figure 5, the platform of the selected IOS image is c7200 and 
+the only model supported is a 7200. If for some reason the 
+auto-population did not work, select the appropriate platform and model.</p>
+
+<p><img class="alignleft  wp-image-32443" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-052.jpg" alt="Figure 5 - Platform and Model Population" height="454" width="609"></p>
+<p align="center">Figure 5 - Platform and Model Population</p>
+
+<p>One thing to note is that the IDLE PC 
+value is important but will be populated when the first lab is run with 
+this IOS image and the IDLE PC process is completed; just leave it blank
+ for now. Once the options are correct select the save button, once this
+ is done a screen like that shown in Figure 6 will appear. Once the 
+configuration is saved select the Close button.</p>
+
+<p><img class="alignleft  wp-image-32444" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-062.jpg" alt="Figure 6 - Cisco IOS Image Configuration - Save" height="454" width="609"></p>
+<p align="center">Figure 6 - Cisco IOS Image Configuration - Save</p>
+
+<p>The second part of this article will 
+display the screens used to configure the different preferences 
+available for GNS3, generally speaking the default settings should work 
+for most people. Figure 7 shows the menu item to be selected to 
+configure GNS3 preferences.</p>
+
+<p><img class="alignleft  wp-image-32445" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-073.jpg" alt="Figure 7 - GNS3 Preferences" height="403" width="607"></p>
+<p align="center">Figure 7 - GNS3 Preferences</p>
+
+<p>Figure 8 shows the main general 
+preferences screen; there are a couple of different options here that 
+someone may want to alter including the project and OS image 
+directories.</p>
+
+<p><img class="alignleft  wp-image-32446" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-082.jpg" alt="Figure 8 - General Preference Screen" height="548" width="606"></p>
+<p align="center">Figure 8 - General Preference Screen</p>
+
+<p>The terminal settings screen shown in 
+Figure 9 can be used to select the preferred terminal application. Putty
+ is generally included with the GNS3 installation, but SecureCRT, Telnet
+ and Teraterm are supported as well.</p>
+
+<p><img class="alignleft  wp-image-32447" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-092.jpg" alt="Figure 9 - Terminal Settings" height="548" width="606"></p>
+<p align="center">Figure 9 - Terminal Settings</p>
+
+<p>The Dynamips configuration options can 
+be altered if required, however, the default options will work for 
+almost all individuals.</p>
+
+<p><img class="alignleft  wp-image-32448" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-102.jpg" alt="Figure 10 - Dynamips Options" height="550" width="608"></p>
+<p align="center">Figure 10 - Dynamips Options</p>
+
+<p>The one option that may need to be 
+altered is the amount of memory that is allowed to be used per 
+hypervisor (each session of dynamips); value will be needed because this
+ will depend on the Cisco IOS image memory configuration. For beginning 
+configurations, the default configuration will work fine. If this memory
+ usage limit does need to be configured the screen shown in Figure 11 
+should be used.</p>
+
+<p><img class="alignleft  wp-image-32449" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/Figure-112.jpg" alt="Figure 11 - Dynamips Hypervisor Configuration" height="550" width="608"></p>
+<p align="center">Figure 11 - Dynamips Hypervisor Configuration</p>
+
+<h2>Summary</h2>
+<p>Once the Cisco IOS images have each been
+ configured (configure each image that will be used in the emulation), 
+GNS3 is then ready to be used. The next article in this series will 
+cover how to setup a single Cisco IOS device within GNS3. 
+&nbsp;Hopefully the contents of this article will enable the reader to 
+get to a point where this is easily completed.</p>
+			</div>
+
+			<div class="post-meta">
+<a href="http://itworkbooks.com/category/category/">Category</a>, <a href="http://itworkbooks.com/category/it-networking/">IT-Networking</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/simulator-gns3/">Simulator GNS3</a>, <a href="http://itworkbooks.com/category/it-networking/simulator-network-gns3ioupacket-tracer/">Simulator Network (GNS3/IOU/Packet-Tracer)</a>	<a href="http://itworkbooks.com/tag/gns3/" rel="tag">GNS3</a>, <a href="http://itworkbooks.com/tag/simulator/" rel="tag">Simulator</a>			</div>
+			<div class="sep"></div>
+		</div>
+
+			<div id="post-1168" class="post-1168 post type-post status-publish format-standard hentry category-category category-it-networking category-simulator-gns3 category-simulator-network-gns3ioupacket-tracer tag-gns3 tag-simulator">
+			<h2 class="title"><a href="http://itworkbooks.com/2015/01/09/installing-gns3-network-simulator/" rel="bookmark">Installing GNS3 Network&nbsp;Simulator</a></h2>
+			<div class="post-info">
+				<div>
+<a href="http://itworkbooks.com/2015/01/09/installing-gns3-network-simulator/#respond" title="Comment on Installing GNS3 Network&nbsp;Simulator">Leave a comment</a>
+Posted by <a href="http://itworkbooks.com/author/stunnetwork/" title="Posts by stunnetwork" rel="author">stunnetwork</a> on January 9, 2015
+									</div>
+			</div>
+			<div class="content">
+				<h4 class="medium h4"><strong>Installing GNS3 Network Simulator.</strong></h4>
+
+<p><img class="attachment-post-thumbnail wp-post-image" src="http://blog.pluralsight.com//wp-content/uploads/2012/05/gns3-network-simulator-install_featured-image.jpg" alt="GNS3 Network Simulator Installation" height="123" width="477"></p>
+
+<p>There are two main ways that GNS3 can be
+ installed, either by using the all-in-one installer or by using one of 
+the standalone packages. The standalone packages are not installers but 
+simply an archive that can be extracted and run directly; this is a very
+ useful option for those who do not want to run through the installation
+ process. The option that will be covered in this article is the 
+installer which includes the installation of Dynamips, Qemu/Pemu, Putty,
+ VPCS, WinPcap and Wireshark.</p>
+
+<h2>GNS3 Installation</h2>
+<p>The installation of GNS3 is simple and 
+the different options to select are based on the specific configuration 
+of the target machine. The installation shown in this article will 
+install all required programs and assumes nothing has been previously 
+installed.</p>
+
+<p>The first thing to do is to obtain the GNS3 installer available at <a href="http://www.gns3.net/download/" rel="nofollow">http://www.gns3.net/download/</a>. Once this file is downloaded, click on the executable file as shown in Figure 1:</p>
+
+<p>Once the installer has been launched, the screen shown in Figure 2 will be displayed; once at this screen press the Next button.</p>
+
+<p><img class="  wp-image-31708 aligncenter" title="Click on the GNS3 Installation Executable" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-1.jpg" alt="Click on the GNS3 Installation Executable" height="347" width="461"></p>
+
+<p>The next screen will display the license information to install GNS3 
+and its associated programs. &nbsp;If the terms are agreeable press the I
+ Agree button.</p>
+
+<p>&nbsp;</p>
+
+<p><img class="aligncenter  wp-image-31710" title="GNS3 License Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-3.jpg" alt="GNS3 License Screen" height="351" width="451"></p>
+
+<p>The next screen will allow the user to 
+select a Start Menu folder name to insert the associated GNS3 shortcuts 
+into; most people just leave this at the default of GNS3. &nbsp;Once a 
+name has been selected you will press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31711" title="Start Menu Name Selection" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-4.jpg" alt="Start Menu Name Selection" height="362" width="465"></p>
+
+<p>The next screen will allow the user to 
+customize the installation by selecting which components will be 
+installed; select the components that are required for the specific 
+installation and press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31712" title="GNS3 Component Selection" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-5.jpg" alt="GNS3 Component Selection" height="366" width="471"></p>
+
+<p>The next screen will allow the user to 
+select where the GNS3 programs and most of its components will be 
+installed. Select the appropriate path and press the Install button.</p>
+
+<p><img class="aligncenter  wp-image-31713" title="GNS3 Install Location" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-6.jpg" alt="GNS3 Install Location" height="363" width="467"></p>
+
+<p>If WinPcap was selected to be installed,
+ the next few screens will be shown as the WinPcap installer is 
+completed. &nbsp;Once this screen is shown, press the Next button. If 
+WinPcap was not selected move to Figure 11.</p>
+
+<p><img class="aligncenter  wp-image-31714" title="WinPcap Installer Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-7.jpg" alt="WinPcap Installer Screen" height="362" width="465"></p>
+
+<p>Read the next screen and press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31715" title="WinPcap Installer Setup Wizard Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-8.jpg" alt="WinPcap Installer Setup Wizard Screen" height="361" width="464"></p>
+
+<p>The next screen will display the license
+ information to install WinPcap. &nbsp;If the terms are agreeable press 
+the I Agree button.</p>
+
+<p><img class="aligncenter  wp-image-31716" title="WinPcap License Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-9.jpg" alt="WinPcap License Screen" height="359" width="462"></p>
+
+<p>On the next screen select whether the WinPcap driver will be automatically started at boot. This is typical.</p>
+
+<p><img class="aligncenter  wp-image-31717" title="WinPcap Driver on Startup" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-10.jpg" alt="WinPcap Driver on Startup" height="357" width="459"></p>
+
+<p>Once the installer has finished it will display the final screen shown in Figure 11, press the Finish button.</p>
+
+<p><img class="aligncenter  wp-image-31718" title="WinPcap Installer Finish" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-11.jpg" alt="WinPcap Installer Finish" height="353" width="454"></p>
+
+<p>If Wireshark was selected to be 
+installed, the next few screens will be shown as the Wireshark installer
+ is completed; once this screen is shown press the Next button. If 
+Wireshark was not selected move to Figure 21.</p>
+
+<p><img class="aligncenter  wp-image-31719" title="Wireshark Installer Setup Wizard Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-12.jpg" alt="Wireshark Installer Setup Wizard Screen" height="356" width="458"></p>
+
+<p>The next screen will display the license
+ information to install Wireshark. &nbsp;If the terms are agreeable 
+press the I Agree button.</p>
+
+<p><img class="aligncenter  wp-image-31720" title="Wireshark License Screen" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-13.jpg" alt="Wireshark License Screen" height="359" width="462"></p>
+
+<p>The next screen will allow the user to 
+customize the installation by selecting which components will be 
+installed; select the components that are required for the specific 
+installation and press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31721" title="Wireshark Component Selection" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-14.jpg" alt="Wireshark Component Selection" height="344" width="442"></p>
+
+<p>The next screen will ask which shortcuts
+ to install as part of the Wireshark installation and ask if a number of
+ different file associations should be associated to Wireshark. Select 
+the wanted options and press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31722" title="Wireshark Additional Tasks" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-15.jpg" alt="Wireshark Additional Tasks" height="348" width="448"></p>
+
+<p>The next screen will allow the user to 
+select where Wireshark will be installed. Select the appropriate path 
+and press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31723" title="Wireshark Install Location" src="http://blog.pluralsight.com//wp-content/uploads/2010/02/figure-16.jpg" alt="Wireshark Install Location" height="353" width="454"></p>
+
+<p>The next screen will ask if WinPcap 
+should be installed as well. &nbsp;Since WinPcap was probably already 
+installed first by the GNS3 installer, this option will probably not be 
+selected; once done press the Install button.</p>
+
+<p><img class="aligncenter  wp-image-31724" title="Install WinPCap (Wireshark Installer)" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-17.jpg" alt="Install WinPCap (Wireshark Installer)" height="345" width="444"></p>
+
+<p>At this point the Wireshark installer will start as shown in Figure 17.</p>
+
+<p><img class="aligncenter  wp-image-31725" title="Wireshark Installing" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-18.jpg" alt="Wireshark Installing" height="349" width="449"></p>
+
+<p>Once the Wireshark installation is complete the screen shown in Figure 18 will be displayed; once done press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31726" title="Wireshark Installation Complete" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-19.jpg" alt="Wireshark Installation Complete" height="349" width="449"></p>
+
+<p>At the next screen <strong>don't</strong> select the Run Wireshark option (this is because the GNS3 installer is still running) and press the Finish button.</p>
+
+<p><img class="aligncenter  wp-image-31727" title="Completing the Wireshark Installation" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-20.jpg" alt="Completing the Wireshark Installation" height="332" width="427"></p>
+
+<p>The next screen will show that the installation of GNS3 is proceeding.</p>
+
+<p><img class="aligncenter  wp-image-31728" title="GNS3 Installation Proceeding" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-21.jpg" alt="GNS3 Installation Proceeding" height="350" width="450"></p>
+
+<p>Once the GNS3 installation is complete the screen shown in Figure 21 will be displayed; once done press the Next button.</p>
+
+<p><img class="aligncenter  wp-image-31729" title="GNS3 Installation Complete" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-22.jpg" alt="GNS3 Installation Complete" height="353" width="454"></p>
+
+<p>The last screen in the installation process is shown in Figure 22; at this screen it is possible to run GNS3 for the first time.</p>
+
+<p><img class="aligncenter  wp-image-31730" title="GNS3 Setup Complete" src="http://blog.pluralsight.com//wp-content/uploads/2012/04/Figure-23.jpg" alt="GNS3 Setup Complete" height="340" width="437"></p>
+
+<h2>Summary</h2>
+<p>Once the installation is complete, the 
+user has the ability to use all of the GNS3 capabilities. A couple of 
+other articles will be written as a follow-up to display the way that 
+these different capabilities can be used to help in studying for Cisco 
+based courses.</p>
+			</div>
+
+</body></html>

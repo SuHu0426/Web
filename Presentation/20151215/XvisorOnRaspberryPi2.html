@@ -1,0 +1,1147 @@
+<html>
+  <head><title>Xvisor on Raspberry Pi2</title></head>
+  <body>
+
+<OL>
+  <LI><a href="#RaspberryXvisor">Xvisor on Raspberry Pi2</a>
+  <LI><a href="#LinuxOnVExpress-A15">Linux on Xvisor VExpress-A15 Guest</a>&nbsp;&nbsp
+      <a href="#BasicFirmwareOnVExpress-A15">Basic Firmware on VExpress-A15 Guest</a>
+  <LI><a href="#Rpi2TwoGuestsDTS">Rpi2 Two Guests DTS</a>
+  <LI><a href="#Xvisor">Xvisor References</a>
+  <LI><a href="#ArmFastModels">Arm Fast Models</a>
+</OL>
+
+
+<a name="RaspberryXvisor"></a><h3>Xvisor on Raspberry Pi2 &nbsp;&nbsp; 
+<a href="https://github.com/avpatel/xvisor-next/blob/master/docs/arm/bcm2836-raspi2.txt" 
+target="_b">(Source Origin)</a></h3>
+
+<h4>Xvisor on Raspberry Pi2 board (or BCM2836) using SD Booting</h4>
+
+<P> This section of readme explains how to build & run Xvisor on actual BCM2836
+SOC boards (Raspberry Pi2 for example) using SD booting.
+
+<P> By default, Xvisor for BCM2836 supports Vexpress-A15 guest so we will show
+how to run Basic Firmware on Vexpress-A15 guest. For more info refer, <a target="_b" 
+href="#BasicFirmwareOnVExpress-A15">vexpress-a15 README</a>.
+
+<P> The Raspberry Pi 2 usually comes with an SD card containig the GPU firmware
+necessary to boot the ARM processor.  To create your own SD Card to boot the Raspberry 
+Pi 2
+
+<OL>
+  <LI> Format a blank SD card with FAT/FAT32 filesystem
+  <LI> Download the following files from the <a target="_b" 
+       href="https://github.com/raspberrypi/firmware/tree/master/boot">Raspberry 
+       Official Repository</a> to the SD card: (Note: the _cd files are used when 
+       gpu_mem=16)
+
+  <UL>
+    <LI> bootcode.bin
+    <LI> fixup.dat
+    <LI> fixup_cd.dat
+    <LI> start.elf
+    <LI> start_cd.elf
+  </UL>
+</OL>
+
+<P><b>Note: (03/11/2016)</b>  
+
+  <UL>
+    <LI> bootcode.bin is found in <code>/media/sdb1/bootcode.bin</code> and 
+         <code>/media/sdb5/bootcode.bin</code>
+    <LI> fixup.dat is found in <code>/media/sdb5/fixup.dat</code>
+    <LI> start.elf is found in <code>/media/sdb5/start.elf</code> 
+    <LI> config.txt is found in <code>/media/sdb5/config.txt</code> 
+  </UL>
+
+<P> As first step, we install u-boot-2015.07 on the SD card that comes with
+Raspberry Pi2 board or that has been formatted as instructed above.  <a target="_b" 
+href="./Uboot-Tutorial.html">Uboot Tutorial</a>. To do this:
+
+<OL>
+  <LI>  Download and build u-boot-2015.07
+
+<a name="UbootToHYPMode"></a>
+<PRE>
+ # wget ftp://ftp.denx.de/pub/u-boot/u-boot-2015.07.tar.bz2
+ ;; <a href="ftp://ftp.denx.de/pub/u-boot/" target="_b">u-boot source</a>
+ # tar -xvf u-boot-2015.07.tar.bz2
+ # cd u-boot-2015.07
+ # make rpi_2_defconfig
+ # make all
+ # cat &lt;xvisor_source>/docs/arm/bcm2836-raspi2-bootblk.bin.ift u-boot.bin > u-boot.hyp
+</PRE>
+
+<P> The binary file <code>bcm2836-raspi2-bootblk.bin.ift</code> is probably compiled 
+from <a target="_b" href="https://github.com/slp/rpi2-hyp-boot">rpi2-hyp-boot</a>, I 
+guess.  Also do some padding so that the binary code occupys 32K. The article: 
+<a href="#EnablingHYPRpi2" target="_b">Enabling HYP mode on the Raspberry Pi 2</a> 
+should also be helpful. Also, on Linux, 
+<a href="http:lxr.free-electrons.com/source/arch/arm/kernel/setup.c#L994" 
+target="_b">HYP mode, Virtualization extensions available.</a></P>
+
+<PRE>
+hsu@Rpi2:~$ dmesg | grep [HV][Yi][Pr]
+[    0.000000] Virtual kernel memory layout:
+[    0.058324] CPU: All CPU(s) started in HYP mode.
+[    0.058353] CPU: Virtualization extensions available.
+</PRE>
+
+  <LI> Mount the boot partition of pre-installed SD card
+  <LI> Copy u-boot.hyp to &lt;raspi2_sd_card_boot_partition>
+  <LI> Create &lt;raspi2_sd_card_boot_partition>/config.txt if it does not exist
+  <LI> Add following lines to &lt;raspi2_sd_card_boot_partition>/config.txt:
+
+ <PRE>
+kernel=u-boot.hyp
+kernel_old=1
+gpu_mem=128
+</PRE>
+
+<h4><a href="http://elinux.org/RPiconfig" target="_b">RPiconfig</a>&nbsp;&nbsp;
+<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=134594"
+       target="_b">Why kernel_old=1</a></h4> 
+
+<P> kernel_old (bool) if 1, load kernel at 0x0
+
+  <LI> Unmount the boot partition of pre-installed SD card
+</OL>
+
+<P> Once we have u-boot installed on SD card, we add 3 more images to the boot
+partition of SD card:
+
+<OL>
+  <LI> U-Boot compatible Xvisor binary (uvmm.bin)
+  <LI> DTB, 
+       <a href="http://www.armadeus.com/wiki/index.php?title=Kernel-with-device-tree"
+       target="_b">(Device Tree Binary)</a>, for Xvisor (one_guest_vexpress-a15.dtb)
+
+<P> Will it be better to compile two_guest_vexpress-a15.dtb via the source file: <a  
+href="../xvisor-next/arch/arm/board/generic/dts/bcm2836/two_guest_vexpress-a15.dts" 
+target="_b">two_guest_vexpress-a15.dts</a>
+
+  <LI> Disk image containing guest binaries (disk.img)
+</OL>
+
+<P> Following are steps to create these images and boot Xvisor on Raspberry Pi2:
+
+<OL>
+  <LI> Build environment 
+
+<PRE>
+  # export CROSS_COMPILE=arm-linux-gnueabi-
+</PRE>
+
+  <LI> GoTo Xvisor source directory 
+
+<PRE>
+  # cd &lt;xvisor_source_directory>
+</PRE>
+
+  <LI> Configure Xvisor with Generic-v7-ve default settings 
+
+<PRE>
+  # make ARCH=arm generic-v7-ve-defconfig
+</PRE>
+
+  <LI> Build Xvisor and DTBs 
+
+<PRE>
+  # make; make dtbs
+</PRE>
+
+  <LI> Make U-Boot compatible uvmm.bin for use with bootm command 
+
+<PRE>
+  # mkimage -A arm -O linux -T kernel -C none -a 0x00008000 -e 0x00008000 -n Xvisor -d build/vmm.bin build/uvmm.bin
+</PRE>
+ 
+
+  <LI> Build Basic Firmware 
+
+<PRE>
+  # make -C tests/arm32/vexpress-a15/basic
+</PRE>
+
+  <LI> Copy defconfig to Linux build directory 
+
+<PRE>
+  # cp tests/arm32/vexpress-a15/linux/linux-&lt;linux_version>_vexpress_a15_defconfig &lt;linux_build_directory>/.config
+</PRE>
+
+  <LI> GoTo Linux source (should it be build?) directory 
+
+<PRE>
+  # cd &lt;linux_source_directory>
+</PRE>
+
+  <LI> Configure Linux in build (should it be source?)  directory 
+
+<PRE>
+  # make O=&lt;linux_build_directory> ARCH=arm oldconfig
+</PRE>
+
+  <LI> Build Linux in build (should it be source?)  directory 
+
+<PRE>
+  # make O=&lt;linux_build_directory> ARCH=arm Image
+</PRE>
+
+  <LI> Create BusyBox RAMDISK to be used as RootFS for Linux kernel 
+
+    <UL>
+      <LI> (Note: For subsequent steps, we will assume that your RAMDISK is located 
+           at &lt;busybox_rootfs_directory>/rootfs.img)
+      <LI> (Note: Please refer tests/common/busybox/README.md for creating rootfs.img 
+           using BusyBox)
+
+<P><a target="_b" 
+href="https://github.com/avpatel/xvisor-next/tree/master/tests/common/busybox">BusyBox 
+RootFS</a>
+
+<PRE>
+$ apt-cache search arm-linux-gnueabihf-  ;; Available on x86_64
+gcc-5-arm-linux-gnueabihf-base - GCC, the GNU Compiler Collection (base package)
+</PRE>
+
+    </UL>
+
+  <LI> GoTo Xvisor source directory 
+
+<PRE>
+  # cd &lt;xvisor_source_directory>
+</PRE>
+
+  <LI> Create disk image for Xvisor with Guest Linux and Guest Basic Firmware 
+
+<PRE>
+  # mkdir -p ./build/disk/tmp
+  # mkdir -p ./build/disk/system
+  # cp -f ./docs/banner/roman.txt ./build/disk/system/banner.txt
+  # cp -f ./docs/logo/xvisor_logo_name.ppm ./build/disk/system/logo.ppm
+  # mkdir -p ./build/disk/images/arm32/vexpress-a15
+  ;; dtc, device tree compiler, source is in linux-source scripts/dtc directory.
+  ;; Basically, it reads in *dts (device tree source) file, compiles it to dtb, 
+  ;; (Device Tree Binary), format.
+  # ./build/tools/dtc/dtc -I dts -O dtb -o ./build/disk/images/arm32/vexpress-a15x2.dtb ./tests/arm32/vexpress-a15/vexpress-a15x2.dts
+  # cp -f ./build/tests/arm32/vexpress-a15/basic/firmware.bin ./build/disk/images/arm32/vexpress-a15/firmware.bin
+  # cp -f ./tests/arm32/vexpress-a15/linux/nor_flash.list ./build/disk/images/arm32/vexpress-a15/nor_flash.list
+  # cp -f ./tests/arm32/vexpress-a15/linux/cmdlist ./build/disk/images/arm32/vexpress-a15/cmdlist
+  # cp -f &lt;linux_build_directory>/arch/arm/boot/Image ./build/disk/images/arm32/vexpress-a15/Image
+  # ./build/tools/dtc/dtc -I dts -O dtb -p 0x800 -o ./build/disk/images/arm32/vexpress-a15/vexpress-v2p-ca15-tc1.dtb \
+./tests/arm32/vexpress-a15/linux/vexpress-v2p-ca15-tc1.dts
+  # cp -f &lt;busybox_rootfs_directory>/rootfs.img ./build/disk/images/arm32/rootfs.img
+  # genext2fs -B 1024 -b 16384 -d ./build/disk ./build/disk.img
+</PRE>
+
+<PRE>
+$ cd /src3/Xvisor/xvisor-next; cat tests/arm32/vexpress-a15/linux/nor_flash.list
+0x00000000 /images/arm32/vexpress-a15/firmware.bin
+0x000FF000 /images/arm32/vexpress-a15/cmdlist
+0x00100000 /images/arm32/vexpress-a15/Image
+0x008F0000 /images/arm32/vexpress-a15/vexpress-v2p-ca15-tc1.dtb
+0x00900000 /images/arm32/rootfs.img
+;; Copy linux from NOR flash to RAM and start linux booting from RAM
+;; According to the contents of nor_flash.list file:
+;;    At address 0x00100000, Image is stored, size 0x7F0000 (= 0x008F0000 - 0x00100000)
+;;    At address 0x008F0000, dtb, (device tree binary), is placed, size 0x010000
+;;                                                          (= 0x00900000 - 0x008F0000)
+;;    At address 0x00900000, rootfs.img is recorded, but its size 0x700000, why?
+;; As far as I could recall, somewhere from the internet, 16MB nor_flash.list is divided 
+;; into three regions:  1M for firmware
+;;                      8M for kernel 
+;;                      7M for root fs, (7M = 0x700000)
+
+hsu@amd-6:$ cat /src3/Xvisor/xvisor-next$ cat tests/arm32/vexpress-a15/linux/cmdlist
+copy 0x80008000 0x00100000 0x7F0000
+copy 0x80800000 0x008F0000 0x010000
+copy 0x80900000 0x00900000 0x700000
+start_linux_fdt 0x80008000 0x80800000 0x80900000 0x700000
+</PRE>
+
+  OR Create disk image for Xvisor with only Guest Basic Firmware 
+
+<PRE>
+  # mkdir -p ./build/disk/tmp
+  # mkdir -p ./build/disk/system
+  # cp -f ./docs/banner/roman.txt ./build/disk/system/banner.txt
+  # cp -f ./docs/logo/xvisor_logo_name.ppm ./build/disk/system/logo.ppm
+  # mkdir -p ./build/disk/images/arm32/vexpress-a15
+  # ./build/tools/dtc/dtc -I dts -O dtb -o ./build/disk/images/arm32/vexpress-a15x2.dtb ./tests/arm32/vexpress-a15/vexpress-a15x2.dts
+  # cp -f ./build/tests/arm32/vexpress-a15/basic/firmware.bin ./build/disk/images/arm32/vexpress-a15/firmware.bin
+  # cp -f ./tests/arm32/vexpress-a15/basic/nor_flash.list ./build/disk/images/arm32/vexpress-a15/nor_flash.list
+  # genext2fs -B 1024 -b 16384 -d ./build/disk ./build/disk.img
+</PRE>
+
+<p><b>References</b>
+
+<UL>
+  <LI><a target="_b" 
+href="https://github.com/avpatel/xvisor-next/blob/master/tests/arm32/common/basic/arm_main.c#L103">start_linux_fdt (Line 103)</a>
+
+<PRE>
+   arm_puts("start_linux_fdt - Start linux kernel (device-tree mechanism)\n");
+   arm_puts("  Usage: start_linux_fdt &lt;kernel_addr> &lt;fdt_addr> [&lt;initrd_addr>] [&lt;initrd_size>]\n");
+   arm_puts("     &lt;kernel_addr>  = kernel load address\n");
+   arm_puts("     &lt;fdt_addr>     = fdt blob address\n");
+   arm_puts("     &lt;initrd_addr>  = initrd load address (optional)\n");
+   arm_puts("     &lt;initrd_size>  = initrd size (optional)\n");
+   arm_puts("\n");
+</PRE>
+
+  <LI><a target="_b" 
+href="https://github.com/avpatel/xvisor-next/blob/master/tests/arm32/common/basic/arm_main.c#L90">copy command (Line 90)</a>
+<PRE>
+   arm_puts("copy - Copy to target memory from source memory\n");
+   arm_puts("  Usage: copy &lt;dest> &lt;src> &lt;count>\n");
+   arm_puts("     &lt;dest>  = destination address in hex\n");
+   arm_puts("     &lt;src>   = source address in hex\n");
+   arm_puts("     &lt;count> = byte count in hex\n");
+</PRE>
+
+  <LI> <a href="../xvisor-next/tests/arm32/vexpress-a15/vexpress-a15x2.dts" 
+       target="_b">nor_flash0 alloced_rom</a>
+      
+      <UL>
+        <LI> address_type = "memory";
+        <LI> guest_physical_addr = &lt;0x00000000>;
+        <LI> physical_size = &lt;0x01000000> = 16M
+        <LI> device_type = "alloced_rom";
+      </UL></LI>
+
+  <LI> <a href="https://groups.google.com/forum/#!topic/xvisor-devel/A3RluVpj9Qo" 
+      target="_b">Improve Guest NOR flash utilization</a>
+
+  <LI><a href="http://man.cx/genext2fs%288%29" target="_b"><b>genext2fs</b></a>
+
+<P> On 09/03/2011, -B option was added in Debian to specify block size.
+
+  <LI><b>mkimage</b> - Generate image for U-Boot. Reference: <a target="_b"  
+      href="http://www.unix.com/man-page/debian/1/mkimage/">man page for mkimage</a></p>
+
+  <P> mkimage options:
+
+<PRE>
+-A [architecture]
+-O [os]
+-T [image type]
+-C [compression type]
+-a [load addess]
+-e [entry point]
+-n [image name]
+-d [image data file]
+</PRE>
+</UL></P>
+
+  <LI> Make U-boot compatible initrd for use with bootm command 
+
+<PRE>
+  # mkimage -A arm -O linux -T ramdisk -a 0x00000000 -n "Xvisor ramdisk" -d build/disk.img build/udisk.img
+</PRE>
+
+  <LI> Unplug bootable SD card from the Raspberry Pi2 board and plug it on your development machine 
+
+  <LI> Mount boot partition (or partition 0) of SD card on your development machine 
+
+  <LI> Copy uvmm.bin, DTB, and disk.img to boot partition of SD card 
+
+<PRE>
+  # cp -f build/uvmm.bin &lt;path_to_mounted_boot_partition_of_sd_card>
+  # cp -f build/arch/arm/board/generic/dts/bcm2836/one_guest_vexpress-a15.dtb &lt;path_to_mounted_boot_partition_of_sd_card>
+  # cp -f build/udisk.img &lt;path_to_mounted_boot_partition_of_sd_card>
+</PRE>
+
+  <LI> Unmount boot partition (or partition 0) of SD card from your development machine 
+
+  <LI> Unplug SD card from your development machine and plug it back on Raspberry Pi2 board 
+
+  <LI> Connect to serial port of Raspberry Pi2 board using Putty or Minicom 
+
+<P> Can we use <b>ssh</b> directly? Probably not, during booting, no network at all!
+    Can we use console directly?
+
+<PRE> 
+$ apt-cache search putty
+putty - Telnet/SSH client for X
+$ apt-cache search minicom
+minicom - friendly menu driven serial communication program
+</PRE> 
+
+  <LI> Power-up or Reset Raspberry Pi2 board and press any key when U-Boot shows auto-boot count down 
+
+  <LI> Enable MMC interface from U-Boot command line 
+
+<PRE>
+  U-Boot> mmc dev 0:0
+</PRE>
+
+  <LI> Copy Xvisor from SD card to SDRAM 
+
+<PRE>
+  U-Boot> fatload mmc 0 0x200000 uvmm.bin
+</PRE>
+
+  <LI> Copy the Xvisor DTB from SD card to SDRAM 
+
+<PRE>
+  U-Boot> fatload mmc 0 0x800000 one_guest_vexpress-a15.dtb
+</PRE>
+
+  <LI> Copy disk image from SD card to SDRAM 
+
+<PRE>
+  U-Boot> fatload mmc 0 0x2000000 udisk.img
+</PRE>
+
+  <LI> Jump into Xvisor after disabling MMU, interrupts, etc 
+
+<PRE>
+  U-Boot> bootm 0x200000 0x2000000 0x800000
+</PRE>
+
+  <P> (Note: If you want to "autoboot" then you need to create a boot.scr file
+   on the root of the SD card. To do so edit a boot.cmd text file and add all
+   the commmands you want to execute automatically. For example you can put
+   the following commands in the "boot.cmd" file:
+
+<PRE>
+   mmc dev 0:0
+   fatload mmc 0 0x200000 uvmm.bin
+   fatload mmc 0 0x800000 one_guest_vexpress-a15.dtb
+   fatload mmc 0 0x2000000 udisk.img
+   bootm 0x200000 0x2000000 0x800000
+</PRE>
+
+<P>   Then you can create the boot.scr file with the following command:
+
+<PRE>
+   # mkimage -C none -A arm -T script -d boot.cmd boot.scr
+</PRE>
+
+   Put the boot.scr file a the root of your SD card.)
+
+  <LI> Kick Guest0 for starting Basic Firmware 
+
+<PRE>
+  XVisor# guest kick guest0
+</PRE>
+
+  <LI> Bind to virtual UART 
+
+<PRE>
+  XVisor# vserial bind guest0/uart0
+</PRE>
+
+  <LI> Try few commands of Basic firmware or goto next step 
+
+<PRE>
+  [guest0/uart0] basic# hi
+  [guest0/uart0] basic# hello
+  [guest0/uart0] basic# help
+</PRE>
+
+  <LI> Copy linux from NOR flash to RAM and start linux booting from RAM 
+
+<PRE>
+  [guest0/uart0] basic# autoexec
+</PRE>
+
+  <P> (Note: "autoexec" is a short-cut command)
+  <P> (Note: The &lt;xvisor_source_directory>/tests/arm32/vexpress-a15/linux/cmdlist
+   file which we have added to guest NOR flash contains set of commands for booting
+   linux from NOR flash)
+
+  <LI> Wait for Linux prompt to come-up and then try out some commands 
+
+<PRE>
+  [guest0/uart0] / # ls
+</PRE>
+
+  <LI> Enter character seqence 'ESCAPE+x+q" return to Xvisor prompt 
+
+<PRE>
+  [guest0/uart0] / #
+</PRE>
+
+<P> Notes:
+
+  <OL>
+    <LI> (Note: replace all &lt;> brackets based on your workspace)
+    <LI> (Note: some of the above steps will need to be adapted for other
+         types of ARM host)
+    <LI> (Note: for more info on your desired ARM host refer docs/arm/)
+    <LI> (Note: you are free to change the ordering of above steps based
+         on your workspace)
+  </OL>
+</OL>
+
+<a name="LinuxOnVExpress-A15"></a><h3>Linux on Xvisor VExpress-A15 SMP Guest
+<a href="../xvisor-next/tests/arm32/vexpress-a15/linux/README">(Source origin)</a></h3>
+
+<P> Linux is a computer operating system which is based on free and open source 
+software. The underlying source code can be used, freely modified, and 
+redistributed, both commercially and non-commercially, by anyone under 
+licenses such as the GNU General Public License. For more information on 
+Linux read the wiki page http://en.wikipedia.org/wiki/Linux
+
+<P> Linux already contains a support for VExpress-A15 Board. We can use this kernel 
+unmodified to run it as a xvisor guest. We also provide VExpress-A15 defconfig for 
+various linux kernel versions for ease in building kernel. To obtain Linux kernel 
+sources visit the following <a href="http://www.kernel.org">kernel.org</a>.
+
+<P> Please follow the steps below to build & run Linux kernel with Busybox RootFS 
+on VExpress-A15 Guest with Xvisor running on <a href="#ArmFastModels">ARM Fast 
+Models</a> Host:
+
+<OL>
+  <LI> Build environment for Xvisor
+
+<PRE>
+  # export CROSS_COMPILE=arm-linux-gnueabi-
+</PRE>
+
+  <LI> GoTo Xvisor source directory
+
+<PRE>
+  # cd &lt;xvisor_source_directory>
+</PRE>
+
+  <LI> Configure Xvisor with Generic v7-ve default settings
+
+<PRE>
+  # make ARCH=arm generic-v7-ve-defconfig
+</PRE>
+
+  <LI> Build Xvisor & DTBs
+
+<PRE>
+  # make; make dtbs
+</PRE>
+
+  <LI> Build Basic Firmware
+
+<PRE>
+  # make -C tests/arm32/vexpress-a15/basic
+</PRE>
+
+  <LI> Copy defconfig to Linux build directory
+
+<PRE>
+  # cp tests/arm32/vexpress-a15/linux/linux-&lt;linux_version>_vexpress_a15_defconfig &lt;linux_build_directory>/.config
+</PRE>
+
+  <LI> GoTo Linux source (should it be build?) directory
+
+<PRE>
+  # cd &lt;linux_source_directory>
+</PRE>
+
+  <LI> Configure Linux in build (should it be source?)  directory
+
+<PRE>
+  # make O=&lt;linux_build_directory> ARCH=arm oldconfig
+</PRE>
+
+  <LI> Build Linux in build (should it be source?)  directory
+
+<PRE>
+  # make O=&lt;linux_build_directory> ARCH=arm Image
+</PRE>
+
+  <LI> Create BusyBox RAMDISK to be used as RootFS for Linux kernel
+
+<P>  (Note: For subsequent steps, we will assume that your RAMDISK is located at 
+   &lt;busybox_rootfs_directory>/rootfs.img)
+
+<P>  (Note: Please refer to <a href="../xvisor-next/tests/common/busybox/README.md" 
+target="_b">busybox/README</a> for creating rootfs.img using BusyBox).
+
+  <LI> GoTo Xvisor source directory
+
+<PRE>
+  # cd &lt;xvisor_source_directory>
+</PRE>
+
+  <LI> Create disk image for Xvisor
+
+<PRE>
+  # mkdir -p ./build/disk/tmp
+  # mkdir -p ./build/disk/system
+  # cp -f ./docs/banner/roman.txt ./build/disk/system/banner.txt
+  # cp -f ./docs/logo/xvisor_logo_name.ppm ./build/disk/system/logo.ppm
+  # mkdir -p ./build/disk/images/arm32/vexpress-a15
+  # ./build/tools/dtc/dtc -I dts -O dtb -o ./build/disk/images/arm32/vexpress-a15x2.dtb ./tests/arm32/vexpress-a15/vexpress-a15x2.dts
+  # cp -f ./build/tests/arm32/vexpress-a15/basic/firmware.bin ./build/disk/images/arm32/vexpress-a15/firmware.bin
+  # cp -f ./tests/arm32/vexpress-a15/linux/nor_flash.list ./build/disk/images/arm32/vexpress-a15/nor_flash.list
+  # cp -f ./tests/arm32/vexpress-a15/linux/cmdlist ./build/disk/images/arm32/vexpress-a15/cmdlist
+  # cp -f &lt;linux_build_directory>/arch/arm/boot/Image ./build/disk/images/arm32/vexpress-a15/Image
+  # ./build/tools/dtc/dtc -I dts -O dtb -p 0x800 -o ./build/disk/images/arm32/vexpress-a15/vexpress-v2p-ca15-tc1.dtb \
+./tests/arm32/vexpress-a15/linux/vexpress-v2p-ca15-tc1.dts
+  # cp -f &lt;busybox_rootfs_directory>/rootfs.img ./build/disk/images/arm32/rootfs.img
+  # genext2fs -B 1024 -b 16384 -d ./build/disk ./build/disk.img
+</PRE>
+
+<P> Or, perhaps, we need to create disk image for Xvisor in the 
+ <a href="../xvisor-next/arch/arm/board/generic/dts/bcm2836" target="_b">bcm2836</a> 
+ directory and choose the <code>two_guest_vexpress-a15.dts</code> device tree source.
+
+  <LI> Create fast_model_boot.axf for running it on ARM Fast Models
+
+<PRE>
+  # ${CROSS_COMPILE}gcc -nostdlib -march=armv7ve -mcpu=cortex-a15 -e start_boot -Wl,--build-id=none -Wl,-Ttext=0x80000000 \
+-DSPIN_LOOP_ADDR=0x14000000 -DVEXPRESS_A15 -DIMAGE=build/vmm.bin -DDTB=build/arch/arm/board/generic/dts/vexpress/a15/one_guest_vexpress-\
+a15.dtb -DINITRD=build/disk.img ./docs/arm/fast_model_boot.S -o build/fast_model_boot.axf
+</PRE>
+
+  <P> <b>Note: (02/15/2016)</b> "-nostdlib" tells gcc to not include the standard 
+libraries, one of them being glibc (the GNU libc). 
+
+  <LI> Launch ARM fast models 8.0 or higher
+
+<PRE>
+  # <a href="https://github.com/xvisor/xvisor/blob/master/tests/arm32/vexpress-a15/linux/README#L67" target="_b">model_shell ...</a>
+</PRE>
+  OR
+
+<PRE>
+  # <a href="https://github.com/xvisor/xvisor/blob/master/tests/arm32/vexpress-a15/linux/README#L69" target="_b">model_shell64 ...</a>
+</PRE>
+
+  <LI> Kick Guest0 for starting Basic Firmware
+
+<PRE>
+  XVisor# guest kick guest0
+</PRE>
+
+  <LI> Bind to virtual UART]
+
+<PRE>
+  XVisor# vserial bind guest0/uart0
+</PRE>
+
+  <LI> Copy linux from NOR flash to RAM and start linux booting from RAM
+
+<PRE>
+  [guest0/uart0] basic# autoexec
+</PRE>
+
+  (Note: "autoexec" is a short-cut command)
+  (Note: The &lt;xvisor_source_directory>/tests/arm32/vexpress-a15/linux/cmdlist file
+   which we have added to guest NOR flash contains set of commands for booting
+   linux from NOR flash)
+
+  <LI> Wait for Linux prompt to come-up and then try out some commands
+
+<PRE>
+  [guest0/uart0] / # ls
+</PRE>
+
+  <LI> Enter character seqence 'ESCAPE+x+q" return to Xvisor prompt
+
+<PRE>
+  [guest0/uart0] / #
+</PRE>
+
+</OL>
+
+  <UL>
+    <LI> (Note: replace all &lt;> brackets based on your workspace)
+    <LI> (Note: some of the above steps will need to be adapted for other types of ARM 
+          host)
+    <LI> (Note: for more info on your desired ARM host refer docs/arm/)
+    <LI> (Note: you are free to change the ordering of above steps based on your 
+          workspace)
+  </UL>
+
+<a name="Rpi2TwoGuestsDTS"></a><h3>Rpi2 Two Guests Device Tree Source</h3>
+
+<PRE>
+# arch/arm/board/generic/dts/bcm2836/bcm2836.dtsi
+
+/memreserve/ 0x00000000 0x00008000;
+
+/ {
+	#address-cells = &lt;1>;
+	#size-cells = &lt;1>;
+	compatible = "brcm,bcm2836";
+	model = "BCM2836";
+	interrupt-parent = &lt;&intc>;
+
+	chosen { };
+	aliases { };
+
+	cpus {
+		#address-cells = &lt;1>;
+		#size-cells = &lt;0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = &lt;0xf00>;
+			clock-frequency = &lt;800000000>;
+			enable-method = "spin-table";
+			cpu-release-addr = &lt;0x4000008C>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = &lt;0xf01>;
+			clock-frequency = &lt;800000000>;
+			enable-method = "spin-table";
+			cpu-release-addr = &lt;0x4000009C>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = &lt;0xf02>;
+			clock-frequency = &lt;800000000>;
+			enable-method = "spin-table";
+			cpu-release-addr = &lt;0x400000AC>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = &lt;0xf03>;
+			clock-frequency = &lt;800000000>;
+			enable-method = "spin-table";
+			cpu-release-addr = &lt;0x400000BC>;
+		};
+	};
+
+	memory { 
+		device_type = "memory"; 
+		reg = &lt;0x00000000 0x40000000>; /* 1 GB */
+	};
+
+	gen-timer { /* Generic Timer */
+      		compatible = "arm,armv7-timer";
+		interrupts = &lt;0>, &lt;1>, &lt;3>, &lt;2>;
+		interrupt-parent = &lt;&local_intc>;
+	};
+
+	soc {
+		#address-cells = &lt;1>;
+		#size-cells = &lt;1>;
+		compatible = "simple-bus";
+
+		timer {
+			compatible = "brcm,bcm2835-system-timer";
+			reg = &lt;0x3f003000 0x1000>;
+			clock-frequency = &lt;1000000>;
+			interrupts = &lt;1 0>, &lt;1 1>, &lt;1 2>, &lt;1 3>;
+		};
+
+		local_intc: local_intc {
+			compatible = "brcm,bcm2836-l1-intc";
+			reg = &lt;0x40000000 0x100>;
+			irq_start = &lt;96>;
+			interrupt-controller;
+			#interrupt-cells = &lt;1>;
+		};
+
+		intc: intc {
+			compatible = "brcm,bcm2836-armctrl-ic";
+			reg = &lt;0x3f00b200 0x200>;
+			irq_start = &lt;0>;
+			interrupt-controller;
+			#interrupt-cells = &lt;2>;
+			interrupts = &lt;8>; /* GPU interrupt of local INTC */
+			interrupt-parent = &lt;&local_intc>;
+		};
+
+		poweroff {
+			compatible = "brcm,bcm2835-poweroff";
+			reg = &lt;0x3f100000 0x28>;
+		};
+
+		SERIAL0: uart0 {
+	      		compatible = "brcm,bcm2835-pl011", "arm,pl011";
+	      		reg = &lt;0x3f201000 0x1000>;
+			clock-frequency = &lt;3000000>;
+			interrupts = &lt;2 25>;
+		};
+
+		sdhci {
+			compatible = "brcm,bcm2835-sdhci";
+			reg = &lt;0x3f300000 0x1000>;
+			clocks = &lt;&clk_mmc>;
+			interrupts = &lt;2 30>;
+		};
+
+		dwc2 {
+			compatible = "brcm,bcm2835-usb";
+			reg = &lt;0x3f980000 0x10000>;
+			interrupts = &lt;2 9>;
+		};
+	};
+
+	clocks {
+		#address-cells = &lt;1>;
+		#size-cells = &lt;0>;
+
+		clk_mmc: mmc {
+			compatible = "fixed-clock";
+			reg = &lt;0>;
+			#clock-cells = &lt;0>;
+			clock-frequency = &lt;100000000>;
+		};
+
+		clk_i2c: i2c {
+			compatible = "fixed-clock";
+			reg = &lt;1>;
+			#clock-cells = &lt;0>;
+			clock-frequency = &lt;250000000>;
+		};
+
+		clk_spi: spi {
+			compatible = "fixed-clock";
+			reg = &lt;2>;
+			#clock-cells = &lt;0>;
+			clock-frequency = &lt;250000000>;
+		};
+	};
+};
+
+# arch/arm/board/generic/dts/bcm2836/bcm2836-rpi-2-b.dtsi
+
+/include/ "bcm2836.dtsi"
+
+/ {
+	model = "Raspberry Pi2 Model B";
+};
+
+# arch/arm/board/generic/dts/bcm2836/two_guest_vexpress-a15.dts
+
+/dts-v1/;
+
+/include/ "bcm2836-rpi-2-b.dtsi"
+
+/ {
+	vmm {
+		net {
+			br0 {
+				device_type = "netswitch";
+				compatible = "bridge";
+			};
+		};
+	};
+
+	chosen {
+		console = &SERIAL0;
+		bootcmd = /* Mount initrd device */
+			  "vfs mount initrd /",
+
+			  /* Load guest0 device tree from file */
+			  "vfs fdt_load /guests guest0 /images/arm32/vexpress-a15x2.dtb mem0,physical_size,physsize,0x06000000 \
+                           net0,switch,string,br0 net1,switch,string,br0",
+
+			  /* Replace guest0 vGIC emulator with GIC emulator */
+			  "devtree attr set /guests/guest0/aspace/gic_dist compatible string vexpress-v2,gic",
+			  "devtree attr set /guests/guest0/aspace/gic_dist physical_size physsize 0x2000",
+			  "devtree node del /guests/guest0/aspace/gic_cpu",
+
+			  /* Create guest0 */
+			  "guest create guest0",
+
+			  /* Load guest0 images */
+			  "vfs guest_load_list guest0 /images/arm32/vexpress-a15/nor_flash.list",
+
+			  /* Load guest1 device tree from file */
+			  "vfs fdt_load /guests guest1 /images/arm32/vexpress-a15x2.dtb mem0,physical_size,physsize,0x06000000 \
+                           net0,switch,string,br0 net1,switch,string,br0",
+
+			  /* Replace guest1 vGIC emulator with GIC emulator */
+			  "devtree attr set /guests/guest1/aspace/gic_dist compatible string vexpress-v2,gic",
+			  "devtree attr set /guests/guest1/aspace/gic_dist physical_size physsize 0x2000",
+			  "devtree node del /guests/guest1/aspace/gic_cpu",
+
+			  /* Create guest1 */
+			  "guest create guest1",
+
+			  /* Load guest1 images */
+			  "vfs guest_load_list guest1 /images/arm32/vexpress-a15/nor_flash.list";
+	};
+};
+</PRE>
+
+<a name="BasicFirmwareOnVExpress-A15"></a><h3>Basic Firmware on VExpress-A15 Guest 
+<a href="../xvisor-next/tests/arm32/vexpress-a15/basic/README">(Source origin)</a></h3>
+
+<P>The basic firmware currently sets up PIC, Timer, and UART and emulates
+a dummy terminal which reponds to various commands. It also includes an
+extensive MMU test suite and dhrystone benchmark.
+
+<P>Hardware features tested by Basic Firmware:
+
+<PRE>
+  - Sensitive non-priviledged instructions
+  - Virtual IRQs
+  - Generic Interrupt Controller (GIC)
+  - PrimeCell Dual-Mode Timer (SP804)
+  - Serial Port (PL011)  
+</PRE>
+
+<P> Please follow the steps below to build & run Basic Firmware on VExpress-A15
+Guest with Xvisor running on ARM <a href="#ArmFastModels" target="_b">Fast Model</a> 
+VExpress-A15 Host:
+
+<PRE>
+  [1. Build environment for Xvisor]
+  # CROSS_COMPILE=arm-linux-gnueabi-
+
+  [2. GoTo Xvisor source directory]
+  # cd &lt;xvisor_source_directory>
+
+  [3. Configure Xvisor with Generic v7-ve default settings]
+  # make ARCH=arm generic-v7-ve-defconfig
+
+  [4. Build Xvisor & DTBs]
+  # make; make dtbs
+
+  [5. Build Basic Firmware]
+  # make -C tests/arm32/vexpress-a15/basic
+
+  [6. Create disk image for Xvisor]
+  # mkdir -p ./build/disk/images/arm32/vexpress-a15
+  # ./build/tools/dtc/dtc -I dts -O dtb -o ./build/disk/images/arm32/vexpress-a15x2.dtb ./tests/arm32/vexpress-a15/vexpress-a15x2.dts
+  # cp -f ./build/tests/arm32/vexpress-a15/basic/firmware.bin ./build/disk/images/arm32/vexpress-a15/firmware.bin
+  # cp -f ./tests/arm32/vexpress-a15/basic/nor_flash.list ./build/disk/images/arm32/vexpress-a15/nor_flash.list
+  # genext2fs -B 1024 -b 16384 -d ./build/disk ./build/disk.img
+
+  [7. Create fast_model_boot.axf for running it on ARM Fast Models]
+  # ${CROSS_COMPILE}gcc -nostdlib -march=armv7ve -mcpu=cortex-a15 -e start_boot \
+-Wl,--build-id=none -Wl,-Ttext=0x80000000 -DSPIN_LOOP_ADDR=0x14000000 -DVEXPRESS_A15 \
+-DIMAGE=build/vmm.bin \
+-DDTB=build/arch/arm/board/generic/dts/vexpress/a15/one_guest_vexpress-a15.dtb \
+-DINITRD=build/disk.img ./docs/arm/fast_model_boot.S -o build/fast_model_boot.axf
+
+  <P> <b>Note: (02/15/2016)</b> "-nostdlib" tells gcc to not include the standard 
+libraries, one of them being glibc (the GNU libc). <a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0841p/index.html">model_shell</a>
+
+  [8. Launch ARM fast models 8.0 or higher]
+  # <a href="https://github.com/xvisor/xvisor/blob/master/tests/arm32/vexpress-a15/basic/README#L43" target="_b">model_shell  ...</a>
+  OR
+  # <a href="https://github.com/xvisor/xvisor/blob/master/tests/arm32/vexpress-a15/basic/README#L45" target="_b">model_shell64  ...</a>
+build/fast_model_boot.axf
+
+  [9. Kick Guest0 for starting Basic Firmware]
+  XVisor# guest kick guest0
+
+  [10. Bind to virtual UART]
+  XVisor# vserial bind guest0/uart0
+
+  [11. Say 'hi' to Basic Firmware]
+  [guest0/uart0] basic# hi
+
+  [12. Say 'hello' to Basic Firmware]
+  [guest0/uart0] basic# hello
+
+  [13. Check various commands of Basic Firmware]
+  [guest0/uart0] basic# help
+
+  [14. Enter character seqence 'ESCAPE+x+q" return to Xvisor prompt]
+  [guest0/uart0] basic# 
+</PRE>
+
+<OL>
+  <LI> (Note: replace all &lt;> brackets based on your workspace)
+  <LI> (Note: the above steps assumes Xvisor running on VExpress-A15 host
+   emulated by ARM Fast Models. For other types of ARM host some of
+   the above steps will need to be adapted for that specfic ARM host.
+   For more info on your desired ARM host refer docs/arm/)
+</OL>
+
+<a name="EnablingHYPRpi2"></a><h3>Enabling HYP mode on the Raspberry Pi 2 
+<a href="http://blog.flexvdi.es/2015/02/25/enabling-hyp-mode-on-the-raspberry-pi-2/" 
+target="_b">(Source Origin)</a></h3>
+
+			<div class="entry-meta">
+<a href="http://blog.flexvdi.com/2015/02/25/enabling-hyp-mode-on-the-raspberry-pi-2/">25 
+February, 2015 &nbsp;&nbsp; 21 July, 2015</a> <a class="url fn n" 
+href="http://blog.flexvdi.com/author/slopez/">Sergio L. Pascual</a>&nbsp;&nbsp;
+								
+ <a href="http://blog.flexvdi.com/category/sin-categoria/">Sin categoria</a>
+
+<p>The newest iteration of the wonderful machine designed by Raspberry Pi Foundation, 
+the Raspberry Pi 2, sports a <b>Broadcom BCM2836 SoC</b>, with four <b>Cortex-A7</b> 
+cores. The Cortex-A7, being the little brother Cortex-A15, features the <b>ARM 
+Virtualization Extensions</b>, so both Xen and KVM based virtualization should work 
+on it.</p>
+
+<p>At this point, you probably are wondering why would someone want to use 
+virtualization on a RPi2. In addition to the usual <em>"because you can!"</em> answer, 
+there's a pretty good reason for it. Imagine you want to use the RPi2 as a <strong>media 
+center</strong> and, at the same time, you want to <strong>run some personal 
+services</strong> (like <a href="https://owncloud.org/">ownCloud</a> or <a 
+href="https://pydio.com/">Pydio</a>) on it. Instead of polluting the media center image, 
+you can run an isolate, secure, virtual machine for such purpose. And, 
+<a href="http://mail-index.netbsd.org/port-arm/2015/02/09/msg002852.html" 
+target="_b">using my VEXPRESS_KVM port</a>, you can even provide those services 
+running <b>NetBSD</b>! </p>
+
+<p>The first step towards being able to use virtualization on the Raspberry Pi 2, is 
+<strong>finding a way to boot the kernel in HYP mode</strong>. Let's see how can we do 
+that.</p>
+
+<p><b>HYP mode and the Raspberry Pi 2 bootloader</b></p>
+
+<p>To be able to use the Virtualization Extensions on the RPi2 (and, by extension, on 
+any ARM based machine), <strong>the bootloader needs to jump into HYP mode before 
+passing the control to Linux</strong> (this is generally done at the same time the 
+bootloader jumps from secure to non-secure world). If that's not the case, as happens 
+with the default RPi2's bootloader, Linux will print this message, and no 
+virtualization support will be available:</p>
+
+<pre>
+ [    0.154021] CPU: All CPU(s) started in SVC mode.
+</pre>
+
+<p>Luckily, <a href="http://www.raspberrypi.org/forums/viewtopic.php?f=72&amp;t=100752" 
+target="_b">this post in the forums</a> points that it's possible to obtain control of 
+the board when it's still in secure mode, by setting the <code>kernel_old=1</code> 
+option in <code>config.txt</code>. So we just need to build a bootloader which properly 
+sets HYP mode before jumping to <code>0x8000</code>, and then bundle it our Linux's 
+zImage.</p>
+
+<p><b>The easy way. Using a prebuilt image</b></p>
+
+<p>I've uploaded a <a href="https://drive.google.com/file/d/0B1QBSii9IJ1NSzhHVlpOak52MDA/view?usp=sharing">prebuilt image here</a> (md5sum: 356788d260e1a93376c5b8acbb63da13), 
+which contains the bootloader and ~32k of padding (to be sure the <code>zImage</code> 
+starts at <code>0x8000</code>). You just need to concatenate it with your current kernel 
+(save a copy first!):</p>
+
+<pre>
+mv /boot/kernel7.img /boot/kernel7.img.bak
+cat bootblk.bin /boot/kernel7.img.bak &gt; /boot/kernel7.img
+</pre>
+
+<p>Then you'll need to add the <code>kernel_old=1</code> option to your 
+<code>config.txt</code>:</p>
+
+<pre>
+echo "kernel_old=1" &gt;&gt; /boot/config.txt
+</pre>
+
+<p>That's it! On the next boot, Linux should say something like this:</p>
+<pre>
+[    0.154131] CPU: All CPU(s) started in HYP mode.
+[    0.154158] CPU: Virtualization extensions available.
+</pre>
+
+<p><b>Building it yourself</b></p>
+
+<p>If you want to build the bootloader by yourself, you'll need to <strong>grab an ARM 
+cross toolchain</strong>. I'm using the one from the 
+<a href="https://launchpad.net/gcc-arm-embedded">GCC ARM Embedded project</a>, which 
+works just fine. Then add it to your <code>$PATH</code>, grab the code for 
+<a href="https://github.com/slp/rpi2-hyp-boot">my GitHub's repo</a>, and build it:</p>
+
+<pre>
+export PATH=$PATH:/home/slp/sources/gcc-arm-none-eabi-4_9-2014q4/bin
+git clone https://github.com/slp/rpi2-hyp-boot.git
+cd rpi2-hyp-boot
+make
+</pre>
+
+<p>That should produce a <code>bootblk.bin</code>, with contains the boot code and 
+<code>32k</code> of padding.</p>
+
+<p><b>Next steps</b></p>
+
+<p>With this custom bootloader, we've been able to boot Linux in HYP mode, but there's 
+still some work to be done to be able to run our first guest. The <strong>RPi2's bcm2836 
+SoC doesn't provide a GIC</strong> (Generic Interrupt Controller), which would provide 
+a very helpful vGIC (Virtual GIC) interface, so we need to <strong>find a way to provide 
+some mechanism for interrupting</strong> the guest (for rescheduling or servicing an 
+IRQ) without relying on it.</p>
+
+<p>As the documentation for the bcm2836/bcm2709 is nowhere to be found, this is somewhat 
+harder, but I hope we'll find a way. </p>
+
+<a name="Xvisor"></a><h3>Xvisor References</h3>
+
+<OL>
+  <LI><a href="http://xhypervisor.org/index.php?page=development" 
+      target="_b">xvisor-devl</a>&nbsp;&nbsp;
+      <a href="https://github.com/avpatel/xvisor-next" target="_b">xvisor-next</a>&nbsp;
+      &nbsp;<a href="https://github.com/xvisor/xvisor" target="_b">xvisor v0.2.7</a>&nbsp;
+      &nbsp;<a href="../SandBox/GetSource/gitXvisorNext.sh" target="_b">gitXvisorNext.sh</a>&nbsp;
+  <LI><a href="https://github.com/xvisor/xvisor/blob/master/docs/DesignDoc" 
+      target="_b">Xvisor Design Document</a>
+  <LI><a href="http://elinux.org/RPi_U-Boot#Copy_U-Boot_to_your_SD_card" 
+      target="_b">RPi U-Boot</a>
+  <LI><a href="http://elinux.org/RPi_Easy_SD_Card_Setup" target="_b">RPi Easy SD Card 
+      Setup</a>
+  <LI><a href="http://xillybus.com/tutorials/device-tree-zynq-1" target="_b">Device 
+      Tree Tutorial</a>
+  <LI><a href="#Rpi2TwoGuestsDTS" target="_b">two_guest_vexpress-a15.dts</a>
+  <LI><a target="_b" 
+href="https://compulab.co.il/workspace/mediawiki/index.php5/U-Boot_quick_reference">U-Boot: Quick reference</a>
+  <LI><a href="./Xvisor-Command-Usages.html" target="_b">Xvisor Command Usages</a>
+  <LI><a href="" target="_b"></a>
+  <LI><a href="" target="_b"></a>
+</OL>
+
+
+<a name="ArmFastModels"></a><h4>Arm Fast Models</h4>
+
+<img src="http://www.arm.com/assets/images/FVP.png" alt="Fast Models Image">
+
+
+<a class="noline" href="https://silver.arm.com/browse/FM000">
+</a>
+
+ <div> Software development cycles for embedded systems can be delayed 
+waiting for expensive development hardware. Remaining competitive in 
+today's market requires fast turn-around of fully-featured software that
+ has been developed on a fully validated system. 
+
+<h5>Solution: Early access to a Virtual Prototype (VP) for accelerated software 
+development </h5>
+
+<p>With ARM Fast Models, software development can begin prior to silicon
+ availability. These extensively validated programmer's view models 
+provide access to ARM-based systems suitable for early software 
+development. Used in conjunction with <a target="_self" href="http://www.arm.com/products/tools/software-tools/ds-5/index.php">ARM DS-5 Development Studio</a>, the Fast Models can help developers debug, analyze, and optimize their applications throughout the development cycle. </p>
+
+<p>Fast Models are delivered as either Fixed Virtual Platforms (FVP) or a
+ library of models for building virtual prototypes tailored to specific 
+SoCs and embedded systems. </p>
+
+<h5>Development of Virtual Prototypes </h5>
+
+<p>The Virtual Prototype will typically consist of models of ARM IP, 
+models of 3rd party IP and custom hardware. ARM provides solutions for 
+assembling and building sub-systems with ARM Fast Models. The sub-system
+ is then extended via export to SystemC and connection to 3rd party 
+models via standardised TLM 2.0 interfaces for AMBA.&nbsp;The VP can 
+then be simulated with the&nbsp;<a target="_self" href="http://accellera.org/">Accellera</a> SystemC reference simulator or with the solutions from EDA partners such as&nbsp;<a target="_self" href="http://www.synopsys.com/Prototyping/VirtualPrototyping/Pages/default.aspx">Synopsys</a> and&nbsp;<a target="_self" href="http://www.cadence.com/products/sd/virtual_system/pages/default.aspx">Cadence</a> with whom we work closely.</p>
+
+<p>These virtual platforms can then be conveniently distributed to 
+software developers for early software development without the need for 
+expensive, hard to maintain development boards.</p></div>
+
+
+<ul><li><a href="http://www.arm.com/products/tools/models/fast-models/?tab=Features" rel="tcontent13993" class="selected"><span class="tabspan">Features</span></a></li></ul>
+
+<ul><li><a href="http://www.arm.com/products/tools/models/fast-models/?tab=Model+Availability" rel="tcontent13963"><span class="tabspan">Model Availability</span></a></li></ul>
+
+<ul><li><a href="http://www.arm.com/products/tools/models/fast-models/?tab=Resources" rel="tcontent13964"><span class="tabspan">Resources</span></a></li></ul>
+
+
+<ul>
+    <li>Executing millions of ARM instructions per second - productive software development </li>
+    <li>Verified with the same validation suites as ARM IP - accuracy is assured </li>
+    <li>Models for all ARM CPUs, System IP and Media TP </li>
+    <li>Models advanced ARM technologies such as caches, MMU, LPAE, virtualization,&nbsp;TrustZone and&nbsp;<a target="_self" href="http://www.arm.com/products/processors/technologies/vector-floating-point.php">VFP</a> </li>
+    <li>Compatible deliverables from Linaro for Linux and Android development </li>
+    <li>SystemC TLM 2.0 Export of ARM processor-based subsystems and models to support creation of complete VPs </li>
+    <li>Swap and Play with Cycle Models to support system bring up &amp; optimization</li>
+</ul>
+  </body>
+</html>
+

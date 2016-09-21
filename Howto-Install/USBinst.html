@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>USB grub2 ISO installer</title>
+	<link type="text/css" rel="stylesheet" href="/css/style_emacs.css" />
+</head>
+<body>
+<h1>USB GRUB2 ISO installer</h1>
+<h3>Preparation</h3>
+<OL>
+<li>A bootable USB drive
+<li>A Linux system or a Linux live CD
+<li>Linux ISO image (netinst or businesscard)
+</OL>
+<h3>Disk Partition and Formatting</h3>
+<pre><div class="console">$ sudo fdisk /dev/sd<span style="color: red">x</span>
+</div><div class="out">
+Command (m for help): <span style="color: red">d</span>
+Selected partition 1
+Command (m for help): <span style="color: red">n</span>
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): <span style="color: red">p</span>
+Partition number (1-4, default 1): <span style="color: red">1</span>
+First sector (2048-30871551, default 2048): 
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-30871551, default 30871551): 
+Using default value 30871551
+Command (m for help): <span style="color: red">a</span>
+Partition number (1-4): <span style="color: red">1</span>
+Command (m for help): <span style="color: red">p</span>
+Disk /dev/sdd: 15.8 GB, 15806234624 bytes
+255 heads, 63 sectors/track, 1921 cylinders, total 30871552 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x3a42665b
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdd1   *        2048    30871551    15434752   83  Linux
+Command (m for help): <span style="color: red">w</span>
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+Syncing disks.
+</div>
+</pre>
+<h3>Install GRUB2 to USB drive</h3>
+	<p>Replacing /dev/sd<span style="color: red">x</span> with your actual USB device
+	<pre><div class="console">$ sudo mkfs.ext2 /dev/sd<span style="color: red">x</span>1
+$ sudo mkdir /mnt/USB
+$ sudo mount /dev/sd<span style="color: red">x</span>1 /mnt/USB
+$ sudo grub-install --force --no-floppy --root-directory=/mnt/USB /dev/sd<span style="color: red">x</span>
+</div><div class="out">Installation finished. No error reported.
+</div>
+</pre>
+<h3>Download ISO image</h3>
+	<p>Download Debian ISO image from 
+	<a href="http://ftp.tw.debian.org/debian-cd/" target="_blank">台中縣教育局</a> or 
+	<a href="http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/" target="_blank">official</a>
+	<pre><div class="console">$ cd /mnt/USB/
+$ sudo mkdir img
+</div>
+</pre>
+Put the iso image in /mnt/USB/img</p>
+<h3>Configure GRUB2</h3>
+	<p>Download initrd.gz and vmlinuz
+	<a href="http://ftp.tw.debian.org/debian/dists/Debian6.0.5/main/installer-i386/current/images/hd-media/" target="_blank">i386</a>
+	<a href="http://ftp.tw.debian.org/debian/dists/Debian6.0.5/main/installer-amd64/current/images/hd-media/" target="_blank">amd64</a>
+	<pre><div class="console">$ cd /mnt/USB/boot
+$ sudo mkdir i386 amd64
+$ cd amd64; ##or cd i386;
+</div>
+</pre>
+Put the initrd.gz and vmlinuz in /mnt/USB/boot/amd64 or /mnt/USB/boot/i386.
+	<pre><div class="console">$ sudo emacs /mnt/USB/boot/grub/grub.cfg
+</div><div class="out">set timeout=10
+set default=0
+set isodir='/img'
+menuentry "Install Kubuntu 12.10 amd64" {
+ set isofile="/img/kubuntu-12.10-desktop-amd64.iso"
+ loopback loop $isofile
+ linux (loop)/casper/vmlinuz boot=casper iso-scan/filename=$isofile splash --
+ initrd (loop)/casper/initrd.lz
+}
+menuentry "Install Debian amd64 netinst" {
+ loopback loop $isodir/debian-6.0.6-amd64-netinst.iso
+ linux /boot/amd64/vmlinuz desktop=lxde --
+ initrd /boot/amd64/initrd.gz
+}
+menuentry "Install Debian i386 netinst" {
+ loopback loop $isodir/debian-6.0.6-i386-netinst.iso
+ linux /boot/i386/vmlinuz desktop=lxde --
+ initrd /boot/i386/initrd.gz
+}
+menuentry "Grub2 HDD" {
+ set root=(hd1)
+ chainloader +1
+}
+menuentry "Restart" {
+ reboot
+}
+ 
+menuentry "Shut Down" {
+ halt
+}
+</div><div class="console">$ cd ; sudo umount /mnt/USB
+</pre>
+	
+<h3>References</h3>
+	<OL>
+	<li><a href="http://www.pendrivelinux.com/install-grub2-on-usb-from-ubuntu-linux/" target="_blank">Install GRUB2 on USB from Ubuntu Linux</a>
+	<li><a href="http://fourdollars.blogspot.tw/2008/11/usb-stick-debian-gnulinux-50-lenny-rc1.html" target="_blank">使用 USB stick 來安裝 Debian GNU/Linux 5.0 (Lenny) rc1</a>
+	<li><a href="http://www.panticz.de/MultiBootUSB" target="_blank">MultiBootUSB</a>
+	<li><a href="http://www.wallix.org/2011/11/02/automatic-installation-of-debian-squeeze-from-a-usb-flash-drive/" target="_blank">Automatic installation of Debian Squeeze from a USB flash drive</a>
+	</OL>
+</body>
+</html>

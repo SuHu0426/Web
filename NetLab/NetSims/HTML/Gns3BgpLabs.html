@@ -1,0 +1,407 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US">
+  <head profile="http://gmpg.org/xfn/11"><title>Free Cisco GNS3 BGP Lab 1</title>
+  </head>
+
+  <body>
+
+<OL>
+  <LI><a href="#FCBgpLab1">Free Cisco GNS3 BGP Lab 1</a>
+  <LI><a href="#RouterAsFrameRelay">Cisco Router as Frame Relay Switch</a>
+  <LI><a href="#FCBgpSP">CCIE Service Provider GNS3 lab</a>
+  <LI><a href="#EigrpLab">CCNP EIGRP GNS3 Lab 1</a>
+  <LI><a href="#"></a>
+</OL>
+
+<a name="FCBgpLab1"></a><h3>Free Cisco GNS3 BGP Lab 1 
+<a href="http://freeciscolab.com/2013/08/30/free-cisco-gns3-bgp-lab-1/">(Source 
+Origin)</a></h3>
+
+<img alt="CCIE-BGP" src="http://freeciscolab.com/wp-content/uploads/2013/08/CCIE-BGP.jpg"
+ width="810"></a>
+
+<P> In this free 
+<a target="newwindow" 
+href="http://freeciscolab.com/2014/04/01/cisco-ios-requirements-certification-exams/">GNS3</a> 
+Lab you will be configuring EIGRP, 
+<a href="http://freeciscolab.com/2013/07/27/gns3-ospf-labs/">OSPF</a>, IBGP and BGP 
+across multiple autonomous systems. You will also configure Point-to-Point and 
+Point-to-Multipoint 
+<a href="http://freeciscolab.com/2010/10/23/cisco-router-emulates-frame-relay-switch/" 
+target="_blank">Frame-Relay</a>, 
+see <a href="http://en.wikipedia.org/wiki/Frame_Relay" target="newwindow" >Frame-Relay 
+Wiki</a>.  For this lab we are using an old INE topology consists of 9 routers and 4 
+level 3 switches. Routers with switching modules install have been substituted for level 
+3 switches as GNS3 does not support level 3 switches.</p>
+
+<h4><span id="more-1828"></span>Objectives:</h4>
+<ul>
+  <li>Point-to-point Frame-Relay</li>
+  <li>Point-to-Multipoint Frame-Relay</li>
+  <li>VLANs</li>
+  <li>Port Channel</li>
+  <li>EIGRP</li>
+  <li>OSPF</li>
+  <li>IBGP</li>
+  <li>BGP</li>
+  <li>Update Source</li>
+</ul>
+
+<h4>Tasks:</h4>
+
+<ol>
+  <li>Configure VLANs as shown in the network drawing.</li>
+  <li>Configure Port Channel on SW4 and SW2 as shown in the network drawing.</li>
+  <li>Configure <a href="http://freeciscolab.com/2010/10/23/cisco-router-emulates-frame-relay-switch/" target="_blank">Frame 
+      Relay</a> cloud 1 and 2 as shown in the network drawing.</li>
+  <li>Using the network address table configure the Loopback <a href="http://freeciscolab.com/2013/04/14/ports-interfaces-differences/">interface</a> 
+      0 on all routers and switches.</li>
+  <li>Using the network address table configure Fast Ethernet interfaces on all routers 
+      and switches as shown in the network drawing.</li>
+  <li>Using the address table configure Serial interfaces on R1, 2, 3, 4, 5, 6, and BB1 
+      as shown in the network drawing.</li>
+  <li>Configure serial interfaces S0/1 and S0/2 of R3 to have a clock rate of 
+      125000.</li>
+  <li>Configure serial interfaces S0/1 of R4 to have a clock rate of 125000.</li>
+  <li>Configure Frame Relay encapsulation on S0/0 interface of R1, 2, 3, 4, 5, 6 and 
+      BB1</li>
+  <li>Configure R1, 2, 3, 4, and 5 to be part of a hub and spoke Frame Relay network as 
+      shown in the network drawing.</li>
+  <li>Configure R6 and BB1 to be part of a point to point Frame Relay network as shown 
+      in the network drawing.</li>
+  <li>Configure R1, 4, and 6 to be part of the OSPF routing process 1.</li>
+  <li>Configure R1, 4, and 6 interfaces to be in OSPF area 0 as shown in the network 
+      drawing.</li>
+  <li>Configure R3 and 5 as well as SW1, 2, 3, and 4 to be in EIGRP AS 1 as shown in 
+      the network drawing.</li>
+  <li>Configure R1, 4, and 6 to be in BGP AS 100 as shown in the network drawing.</li>
+  <li>Configure R2 to be in BGP AS 200 as shown in the network drawing.</li>
+  <li>Configure R3 as well as SW1 and 3 to be in BGP AS 300 as shown in the network 
+      drawing.</li>
+  <li>Configure R5 as well as SW2 and 4 to be in BGP AS 400 as shown in the network 
+      drawing.</li>
+  <li>Configure BB1 and BB3 to be in BGP AS 54 as shown in the network drawing.</li>
+  <li>Configure BB2 to be in BGP AS 254 as shown in the network drawing.</li>
+  <li>Configure BGP neighbor relationships on all routers and switches as shown in 
+      the network diagram.</li>
+  <li>Configure Loopback 0 to be the BGP update source on all routers and switches.</li>
+  <li>Configure SW1 and SW2 as BGP route reflectors.</li>
+  <li>Configure R2 BGP neighbor 192.10.1.254 with the password CISCO</li>
+  <li>Configure R1, 2, 3, 4 and 5 to prefer the Frame Relay interface.</li>
+</ol>
+
+<h5>Search for Additional Labs: <a href="http://freeciscolab.com/?dl_id=71">Advanced 
+   BGP Lab-1</a></strong> (1,461 hits)</p></h5>
+
+<a name="RouterAsFrameRelay"></a><h3 class="title" itemprop="name" "="">Cisco Router as Frame Relay Switch 
+<a href="http://www.getnetworking.net/tutorials/cisco-router-as-frame-relay-switch" 
+target="newwindow">(Source Origin)</a></h3>	
+
+
+<p class="meta">
+Written on by <a href="http://www.getnetworking.net/author/vanikad" 
+title="admin">admin</a> on. Posted in 
+<a href="http://www.getnetworking.net/category/frame-relay" 
+title="View all posts in Frame Relay">Frame Relay</a></p>
+
+
+<p class="dropcap">Hi all, In this article we will configure a Cisco Router to act 
+as a Frame Relay Switch. We have used Cisco routers 3700 series in GNS3. To 
+demonstrate comunication through Frame Relay Switch we connected to it two end 
+devices (routers in our case), <span id="more-165"></span>we configured them with 
+their IP addresses and prepared to support Frame Relay Encapsulation on interfaces 
+connected to FR Switch. (<strong><a title="Cisco Router as Frame Relay Switch" 
+href="http://www.getnetworking.net/networking/tutorials/5/watch/">Watch the 
+video</a></strong>)</p>
+
+<p>But first a little bit about the logic of this configuration:</p>
+
+<p>To work as Frame Relay switch must enable Frame Relay Switching on Router by using 
+<strong><em>frame-relay switching</em></strong>, next go under interface configuration 
+mode and set interface as DCE with <strong><em>frame-relay intf-type dce</em></strong> 
+command, after that set clock rate with <strong><em>clock rate</em></strong> command, 
+and use <strong><em>frame-relay route</em></strong> to route traffic from one DLCI of 
+a interface to another DLCI of a interface. In next picture is presented topology for 
+this lab.</p>
+
+
+<img alt="Router As Frame Relay Switch" src="http://www.getnetworking.net/wp-content/uploads/2012/09/Router_As_Frame_Relay_Switch.png" height="280" width="540">
+
+<p class="wp-caption-text">Router As Frame Relay Switch</p>
+
+<p>From the picture is seen that DLCI 100 is assigned to interface attached to R1 and 
+DLCI 200 is assigned to attached to R2. In box bellow is shown how to do this:</p>
+
+<p><strong>FR1</strong></p>
+
+<pre>frame-relay switching 
+
+interface Serial0/0
+no ip address
+encapsulation frame-relay
+clock rate 64000
+frame-relay intf-type dce
+frame-relay route 100 interface Serial0/1 200 
+
+interface Serial0/1
+no ip address
+encapsulation frame-relay
+clock rate 64000
+frame-relay intf-type dce
+frame-relay route 200 interface Serial0/0 100
+</pre>
+
+<p>These are simple steps that you should do on router to act as FR Switch, next will 
+configure two end devices that are connected to FR1 and use DLCI 100 and 200 
+respectively.</p>
+
+<p><strong>R1</strong></p>
+
+<pre>interface Serial0/0
+ip address 10.0.0.1 255.255.255.0
+encapsulation frame-relay
+</pre>
+
+<p><strong>R2</strong></p>
+
+<pre>interface Serial0/0
+ip address 10.0.0.2 255.255.255.0
+encapsulation frame-relay
+</pre>
+
+<p>Now let's verify configuration and connectivity between end routers for this lab, in 
+screenshots bellow are shown output of command <strong><em>show frame-relay 
+route</em></strong> on FR switch, <strong><em>show frame-relay pvc</em></strong> and 
+<strong><em>show frame-relay map</em></strong> on end routers and of course ping 
+command.</p>
+
+
+<img src="http://www.getnetworking.net/wp-content/uploads/2012/09/FR_output.png" 
+height="63" width="540"><p class="wp-caption-text">Verification on FR Switch</p>
+
+<img src="http://www.getnetworking.net/wp-content/uploads/2012/09/FR_EndDev_output.png" 
+height="377" width="540"><p class="wp-caption-text">Verification on end devices (R1) 
+and ping output</p>
+
+<strong>Downloads</strong> <a href="http://www.getnetworking.net/networking/tutorials/5/configs.rar">Router configuration files</a>&nbsp;&nbsp;
+<a href="http://www.getnetworking.net/networking/tutorials/5/lab.rar">GNS3 Topology with configuration files</a>
+
+<P>Note that for this lab were used Cisco routers 3700 series in GNS3 version 0.7.4</div><div class="bawmrp">
+
+<h4>Y</h4>
+
+<ul>
+  <li><a href="http://www.getnetworking.net/tutorials/ospf-point-to-multipoint-non-broadcast-over-frame-relay">OSPF Point to Multipoint Non Broadcast over Frame Relay</a></li>
+  <li><a href="http://www.getnetworking.net/tutorials/ospf-point-to-multipoint-over-frame-relay">OSPF Point to Multipoint over Frame Relay</a></li>
+  <li><a href="http://www.getnetworking.net/tutorials/ospf-non-broadcast-over-frame-relay">OSPF Non-Broadcast over Frame Relay</a></li>
+  <li><a href="http://www.getnetworking.net/tutorials/frame-relay-point-to-multipoint">Frame Relay Point to Multipoint</a></li>
+  <li><a href="http://www.getnetworking.net/tutorials/frame-relay-point-to-point-with-eigrp">Frame Relay Point to Point with EIGRP</a></li>
+</ul>
+
+<a name="FCBgpSP"></a><h3>CCIE Service Provider GNS3 lab 
+<a href="http://freeciscolab.com/2014/03/15/ccie-service-provider-gns3-lab/">(Source 
+Origin)</a></h3>
+<div class="post-title-info">Posted by: admin &nbsp;: &nbsp;Category: 
+<a href="http://freeciscolab.com/category/lab-scenarios/ccie/">CCIE</a>, 
+<a href="http://freeciscolab.com/category/dynamips/">GNS3 Dynamips</a>, 
+<a href="http://freeciscolab.com/category/lab-scenarios/">Lab Scenarios</a>, 
+<a href="http://freeciscolab.com/category/routing/">Routing</a></div>
+
+<img src="http://freeciscolab.com/wp-content/uploads/2014/03/SP-Lab.jpg" width="810">
+
+<p>This lab is an advanced <a href="http://freeciscolab.com/2010/12/12/free-cisco-lab-gns3-scenario-ccie-final-assessment/" target="_blank">CCIE</a>
+ service provided lab that I discovered on one of the many Cisco forums 
+online dedicated to providing help to Cisco students and network 
+engineers alike. I tough that it was an excellent practice scenario for 
+anyone studying for the service provider exam or if you just like gain a
+ better understand of <a href="http://freeciscolab.com/2013/12/05/free-gns3-lab-basic-mpls-configuration/">MPLS</a>. This lab was originally created by P.Kaczor, CCIE #24301. I created a <a href="http://freeciscolab.com/2014/04/01/cisco-ios-requirements-certification-exams/">GNS3</a> topology and the solution configuration so you will have something to compare your solution when you have completed the lab.<span id="more-1913"></span><br>
+
+<P> If you have completed passing you CCIE routing and switching exam and 
+lab and you are looking for a new challenge you might want to pursue the
+ CCIE service provider certification. The CCIE Service Provider path 
+focuses on the skills required for proficiency in the service provider 
+networking arena. The CCIE Service Provider certification certifies you 
+are an expert in IP fundamentals and technologies as well as building an
+ extensible service provider network infrastructure to provide rich 
+managed services. Those certified as CCIE Service Provider will possess 
+advanced skills related to packet architecture and technologies 
+essential to service providers such as service provisioning, MPLS, VPNs,
+ service level agreements and basic security.</p>
+
+<h3>Learning Objectives:</h3>
+<ul>
+  <li>LDP with <a href="http://freeciscolab.com/2013/07/27/gns3-ospf-labs/">OSPF</a> 
+      and ISIS as IGP.</li>
+  <li>P-BGP IPv4 and <a href="http://freeciscolab.com/2011/10/16/basic-ipv4-ipv6-routing-common-wan/">IPv6</a>.</li>
+  <li>BGP IP/L3VPN for IPv4 and IPv6 (intra- and inter-AS).</li>
+  <li>MPLS TE (intra-area, inter-AS).</li>
+  <li>PE-CE routing protocols.</li>
+  <li>VRF selection with PBR.</li>
+  <li>Advanced BGP features.</li>
+  <li>MVPN (draft-rosen).</li>
+</ul>
+
+<p>I have included the GNS3 topology along with the final configuration 
+file in the download. Although the lab has been created using GNS3 you 
+may choose to use real hardware for your lab but be aware you may need 
+to change the topology in order to support the devices you choose to use
+ and be sure that IOS version of selected devices support all the 
+necessary command required.</p>
+
+
+<h4>Search for Additional Labs: 
+<a href="http://freeciscolab.com/?dl_id=79">CCIE-SP-GNS3-LAB</a>
+(1,001 hits)</h4>
+
+
+<p>If you have found this lab helpful please help us keep this site running.<br>
+
+<a name="EigrpLab"></a>  <h3 class="title">CCNP EIGRP GNS3 Lab-1
+<a href="http://freeccnplab.com/2014/04/25/ccnp-eigrp-gns3-lab-1-2/">(Source 
+Origin)</a></h3>
+<div class="postdate">Posted by <strong>barry</strong> on  April 25th, 2014 </div>
+			
+<P><img src="http://freeccnplab.com/wp-content/uploads/2014/04/EIGRP-Lab4.jpg" 
+width="800">
+
+<P> The purpose of this CCNP 
+<a href="http://freeccnplab.com/2014/03/31/ccnp-ios-requirments-gns3/" 
+target="newwindow">GNS3</a> lab is to gain a better understand of how to configure 
+<a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> on Cisco 
+<a href="http://freeccnplab.com/2014/03/31/ccnp-ios-requirments-gns3/" 
+target="newwindow">IOS</a> 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">routers</a> in multiple autonomous system. In this lab we will use 
+<a href="http://freeccnplab.com/2014/03/31/ccnp-ios-requirments-gns3/" 
+target="newwindow">GNS3</a> to model a simple lab to demonstrate how to configure and 
+verify <a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> in a multiple autonomous system implementation. 
+Additionally we will learn path control and route summarization.</p>
+
+<h4>EIGRP:</h4>
+
+<p><a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> (Enhanced Interior Gateway Routing Protocol) is an 
+advanced distance-vector routing protocol that permits 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">routers</a> to exchange Path information in a more efficient way 
+than with previous network protocols. 
+<a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> grew out of IGRP (Interior Gateway Routing Protocol) 
+<a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> or IGRP can interoperate because the metric used with 
+one protocol can be translated into the metrics of the other protocol.</p>
+
+<p><a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a>, a router maintains a copy of its neighbor's routing 
+tables. If it cannot locate the route to a destination in one of these tables, it 
+queries its neighbors for a route and they in turn query their neighbors until a 
+route is found. When a routing table entry changes in one of the 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">routers</a>, it notifies its neighbors of the only the changes 
+unlike previous protocols that require sending the entire routing table. To keep all 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">routers</a> aware of the state of neighbors, each router sends 
+out a periodic "hello" packet. A router from which no "hello" packet has been received 
+in a certain period of time is assumed to be inoperative.</p>
+
+<p><a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> uses the Diffusing-Update Algorithm (DUAL) to determine 
+the most efficient route to a destination based on cost. A DUAL finite state machine 
+contains decision information used by the algorithm to determine the least-cost 
+route.</p>
+
+<h4>Autonomous System:</h4>
+
+<p>Each <a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> process is identified by an autonomous system (AS) number, 
+just like IGRP processes. 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">Routers</a> with the same AS numbers will exchange routing 
+information with each other, resulting in a routing domain. 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">Routers</a> with dissimilar AS numbers will not exchange any 
+routing information by default. However, routes from one routing domain can be leaked 
+into another domain through the 
+<a href="http://freeccnplab.com/2012/04/24/free-ccnp-gns3-lab-advanced-redistribution/" 
+target="newwindow">redistribution</a> commands.</p>
+
+<h4>Route Summarization:</h4>
+
+<p>The default behavior of 
+<a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> is to summarize on network-number boundaries. This is 
+similar to RIP and IGRP and is a prudent way for a routing protocol to reduce the 
+number of routes that are propagated between 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">routers</a>.</p>
+
+<h4>Load Balancing:</h4>
+
+<p>In general, load balancing is the capability of a router to distribute traffic over 
+all the router network ports that are the same distance from the destination address. 
+Load balancing increases the utilization of network segments, and so increases 
+effective network bandwidth. There are two types of load balancing:</p>
+
+<ul>
+  <li>Equal cost path - Applicable when different paths to a destination network report 
+      the same routing metric value. The maximum-paths command determines the maximum 
+      number of routes that the routing protocol can use.</li>
+  <li>Unequal cost path - Applicable when different paths to a destination network 
+      report are of different routing metric values. The variance command determines 
+      which of these routes is used by the router.</li>
+</ul>
+
+<p>Every routing protocol supports equal cost path load balancing. In addition, 
+<a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> also support unequal cost path load balancing. Use the 
+variance n command in order to instruct the router to include routes with a metric of 
+less than n times the minimum metric route for that destination. The variable n can 
+take a value between 1 and 128. The default is 1, which means equal cost load 
+balancing. Traffic is also distributed among the links with unequal costs, 
+proportionately, with respect to the metric.</p>
+
+<h4>EGIRP Metric:</h4>
+
+<p><a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+target="newwindow">EIGRP</a> uses the minimum bandwidth on the path to a destination 
+network and the total delay to compute routing metrics. Although you can configure 
+other metrics, we do not recommend it, as it can cause routing loops in your network. 
+The bandwidth and delay metrics are determined from values configured on the interfaces 
+of <a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/" 
+target="newwindow">routers</a> in the path to the destination network.</p>
+
+
+<h4>Learning Objectives:</h4>
+
+
+<ul>
+  <li>Review basic router configuration.</li>
+  <li>Enable 
+      <a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+      target="newwindow">EIGRP</a> on Cisco 
+      <a href="http://freeccnplab.com/2014/03/31/ccnp-ios-requirments-gns3/" 
+      target="newwindow">IOS</a> 
+      <a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/">routers</a>.</li>
+  <li>Advertise network using 
+      <a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+      target="newwindow">EIGRP</a>.</li>
+  <li>Variance</li>
+  <li>Offset-list</li>
+  <li>Path control using 
+      <a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+      target="newwindow">EIGRP</a> metrics.</li>
+  <li>Verify 
+      <a href="http://freeccnplab.com/2012/01/03/basic-eigrp-configuration-gns3-lab/" 
+      target="newwindow">EIGRP</a> configuration using Cisco 
+      <a href="http://freeccnplab.com/2014/03/31/ccnp-ios-requirments-gns3/" 
+      target="newwindow">IOS</a> commands.</li>
+</ul>
+
+<h4>Download this lab now for full details: <a href="http://freeccnplab.com/download/38/"
+    target="newwindow">CCNP GNS3 EIGRP Lab4</a></h4>
+
+<p><strong>If you have found this lab helpful please help us keep this site running.</strong></p>
+
+</body></html>

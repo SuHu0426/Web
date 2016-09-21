@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Enlightenment </title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  </head>
+<body>
+<h1>Enlightenment Desktop environment</h1>
+
+<p>Enlightenment and EFL Debian official packages are outdated. In this part, the installation for Debian is done from sources like in the Get EFL installed tutorial. </p>
+<p>The following part provides a script and shows how to install Enlightenment and Terminology with their dependencies on Debian. The script below can be easily adapted for Elementary. </p>
+
+<h2>Install dependencies</h2>
+<pre class="mdol">
+<code>sudo aptitude install \ 
+  make gcc bison flex gawk subversion automake autoconf doxygen\ 
+  check autotools-dev autoconf-archive autopoint libtool gettext \ 
+  libpam0g-dev libfreetype6-dev libpng12-dev zlib1g-dev  libjpeg-dev\ 
+  libdbus-1-dev luajit libluajit-5.1-dev libx11-dev libxcursor-dev\ 
+  libxrender-dev libxrandr-dev libxfixes-dev libxdamage-dev\ 
+  libxcomposite-dev libxss-dev libxp-dev libxext-dev libxinerama-dev 
+</code>
+<code>sudo aptitude install \ 
+  libxkbfile-dev libxtst-dev libxcb1-dev libxcb-shape0-dev\ 
+  libxcb-keysyms1-dev libpulse-dev libsndfile1-dev  libudev-dev\ 
+  libblkid-dev libmount-dev libgstreamer1.0-dev libtiff5-dev libgif-dev\ 
+  curl libssl-dev libspectre-dev libpoppler-dev librsvg2-dev\ 
+  libraw-dev libxinerama-dev git libfribidi-dev libcogl-gles2-dev\ 
+  libbullet-dev libgstreamer-plugins-base1.0-dev libvlc-dev 
+</code>
+</pre>
+
+<h2>Install e17</h2>
+<pre class="mdol">
+<code>sudo aptitude install e17</code>
+</pre>
+
+<h2>Build new version</h2>
+<p>Copy the source code of the shell script below in a file called build_enlight.sh. </p>
+
+<pre class="mdol">
+<code class="out">#!/bin/bash 
+  
+set -e 
+# Target directory 
+PREFIX="/usr/local" 
+  
+# List of the needed packages 
+# To adapt to your needs 
+PROJECTS="efl emotion_generic_players evas_generic_loaders enlightenment" 
+  
+# Download url 
+SITE=" http://git.enlightenment.org/core/" 
+OPT="--prefix=$PREFIX" 
+  
+PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH" 
+PATH="$PREFIX/bin:$PATH" 
+LD_LIBRARY_PATH="$PREFIX/lib:$LD_LIBRARY_PATH" 
+LOG="installe.log" 
+rm -f $LOG      # Delete precedent log file 
+touch $LOG      # Create a log file 
+date >> $LOG    # Add current date 
+  
+# Download and compile each module 
+for PROJ in $PROJECTS; do 
+    # Cloning 
+    if [ ! -d $PROJ ]; then 
+        git clone $SITE$PROJ.git $PROJ 
+    fi 
+    # Go building and installing 
+    cd $PROJ* 
+    make clean distclean || true 
+    ./autogen.sh $OPT 
+    make 
+    sudo make install 
+    cd .. 
+    sudo ldconfig 
+    echo $PROJ" is installed" >> $LOG 
+done 
+  
+#Optionnal Terminology 
+git clone http://git.enlightenment.org/apps/terminology.git 
+cd terminology 
+./autogen.sh $OPT 
+make 
+sudo make all install 
+cd .. 
+sudo ldconfig 
+  
+# Delete all downloaded files and compile traces 
+rm -rf e* 
+  
+# Create the menu entry of Enlightenment for gdm, kdm or liqhtdm 
+sudo ln -s /usr/local/share/xsessions/enlightenment.desktop /usr/share/xsessions/ </code>
+</pre>
+
+<p>This script clones the repositories, builds and installs the EFL libraries, then builds and installs Terminology. Finally, it creates the link to launch enlightenment in the display manager. </p>
+<p>Set the script executable: </p>
+<pre class="mdol">
+<code>chmod ug+x build_enlight.sh </code>
+</pre>
+
+<p>Then, execute the script. Once done, you can reboot and choose Enlightenment as a window manager.</p>
+
+<h2>Terminology (Option)</h2>
+<pre class="mdol">
+<code>git clone http://git.enlightenment.org/apps/terminology.git</code>
+<code>cd terminology</code>
+<code>./autogen.sh $OPT</code>
+<code>make</code>
+<code>sudo make all install</code>
+<code>cd .. </code>
+<code>sudo ldconfig</code>
+</pre>
+
+<h3>Delete all downloaded files and compile traces</h3>
+<pre class="mdol">
+<code>rm -rf e*</code>
+</pre>
+
+<h3>Create the menu entry of Enlightenment for gdm, kdm or liqhtdm</h3>
+<pre class="mdol">
+<code>sudo aptitude install lightdm</code>
+<code>sudo mv /usr/share/xsessions/enlightenment.desktop /usr/share/xsessions/enlightenment17.desktop</code>
+<code>sudo ln -s /usr/local/share/xsessions/enlightenment.desktop /usr/share/xsessions/</code>
+</pre>
+
+
+<!-- START References -->
+<h1>References</h1>
+<ul>
+  <li><a href="https://docs.docker.com/" target="_blank"></a>
+  <li><a href="https://docs.docker.com/engine/installation/linux/debian/" target="_blank"></a>
+  <li><a href="" target="_blank"></a>
+<!--  <li><a href="" target="_blank"></a>
+  <li><a href="" target="_blank"></a> -->
+</ul>
+<!-- END References -->
+
+<hr>
+<script type="text/javascript">
+<!-- Hide JavaScript...
+var LastUpdated = document.lastModified;
+document.writeln ("This page was last updated " + LastUpdated);
+// End Hiding -->
+</script>
+<address style="text-align: right;"><a href="mailto:cssu@cs.nchu.edu.tw">Chi-She
+ng Su</a></address>
+
+</body>
+</html>

@@ -1,0 +1,46 @@
+# apt-get install kvm qemu
+# modprobe kvm-amd
+restart computer
+
+tunctl
+# apt-get install uml-utilities
+
+vde (Ubuntu)
+# apt-get install vde 
+
+sudo adduser hsu kvm
+
+
+vdekvm -net vde,vlan=0,sock=/src3/KVM/network-3881 -m 256 -net nic,vlan=0,macaddr=00:e0
+:81:4b:f2:93 -hda ../kvm14-01.ovl
+
+$ qemu-img create Debian.img 3G
+
+$ qemu-img create -b Ubuntu.img -f qcow2 kvm-002.ovl
+
+#Install from CD
+$ kvm -cdrom mini.iso Debian.img 
+$ sudo mount -o loop,offset=32256 Debian.img /mnt/tmp 
+
+
+$ diff  /mnt/tmp/etc/network/interfaces /mnt/tmp/etc/network/interfaces.orig
+9,10c9,10
+< # auto eth0
+< # iface eth0 inet dhcp
+---
+> auto eth0
+> iface eth0 inet dhcp
+
+
+Mounting KVM qcow2 and overlay images: 
+
+$ sudo modprobe nbd max_part=8
+$ sudo sudo kvm-nbd --connect=/dev/nbd0 kvm-002.ovl
+$ sudo mount /dev/nbd0p1 /mnt/tmp
+
+$ sudo umount /mnt/tmp
+$ sudo kvm-nbd --disconnect /dev/nbd0
+$ sudo rmmod nbd
+
+
+

@@ -1,0 +1,7 @@
+RAM:
+$ sudo dmidecode
+
+HD:
+$ sudo hdparm -i /dev/sda
+
+

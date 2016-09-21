@@ -1,0 +1,137 @@
+<html>
+  <head>
+    <title>Quagga</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  </head>
+<body>
+  <h1>Quagga</h1>
+  <h2>Installation</h2>
+<pre class="mdol">
+<code>sudo aptitude install quagga</code>
+<code>ls -l /etc/quagga</code>
+<code class="out">total 8
+-rw-r--r-- 1 root root 990 Mar 13  2015 daemons
+-rw-r--r-- 1 root root 945 Mar 13  2015 debian.conf
+</code>
+<code>cd /etc/quagga</code>
+<code>sudo cp daemons daemons.orig</code>
+<code>sudo nano daemons</code>
+<code>diff daemons daemons.orig</code>
+<code class="out">24c24
+< zebra=yes
+---
+> zebra=no</code>
+<code>sudo cp /usr/share/doc/quagga/examples/zebra.conf.sample /etc/quagga/zebra.conf</code>
+<code>sudo service quagga restart</code>
+<code>ps -ef | grep quagga</code>
+<code class="out">root      1976     1  0 04:31 ?        00:00:00 /usr/lib/quagga/watchquagga --daemon zebra
+</code>
+<code>sudo vtysh</code>
+<code class="out">
+Hello, this is Quagga (version 0.99.24.1).
+Copyright 1996-2005 Kunihiro Ishiguro, et al.
+
+Quagga# exit
+</code>
+<code>telnet localhost 2601</code>
+<code class="out">Trying ::1...
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+
+Hello, this is Quagga (version 0.99.24.1).
+Copyright 1996-2005 Kunihiro Ishiguro, et al.
+
+
+User Access Verification
+
+Password: 
+Suhu-Router> enable
+Password: 
+Suhu-Router# configure terminal
+Suhu-Router(config)# service password-encryption 
+Suhu-Router(config)# interface eth0 
+Suhu-Router(config-if)# ip address 192.168.180.252/24 label LAN
+Suhu-Router(config-if)# end
+Suhu-Router# show running-config
+
+Current configuration:
+!
+hostname Suhu-Router
+password 8 AH9D3yqe92ZvE
+enable password 8 J..LfSbjRBhYk
+service password-encryption
+!
+interface eth0
+ no link-detect
+ ip address 192.168.180.253/24
+ ipv6 nd suppress-ra
+!
+interface lo
+ no link-detect
+!
+!
+!
+line vty
+!
+end
+
+Suhu-Router# write
+Can't backup old configuration file /etc/quagga/zebra.conf.sav.
+Suhu-Router# exit
+Connection closed by foreign host.
+</code>
+<code>sudo chown quagga.quaggavty /etc/quagga/*.conf</code>
+<code>sudo chmod 640 /etc/quagga/*.conf</code>
+<code>telnet localhost 2601</code>
+<code class="out">Trying ::1...
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+
+Hello, this is Quagga (version 0.99.24.1).
+Copyright 1996-2005 Kunihiro Ishiguro, et al.
+
+
+User Access Verification
+
+Password: 
+Suhu-Router> enable 
+Password: 
+Suhu-Router# write 
+Configuration saved to /etc/quagga/zebra.conf
+Suhu-Router# show ip route 
+Codes: K - kernel route, C - connected, S - static, R - RIP,
+       O - OSPF, I - IS-IS, B - BGP, P - PIM, A - Babel,
+       > - selected route, * - FIB route
+
+K>* 0.0.0.0/0 via 192.168.180.254, eth0
+C>* 127.0.0.0/8 is directly connected, lo
+C>* 192.168.180.0/24 is directly connected, eth0
+</code>
+<code></code>
+<code></code>
+<code></code>
+</pre>
+
+<h2>References</h2>
+<a href="http://www.nongnu.org/quagga/" target="_blank">Quagga Routing Suite</a><br>
+<a href="http://openmaniak.com/quagga_tutorial.php" target="_blank">QUAGGA - The Easy Tutorial - How to use Quagga</a><br>
+<a href="https://www.sown.org.uk/wiki/Quagga" target="_blank">Quagga - SOWNWiki</a><br>
+
+<!-- 頁底 -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+      <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>'
+);
+      // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> ChiSheng Su </a>
+  </address>
+</div>
+</body>
+</html>

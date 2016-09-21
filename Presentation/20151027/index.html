@@ -1,0 +1,72 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Network Namespace</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+</head>
+<body>
+
+  <h1><a href="http://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/" target="_blank">Predictable Network Interface Names</a></h1>
+  <h1>Old way Kernel/modules/udev</h1>
+  <p>supplying these kernel parameters
+    <ol>
+      <li>net.ifnames=0
+      <li>biosdevname=0
+    </ol>
+  <p>To do so follow this steps:
+    <ol>
+      <li>Edit /etc/default/grub
+      <li>At the end of GRUB_CMDLINE_LINUX line append "net.ifnames=0 biosdevname=0"
+      <li>Save the file
+      <li>Type "sudo update-grub2"
+      <li>Type "sudo reboot"
+    </ol>
+  </p>
+  <h1>Fix console text mode in GNU Screen, disable net.ifnames and disable biosdevname</h1>
+
+<pre class="mdol">
+<code>sudo emacs /etc/modprobe.d/fbdev-blacklist.conf</code>
+<code>sudo mv /etc/modprobe.d/fbdev-blacklist.conf~ /etc/modprobe.d/fbdev-blacklist.conf.orig</code>
+<code>diff /etc/modprobe.d/fbdev-blacklist.conf /etc/modprobe.d/fbdev-blacklist.conf.orig</code>
+<code class="out">21d20
+&lt blacklist vga16fb
+</code>
+<code>sudo emacs /etc/default/grub</code>
+<code>sudo mv /etc/default/grub~ /etc/default/grub.orig</code>
+<code>diff /etc/default/grub /etc/default/grub.orig</code>
+<code class="out">9,10c9,10
+&lt; GRUB_CMDLINE_LINUX_DEFAULT="quiet fbcon=map:99"
+&lt; GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"
+---
+&gt; GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+&gt; GRUB_CMDLINE_LINUX=""
+18c18
+&lt; GRUB_TERMINAL=console
+---
+&gt; #GRUB_TERMINAL=console
+</code>
+<code>sudo update-grub</code>
+<code>sudo reboot</code>
+</pre>
+  
+  <h1>References</h1>
+  <ul>
+    <li><a href="http://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/" target="_blank">Predictable Network Interface Names</a>
+    <li><a href="http://unix.stackexchange.com/questions/81834/how-can-i-change-the-default-ens33-network-device-to-old-eth0-on-fedora-19" target="_blank">How can I change the default “ens33” network device to old “eth0” on Fedora 19?</a>
+  </ul>
+
+<!-- 頁底 -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+      <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+      // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> ChiSheng Su </a>
+  </address>
+</div>
+</body>
+</html>

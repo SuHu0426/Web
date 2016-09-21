@@ -1,0 +1,1354 @@
+<OL> 
+  <LI> Create Ceph-Temp.img and install <a href="CepfTempPackages.html" 
+target="newwindow">these packages</a> in it:
+ <P> As far as I can recall: Resize the image from <code>deb-min</code>, (increased 
+1G to /dev/sda2) and  install a few more packages: <code>btrfs-tools</code>, 
+<code>sudo</code>, <code>synaptic</code>, <code>emacs</code>, <code>ceph</code>.
+ <P> Since this VM template is for setting up Cepf Object Storage cluster, it needs 
+btrfs and cepf filesystems, automatically load the related modules at boot time.
+<PRE>
+hsu@Ceph-Temp:~$ diff /etc/modules /etc/modules.orig
+8,9d7
+< btrfs
+< ceph
+</PRE>
+ <P> Since Ceph is in active development cycle, we need all its newest features 
+available, set up sources.list as follow:
+<PRE>
+hsu@Ceph-Temp:~$ more /etc/apt/sources.list
+deb http://140.120.7.21/debian wheezy main contrib
+deb http://140.120.7.21/debian sid main contrib
+deb http://security.debian.org/ wheezy/updates main contrib
+# deb-src http://ftp.tw.debian.org/debian/ squeeze main
+</PRE>
+<LI> Create 10G empty disk
+<PRE>
+$ ls -l ../Vdi*/*
+-rw-r--r-- 1 hsu hsu 10485760000 Aug 27 14:48 ../Vdisks/blank.img
+</PRE>
+<LI> Modify start-Ceph-Temp-20-efs so that it carries <code>../Vdisks/blank.img</code> 
+    as /dev/sdb.  Maybe, we need to format <code>blank.img</code> to be a btrfs 
+    filesystem?  
+<PRE>
+$ diff start-Ceph-Temp-20-efs start-Ceph-Temp-20-efs.orig
+27c27
+< kvm -net vde,vlan=0,sock=/src4/ceph/network-3412 -net nic,vlan=0,macaddr=1c:6f:65:85:64:b3 -m 512M -monitor unix:/src4/ceph/network-3412/MonSock,server,nowait -hda ../cluster/Ceph-Temp.img -hdb ../Vdisks/blank.img&
+---
+> kvm -net vde,vlan=0,sock=/src4/ceph/network-3412 -net nic,vlan=0,macaddr=1c:6f:65:85:64:b3 -m 512M -monitor unix:/src4/ceph/network-3412/MonSock,server,nowait -hda ../cluster/Ceph-Temp.img -hdb /dev/sda&
+</PRE>
+<LI> On the Physical host, install <b>btrfs-tools</b> (via synaptic) so that we can make 
+ btrfs filesystem on virtual disk.
+<PRE>
+ # On Physical Host 
+ $ sudo modprobe btrfs 
+ $ cat /proc/filesystems | grep btrfs
+        btrfs
+ $ which mkfs.btrfs  
+ $ cd /src4/ceph/Vdisks 
+ $ ls -l
+total 10240004
+-rw-r--r-- 1 hsu hsu 10485760000 Aug 27 14:48 blank.img
+ $ cp blank.img osdBlk.ada
+ $ sudo mkfs.btrfs osdBlk.ada
+[sudo] password for hsu: 
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+fs created label (null) on osdBlk.ada
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 9.77GB
+Btrfs Btrfs v0.19
+ $ sudo mount -t btrfs -o loop osdBlk.ada /mnt/tmp
+hsu@amd-6:/src4/ceph/Vdisks$ ls -l /mnt/tmp
+total 0
+ $ ls -l /dev/disk/by-uuid | grep loop
+lrwxrwxrwx 1 root root 11 Aug 29 18:49 844d814e-2467-4072-8f10-98cb19d3273b -> ../../loop0 
+ $ cat /etc/mtab | grep /mnt/tmp
+/dev/loop0 /mnt/tmp btrfs rw,relatime,space_cache 0 0
+ # Similarly, we copy blank.img to osdBlk.bob and osdBlk.cay.  Then, we make btrfs on 
+ # each of them and check their UUIDs as above.  Make sure the UUIDs of all of them are
+ # different.
+ $ pwd
+/src4/ceph/Vdisks
+ $ ls -l
+total 40960016
+-rw-r--r-- 1 hsu hsu 10485760000 Aug 27 14:48 blank.img
+-rw-r--r-- 1 hsu hsu 10485760000 Aug 29 18:56 osdBlk.ada
+-rw-r--r-- 1 hsu hsu 10485760000 Aug 29 22:33 osdBlk.bob
+-rw-r--r-- 1 hsu hsu 10485760000 Aug 29 22:34 osdBlk.cay
+ $ file osdBlk.ada
+osdBlk.ada: BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 4096)
+ $ file osdBlk.bob
+osdBlk.bob: BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 4096)
+ $ file osdBlk.cay
+osdBlk.cay: BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 4096)
+</PRE>
+<LI> Prepare the needed Data or Configuration Files:
+<PRE>
+hsu@amd-6:/src4/ceph/DataFiles$ pwd
+/src4/ceph/DataFiles
+hsu@amd-6:/src4/ceph/DataFiles$ ls -l
+total 8
+-rw-r--r-- 1 hsu hsu 893 Sep  1 09:41 ceph.conf
+-rw-r--r-- 1 hsu hsu 146 Sep  3 09:10 ceph.hosts
+lrwxrwxrwx 1 hsu hsu  10 Sep  3 09:09 hosts -> ceph.hosts
+hsu@amd-6:/src4/ceph/DataFiles$ cat ceph.hosts
+192.168.0.5      Ceph-Temp     ceph-temp
+192.168.0.6      Ada           ada
+192.168.0.7      Bob           bob
+192.168.0.8      Cay           cay
+hsu@amd-6:/src4/ceph/DataFiles$ cat ceph.conf
+# Omit lengthy output
+</PRE>
+<LI> Boot Ceph-Temp
+<OL>
+  <LI> Permit Root login so that <b>mkcephfs</b> can be executed as root.
+<PRE>
+hsu@Ceph-Temp:~$ diff /etc/ssh/sshd_config /etc/ssh/sshd_config.bkp
+26c26
+< PermitRootLogin yes
+---
+> PermitRootLogin no
+</PRE>
+<P> Remember to turn off the RootLogin permission for ceph-temp after 
+  ada, bob, and cay are ready.
+  <LI> scp DataFiles/ceph.conf to 192.168.0.5:/tmp and
+<PRE>
+hsu@Ceph-Temp:~$ sudo mv /tmp/ceph.conf /etc/ceph
+</PRE>
+  <LI> The necessary directories <code>/srv/ceph</code>, <code>/srv/ceph/mon</code>,
+ <code>/srv/ceph/osd</code>, <code>/srv/ceph/osd/osd.ada</code> in <code>/srv</code>
+ are created in the Config-Kvm-Storage script.  And the next line for mounting 
+ (btrfs) object storage is added to /etc/rc.local.
+<PRE>
+ mount -t btrfs /dev/sdb /srv/ceph/osd/osd.ada
+</PRE>
+  <P> Also, the <code>DataFiles/ceph.hosts</code> is symbolic linked to 
+<code>DataFiles/hosts</code>.  From <code>DataFiles/hosts</code>, 
+Config-Kvm-Storage script will append it to newly generated <code>/etc/hosts</code>.
+  <LI> Produce ada, bob, cay VMs
+<PRE> 
+ $ cd /src4/ceph/cluster 
+ $ cp Ceph-Temp.img Ceph-Ada.img
+ $ cd ../bin 
+ $ Config-Kvm-Storage ../cluster/Ceph-Ada.img Ada 192.168.0.6 eth0 21  ../Vdisks/osdBlk.ada
+</PRE>
+<P> Do the same for bob, cay.  Then boot all of them in the foreground and 
+  execute <code>$ sudo ./recover70rules</code> on all of them to get rid of 
+  eth1, the wrong ethernet device.
+  <LI> <a href="http://ceph.com/w/index.php?title=Creating_a_new_file_system" 
+     target="newwindow">Generate SSH key for root</a>
+<P> We need to set up ssh keys so that the machine we are running mkcephfs on 
+(master) can ssh in to other nodes (slave) as root.   We do this as follows:
+<P> <b>ssh-keygen</b> does not recognize the "-d" option!
+<PRE>
+ $ ssh -X root@192.168.0.8
+Cay:~# ssh-keygen 
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Created directory '/root/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+The key fingerprint is:
+54:e6:a7:36:60:5d:f4:8b:d3:0a:04:a9:3c:78:2e:7e root@Cay
+The key's randomart image is:
++--[ RSA 2048]----+
+|        ..o.o    |
+|        .* . .   |
+|     o .+ + . .  |
+|    . =o o o o . |
+|     o .S = o o  |
+|    . .  . o o   |
+|   . .      .    |
+|    . E          |
+|     .           |
++-----------------+
+Cay:~# ssh-copy-id root@bob
+Cay:~# ssh-copy-id root@ada
+</PRE>
+</OL>
+<LI> <a href="http://ceph.com/w/index.php?title=Creating_a_new_file_system" 
+target="newwindow"><b>mkcephfs</b></a> --- create a new Ceph cluster file system
+<P> The formal names for our VMs are: Ada, Bob, Cay.  Nicknames are ada, bob, cay. 
+Unfortunately, in <code>/etc/ceph/ceph.conf</code> file, we use their nicknames 
+when assigning host values.  We correct it after the execution of <b>mkcephfs</b> 
+failed.  Then tried it again.
+<PRE>
+Cay:~# mkcephfs -c /etc/ceph/ceph.conf -a -k /etc/ceph/keyring.admin
+temp dir is /tmp/mkcephfs.AhJuMn5xlH
+preparing monmap in /tmp/mkcephfs.AhJuMn5xlH/monmap
+/usr/bin/monmaptool --create --clobber --add a 192.168.0.6:6789 --add b 192.168.0.7:6789 --add c 192.168.0.8:6789 --print /tmp/mkcephfs.AhJuMn5xlH/monmap
+/usr/bin/monmaptool: monmap file /tmp/mkcephfs.AhJuMn5xlH/monmap
+/usr/bin/monmaptool: generated fsid bcf49709-ae94-4244-b4a9-21b481288a8e
+epoch 0
+fsid bcf49709-ae94-4244-b4a9-21b481288a8e
+last_changed 2012-09-03 18:45:26.667257
+created 2012-09-03 18:45:26.667257
+0: 192.168.0.6:6789/0 mon.a
+1: 192.168.0.7:6789/0 mon.b
+2: 192.168.0.8:6789/0 mon.c
+/usr/bin/monmaptool: writing epoch 0 to /tmp/mkcephfs.AhJuMn5xlH/monmap (3 monitors)
+=== osd.0 === 
+pushing conf and monmap to Ada:/tmp/mkfs.ceph.2144
+2012-09-03 18:45:29.545637 7fde12bbd780 -1 filestore(/srv/ceph/osd/osd.Ada) could not find 23c2fcde/osd_superblock/0//-1 in index: (2) No such file or directory
+2012-09-03 18:45:30.162704 7fde12bbd780 -1 created object store /srv/ceph/osd/osd.Ada journal /srv/ceph/osd/osd.0.journal for osd.0 fsid bcf49709-ae94-4244-b4a9-21b481288a8e
+creating private key for osd.0 keyring /etc/ceph/keyring.osd.0
+creating /etc/ceph/keyring.osd.0
+collecting osd.0 key
+=== osd.1 === 
+pushing conf and monmap to Bob:/tmp/mkfs.ceph.2144
+2012-09-03 18:45:32.790829 7fde309ac780 -1 filestore(/srv/ceph/osd/osd.Bob) could not find 23c2fcde/osd_superblock/0//-1 in index: (2) No such file or directory
+2012-09-03 18:45:33.384811 7fde309ac780 -1 created object store /srv/ceph/osd/osd.Bob journal /srv/ceph/osd/osd.1.journal for osd.1 fsid bcf49709-ae94-4244-b4a9-21b481288a8e
+creating private key for osd.1 keyring /etc/ceph/keyring.osd.1
+creating /etc/ceph/keyring.osd.1
+collecting osd.1 key
+=== osd.2 === 
+2012-09-03 18:45:33.983906 7f474305a780 -1 filestore(/srv/ceph/osd/osd.Cay) could not find 23c2fcde/osd_superblock/0//-1 in index: (2) No such file or directory
+2012-09-03 18:45:34.594248 7f474305a780 -1 created object store /srv/ceph/osd/osd.Cay journal /srv/ceph/osd/osd.2.journal for osd.2 fsid bcf49709-ae94-4244-b4a9-21b481288a8e
+creating private key for osd.2 keyring /etc/ceph/keyring.osd.2
+creating /etc/ceph/keyring.osd.2
+=== mds.a === 
+pushing conf and monmap to Ada:/tmp/mkfs.ceph.2144
+creating private key for mds.a keyring /etc/ceph/keyring.mds.a
+creating /etc/ceph/keyring.mds.a
+collecting mds.a key
+=== mds.c === 
+creating private key for mds.c keyring /etc/ceph/keyring.mds.c
+creating /etc/ceph/keyring.mds.c
+Building generic osdmap from /tmp/mkcephfs.AhJuMn5xlH/conf
+/usr/bin/osdmaptool: osdmap file '/tmp/mkcephfs.AhJuMn5xlH/osdmap'
+/usr/bin/osdmaptool: writing epoch 1 to /tmp/mkcephfs.AhJuMn5xlH/osdmap
+Generating admin key at /tmp/mkcephfs.AhJuMn5xlH/keyring.admin
+creating /tmp/mkcephfs.AhJuMn5xlH/keyring.admin
+Building initial monitor keyring
+added entity mds.a auth auth(auid = 18446744073709551615 key=AQBQikRQoE2WCBAA4Ok+m3gHjepnuITEx7rBrw== with 0 caps)
+added entity mds.c auth auth(auid = 18446744073709551615 key=AQBPikRQaOdRIhAAgQ2NBgtqeg9p0uwwUUegtQ== with 0 caps)
+added entity osd.0 auth auth(auid = 18446744073709551615 key=AQBKikRQsHT1DRAAgOIDa2aS/B+l6KC1qVlVYw== with 0 caps)
+added entity osd.1 auth auth(auid = 18446744073709551615 key=AQBNikRQQBAiGhAAYRaqXLi64pO4Ea5bXW6m6g== with 0 caps)
+added entity osd.2 auth auth(auid = 18446744073709551615 key=AQBOikRQiGsxJhAAMLlE76RrGZkXzyAu8XiNTA== with 0 caps)
+=== mon.a === 
+pushing everything to Ada
+/usr/bin/ceph-mon: created monfs at /srv/ceph/mon/mon.a for mon.a
+=== mon.b === 
+pushing everything to Bob
+/usr/bin/ceph-mon: created monfs at /srv/ceph/mon/mon.b for mon.b
+=== mon.c === 
+/usr/bin/ceph-mon: created monfs at /srv/ceph/mon/mon.c for mon.c
+placing client.admin keyring in /etc/ceph/keyring.admin
+Cay:~# echo $?
+0
+</PRE>
+<P> Carefully examine ada, bob, and cay, only cay, the one on which we execute the 
+<b>mkcephfs</b> command, has <code>/etc/ceph/keyring.admin</code>
+<PRE>
+Cay:~$ su root
+Password: 
+root@Cay:/home/hsu# for host in ada bob
+>                     do
+>                       scp /etc/ceph/keyring.admin root@$host:/etc/ceph/keyring.admin;
+>                     done
+keyring.admin                                 100%   63     0.1KB/s   00:00    
+keyring.admin                                 100%   63     0.1KB/s   00:00    
+</PRE>
+<LI> Deploying with mkcephfs 
+<a href="http://ceph.com/docs/master/rados/deployment/mkcephfs/"
+  target="newwindow">(Source Origin)</a>
+<h5>Enabling Authentication</h5>
+<p>In the <tt class="docutils literal"><span class="pre">[global]</span></tt> settings 
+of your <tt class="docutils literal"><span class="pre">ceph.conf</span></tt> file, you 
+can enable authentication for your cluster.</p>
+<div><pre>[global]
+        auth supported = cephx</pre>
+</div>
+<p>The valid values are <code>cephx</code> or <code>none</code>. If you specify 
+<code>cephx</code>, Ceph will look for the keyring in the default search path, which
+includes <code>/etc/ceph/keyring</code>.  You can override this location by
+adding a <b>keyring</b> option in the <code>[global]</code> section of your
+<b>ceph.conf</b> file, but this is not recommended.</p>
+</div>
+<div class="section" id="the-client-admin-key">
+<P> For authentication business, please check its official documentation: 
+<a href="http://ceph.com/w/index.php?title=Cephx"
+  target="newwindow">Cephx</a> and 
+<a href="http://ceph.com/docs/master/cluster-ops/authentication/"
+  target="newwindow">Authentication</a>.  You may also login ceph-enabled 
+VM and check its manual page via
+<PRE>
+hsu@Ceph-Temp:~$ man ceph-authtool 
+CEPH-AUTHTOOL(8)                     Ceph                     CEPH-AUTHTOOL(8)
+NAME
+       ceph-authtool - ceph keyring manipulation tool
+SYNOPSIS
+       ceph-authtool keyringfile [ -l | --list ] [ -C | --create-keyring
+       ] [ -p | --print ] [ -n | --name entityname ] [ --gen-key ] [ -a |
+       --add-key base64_key ] [ --caps capfils ]
+     .
+     .
+     .
+</PRE>
+<a name="CephClient"><LI> Ceph Clients</a>
+<P> First, login ada, bob, and cay, as root, start ceph.  Probably, we should put 
+   this line in <code>/etc/rc.local</code>.
+<PRE>
+ # /etc/init.d/ceph start
+</PRE>
+<P> Now, are we ready to use our storage cluster yet? For reference:
+<a href="http://ceph.com/w/index.php?title=Mounting_the_file_system"
+target="newwindow">Mounting Ceph FS</a>
+<P> <b>Warning: Don't mount ceph using kernel driver on the osd server. Perhaps it 
+will freeze the ceph client and your osd server. </b>
+<PRE>
+hsu@amd-6:/src4/ceph$ cp cluster/Ceph-Temp.img clients/Ceph-Client.img
+hsu@amd-6:/src4/ceph$ cd bin
+$ ./Config-Kvm ../clients/Ceph-Client.img ceph-client1 192.168.0.130 eth0 30
+# Ada, Bob, Cay are already online
+hsu@amd-6:/src4/ceph/bin$ start-ceph-client1-30
+hsu@amd-6:~$ ssh -X hsu@192.168.0.130
+$ sudo ceph-authtool -l /etc/ceph/keyring.admin
+[sudo] password for hsu: 
+can't open /etc/ceph/keyring.admin: can't open /etc/ceph/keyring.admin: (2) No such file or directory
+ceph-client1:~$ which ceph-fuse
+/usr/bin/ceph-fuse
+ceph-client1:~$ ceph-fuse -m 192.168.0.6:6789 /mnt/tmp
+# Failed due to: auth: failed to open keyring from /etc/ceph/keyring.admin
+</PRE>
+<P> We need to get the <code>/etc/ceph/keyring.admin</code> from ada, bob, or cay.
+<PRE>
+ceph-client1:~$ ceph-authtool -l /etc/ceph/keyring.admin
+[client.admin]
+        key = AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+ceph-client1:~$  ceph -s
+   health HEALTH_OK
+   monmap e1: 3 mons at {a=192.168.0.6:6789/0,b=192.168.0.7:6789/0,c=192.168.0.8:6789/0}, election epoch 6, quorum 0,1,2 a,b,c
+   osdmap e7: 3 osds: 3 up, 3 in
+    pgmap v232: 576 pgs: 576 active+clean; 8730 bytes data, 8384 KB used, 26915 MB / 30000 MB avail
+   mdsmap e5: 1/1/1 up {0=c=up:active}, 1 up:standby
+# Next command need to be executed with sudo.  Otherwise, failed to open /dev/fuse
+ceph-client1:~$ ls -l /dev/fuse
+ceph-client1:~$ sudo ceph-fuse -m 192.168.0.6:6789 /mnt/tmp
+ceph-fuse[2361]: starting ceph client
+ceph-fuse[2361]: starting fuse
+ceph-client1:~$ ls -l /mnt/tmp
+total 0
+ceph-client1:~$ sudo umount /mnt/tmp
+ceph-client1:~$ sudo mount -t ceph 192.168.0.6:6789:/ /mnt/tmp -vv -o name=admin,secret=AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+parsing options: rw,name=admin,secret=AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+mount: error writing /etc/mtab: Invalid argument
+# Although we got the last error message line, it seems ceph filesystem is ready and 
+# been mounted on the /mnt/tmp directory.  It even shows up in <code>/etc/mtab</code>.
+ceph-client1:~$ ls -lia /mnt/tmp
+total 4
+   1 drwxr-xr-x 1 root root    0 Sep  7 15:19 .
+7689 drwxr-xr-x 3 root root 4096 Sep  7 10:13 ..
+ceph-client1:~$ df
+Filesystem         1K-blocks    Used Available Use% Mounted on
+rootfs               2615208  996020   1488120  41% /
+udev                   10240       0     10240   0% /dev
+tmpfs                  50900     156     50744   1% /run
+/dev/sda2            2615208  996020   1488120  41% /
+tmpfs                   5120       0      5120   0% /run/lock
+tmpfs                 101780       0    101780   0% /run/shm
+/dev/sda1             467367   19636    422797   5% /boot
+192.168.0.6:6789:/  30720000 3159040  27560960  11% /mnt/tmp
+ceph-client1:~$ cat /etc/mtab
+rootfs / rootfs rw 0 0
+sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,relatime,size=10240k,nr_inodes=62132,mode=755 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+tmpfs /run tmpfs rw,nosuid,noexec,relatime,size=50900k,mode=755 0 0
+/dev/sda2 / ext4 rw,relatime,errors=remount-ro,user_xattr,acl,barrier=1,data=ordered 0 0
+tmpfs /run/lock tmpfs rw,nosuid,nodev,noexec,relatime,size=5120k 0 0
+tmpfs /run/shm tmpfs rw,nosuid,nodev,noexec,relatime,size=101780k 0 0
+fusectl /sys/fs/fuse/connections fusectl rw,relatime 0 0
+/dev/sda1 /boot ext2 rw,relatime,errors=continue 0 0
+192.168.0.6:6789:/ /mnt/tmp ceph rw,relatime,name=admin,secret=<hidden> 0 0
+</PRE>
+  <LI> <a href="http://ceph.com/w/index.php?title=Rbd" target="newwindow">Rbd: Rados block 
+   device</a>
+<P> Booting ceph cluster and ceph-client and check its health:
+<PRE>
+hsu@amd-6:/src4/ceph/bin$ start-Ada-21-AsDaemon; start-Bob-22-AsDaemon; start-Cay-23-AsDaemon; start-ceph-client1-30-AsDaemon
+hsu@amd-6:~$ ssh -X hsu@192.168.0.130
+hsu@192.168.0.130's password: 
+Linux ceph-client1 3.2.0-3-amd64 #1 SMP Mon Jul 23 02:45:17 UTC 2012 x86_64
+   . 
+   . 
+   . 
+Last login: Sun Sep  9 15:26:12 2012 from 192.168.0.32
+ceph-client1:~$ ceph -s
+   health HEALTH_OK
+   monmap e1: 3 mons at {a=192.168.0.6:6789/0,b=192.168.0.7:6789/0,c=192.168.0.8:6789/0}, election epoch 2, quorum 0,1,2 a,b,c
+   osdmap e29: 3 osds: 3 up, 3 in
+    pgmap v607: 576 pgs: 576 active+clean; 9947 bytes data, 9084 KB used, 26915 MB / 30000 MB avail
+   mdsmap e19: 1/1/1 up {0=c=up:active}, 1 up:standby
+ceph-client1:~$ 
+</PRE>
+<P> On the ceph server, create rbd image and resize it:
+<PRE>
+$ xs cay
+Cay:~$ sudo rbd create foo --size 256
+Cay:~$ sudo rbd list
+foo
+Cay:~$ sudo rbd resize --image foo --size 512
+Resizing image: 100% complete...done.
+Cay:~$ sudo rbd info foo
+rbd image 'foo':
+        size 512 MB in 128 objects
+        order 22 (4096 KB objects)
+        block_name_prefix: rb.0.0
+        parent:  (pool -1)
+Cay:~$ sudo rados ls -p rbd
+foo.rbd
+rbd_directory
+rbd_info
+#########################################################################################
+# Remember issue the following command to delete foo after we have done with client side.
+#########################################################################################
+Cay:~$ sudo  rbd rm foo
+Removing image: 100% complete...done.
+Cay:~$  sudo rbd list
+</PRE>
+<P> On the ceph client side, 
+<PRE>
+ceph-client1:~$ ceph-authtool -l /etc/ceph/keyring.admin
+[client.admin]
+        key = AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+ceph-client1:~$ echo "AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==" >/tmp/secretfile 
+ceph-client1:~$ more /tmp/secretfile
+AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+ceph-client1:~$ lsmod | grep rbd
+ceph-client1:~$ sudo modprobe rbd
+[sudo] password for hsu: 
+ceph-client1:~$ lsmod | grep rbd
+rbd                    22311  0 
+libceph                90118  2 ceph,rbd
+ceph-client1:~$ ls -l /sys/bus/rbd
+total 0
+--w------- 1 root root 4096 Sep 10 09:14 add
+drwxr-xr-x 2 root root    0 Sep 10 09:14 devices
+drwxr-xr-x 2 root root    0 Sep 10 09:14 drivers
+-rw-r--r-- 1 root root 4096 Sep 10 09:14 drivers_autoprobe
+--w------- 1 root root 4096 Sep 10 09:14 drivers_probe
+--w------- 1 root root 4096 Sep 10 09:14 remove
+--w------- 1 root root 4096 Sep 10 09:14 uevent
+$ sudo echo "192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=`cat /tmp/secretfile` rbd foo" >/sys/bus/rbd/add
+-bash: /sys/bus/rbd/add: Permission denied
+ceph-client1:~$ su
+Password: 
+root@ceph-client1:/home/hsu# echo "192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=`cat /tmp/secretfile` rbd foo" >/sys/bus/rbd/add
+root@ceph-client1:/home/hsu# ls /sys/bus/rbd/devices
+0
+root@ceph-client1:/home/hsu# ls -l /sys/bus/rbd/devices
+total 0
+lrwxrwxrwx 1 root root 0 Sep 10 09:31 0 -> ../../../devices/rbd/0
+root@ceph-client1:/home/hsu# ls -l /sys/devices/rbd/0
+total 0
+-r--r--r-- 1 root root 4096 Sep 10 09:33 client_id
+--w------- 1 root root 4096 Sep 10 09:33 create_snap
+-r--r--r-- 1 root root 4096 Sep 10 09:20 current_snap
+-r--r--r-- 1 root root 4096 Sep 10 09:33 major
+-r--r--r-- 1 root root 4096 Sep 10 09:20 name
+-r--r--r-- 1 root root 4096 Sep 10 09:20 pool
+drwxr-xr-x 2 root root    0 Sep 10 09:33 power
+--w------- 1 root root 4096 Sep 10 09:33 refresh
+-r--r--r-- 1 root root 4096 Sep 10 09:33 size
+lrwxrwxrwx 1 root root    0 Sep 10 09:20 subsystem -> ../../../bus/rbd
+-rw-r--r-- 1 root root 4096 Sep 10 09:20 uevent
+root@ceph-client1:/home/hsu# cat /sys/devices/rbd/0/size
+536870912
+root@ceph-client1:/home/hsu# ls -l /dev/rbd0
+brw-rw---T 1 root disk 254, 0 Sep 10 09:20 /dev/rbd0
+root@ceph-client1:/home/hsu# cat /sys/devices/rbd/0/client_id
+client4705
+root@ceph-client1:/home/hsu# cat /sys/devices/rbd/0/name
+foo
+root@ceph-client1:/home/hsu# mkfs -t ext2 /dev/rbd0
+mke2fs 1.42.5 (29-Jul-2012)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=1024 blocks, Stripe width=1024 blocks
+32768 inodes, 131072 blocks
+6553 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=134217728
+4 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks: 
+        32768, 98304
+Allocating group tables: done                            
+Writing inode tables: done                            
+Writing superblocks and filesystem accounting information: done
+root@ceph-client1:/home/hsu# mount -t ext2 /dev/rbd0 /mnt
+root@ceph-client1:/home/hsu# ls -l /mnt
+total 16
+drwx------ 2 root root 16384 Sep 10 09:48 lost+found
+root@ceph-client1:/home/hsu# df /mnt
+Filesystem     1K-blocks  Used Available Use% Mounted on
+/dev/rbd0         516040   396    489432   1% /mnt
+root@ceph-client1:/home/hsu# more /etc/mtab
+rootfs / rootfs rw 0 0
+sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,relatime,size=10240k,nr_inodes=62132,mode=755 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+tmpfs /run tmpfs rw,nosuid,noexec,relatime,size=50900k,mode=755 0 0
+/dev/sda2 / ext4 rw,relatime,errors=remount-ro,user_xattr,acl,barrier=1,data=ord
+ered 0 0
+tmpfs /run/lock tmpfs rw,nosuid,nodev,noexec,relatime,size=5120k 0 0
+tmpfs /run/shm tmpfs rw,nosuid,nodev,noexec,relatime,size=101780k 0 0
+fusectl /sys/fs/fuse/connections fusectl rw,relatime 0 0
+/dev/sda1 /boot ext2 rw,relatime,errors=continue 0 0
+/dev/rbd0 /mnt ext2 rw,relatime,errors=continue,user_xattr,acl 0 0
+root@ceph-client1:/home/hsu# umount /mnt
+root@ceph-client1:/home/hsu# echo 0 > /sys/bus/rbd/remove
+root@ceph-client1:/home/hsu# ls -l  /dev/rbd0
+ls: cannot access /dev/rbd0: No such file or directory
+root@ceph-client1:/home/hsu# ls -l /sys/bus/rbd/devices
+total 0
+root@ceph-client1:/home/hsu#  ls -l /sys/devices/rbd
+total 0
+drwxr-xr-x 2 root root    0 Sep 10 09:57 power
+-rw-r--r-- 1 root root 4096 Sep 10 09:20 uevent
+</PRE>
+<LI> An rbd can not be shared by multiple VMs, (need to verify this statement.)  
+   For it to be shared by multiple VMs, we need to export it via <b>iSCSI</b>. 
+   With <b>iSCSI</b>, we may also provide redundancy via multipathing, but we need 
+   different subnets (and router between subnets).  Roughly speaking, 
+   <b>iSCSI multipath</b> is to provide two or more IP paths for accessing an 
+   iSCSI connected block storage device.  And this two IP paths must come 
+   from two different subnets, so that if one subnet failed, there is another 
+   IP path to reach this block storage.  Also, theoretically, the internet 
+   bandwidth can be increased via multiple IP paths, especially, if second IP path 
+   can be set up on GB ether devices.
+<P> <b>More subtle problem:</b> 
+<a href="http://comments.gmane.org/gmane.comp.file-systems.ceph.devel/4596" 
+target="newwindow">rbd device would disappear after re-boot</a>
+<LI> Router/Gateway
+<P> New Reference: <a href="./vyatta-gateway.html#VyattaVC65" target="newwindow">My 
+Router Setup</a>&nbsp;&nbsp; Old Reference: <a href="./vyatta-gateway.html#MyRouterVC64" 
+target="newwindow">My Router (VC6.4) Installation</a>
+<P> We choose <a href="http://en.wikipedia.org/wiki/Vyatta" 
+target=newwindow">Vyatta</a> to produce our virtual router/gateway.  So far so good. 
+Can not upgrade it from VC6.4 to  VC6.5.  Download new iso from 
+<a href="http://packages.vyatta.com/vyatta/iso/VC6.5/" 
+target=newwindow">vyatta-livecd_VC6.5R1_amd64.iso</a> and re-install it by following
+the instruction described in the above New Reference.  
+<P> <b>Note: (11/24/2012)</b> <a href="http://en.wikipedia.org/wiki/Vyatta" 
+target="newwindow">Vyatta</a>, a Debian-based software-based virtual router, and 
+claimed to be similar to Juniper JUNOS or Cisco IOS. It has two editions: (1) 
+subscription and (2) open sourced editions.  Subscription edition provides web-based 
+management interface, i.e. user friendlier.  We take the second approach.  Almost all 
+the setups you did based on your Debian experience are in vain, i.e. after rebooting, 
+setups are gone.  Only can be done via <b>configure</b>, a command no where to be 
+found.  Worst of all, you won't be able to upgrade your software packages using 
+Debian mirror.  And you can't install additional packages, such as synaptic and emacs.  
+<b>nano</b> is the only text editor (similar to emacs) available.  There is no X GUI 
+interface, everything is based on command line interface (CLI).  It dose not offer any 
+upgrade path.  You only can reinstall newer version via ISO image. Its documentaion 
+web page: <a href="http://www.vyatta.com/download/docdl" target="newwindow">Vyatta 
+Docdl</a>, zip download: 
+<a href="http://www.vyatta.com/downloads/documentation/VC6.5/VC65.zip" 
+target="newwindow">VC65.zip</a>
+<P> <b>Note: (10/08/2012)</b> MyRouter is OK, now, I think.  To test it, bring up 
+Test-Eth1 (on ac00), a VM with only IP 192.168.1.254, edit its /etc/rc.local so that 
+its default gateway is 192.168.1.1, not 192.168.1.33, the second IP address of ac00.  
+Reboot it.  And on amd-6, booting MyRouter and ceph-client1.  Login Test-Eth1, from 
+it we can successfully login 192.168.0.33 (ac00), 192.168.0.32 (amd-6), 192.168.0.130 
+(ceph-client1), but not machines on the 140.120 network.  But, I think this is OK, 
+since 192.168.1.0/24 is our own private lan.  (Originally, Test-Eth1 with 192.168.1.33 
+default gateway can reach anywhere.)
+<P> <a name="Config-Kvm-MyRouter"></a> <b>Note: (10/08/2012)</b> Our router should 
+route 192.168.1.0/24 subnet to other subnet.  For consistency, we use eth1 (if possible 
+at all, for virtual machines with only one 192.168.1.* IP address, it only has (virtual) 
+eth0 card,) to connect our 192.168.1.0/24 subnet.  For Setting up Kvm with 2 Nics and 2 
+Taps, you may consult the <a href="#KvmWith2Nics">Kvm with 2 Nics</a>. The correct way 
+to setup MyRouter is as follows:  <b>Notice</b> that the MAC addresses of the two nics 
+must be the same as the MAC addresses for ethernet eth0 and ethernet eth1 recorded in 
+the <code>/opt/vyatta/etc/config/config.boot</code> file.
+<PRE>
+ $ Config-Kvm ../Router/MyRouter.img MyRouter 192.168.1.1 eth1 13 
+ # Edit start-MyRouter-13, start-MyRouter-13-AsDaemon, stop-MyRouter-restore-lan-13 
+ # As follows:
+ $ diff start-MyRouter-13  start-MyRouter-13.orig
+17,22d16
+< ################################################################################
+< sudo tunctl -u hsu -t tap103
+< sudo ifconfig tap103 192.168.0.32 netmask 255.255.255.255 up
+< sudo iptables --table nat -A POSTROUTING --out-interface eth0 -j MASQUERADE
+< sudo iptables -A FORWARD --in-interface tap103 -j ACCEPT
+< ################################################################################
+28,32d21
+< ################################################################################
+< sudo sysctl net.ipv4.conf.tap103.proxy_arp=1
+< sudo arp -Ds 192.168.0.2 eth0 pub
+< sudo route add -host 192.168.0.2 dev tap103
+< ################################################################################
+35,37d23
+< ################################################################################
+< vde_switch -tap tap103 -mod 644 -sock=/src4/ceph/network-3039 -mgmt /src4/ceph/network-3039/vde_switch.mgmt -daemon </dev/null >/dev/null
+< ################################################################################
+39,43c25
+< ################################################################################
+< # The MAC addresses for eth0 and eth1 are inscribed in config.boot file, can't be 
+< # changed arbitrarily.
+< ################################################################################
+< kvm -net vde,vlan=0,sock=/src4/ceph/network-3039 -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -net vde,vlan=1,sock=/src4/ceph/network-3049  -net nic,vlan=1,macaddr=1c:6f:65:e5:2f:3d -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -hda ../Router/MyRouter.img &
+---
+> kvm -net vde,vlan=0,sock=/src4/ceph/network-3049 -net nic,vlan=0,macaddr=1c:6f:65:e5:2f:3d -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -hda ../Router/MyRouter.img &
+ ############################################################################
+ # For start-MyRouter-13-AsDaemon script, it is almost identical to start-MyRouter-13,
+ # We only need to pay attention to the "-net" options for the kvm command.  And the 
+ # eth0 and eth1 MAC addresses are hard-coded in its /opt/vyatta/etc/config/config.boot 
+ # file.   We also use vlan0 and vlan1 as different (virtual) switches for two different
+ # subnets.  It seems OK, now.   Surely, we need more testing!!  The difference of the 
+ # last line in the start-MyRouter-13-AsDaemon and start-MyRouter-13-AsDaemon.orig shell
+ # scripts is kept, the rest differences are the same as above.
+ ############################################################################
+< screen -S MyRouter -d -m kvm  -net vde,vlan=0,sock=/src4/ceph/network-3039 -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -net vde,vlan=1,sock=/src4/ceph/network-3049  -net nic,vlan=1,macaddr=1c:6f:65:e5:2f:3d  -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -curses -hda ../Router/MyRouter.img &
+---
+> screen -S MyRouter -d -m kvm -net vde,vlan=0,sock=/src4/ceph/network-3049 -net nic,vlan=0,macaddr=1c:6f:65:e5:2f:3d -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -curses -hda ../Router/MyRouter.img &
+$ diff stop-MyRouter-restore-lan-13 stop-MyRouter-restore-lan-13.orig
+45,47d44
+< ################################################################################
+< sudo pkill -f "vde_switch -tap tap103 -mod 644 -sock=/src4/ceph/network-3039 -mgmt /src4/ceph/network-3039/vde_switch.mgmt"
+< ################################################################################
+52,56d48
+< ################################################################################
+< if [ -S /src4/ceph/network-3039/ctl ]; then rm /src4/ceph/network-3039/ctl; fi
+< if [ -S /src4/ceph/network-3039/vde_switch.mgmt ]; then rm /src4/ceph/network-3039/vde_switch.mgmt; fi
+< if [ -d /src4/ceph/network-3039 ]; then rm -rf /src4/ceph/network-3039; fi
+< ################################################################################
+65,71d56
+< ################################################################################
+< sudo sysctl net.ipv4.conf.tap103.proxy_arp=0
+< sudo ifconfig tap103 192.168.0.32 down
+< # sudo iptables --table nat -D POSTROUTING --out-interface eth1 -j MASQUERADE
+< sudo iptables -D FORWARD --in-interface tap103 -j ACCEPT
+< sudo tunctl -d tap103
+< ################################################################################
+</PRE>
+<h4><b>mkpartfs</b> command is useless (kept for reference only)</h4>
+<P> The <b>mkpartfs</b> command provided by qemu-kvm ends up with "/dev/sda 
+<a href="http://serverfault.com/questions/104923/unrecognised-disc-label-when-using-parted-with-qemu-images" 
+target="newwindow">unrecognized disk label</a>".  We can use <b>start-Gparted-6-efs</b> 
+(in <code>/src3/KVM/bin</code>) and specify <code>/src4/ceph/Router/MyRouter.img</code> 
+as its argument and use <b>gparted</b> command to partition <code>/dev/sdb</code> (1) 
+First partition 488M, ext2, (2) second partition 3096M, ext4, (3) third partition 512M, 
+swap.  I always got 513M for 3rd partition.  Also turn on the boot flag for the first 
+partition.  Apparently, first 1MB is reserved for MBR, not used.  I asked for 488M, 
+only got 487M and the second partition (/) started at sector 999424, the correct offset 
+to use <b>Config-Kvm</b> shell script.  The first partition is totally wasted, but we 
+need it to get the right offset for <b>Config-Kvm</b> shellscript to be functional.
+<PRE>
+ $ mkdir /src4/ceph/Router
+ $ mv *iso /src4/ceph/Router
+ $ cd /src4/ceph/Router
+ $ qemu-img create MyRouter.img 4G
+##############################################################################
+# When seeing system prompt, type "install system" without the double quotes.
+# print ;; print info about hard disk.
+# mkpartfs primary ext2 1 512  ;; in the unit of MBs.
+# set 1 boot on ;; enable boot option on partition 1.
+# print
+# mkpartfs primary ext4 512 
+##############################################################################
+</PRE>
+<LI><a name="KvmWith2Nics">Setup of Kvm with 2 Nics and 2 Taps</a>
+<P> For IP path redundancy, we need some of our VMs to be accessible via two different 
+subnets.  Of course, our physical host must have at least two ethernet cards and we can 
+reach it via two different subnets, say 192.168.0.0/24 and 192.168.1.0/24.  In the 
+following scenario, 192.168.0.0/24 is the public subnet, 192.168.1.0/24 is the private 
+subnet, i.e. we use this subnet to achieve higher bandwidth and less interrupt.
+<PRE>
+ $ cd /src4/ceph/clients
+ $ cp Debian-Eth1.img Debian-2Nics.img
+ $ cd ../bin  
+ $ Config-Kvm ../clients/Debian-2Nics.img Deb2Nics 192.168.1.253 eth1 253 
+ # Manually add tun/tap for eth0:  eth0 communicates with host via tap243.  And we 
+ # would like eth0 and eth1 to be on vlan0 and vlan1, two different switches.  Also,
+ # we fake the MAC address of eth1 by subtract 10 from the last three hexadecimal 
+ # digits of eth0.  Recall that the MAC address of eth0 is also a facked one!
+ $ diff start-Deb2Nics-253-AsDaemon start-Deb2Nics-253-AsDaemon.orig
+17,22d16
+< #################################################################################
+< sudo tunctl -u hsu -t tap243
+< sudo ifconfig tap243 192.168.0.33 netmask 255.255.255.255 up
+< sudo iptables --table nat -A POSTROUTING --out-interface eth0 -j MASQUERADE
+< sudo iptables -A FORWARD --in-interface tap243 -j ACCEPT
+< #################################################################################
+28,32d21
+< #################################################################################
+< sudo sysctl net.ipv4.conf.tap243.proxy_arp=1
+< sudo arp -Ds 192.168.0.253 eth0 pub
+< sudo route add -host 192.168.0.253 dev tap243
+< #################################################################################
+35,37d23
+< #################################################################################
+< vde_switch -tap tap243 -mod 644 -sock=/src4/ceph/network-3610 -mgmt /src4/ceph/network-3610/vde_switch.mgmt -daemon </dev/null >/dev/null
+< #################################################################################
+39c25
+< screen -S Deb2Nics -d -m kvm  -net vde,vlan=0,sock=/src4/ceph/network-3610 -net nic,vlan=0,macaddr=00:25:90:d5:c6:42 -net vde,vlan=1,sock=/src4/ceph/network-3620 -net nic,vlan=1,macaddr=00:25:90:c5:b6:32 -m 512M -monitor unix:/src4/ceph/network-3620/MonSock,server,nowait -curses -hda ../clients/Debian-2Nics.img &
+---
+> screen -S Deb2Nics -d -m kvm -net vde,vlan=0,sock=/src4/ceph/network-3620 -net nic,vlan=0,macaddr=00:25:90:d5:c6:42 -m 512M -monitor unix:/src4/ceph/network-3620/MonSock,server,nowait -curses -hda ../clients/Debian-2Nics.img &
+</PRE>
+<LI> Multipath RBD via iSCSI 
+<P> References: 
+<OL>
+  <LI> <a href="./Using-iSCSI-on-Debian.html" target="newwindow">Using iSCSI
+      on Debian</a>&nbsp;&nbsp;&nbsp;  
+  <LI> <a href="./WhyLioiSCSiTarget.html" target="newwindow">Sorry, probably I 
+      made a wrong choice</a>
+</OL>
+<P>  Following the steps outlined in the first article, we can create a Ceph Client 
+  and turn it to be an iSCSITarget.  This iSCSITarget may also carry other block 
+  devices.  This iSCSITarget essentially becomes our poor man's SAN storage.  
+  Through iSCSIInitiator, we may obtain remote storage space via our LAN.
+<LI> More References:
+ <TABLE>
+   <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="http://en.wikipedia.org/wiki/ISCSI" 
+  target="newwindow">iSCSI Introduction Wiki</a>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="VirtualStorageAndUsbHdd.html#CephiScsi" target="newwindow">Ceph 
+  ISCSI Wiki</a>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="#CephRbdSan" 
+  target="newwindow">Ceph Rbd As San Storage</a>&nbsp;&nbsp;&nbsp;&nbsp;
+   <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="http://wiki.debian.org/SAN/iSCSI" 
+  target="newwindow">Debian iSCSI Wiki</a>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="./Using-iSCSI-on-Debian.html" target="newwindow">Debian 
+  iSCSI</a>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="http://christophe.varoqui.free.fr/refbook.html" 
+  target="newwindow">MultiPath</a>&nbsp;&nbsp;&nbsp;&nbsp;
+   <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="#QuickStart" 
+  target="newwindow">5-minute Quick Start</a>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="#CephFSQuickStart" 
+  target="newwindow">CephFS Quick Start</a>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="#CephFS" 
+  target="newwindow">Ceph FS</a>
+   <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;
+       <TD><a href="#ACourseInCeph" 
+  target="newwindow">A crash course in Ceph</a>&nbsp;&nbsp;&nbsp;&nbsp;
+ </TABLE>
+</OL>
+<a name="CephRbdSan"></a><h3 class="title">Turning Ceph RBD Images into SAN Storage Devices
+<a href="http://www.hastexo.com/resources/hints-and-kinks/turning-ceph-rbd-images-san-storage-devices">(Source Origin)</a></h3>
+<p>RADOS Block Device (RBD) is a <a href="http://ceph.com/ceph-storage/block-storage/" 
+target="_blank">block-layer interface</a> to the 
+<a href="http://www.hastexo.com/knowledge/storage-io/ceph">Ceph</a> distributed storage 
+stack. Here's how you can enhance RBD with SAN storage device compatibility, like 
+<a href="http://en.wikipedia.org/wiki/ISCSI" target="_blank">iSCSI</a> and 
+<a href="http://en.wikipedia.org/wiki/Fibre_Channel" target="_blank">Fibre Channel</a>, 
+to connect systems with no native RBD support to your Ceph cluster.</p>
+<h4>Prerequisites</h4>
+<p>What you'll need in order to accomplish SAN compatibility for your Ceph cluster is 
+this:</p>
+<ul>
+  <li>A working Ceph cluster. You probably guessed this one. More specifically, you 
+should have&nbsp;
+  <ul>
+    <li>a RADOS pool in which you can create RBD images; the default rbd pool will do 
+        nicely.&nbsp;</li>
+    <li>a set of credentials for a client to connect to the cluster, and create and map 
+        RBD devices. You can use the default client.admin credentials for this purpose, 
+        but I prefer to use a separate set of credentials for client.rbd.</li>
+    <li>that user should have at least the allow r permission on your mons, and allow rw 
+        on your osds (the latter you can restrict to the rbd pool if you wish).</li>
+  </ul></li>
+  <li>A SCSI proxy node, which will act as an intermediary between your legacy 
+      initiators and the Ceph cluster. It should have
+  <ul>
+    <li>A sufficiently recent Linux kernel. 2.6.38 is the absolute minimum, but a 
+        post-3.2.0 kernel is highly recommended.</li>
+    <li>A working installation of the client tools required to map RBD devices (the 
+        rbd binary is the important one).</li>
+    <li>A copy of the credentials for your rbd client.</li>
+    <li>A working installation of the LIO and target tools (lio-utils and 
+        targetcli).</li>
+  </ul></li>
+  <li>And finally, any number of clients supporting 
+      <a href="http://linux-iscsi.org/index.php/LIO-Target#Fabric_modules" 
+      target="_blank">any of LIO's fabric modules</a>. We'll use iSCSI in this example, 
+      but you could also use FibreChannel, FCoE, InfiniBand, and others.</li>
+</ul>
+<h4>Getting Started</h4>
+<p>The first thing we'll need to do is create an RBD image. Suppose we would like to 
+create one that is 10GB in size (recall, all RBD images are thin-provisioned, so we 
+won't actually use 10GB in the Ceph cluster right from the start).</p>
+<pre>
+rbd -n client.rbd -k /etc/ceph/keyring.client.rbd create --size 10240 test
+</pre>
+<p><b>Question:</b>  Option <code>-n client.rbd</code> means name? In the 
+<a href="http://ceph.com/docs/master/man/8/rbd/">rbd manpage</a>,
+there is no such option.  Manpage too old?  Or, shall we use the <code>--id 
+username</code> option, instead?
+<p>This means we are connecting to our Ceph mon servers (defined in the default
+ configuration file, /etc/ceph/ceph.conf) using the client.rbd identity, whose 
+ authentication key is stored in /etc/ceph/keyring.client.rbd. The nominal image 
+ size is 10240MB, and its name is a hardly creative test.</p>
+<p>You can run this command from any node inside or outside your Ceph cluster, as long 
+as the configuration file and authentication credentials are stored in the appropriate 
+location. <b>This should be tested</b>, and it is helpful, since we usual run  Ceph 
+cluster in the daemon mode.
+The next step, however, is one that you must complete from your proxy (iSCSITarget) 
+node (the one with the lio tools installed):</p>
+<pre>
+ $ modprobe rbd
+ $ rbd --user rbd --secret /etc/ceph/secret.client.rbd map test
+</pre>
+<p> Note that this syntax applies to the current "stable" Ceph release, 0.48 "argonaut". 
+Newer releases do away with the somewhat illogical --user and --secret syntax, and 
+just allow --id and --keyring which is more in line with all other Ceph tools.</p>
+We use the following syntax, more directly but more complicated.
+<pre>
+ceph-client1:~$ sudo modprobe rbd
+ceph-client1:~$ ceph-authtool -l /etc/ceph/keyring.admin
+[client.admin]
+        key = AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==
+ceph-client1:~$ echo "AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==" >/tmp/secretfile 
+ceph-client1:~$ echo "192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=`cat /tmp/secretfile` rbd foo" >/sys/bus/rbd/add
+</pre>
+<p>Once the map command has completed, you should see a new block device named /dev/rbd0 
+(provided this is the first device you mapped on this machine), and a handy symlink of 
+the pattern /dev/rbd/&lt;pool&gt;/&lt;image&gt;, in our case /dev/rbd/rbd/test. This
+is a kernel-level block device like any other, and we can now proceed by exporting it 
+to the Unified Target infrastructure.</p>
+<h4>Exporting the Target</h4>
+<p>Once we have our mapped RBD device in place, we can create a target, and export it 
+via one of LIO's fabric modules. The <a href="./Targetcli.html" 
+target=""newwindow">targetcli</a> subshell comes in very handy for this 
+purpose:</p>
+<pre>
+<strong># targetcli</strong> 
+Welcome to the targetcli shell:
+ Copyright (c) 2011 by RisingTide Systems LLC.
+Visit us at <a href="http://www.risingtidesystems.com/" 
+title="http://www.risingtidesystems.com">http://www.risingtidesystems.com</a>.
+Loaded tcm_loop kernel module.
+Created '/sys/kernel/config/target/loopback'.
+Done loading loopback fabric module.
+Loaded tcm_fc kernel module.
+Created '/sys/kernel/config/target/fc'.
+Done loading tcm_fc fabric module.
+Can't load fabric module qla2xxx.
+Loaded iscsi_target_mod kernel module.
+Created '/sys/kernel/config/target/iscsi'.
+Done loading iscsi fabric module.
+Can't load fabric module ib_srpt.
+<strong>/&gt; cd backstores/iblock
+/backstores/iblock&gt; create test /dev/rbd/rbd/test</strong>
+Generating a wwn serial.
+Created iblock storage object test using /dev/rbd/rbd/test.
+Entering new node /backstores/iblock/test
+<strong>/backstores/iblock/test&gt; status</strong>
+Status for /backstores/iblock/test: /dev/rbd/rbd/liotest deactivated
+</pre>
+<P> <b>Note: (10/26/2012)</b> The above modules can be found in Debian 3.2.0-4-amd64 
+kernel.
+<PRE>
+hsu@Amath-Client00:~$ find /lib/modules -name "*tcm*"
+/lib/modules/3.2.0-4-amd64/kernel/drivers/target/tcm_fc
+/lib/modules/3.2.0-4-amd64/kernel/drivers/target/tcm_fc/tcm_fc.ko
+/lib/modules/3.2.0-4-amd64/kernel/drivers/target/loopback/tcm_loop.ko
+hsu@Amath-Client00:~$ find /lib/modules -name "*iscsi_target*"
+/lib/modules/3.2.0-4-amd64/kernel/drivers/target/iscsi/iscsi_target_mod.ko
+hsu@Amath-Client00:~$ apt-cache search targetcli
+targetcli - administration tool for managing LIO core target
+hsu@Amath-Client00:~$ apt-cache search lio-utils
+lio-utils - configuration tool for LIO core target
+kamailio-utils-modules - Provides a set utility functions for Kamailio
+</PRE>
+<p>Now we've created a backstore named <code>test</code>, corresponding to our mapped 
+RBD image of the same name. At this point it  is deactivated, as it hasn't been
+assigned to any iSCSI target.  Up next, we'll create the target, add the backstore as 
+LUN 0, and assign the target to a Target Portal Group (TPG):</p>
+<pre>
+<strong>/backstores/iblock&gt; cd ..
+/backstores&gt; cd ..
+/&gt; cd iscsi 
+/iscsi&gt; create</strong>
+Created target iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557.
+Selected TPG Tag 1.
+Successfully created TPG 1.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557/tpgt1
+<strong>/iscsi/iqn.20...8ca9557/tpgt1&gt; cd luns
+/iscsi/iqn.20...57/tpgt1/luns&gt; status</strong>
+Status for /iscsi/iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557/tpgt1/luns: 0 LUN
+<strong>/iscsi/iqn.20...57/tpgt1/luns&gt; create /backstores/iblock/test 
+</strong>Selected LUN 0.
+Successfully created LUN 0.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557/tpgt1/luns/lun0
+<strong>/iscsi/iqn.20...gt1/luns/lun0&gt; cd ..
+/iscsi/iqn.20...57/tpgt1/luns&gt; cd ..
+/iscsi/iqn.20...8ca9557/tpgt1&gt; cd portals 
+/iscsi/iqn.20...tpgt1/portals&gt; create 192.168.122.117
+Using default IP port 3260</strong>
+Successfully created network portal 192.168.122.117:3260.
+Entering new node /iscsi/iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557/tpgt1/portals/192.168.122.117:3260
+</pre>
+<p>So now we have a new target, with the IQN 
+<code>iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557</code>, assigned to a TPG 
+listening on <code>192.168.122.117</code>.</p>
+<p>For demonstration purposes, we can now disable authentication and 
+initiator filters. You should obviously not do this on a production 
+system.</p>
+<pre>
+<strong>/iscsi/iqn.20....122.117:3260&gt; cd ..
+/iscsi/iqn.20...tpgt1/portals&gt; cd ..
+/iscsi/iqn.20...8ca9557/tpgt1&gt; set attribute authentication=0
+</strong>Parameter authentication is now '0'.
+<strong>/iscsi/iqn.20...8ca9557/tpgt1&gt; set attribute demo_mode_write_protect=0 generate_node_acls=1 cache_dynamic_acls=1
+</strong>Parameter demo_mode_write_protect is now '0'.
+Parameter generate_node_acls is now '1'.
+Parameter cache_dynamic_acls is now '1'.
+<strong>/iscsi/iqn.20...8ca9557/tpgt1&gt; exit</strong>
+</pre>
+<p>There. Now we have an iSCSI target, a target portal group, and a single LUN assigned 
+to it.</p>
+<h4>Using your new target</h4>
+<p>And now, you can just connect to this thin-provisioned, dynamically replicated, 
+self-healing and self-rebalancing, snapshot capable, striped and distributed block 
+device as you would to any other iSCSI target.</p>
+<p>Here's an example for the Linux standard open-iscsi tools:</p>
+<pre><strong># iscsiadm -m discovery -p 192.168.122.117 -t sendtargets
+</strong>192.168.122.117:3260,1 iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557
+<strong># iscsiadm -m node -T iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557 -p 192.168.122.117 --login
+</strong>Logging in to [iface: default, target: iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557, portal: 192.168.122.117,3260]
+Login to [iface: default, target: iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557, portal: 192.168.122.117,3260]: successful
+</pre>
+<p>At this point, you'll have a shiny SCSI device showing up under lsscsi and in your 
+/dev tree, and this device you can use for anything you please. Try partitioning it 
+and making a filesystem on one of the partitions.</p>
+<p>And when you're done, you just log out:</p>
+<pre><strong># iscsiadm -m node -T iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557 -p 192.168.122.117 --logout
+</strong>Logging out of session [sid: 1, target: iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557, portal: 192.168.122.117,3260]
+Logout of [sid: 1, target: iqn.2003-01.org.linux-iscsi.gwen.i686:sn.7d9ed8ca9557, portal: 192.168.122.117,3260]: successful
+</pre>
+<p>That's it.</p>
+<h4>Where To Go From Here</h4>
+<p>Now you can start doing pretty nifty stuff.</p>
+ 
+<p>Have a server that needs extra storage, but runs a legacy Linux distro with no 
+native RBD support? Install open-iscsi and provide that box with the replicated, 
+striped, self-healing, auto-mirroring capacity that Ceph and RBD come with.</p>
+<p>Have a Windows box that should somehow start using your massive distributed storage 
+cluster? As long as you have 
+<a href="http://technet.microsoft.com/en-us/library/ee338476%28v=ws.10%29.aspx" 
+target="_blank">Microsoft iSCSI Initiator</a> installed, you can do so in an 
+all-software solution. Or you just get the iSCSI HBA of your choice, and use its 
+Windows driver.</p>
+<p>And if you have a server that can boot off iSCSI, you can even run a bare-metal 
+install, or build a diskless system that stores all of its data in RBD.</p>
+<p>Want High Availability for your target proxy? Can do. 
+<a href="http://www.hastexo.com/knowledge/high-availability/pacemaker">Pacemaker</a> 
+has resource agents both for LIO and for RBD. And highly-available iSCSI servers are 
+a relatively old hat; we've 
+<a href="http://www.hastexo.com/products/estimates/storage-iscsi">been doing that 
+with other, less powerful storage replication solutions</a> forever.</p>
+<a name="QuickStart"></a><h3>5-minute Quick Start 
+<a href="http://ceph.com/docs/master/start/quick-start/" 
+target="newwindow">(Source Origin)</a></h3>
+<img class="logo" src="http://ceph.com/docs/master/_static/logo.png" alt="Logo">
+<p>Thank you for trying Ceph! Petabyte-scale data clusters are quite an
+undertaking. Before delving deeper into Ceph, we recommend setting up a two-node
+demo cluster to explore some of the functionality. The Ceph <strong>5-Minute Quick
+Start</strong> deploys a Ceph object store cluster on one server machine and a Ceph
+client on a separate machine, each with a recent Debian/Ubuntu operating system.
+The intent of this <strong>Quick Start</strong> is to help you exercise Ceph object store
+functionality without the configuration and deployment overhead associated with
+a production-ready object store cluster. Once you complete this quick start, you
+may exercise Ceph commands on the command line. You may also proceed to the
+quick start guides for block devices, CephFS filesystems, and the RESTful
+gateway.</p>
+<p class="ditaa">
+<img src="http://ceph.com/docs/master/_images/ditaa-621cdc0b711839f3e69cf8895d81a585a041f1e9.png">
+</p>
+<div class="section" id="install-debian-ubuntu">
+<h4>Install Debian/Ubuntu<a class="headerlink" href="#install-debian-ubuntu" title="Permalink to this headline"> </a></h4>
+<p>Install a recent release of Debian or Ubuntu (e.g., 12.04 precise) on your
+Ceph server machine and your client machine.</p>
+</div>
+<div class="section" id="add-ceph-packages">
+<h4>Add Ceph Packages<a class="headerlink" href="#add-ceph-packages" title="Permalink to this headline"> </a></h4>
+<p>To get the latest Ceph packages, add a release key to <abbr title="Advanced Package Tool">APT</abbr>, add a source location to the <tt class="docutils literal"><span class="pre">/etc/apt/sources.list</span></tt> on your
+Ceph server and client machines, update your systems and install Ceph.</p>
+<div class="highlight-python"><pre>wget -q -O- https://raw.github.com/ceph/ceph/master/keys/release.asc | sudo apt-key add -
+echo deb http://ceph.com/debian/ $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/ceph.list
+sudo apt-get update &amp;&amp; sudo apt-get install ceph</pre>
+</div>
+<p>Check the Ceph version you are using and make a note of it so that you have the
+correct settings in your configuration file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ceph</span> <span class="o">-</span><span class="n">v</span>
+</pre></div>
+</div>
+<p>If <tt class="docutils literal"><span class="pre">ceph</span> <span class="pre">-v</span></tt> reflects an earlier version from what you installed, your
+<tt class="docutils literal"><span class="pre">ceph-common</span></tt> library may be using the version distributed with the kernel.
+Once you've installed Ceph, you may also update and upgrade your packages to
+ensure you have the latest <tt class="docutils literal"><span class="pre">ceph-common</span></tt> library installed.</p>
+<div class="highlight-python"><pre>sudo apt-get update &amp;&amp; sudo apt-get upgrade</pre>
+</div>
+<p>If you want to use a version other than the current release, see <a class="reference external" href="http://ceph.com/docs/master/install/debian">Installing
+Debian/Ubuntu Packages</a> for further details.</p>
+</div>
+<div class="section" id="add-a-configuration-file">
+<h4>Add a Configuration File<a class="headerlink" href="#add-a-configuration-file" title="Permalink to this headline"> </a></h4>
+<p>The example configuration file will configure Ceph to operate a monitor, two OSD
+daemons and one metadata server on your Ceph server machine. To add a
+configuration file to Ceph, we suggest copying the contents of the example file
+below to an editor. Then, follow the steps below to modify it.</p>
+<div class="highlight-ini"><div class="highlight"><pre><span class="k">[global]</span>
+	<span class="c"># For version 0.55 and beyond, you must explicitly enable </span>
+	<span class="c"># or disable authentication with "auth" entries in [global].</span>
+	
+	<span class="na">auth cluster required</span> <span class="o">=</span> <span class="s">cephx</span>
+<span class="s">	auth service required = cephx</span>
+<span class="s">	auth client required = cephx</span>
+<span class="k">[osd]</span>
+	<span class="na">osd journal size</span> <span class="o">=</span> <span class="s">1000</span>
+	
+	<span class="c">#The following assumes ext4 filesystem.</span>
+	<span class="na">filestore xattr use omap</span> <span class="o">=</span> <span class="s">true</span>
+	<span class="c"># For Bobtail (v 0.56) and subsequent versions, you may </span>
+	<span class="c"># add settings for mkcephfs so that it will create and mount</span>
+	<span class="c"># the file system on a particular OSD for you. Remove the comment `#` </span>
+	<span class="c"># character for the following settings and replace the values </span>
+	<span class="c"># in braces with appropriate values, or leave the following settings </span>
+	<span class="c"># commented out to accept the default values. You must specify the </span>
+	<span class="c"># --mkfs option with mkcephfs in order for the deployment script to </span>
+	<span class="c"># utilize the following settings, and you must define the 'devs'</span>
+	<span class="c"># option for each osd instance; see below.</span>
+	<span class="c">#osd mkfs type = {fs-type}</span>
+	<span class="c">#osd mkfs options {fs-type} = {mkfs options}   # default for xfs is "-f"</span>
+	<span class="c">#osd mount options {fs-type} = {mount options} # default mount option is "rw, noatime"</span>
+	<span class="c"># Execute $ hostname to retrieve the name of your host,</span>
+	<span class="c"># and replace {hostname} with the name of your host.</span>
+	<span class="c"># For the monitor, replace {ip-address} with the IP</span>
+	<span class="c"># address of your host.</span>
+<span class="k">[mon.a]</span>
+	<span class="na">host</span> <span class="o">=</span> <span class="s">{hostname}</span>
+<span class="s">	mon addr = {ip-address}:6789</span>
+<span class="k">[osd.0]</span>
+	<span class="na">host</span> <span class="o">=</span> <span class="s">{hostname}</span>
+	
+	<span class="c"># For Bobtail (v 0.56) and subsequent versions, you may </span>
+	<span class="c"># add settings for mkcephfs so that it will create and mount</span>
+	<span class="c"># the file system on a particular OSD for you. Remove the comment `#` </span>
+	<span class="c"># character for the following setting for each OSD and specify </span>
+	<span class="c"># a path to the device if you use mkcephfs with the --mkfs option.</span>
+	
+	<span class="c">#devs = {path-to-device}</span>
+<span class="k">[osd.1]</span>
+	<span class="na">host</span> <span class="o">=</span> <span class="s">{hostname}</span>
+<span class="s">	#devs = {path-to-device}</span>
+<span class="k">[mds.a]</span>
+	<span class="na">host</span> <span class="o">=</span> <span class="s">{hostname}</span>
+</pre></div>
+</div>
+<ol class="arabic">
+<li><p class="first">Open a command line on your Ceph server machine and execute <tt class="docutils literal"><span class="pre">hostname</span> <span class="pre">-s</span></tt>
+to retrieve the name of your Ceph server machine.</p>
+</li>
+<li><p class="first">Replace <tt class="docutils literal"><span class="pre">{hostname}</span></tt> in the sample configuration file with your host name.</p>
+</li>
+<li><p class="first">Execute <tt class="docutils literal"><span class="pre">ifconfig</span></tt> on the command line of your Ceph server machine to
+retrieve the IP address of your Ceph server machine.</p>
+</li>
+<li><p class="first">Replace <tt class="docutils literal"><span class="pre">{ip-address}</span></tt> in the sample configuration file with the IP
+address of your Ceph server host.</p>
+</li>
+<li><p class="first">Save the contents to <tt class="docutils literal"><span class="pre">/etc/ceph/ceph.conf</span></tt> on Ceph server host.</p>
+</li>
+<li><p class="first">Copy the configuration file to <tt class="docutils literal"><span class="pre">/etc/ceph/ceph.conf</span></tt> on your client host.</p>
+<div class="highlight-python"><pre>sudo scp {user}@{server-machine}:/etc/ceph/ceph.conf /etc/ceph/ceph.conf</pre>
+</div>
+</li>
+</ol>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">Ensure the <tt class="docutils literal"><span class="pre">ceph.conf</span></tt> file has appropriate permissions set
+(e.g. <tt class="docutils literal"><span class="pre">chmod</span> <span class="pre">644</span></tt>) on your client machine.</p>
+</div>
+<p class="versionadded">
+<span class="versionmodified">New in version 0.55.</span></p>
+<p>Ceph v0.55 and above have authentication enabled by default. You should
+explicitly enable or disable authentication with version 0.55 and above.
+The example configuration provides <tt class="docutils literal"><span class="pre">auth</span></tt> entries for authentication.
+For details on Ceph authentication see <a class="reference external" href="http://ceph.com/docs/master/rados/operations/authentication">Ceph Authentication</a>.</p>
+</div>
+<div class="section" id="deploy-the-configuration">
+<h4>Deploy the Configuration<a class="headerlink" href="#deploy-the-configuration" title="Permalink to this headline"> </a></h4>
+<p>You must perform the following steps to deploy the configuration.</p>
+<ol class="arabic">
+<li><p class="first">On your Ceph server host, create a directory for each daemon. For the
+example configuration, execute the following:</p>
+<div class="highlight-python"><pre>sudo mkdir -p /var/lib/ceph/osd/ceph-0
+sudo mkdir -p /var/lib/ceph/osd/ceph-1
+sudo mkdir -p /var/lib/ceph/mon/ceph-a
+sudo mkdir -p /var/lib/ceph/mds/ceph-a</pre>
+</div>
+</li>
+<li><p class="first">Execute the following on the Ceph server host:</p>
+<div class="highlight-python"><pre>cd /etc/ceph
+sudo mkcephfs -a -c /etc/ceph/ceph.conf -k ceph.keyring</pre>
+</div>
+</li>
+</ol>
+<p>Among other things, <tt class="docutils literal"><span class="pre">mkcephfs</span></tt> will deploy Ceph and generate a
+<tt class="docutils literal"><span class="pre">client.admin</span></tt> user and key. For Bobtail and subsequent versions (v 0.56 and
+after), the <tt class="docutils literal"><span class="pre">mkcephfs</span></tt> script will create and mount the filesystem for you
+provided you specify <tt class="docutils literal"><span class="pre">osd</span> <span class="pre">mkfs</span></tt> <tt class="docutils literal"><span class="pre">osd</span> <span class="pre">mount</span></tt> and <tt class="docutils literal"><span class="pre">devs</span></tt> settings in your
+Ceph configuration file.</p>
+</div>
+<div class="section" id="start-ceph">
+<h4>Start Ceph<a class="headerlink" href="#start-ceph" title="Permalink to this headline"> </a></h4>
+<p>Once you have deployed the configuration, start Ceph from the command line of
+your server machine.</p>
+<div class="highlight-python"><pre>sudo service ceph start</pre>
+</div>
+<p>Check the health of your Ceph cluster to ensure it is ready.</p>
+<div class="highlight-python"><pre>sudo ceph health</pre>
+</div>
+<p>When your cluster echoes back <tt class="docutils literal"><span class="pre">HEALTH_OK</span></tt>, you may begin using Ceph.</p>
+</div>
+<div class="section" id="copy-the-keyring-to-the-client">
+<h4>Copy The Keyring to The Client<a class="headerlink" href="#copy-the-keyring-to-the-client" title="Permalink to this headline"> </a></h4>
+<p>The next step you must perform is to copy <tt class="docutils literal"><span class="pre">/etc/ceph/ceph.keyring</span></tt>, which
+contains the <tt class="docutils literal"><span class="pre">client.admin</span></tt> key, from the server machine to the client
+machine. If you don't perform this step, you will not be able to use the Ceph
+command line, as the example Ceph configuration requires authentication.</p>
+<div class="highlight-python"><pre>sudo scp {user}@{server-machine}:/etc/ceph/ceph.keyring /etc/ceph/ceph.keyring</pre>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">Ensure the <tt class="docutils literal"><span class="pre">ceph.keyring</span></tt> file has appropriate permissions set
+(e.g., <tt class="docutils literal"><span class="pre">chmod</span> <span class="pre">644</span></tt>) on your client machine.</p>
+</div>
+</div>
+<div class="section" id="proceed-to-other-quick-starts">
+<h4>Proceed to Other Quick Starts<a class="headerlink" href="#proceed-to-other-quick-starts" title="Permalink to this headline"> </a></h4>
+<p>Once you have Ceph running with both a client and a server, you
+may proceed to the other Quick Start guides.</p>
+<ol class="arabic simple">
+<li>For Ceph block devices, proceed to <a class="reference external" href="http://ceph.com/docs/master/start/quick-rbd">Block Device Quick Start</a>.</li>
+<li>For the CephFS filesystem, proceed to 
+<a href="#CephFSQuickStart">CephFS Quick Start</a>.</li>
+<li>For the RESTful Gateway, proceed to <a class="reference external" href="http://ceph.com/docs/master/start/quick-rgw">Gateway Quick Start</a>.</li>
+</ol>
+</div>
+</div>
+<a name="CephFSQuickStart"></a><h3>CephFS Quick Start 
+<a class="headerlink" href="http://ceph.com/docs/master/start/quick-cephfs/" 
+target="newwindow">(Source Origin)</a></h3>
+<p>To use this guide, you must have executed the procedures in the 
+<a href="http://ceph.com/docs/master/start/quick-start">5-minute
+Quick Start</a> guide first. Execute this quick start on the client machine.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">Mount the CephFS filesystem on the client machine,
+not the cluster machine.</p>
+</div>
+<div class="section" id="kernel-driver">
+<h4>Kernel Driver<a class="headerlink" href="#kernel-driver" title="Permalink to this headline"> </a></h4>
+<p>Mount Ceph FS as a kernel driver.</p>
+<div class="highlight-python"><pre>sudo mkdir /mnt/mycephfs
+sudo mount -t ceph {ip-address-of-monitor}:6789:/ /mnt/mycephfs</pre>
+</div>
+</div>
+<div class="section" id="filesystem-in-user-space-fuse">
+<h4>Filesystem in User Space (FUSE)<a class="headerlink" href="#filesystem-in-user-space-fuse" title="Permalink to this headline"> </a></h4>
+<p>Mount Ceph FS as with FUSE. Replace {username} with your username.</p>
+<div class="highlight-python"><pre>sudo mkdir /home/{username}/cephfs
+sudo ceph-fuse -m {ip-address-of-monitor}:6789 /home/{username}/cephfs</pre>
+</div>
+</div>
+<div class="section" id="additional-information">
+<h4>Additional Information<a class="headerlink" href="#additional-information" title="Permalink to this headline"> </a></h4>
+<p>See <a class="reference external" href="#CephFS">CephFS</a> for additional information. CephFS is not quite as stable
+as the block device and the object storage gateway. Contact <a class="reference external" href="http://inktank.com/">Inktank</a> for
+details on running CephFS in a production environment.</p>
+</div>
+</div>
+<a name="CephFS"></a><h3>Ceph FS <a href="http://ceph.com/docs/master/cephfs/">(Source Origin)</a></h3>
+<p>The Ceph FS file system is a POSIX-compliant file system that uses a RADOS
+cluster to store its data. Ceph FS uses the same RADOS object storage device
+system as RADOS block devices and RADOS object stores such as the RADOS gateway
+with its S3 and Swift APIs, or native bindings. Using Ceph FS requires at least
+one metadata server in your <tt class="docutils literal">
+<span class="pre">ceph.conf</span></tt> configuration file.</p>
+<div class="toctree-wrapper compound">
+<ul>
+  <li><a href="http://ceph.com/docs/master/cephfs/kernel/" 
+       target="newwindow">Mount Ceph FS</a></li>
+  <li><a href="http://ceph.com/docs/master/cephfs/fuse/" 
+       target="newwindow">Mount Ceph FS as FUSE</a></li>
+  <li><a href="http://ceph.com/docs/master/cephfs/fstab/" 
+       target="newwindow">Mount Ceph FS in "fstab"</a></li>
+  <li><a href="http://ceph.com/docs/master/cephfs/hadoop/" 
+       target="newwindow">Using Ceph with Hadoop</a></li>
+  <li><a href="http://ceph.com/docs/master/cephfs/mds-config-ref/" 
+       target="newwindow">MDS Configuration</a></li>
+  <li><a href="http://ceph.com/docs/master/cephfs/journaler/" 
+       target="newwindow">Journaler Configuration</a></li>
+  <li><a href="http://ceph.com/docs/master/man/8/cephfs/" 
+       target="newwindow">Manpage cephfs</a></li>
+  <li><a href="http://ceph.com/docs/master/man/8/ceph-fuse/" 
+       target="newwindow">Manpage ceph-fuse</a></li>
+  <li><a href="http://ceph.com/docs/master/man/8/mount.ceph/" 
+       target="newwindow">Manpage mount.ceph</a></li>
+  <li><a href="http://ceph.com/docs/master/api/libcephfs-java/" 
+       target="newwindow">libcephfs</a></li>
+</ul>
+<a name="ACourseInCeph"></a><h3>A crash course in Ceph, a distributed replicated 
+clustered filesystem 
+<a href="http://www.anchor.com.au/blog/2012/09/a-crash-course-in-ceph/" 
+target="newwindow">(Source Origin)</a></h3>
+				<small class="timestamp">Published September 14th, 2012 by Barney Desmond </small>
+	
+				<div class="entry">
+					<a id="dd_start"></a><p>We've been looking at <a href="http://en.wikipedia.org/wiki/Ceph">Ceph</a>
+ recently, it's basically a fault-tolerant distributed clustered 
+filesystem. If it works, that's like a nirvana for shared storage: you 
+have many servers, each one pitches in a few disks, and the there's a 
+filesystem that sits on top that visible to all servers in the cluster. 
+If a disk fails, that's okay too.</p>
+<p>Those are really cool features, but it turns out that Ceph is really 
+more than just that. To borrow a phrase, Ceph is like an onion - it's 
+got layers. The filesystem on top is nifty, but the coolest bits are 
+below the surface.</p>
+<p>If Ceph proves to be solid enough for use, we'll need to train our 
+sysadmins all about Ceph. That means pretty diagrams and explanations, 
+which we thought would be more fun to share you.</p>
+<h4>Diagram</h4>
+<p>This is the logical diagram that we came up with while learning about
+ Ceph. It might help to keep it open in another window as you read a 
+description of the components and services.</p>
+<div id="attachment_4487" class="wp-caption aligncenter" style="width: 500px"><a href="http://www.anchor.com.au/blog/wp-content/uploads/2012/09/ceph_stack.png"><img src="http://www.anchor.com.au/blog/wp-content/uploads/2012/09/ceph_stack.png" alt="" title="Our understanding of Ceph's major components" class="size-full wp-image-4487" width="490" height="327"></a><p class="wp-caption-text">Ceph's major components, click through for a better view</p></div>
+<h4>Ceph components</h4>
+<p>We'll start at the bottom of the stack and work our way up.</p>
+<h5>OSDs</h5>
+<p>OSD stands for <strong>Object Storage Device</strong>, and roughly corresponds to a physical disk. An OSD is actually a directory (eg. <code>/var/lib/ceph/osd-1</code>)
+ that Ceph makes use of, residing on a regular filesystem, though it 
+should be assumed to be opaque for the purposes of using it with Ceph.</p>
+<p>Use of XFS or btrfs is <a href="http://ceph.com/docs/master/config-cluster/file-system-recommendations/">recommended</a> when creating OSDs, owing to their good performance, featureset (support for XATTRs larger than 4KiB) and data integrity.</p>
+<p>We're using btrfs for our testing.</p>
+<h6>Using RAIDed OSDs</h6>
+<p>A feature of Ceph is that it can tolerate the loss of OSDs. This 
+means we can theoretically achieve fantastic utilisation of storage 
+devices by obviating the need for RAID on every single device.</p>
+<p>However, we've not yet determined whether this is awesome. At this 
+stage we're not using RAID, and just letting Ceph take care of block 
+replication.</p>
+<h5>Placement Groups</h5>
+<p>Also referred to as <strong>PG</strong>s, the <a href="http://ceph.com/docs/master/cluster-ops/placement-groups/">official docs</a>
+ note that placement groups help ensure performance and scalability, as 
+tracking metadata for each individual object would be too costly.</p>
+<p>A PG collects objects from the next layer up and manages them as a 
+collection. It represents a mostly-static mapping to one or more 
+underlying OSDs. Replication is done at the PG layer: the degree of 
+replication (number of copies) is asserted higher, up at the Pool level,
+ and all PGs in a pool will replicate stored objects into multiple OSDs.</p>
+<p>As an example in a system with 3-way replication:</p>
+<ul>
+<li>PG-1 might map to OSDs 1, 37 and 99</li>
+<li>PG-2 might map to OSDs 4, 22 and 41</li>
+<li>PG-3 might map to OSDs 18, 26 and 55</li>
+<li><em>Etc.</em></li>
+</ul>
+<p>Any object that happens to be stored on PG-1 will be written to all 
+three OSDs (1,37,99). Any object stored in PG-2 will be written to its 
+three OSDs (4,22,41). And so on.</p>
+<h5>Pools</h5>
+<p>A pool is the layer at which most user-interaction takes place. This 
+is the important stuff like GET, PUT, DELETE actions for objects in a 
+pool.</p>
+<p>Pools contain a number of PGs, not shared with other pools (if you 
+have multiple pools). The number of PGs in a pool is defined when the 
+pool is first created, and can't be changed later. You can think of PGs 
+as providing a hash mapping for objects into OSDs, to ensure that the 
+OSDs are filled evenly when adding objects to the pool.</p>
+<h5>CRUSH maps</h5>
+<p>CRUSH mappings are specified on a per-pool basis, and serve to skew 
+the distribution of objects into OSDs according to administrator-defined
+ policy. This is important for ensuring that replicas don't end up on 
+the same disk/host/rack/etc, which would break the entire point of 
+having replicant copies.</p>
+<p>A CRUSH map is written by hand, then compiled and passed to the cluster. </p>
+<h5>Still confused?</h5>
+<p>This may not make much sense at the moment, and that's completely 
+understandable. Someone on the Ceph mailing list provided a brief <a href="http://ceph.com/docs/master/dev/placement-group/">summary</a> of the components which we found helpful for clarifying things:</p>
+<blockquote>
+<UL>
+  <LI>Many objects will map to one PG<br>
+  <LI>Each object maps to exactly one PG<br>
+  <LI>One PG maps to a list of OSDs. The first one in the list is the primary and the rest are replicas<br>
+  <LI>Many PGs can map to one OSD
+</UL>
+<p>A PG represents nothing but a grouping of objects; you configure the number of
+PGs you want, number of OSDs * 100 is a good starting point, and all of your
+stored objects are evenly pseudo-randomly distributed to the PGs.
+<p>So a PG explicitly does NOT represent a fixed amount of storage; it
+represents 1/pg_num 'th of the storage you happen to have on your OSDs.
+</p></blockquote>
+<h4>Ceph services</h4>
+<p>Now we're into the good stuff. Pools full of objects are well and good, but what do you do with it now?</p>
+<h5>RADOS</h5>
+<p>What the lower layers ultimately provide is a RADOS cluster: Reliable
+ Autonomic Distributed Object Store. At a practical level this 
+translates to <strong>storing opaque blobs of data (objects) in high performance shared storage</strong>.</p>
+<p>Because RADOS is fairly generic, it's ideal for building more complex systems on top. One of these is RBD.</p>
+<h5>RBD</h5>
+<p>As the name suggests, a RADOS Block Device (RBD) is a block device 
+stored in RADOS. RBD offers useful features on top of raw RADOS objects.
+ From the official docs:</p>
+<ul>
+<li>RBDs are striped over multiple PGs for performance</li>
+<li>RBDs are resizable</li>
+<li>Thin provisioning means on-disk space isn't used until actually required</li>
+</ul>
+<p>RBD also takes advantage of RADOS capabilities such as snapshotting 
+and cloning, which would be very handy for applications like virtual 
+machine disks.</p>
+<h5>CephFS</h5>
+<p>CephFS is a POSIX-compliant clustered filesystem implemented on top 
+of RADOS. This is very elegant because the lower layer features of the 
+stack provide really awesome filesystem features (such as snapshotting),
+ while the CephFS layer just needs to translate that into a usable 
+filesystem.</p>
+<p>CephFS isn't considered ready for prime-time just yet, but RADOS and RBD are.</p>
+<h4>We're excited!</h4>
+<p>Anchor is mostly interested in the RBD service that Ceph provides. To date our <a href="http://www.anchor.com.au/servers/">VPS</a>
+ infrastructure has been very insular, with each hypervisor functioning 
+independently. This works fantastically and avoids putting all our eggs 
+in one basket, but the lure of shared storage is strong.</p>
+<p>Our hypervisor of choice, KVM, already has support for direct 
+integration with RBD, which makes it a very attractive option if we want
+ to use shared storage. Shared storage for a VPS enables live migration 
+between hypervisors (moving a VPS to another hypervisor without 
+downtime), which is unbelievably cool.</p>
+<p>CephFS is also something we'd like to be able to offer our customers 
+when it matures. We've found sharing files between multiple servers in a
+ highly-available fashion to be clunky at best. We've so far avoided 
+solutions like GFS and Lustre due to the level of complexity, so we're 
+hoping CephFS will be a good option at the right scale.</p>
+<h4>Further reading</h4>
+<p>We wouldn't dare to suggest that our notes here are complete or 
+infallibly accurate. If you're interested in Ceph, the following 
+resources are worth a read.</p>
+<ul>
+<li>Florian Haas, one of The HA Guys, has a good little <a href="http://www.hastexo.com/blogs/florian/2012/03/08/ceph-tickling-my-geek-genes">intro to the technical virtues of Ceph</a></li>
+<li>The <a href="http://ceph.com/docs/master/">official Ceph docs</a> are remarkably good once you know what you're looking for, and have been updated recently</li>
+<li>More details about <a href="http://ceph.com/docs/master/cluster-ops/pools/">Pools</a></li>
+<li>More details about <a href="http://ceph.com/docs/master/ops/manage/grow/placement-groups/">Placement Groups</a></li>
+<li>A description of how data is <a href="http://ceph.com/docs/master/cluster-ops/data-placement/">arranged and placed on the OSDs</a></li>
+</ul>
+<p>Got any questions, comments or want to report a mistake? Feel free to let us know in the comments below, or <a href="mailto:support@anchor.net.au">send us a mail</a>.</p>
+						
+<div class="meta-info">
+<p class="meta"> Posted in <a href="http://www.anchor.com.au/blog/category/ftw/" title="View all posts in FTW" rel="category tag">FTW</a></p>
+							
+						<p class="make-comment">
+													&nbsp;<a href="http://www.anchor.com.au/blog/2012/09/a-crash-course-in-ceph/#comments">Leave a comment</a></p>

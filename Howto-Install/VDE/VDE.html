@@ -1,0 +1,95 @@
+﻿<HTML>  
+  <head><title>VDE</title></head>  
+  
+<h3><a href="http://vde.sourceforge.net/">VDE: Virtual Distributed Ethernet</a></h3>
+
+<P> <b>VDE</b> is an ethernet compliant virtual network that can be spawned over a set of physical computer over the Internet.VDE is part of virtualsquare project
+
+<P> <b>vde_switch 指令介紹</b>
+<PRE> 
+vde_switch
+-sock :specify the directory when comm socket are created.
+-mod :specify the octal permissions for the comm sockets.
+-tap :connect the specified tuntap interface to this vde_switch(needs root privileges)It is possible to 
+      specify several tap interfaces,comma separated.
+-daemon :specify the directory when comm socket are created.
+-mgmt
+</PRE>
+
+<P> <b>vde_switch 使用</b>
+
+<OL>  
+  <LI> 使用 vde_switch 連接虛擬機器
+<PRE>
+$ vde_switch -mod 644 -sock=/src4/KVM/network-4428 -mgmt /src4/KVM/network-4428/vde_switch.mgmt \
+-daemon </dev/null >/dev/null
+$ kvm -net vde,vlan=0,sock=/src4/KVM/network-4428 -net nic,vlan=0,macaddr=00:18:f3:01:2e:e6 -m  \
+512M -monitor unix:/src4/KVM/network-4428/MonSock,server,nowait -hda ../Resize/DebSqz-Mini.img &
+</PRE>
+  <LI> 利用tap及vde_switch使虛擬機器可以對外連接網路
+<PRE>
+##tap及iptables相關設定
+$ sudo chmod 666 /dev/net/tun
+$ sudo tunctl -u hsu -t tap1
+$ sudo ifconfig tap1 140.120.8.101 netmask 255.255.255.255 up
+$ sudo iptables --table nat -A POSTROUTING --out-interface eth0 -j MASQUERADE
+$ sudo iptables -A FORWARD --in-interface tap1 -j ACCEPT
+$ sudo chmod 666 /dev/net/tun # First time only get 660
+$ sudo sysctl net.ipv4.ip_forward=1
+$ sudo sysctl net.ipv4.conf.tap1.proxy_arp=1
+$ sudo arp -Ds 140.120.8.214 eth0 pub
+$ sudo route add -host 140.120.8.214 dev tap1
+##vde_switch設定及開啟虛擬機器
+$ vde_switch -tap tap1 -mod 644 -sock=/src4/KVM/network-4428 -mgmt /src4/KVM/network-4428       \
+/vde_switch.mgmt -daemon </dev/null >/dev/null
+$ kvm -net vde,vlan=0,sock=/src4/KVM/network-4428 -net nic,vlan=0,macaddr=00:18:f3:01:2e:e6 -m  \
+512M -monitor unix:/src4/KVM/network-4428/MonSock,server,nowait -hda ../Resize/DebSqz-Mini.img &
+</PRE>
+  <LI> 一台實體機器兩台虛擬機器，兩台虛擬機器互相連通
+<div>
+ <img src="./JPG/example1.jpeg">
+</div><br>
+<PRE>
+$ vde_switch -mod 644 -sock=/src4/KVM/network-4428 -mgmt /src4/KVM/network-4428/vde_switch.mgmt \
+-daemon </dev/null >/dev/null
+$ kvm -net vde,vlan=0,sock=/src4/KVM/network-4428 -net nic,vlan=0,macaddr=00:18:f3:01:2e:e6 -m  \
+512M -monitor unix:/src4/KVM/network-4428/MonSock,server,nowait -hda ../Resize/DebSqz-Mini.img &
+$ kvm -net vde,vlan=0,sock=/src4/KVM/network-4428 -net nic,vlan=0,macaddr=00:18:f3:02:2e:e6 -m  \
+512M -monitor unix:/src4/KVM/network-4428/MonSock,server,nowait -hda ../Resize/DebSqz-Mini2.img &
+</PRE>
+  <LI> 兩台實體機器各自一台虛擬機器，兩台虛擬機器互相連通
+<div>
+ <img src="./JPG/example2.jpeg">
+</div><br>
+<P><b>vde_plug:</b> A vde_plug is a plug to be connected into a VDE switch.
+<P><b>dpipe:</b> bi-directional pipe command.
+<PRE>
+##利用第1點的方法在兩台實體機器開啟虛擬機器
+$ dpipe vde_plug /src4/KVM/network-4428 = ssh hsu@140.120.8.102 vde_plug /src4/KVM/network-3325
+</PRE>
+  <LI> 一台實體機器兩台虛擬機器(可對外)，兩台虛擬機器互相連通
+<div>
+ <img src="./JPG/example3.jpeg">
+</div><br>
+<PRE>
+##利用第2點開啟一台虛擬機器
+$ kvm -net vde,vlan=0,sock=/src4/KVM/network-4428 -net nic,vlan=0,macaddr=00:18:f3:02:2e:e6 -m \
+512M -monitor unix:/src4/KVM/network-4428/MonSock,server,nowait -hda ../Resize/DebSqz-Mini2.img &
+</PRE>
+  <LI> 兩台實體機器各自一台虛擬機器(其中一台可對外)，兩台虛擬機器互相連通
+<div>
+ <img src="./JPG/example4.jpeg">
+</div><br>
+<PRE>
+##在其中一台用第2點開啟一台虛擬機器，另一台用第1點開啟
+$ dpipe vde_plug /src4/KVM/network-4428 = ssh hsu@140.120.8.102 vde_plug /src4/KVM/network-3325
+</PRE>
+  <LI> 從dhcp取得IP
+<div>
+ <img src="./JPG/example5.jpeg">
+</div><br>
+<P><b>slirpvde:</b> Virtual Distributed Ethernet-Slirp interface
+<PRE>
+##利用第1點建立兩台虛擬機器(在兩台實體機器上各一台)
+$ slirpvde -d -s /src3/KVM/network-16776 -dhcp
+</PRE>

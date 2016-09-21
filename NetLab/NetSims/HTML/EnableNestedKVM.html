@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<head><title>How to Enable Nested KVM | rdoxenham.com</title>
+</head>
+
+<body>
+<h3 class="entry-title">How to Enable Nested KVM 
+<a href="http://www.rdoxenham.com/?p=275">(Source Origin)</a></h3>
+
+Posted on June 26, 2012 by admin
+
+<p>If you've arrived at this blog post I'd have to assume you're 
+familiar with what KVM is, but for the benefit of those who are unaware 
+or are just interested in reading more, I'll give a bit of a background...
+ Kernel-based Virtual Machine (KVM) is a kernel module that was 
+originally developed by an Israeli organisation called Qumranet to 
+provide native virtualisation technology for Linux-based platforms; 
+essentially turning the kernel into a Tier-1 hypervisor. It has since 
+been ported to multiple other platforms and architectures other than 
+32/64-bit x86. It got initially adopted into the upstream Linux kernel 
+as of 2.6.20 (back in 2007).<span id="more-275"></span></p>
+
+<p>Typically KVM is designed to run on-top of a bare-metal Linux machine
+ with a CPU that supports virtualisation extensions, i.e. Intel VMX and 
+AMD SVM. This allowed a physical machine to run multiple virtual 
+machines on-top (using associated components such as libvirt and qemu), 
+but there's a new neat technology known as 'nested KVM', in other words,
+ KVM support within a KVM-based guest or a hypervisor within a guest. 
+You may ask the question 'why do we need this?'... well, in my position 
+I'm often running into situations where I have to carry out product 
+demonstrations or debugging hypervisor environments, having another 
+layer of virtualisation abstraction with nested-KVM is great, especially
+ when on the train or on a plane!</p>
+
+<p>There are, of course, some performance problems with doing this but 
+for debugging or wanting to spin up a test environment with technologies
+ such as Red Hat Enterprise Virtualisation or VMware on a single machine
+ it's quite a nice solution. So let's look at how to enable it first, by
+ default it's usually disabled, at least on my Fedora 16 machine (you 
+can replace Intel with AMD here if you have an AMD-based processor)...</p>
+
+<PRE>
+ $ cat /sys/module/kvm_amd/parameters/nested
+1
+ # $ cat /sys/module/kvm_intel/parameters/nested 
+ # N
+ # It seems in Debian, nested KVM is enabled by default, at least for amd64.  Am I right?
+ # SubNetT is a kvm-based VM which is deployed for conducting subnet testing in it.
+ # hsu@SubNetT:~$ grep -E "(vmx|svm)" /proc/cpuinfo
+flags	: fpu de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush 
+    mmx fxsr sse sse2 syscall nx lm nopl pni cx16 x2apic popcnt hypervisor lahf_lm 
+    <b>svm</b> abm sse4a
+ # hsu@SubNetT:~$ lsmod | grep kvm
+kvm_amd                59091  0 
+kvm                   388635  1 kvm_amd
+ # hsu@SubNetT:~$ dmesg | grep kvm
+[    0.000000] kvm-clock: Using msrs 4b564d01 and 4b564d00
+[    0.000000] kvm-clock: cpu 0, msr 0:1ffd3001, primary cpu clock
+[    0.000000] kvm-stealtime: cpu 0, msr 1fc0d080
+[    0.083427] Switched to clocksource kvm-clock
+[    2.259375] kvm: Nested Virtualization enabled
+ # <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=731317">Nested Kvm</a>
+</PRE>
+
+<p>To enable it, we need to make sure the KVM architecture specific module is loaded 
+with the nested option. There are a few options for enabling it, the first way to do 
+this is just update your boot loader to specify the nested option; that way it 
+persists with a reboot or kernel upgrade. Assuming you're using Fedora with GRUB2, 
+(as root) you need to update the '<em>/etc/default/grub</em>' file and append 
+'<em>kvm-intel.nested=1</em>' to the <em>'GRUB_CMDLINE_LINUX</em>' line. For 
+reference, mine is specified below, remember to replace 'intel' with 'amd' if 
+required.</p>
+
+<PRE>
+# cat /etc/default/grub | grep CMDLINE
+GRUB_CMDLINE_LINUX="rd.lvm.lv=vol0/swapVol
+ rd.md=0 rd.dm=0&nbsp; KEYTABLE=us quiet rd.lvm.lv=vol0/rootVol rhgb 
+rd.luks=0 SYSFONT=latarcyrheb-sun16 LANG=en_US.UTF-8 kvm-intel.nested=1" 
+</PRE>
+
+
+<p>Once this is specified, you'll need to rebuild your GRUB configuration files so 
+that when you next reboot the command line 
+arguments you just specified are loaded, note the GRUB2 configuration 
+location may be different on a non-Fedora machine...</p>
+
+<PRE>
+# grub2-mkconfig -o /boot/grub2/grub.cfg 
+</PRE>
+
+
+<p>Alternatively, (thanks to Dominic Cleal for the suggestion) this can 
+be modified using the modprobe configuration files, making things 
+slightly easier-</p>
+
+<PRE>
+$ echo "options kvm-intel nested=1" | sudo tee /etc/modprobe.d/kvm-intel.conf 
+</PRE>
+
+
+<p>I would now recommend rebooting your machine to verify the changes 
+have been made. Once again, you can re-run the previous command to check
+ this and you should see that the changes to the module have been made.</p>
+
+<PRE>
+$ cat /sys/module/kvm_intel/parameters/nested 
+Y 
+</PRE>
+
+
+<p>And that's it, you've successfully enabled nested-KVM. Next, when you
+ create new virtual machines, e.g. with virt-manager, you will need to 
+'require' vmx or svm to be presented to the virtual machine; that way 
+the guests can make use of the underlying nested-KVM features that have 
+been enabled. This can also be done via direct modification of the 
+libvirt XML definition of a given virtual machine, an example of one of 
+my VM's is shown below-</p>
+
+<PRE>
+ &lt;cpu match='exact'>
+  &lt;model>Westmere&lt;/model>
+  &lt;feature policy='require' name='vmx'/>
+ &lt;/cpu>
+</PRE>
+
+
+<p>Any questions please feel free to get in touch, I'd be happy to help out. </p>
+
+<p>Further reading: https://github.com/torvalds/linux/blob/master/Documentation/virtual/kvm/nested-vmx.txt</p>
+
+
+<footer class="entry-meta">
+		This entry was posted in <a href="http://www.rdoxenham.com/?cat=8" title="View all posts in KVM" rel="category">KVM</a>, <a href="http://www.rdoxenham.com/?cat=4" title="View all posts in Linux" rel="category">Linux</a> by <a href="http://www.rdoxenham.com/?author=1">admin</a>. 		
+</footer><!-- .entry-meta -->
+
+<div id="comments">
+	
+	
+<h4 id="comments-title">9 thoughts on "<span>How to Enable Nested KVM</span>"</h4>
+
+		
+<ol class="commentlist">
+  <li><footer class="comment-meta">
+<a href="http://jwread.com/" rel="external nofollow" class="url">James Read</a></span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-815"><time datetime="2012-06-26T01:14:11+00:00">June 26, 2012 at 01:14</time></a> <span class="says">said:</span>
+</footer>
+
+
+<p>Really good article Rhys, I'd never heard of a hypervisor with this feature 
+until now. </p>
+
+<p>At first it strikes you as a really peculiar option - you can see why it is disabled 
+by default. Clearly, in the example you gave, such as debugging a hypervisor or similar, 
+it would be really useful to run virtual.</p>
+  </li>
+
+  <li><footer class="comment-meta">
+<a href="http://m0dlx.com/" rel="external nofollow" class="url">Dominic Cleal</a></span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-817"><time datetime="2012-06-26T11:34:51+00:00">June 26, 2012 at 11:34</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Thanks Rhys.  Slightly easier than updating GRUB is just to use modprobe:</p>
+
+<p>echo "options kvm-intel nested=1" | sudo tee /etc/modprobe.d/kvm-intel.conf</p>
+
+<p>Looking in virt-manager, I see I didn't have the CPU model set up to 
+be the same as the host's (there's a simple button under Processor that 
+sets it up).  I wonder how performance would have been affected 
+with/without the extra SSE3/4 type extensions that it's now enabled?</p>
+  </li>
+
+  <li><footer class="comment-meta">
+Dale Macartney</span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-818"><time datetime="2012-06-26T12:15:16+00:00">June 26, 2012 at 12:15</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Great write up. WIll definitely be putting this to the test. </p>
+
+<p>Keep it up</p>
+
+  </li>
+
+  <li><footer class="comment-meta">
+admin</span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-819"><time datetime="2012-06-26T13:19:06+00:00">June 26, 2012 at 13:19</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Thanks for the alternative method, Dom! </p>
+
+<p>Sounds like you have some performance testing to do  </p>
+  </li>
+
+  <li><footer class="comment-meta">
+<a href="http://www.timj.co.uk/" rel="external nofollow" class="url">Tim Jackson</a></span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-821"><time datetime="2012-06-27T09:38:45+00:00">June 27, 2012 at 09:38</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Thanks for the tip Rhys, looking forward to trying this one out for local test deployments etc.!</p>
+  </li>
+
+  <li><footer class="comment-meta">
+<a href="http://unixbhaskar.blogspot.com/" rel="external nofollow" class="url">Bhaskar Chowdhury</a></span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-975"><time datetime="2012-09-06T12:06:55+00:00">September 6, 2012 at 12:06</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Wonderful! wasn't aware of it.Thanks.</p>
+  </li>
+
+  <li><footer class="comment-meta">
+Rapha</span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-22339"><time datetime="2013-05-31T18:28:41+00:00">May 31, 2013 at 18:28</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Thanks for the great guide.</p>
+
+<p>I'm trying this in my ubuntu 12.02 but after run:<br>
+' echo "options kvm-intel nested=1" | sudo tee /etc/modprobe.d/kvm-intel.conf '<br>
+and reboot seems like nested don't be able yet.<br>
+The ' cat /sys/module/kvm_intel/parameters/nested ' returns N (instead of Y).</p>
+
+<p>Anyone can help me and point some direction?<br>
+Thanks</p>
+  </li>
+
+  <li><footer class="comment-meta">
+admin</span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-22353"><time datetime="2013-06-05T19:21:03+00:00">June 5, 2013 at 19:21</time></a> <span class="says">said:</span>
+</footer>
+
+<p>@Rapha, this guide was written for 
+Fedora/Red Hat based distributions. Ubuntu doesn't have a modprobe.d 
+configuration directory. You'll need to make the necessary changes to 
+the correct file, see <a href="http://askubuntu.com/questions/51226/how-to-add-kernel-module-parameters" rel="nofollow">http://askubuntu.com/questions/51226/how-to-add-kernel-module-parameters</a> for details.</p>
+  </li>
+
+  <li><footer class="comment-meta">
+Alex</span> on <a href="http://www.rdoxenham.com/?p=275&amp;cpage=1#comment-22558"><time datetime="2013-10-10T16:16:09+00:00">October 10, 2013 at 16:16</time></a> <span class="says">said:</span>
+</footer>
+
+<p>Just to be clear, this is all done on the bare-metal host, right?</p>
+
+<p>I've been trying to get KVM guests to work on a rented KVM host, but 
+that host in itself is of course a KVM guest on the company's bare-metal
+ server.</p>
+
+<p>So from this post, I understand that it is they who have to enable 
+nested KVM, to expose it to me (for the befenfit of the guests I want to
+ run).</p>
+
+<p>Thanks</p>
+  </li>
+</ol>
+
+</body></html>

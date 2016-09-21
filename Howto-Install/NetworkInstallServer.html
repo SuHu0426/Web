@@ -1,0 +1,246 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Install Operation System via LAN</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  </head>
+<body>
+  <h1>Install Operation System via LAN</h1>
+  <p>At first, we need prepare a PXE server and a DHCP server. We create a virtual machine as the PXE server and use the cisco switch DHCP server feature(or virtual router VyOS).
+  <p>The main components:
+    <ul>
+      <li>PXE server
+      <li>DHCP server
+    </ul>
+  </p>
+  
+  <h2>PXE Server</h2>
+  <p>A PXE server consist of a tftp server and a DHCP server. Here we put the http server and the tftp server together.</p>
+  <h3>PXE intallation and configuration</h3>
+  <p>Now we install these packages at the Debian Jessie end as:
+<pre class="mdol">
+<code>sudo aptitude update</code>
+<code>sudo aptitude install tftpd-hpa</code>
+</pre>
+  <p>Next, modify the tftpd configuration file.
+<pre class="mdol">
+<code>cd /etc/default</code>
+<code>sudo cp tftpd-hpa tftpd-hpa.orig</code>
+<code>sudo nano /etc/default/tftpd-hpa</code>
+<code class="out"># /etc/default/tftpd-hpa
+  
+TFTP_USERNAME="tftp"
+TFTP_DIRECTORY="/home/cloud/tftp"
+TFTP_ADDRESS="0.0.0.0:69"
+TFTP_OPTIONS="--secure"
+</code>
+<code>sudo /etc/init.d/tftpd-hpa start</code>
+</pre>
+  </p>
+
+<h2>Network Boot Options</h2>
+<p>Now, setup the network bootup options. We need the following tools.
+
+<p>Provide the boot image</p>
+<pre class="mdol">
+<code>wget http://mirror.cs.nchu.edu.tw/debian/dists/jessie/main/installer-amd64/current/images/netboot/netboot.tar.gz</code>
+<code>wget http://mirror.cs.nchu.edu.tw/debian/dists/jessie/main/installer-amd64/current/images/SHA256SUMS</code>
+<code>cat SHA256SUMS | grep -F netboot/netboot.tar.gz</code>
+<code class="out">9f5a4b841540b468945f0a7f4342dd87b848762f40987ab453c0830f9a476508  ./netboot/netboot.tar.gz</code>
+<code>sha256sum netboot.tar.gz</code>
+<code class="out">9f5a4b841540b468945f0a7f4342dd87b848762f40987ab453c0830f9a476508  netboot.tar.gz</code>
+<code>tar zxvf netboot.tar.gz</code>
+<code>rm netboot.tar.gz SHA256SUMS</code>
+<code>ls -l</code>
+<code class="out">total 8
+drwxr-xr-x 3 cloud cloud 4096 Apr 18 19:06 debian-installer
+lrwxrwxrwx 1 cloud cloud   47 Apr 18 19:06 ldlinux.c32 -> debian-installer/amd64/boot-screens/ldlinux.c32
+lrwxrwxrwx 1 cloud cloud   33 Apr 18 19:06 pxelinux.0 -> debian-installer/amd64/pxelinux.0
+lrwxrwxrwx 1 cloud cloud   35 Apr 18 19:06 pxelinux.cfg -> debian-installer/amd64/pxelinux.cfg
+-rw-r--r-- 1 cloud cloud   54 Apr 18 19:06 version.info</code>
+</pre>
+
+<h2>DHCP Server setting</h2>
+<pre class="mdol">
+<code class="adm">show service dhcp-server</code>
+<code class="out"> shared-network-name 180-WAN {
+     subnet 192.168.180.0/24 {
+         bootfile-name pxelinux.0
+         bootfile-server 192.168.180.253
+         default-router 192.168.180.254
+         dns-server 140.120.13.1
+         dns-server 140.120.1.2
+         dns-server 8.8.8.8
+         lease 86400
+         start 192.168.180.100 {
+             stop 192.168.180.127
+         }
+     }
+ }
+</code>
+</pre>
+
+<h2>Launch TFTP Server</h3>
+<pre class="dol">sudo /etc/init.d/tftpd-hpa start</pre>
+<hr>
+
+
+
+
+<p>If you want to provide multiple boot option, install syslinux.</p>
+<p>File Descriptions</p>
+<ol>
+  <li>gpxelinux.0 PXE boot loader</li>
+  <li>menu.c32 text menu module</li>
+  <li>vesamenu.c32 graphic menu module</li>
+  <li>reboot.c32 reboot module</li>
+  <li>chain.c32 chain loader module</li>
+  <li>memdisk memory disk emulator</li>
+</ol>
+
+<pre class="mdol">
+<code>sudo aptitude install syslinux</code>
+<code>mkdir ~/tftp; cd ~/tftp</code>
+<code>ls -l /usr/lib/syslinux/modules</code>
+<code class="out">total 12
+drwxr-xr-x 2 root root 4096 Apr 21 20:17 bios
+drwxr-xr-x 2 root root 4096 Apr 21 20:17 efi32
+drwxr-xr-x 2 root root 4096 Apr 21 20:17 efi64
+</code>
+</pre>
+
+<p>Note: Old version of Debian we can find by the following command.</p>
+<pre class="mdol">
+<code>find / -name pxelinux.0 2>/dev/null</code>
+<code class="out">/usr/lib/syslinux/pxelinux.0</code>
+</pre>
+
+<pre>
+$ ls -l /usr/lib/syslinux/
+$ cd /usr/lib/syslinux/
+$ cp pxelinux.0 gpxelinux.0 menu.c32 vesamenu.c32 reboot.c32 chain.c32 memdisk /home/hsu/tftp
+$ mkdir pxelinux.cfg; cd pxelinux.cfg
+$ more default
+<code>
+# Default boot option to use
+DEFAULT menu.c32
+# Prompt user for selection
+PROMPT 0
+# Menu Configuration
+MENU WIDTH 80
+MENU MARGIN 10
+MENU PASSWORDMARGIN 3
+MENU ROWS 12
+MENU TABMSGROW 18
+MENU CMDLINEROW 18
+MENU ENDROW 24
+MENU PASSWORDROW 11
+MENU TIMEOUTROW 20
+MENU TITLE Main Menu
+# Menus
+LABEL 0
+	MENU DEFAULT Local HardDisk
+	LOCALBOOT 0
+LABEL 1.1
+	MENU LABEL Debian Squeeze
+	KERNEL images/squeeze/amd64/linux
+	APPEND desktop=lxde vga=788 initrd=images/squeeze/amd64/initrd.gz  --
+LABEL 1.2
+	MENU LABEL Debian Squeeze rescue
+	KERNEL images/squeeze/amd64/linux
+	APPEND vga=788 initrd=images/squeeze/amd64/initrd.gz rescue/enable=true  --
+LABEL 2.1
+	MENU LABEL Debian Testing (Wheezy)
+	KERNEL images/testing/amd64/linux
+	APPEND desktop=lxde vga=788 initrd=images/testing/amd64/initrd.gz  --
+LABEL 2.2
+	MENU LABEL Debian Testing (Wheezy) rescue
+	KERNEL images/testing/amd64/linux
+	APPEND vga=788 initrd=images/testing/amd64/initrd.gz rescue/enable=true  --
+</code>
+$ more graphics.conf 
+<code>
+menu color tabmsg 37;40      #80ffffff #00000000
+menu color hotsel 30;47      #40000000 #20ffffff
+menu color sel 30;47      #40000000 #20ffffff
+menu color scrollbar 30;47      #40000000 #20ffffff
+menu MASTER PASSWD yourpassword
+menu WIDTH 80
+menu MARGIN 22
+menu PASSWORDMARGIN 26
+menu ROWS 6
+menu TABMSGROW 15
+menu CMDLINEROW 15
+menu ENDROW 24
+menu PASSWORDROW 12
+menu TIMEOUTROW 13
+menu VSHIFT 6
+menu PASSPROMPT Enter Password:
+NOESCAPE 1
+ALLOWOPTIONS 0
+</code>
+$ cd ..
+$ mkdir images; cd images
+$ mkdir -p $Distribution/$ARCH/$Release
+</pre>
+<p>* For each "Release" and "ARCH" Copy vmlinuz and initrd.img from /images/pxeboot/ directory of that $Release/$ARCH to /tftp/images/$Distribution/$ARCH/$Release</p>
+
+  
+  <h2>DHCP Server</h2>
+<pre>
+$ sudo aptitude install isc-dhcp-server
+$ cd /etc/dhcp/
+$ sudo cp dhcpd.conf dhcpd.conf.orig
+$ more dhcpd.conf
+<code>
+ddns-update-style none;
+# option domain-name "example.org";
+option domain-name-servers 140.120.13.1, 140.120.1.2;
+default-lease-time 600;
+max-lease-time 7200;
+log-facility local7;
+subnet 192.168.180.0 netmask 255.255.255.0 {
+       range 192.168.180.100 192.168.180.200;
+       filename "pxelinux.0";       # PXE boot loader filename
+       next-server 192.168.180.11;  # TFTP server address
+       option routers 192.168.180.1;
+       option subnet-mask 255.255.255.0;
+}
+#########################################################################
+# We've also used next-server to point to the TFTP server we're using
+# (which is the same host as our DHCP server, but doesn't need to be). 
+# We've chosen the default name of pxelinux.0 as the name of the file 
+# for booting clients to request.
+# 
+# If you want to configure static ipaddress for some machines follow this
+# 
+# host hostname {
+# hardware ethernet 00:B0:CF:8B:49:37;
+# fixed-address 192.0.0.19;
+# }
+#########################################################################
+</code>
+$ sudo /etc/init.d/isc-dhcp-server restart
+</pre>
+<p>Set BIOS LAN Boot enable or PXE Boot mode
+</br></br></br></br>
+
+
+
+<h2>References</h2>
+  <ul>
+    <li><a href="https://wiki.debian.org/PXEBootInstall">Debian Wiki: PXEBootInstall</a>
+    <li><a href="http://wiki.hackzine.org/sysadmin/debian-pxe-server.html">Debian: installing a PXE server on Wheezy</a>
+  </ul>
+
+  
+  <!-- 頁底 -->
+  <div id="footer" style="width: 100%; clear: left;" align="center">
+    <hr>
+    <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+    <address style="text-align: right; float: right; margin-right:1em;">
+      <a href="mailto:cssu@cs.nchu.edu.tw"> Chi-Sheng Su </a>
+    </address>
+  </div>
+</body>
+</html>

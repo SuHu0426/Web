@@ -1,0 +1,857 @@
+<html>
+  <head><title>Xvisor Tutorial</title></head>
+  <body>  
+   <h3>References</h3>
+
+<OL>
+  <li> <a href="http://www.wiki.xilinx.com/U-boot" target="_b">U-Boot Commands</a>
+  <li> Uboot and RaspberryPi2
+
+<a name="UbootRaspberryPi2"></a>
+<h3 class="entry-title">Raspberry Pi 2 - Debian Jessie and&nbsp;U-Boot 
+<a href="https://parobalth.wordpress.com/2015/07/07/raspberry-pi-2-debian-jessie-and-u-boot/">(Source Origin)</a></h3>
+		
+<p class="comments-link"><a href="https://parobalth.wordpress.com/2015/07/07/raspberry-pi-2-debian-jessie-and-u-boot/#comments">Comments</a> (07/07/2015)</p>
+
+
+<p><em>This is a short post how to add u-boot to the debian jessie image created by 
+Sjoerd Simons.</em></p>
+
+<p>The fastest solution is to copy my u-boot.bin, my boot.scr and my config.txt to 
+/boot/firmware.  I uploaded the files to 
+<a href="https://gitlab.com/parobalth/u-boot_rpi2">u-boot_rpi2</a><br></p>
+
+<hr>
+<p>If you want to follow my steps or want to improve them:</p>
+
+<p>You may have already read or may want to read:</p>
+
+<p><a href="https://wiki.debian.org/RaspberryPi2">Debian RaspberryPi2</a> and/or 
+<a href="https://wiki.debian.org/RaspberryPi">Debian RaspberryPi</a></p>
+
+
+<p><strong>First</strong> you need Sjoerd Simons Debian image (download it and write 
+it to your micro sd-card):</p>
+
+<p><a href="https://www.collabora.com/about-us/blog/2015/02/03/debian-jessie-on-raspberry-pi-2/">Debian Jessie On RaspberryPi2/</a></p>
+
+<p><strong>Second</strong> you have to build u-boot:</p>
+
+<p>My source for the u-boot part is:</p>
+
+<p><a href="#BootingRPi2WithUboot">Booting Raspberry Pi2 With Uboot And 
+Hyp Enabled</a></p>
+
+<p>Basically I used the same commands but without crossbuilding and without the need 
+for a serial console. I built u-boot on the raspberry pi 2 and made the boot.scr file 
+without testing. (It works for me)</p>
+
+<OL>
+
+   <LI> I installed 'build-essential' and some of it's recommendations on my Rpi2 to 
+build u-boot successfully.
+
+   <LI> execute this commands:
+
+<p><code>git clone git://git.denx.de/u-boot.git </code></p>
+
+<p><code>cd u-boot </code></p>
+
+<p><code>make rpi_2_defconfig </code></p>
+
+<p><code>make all</code></p>
+
+   <LI> copy u-boot.bin to /boot/firmware on your Rpi2
+
+<P> <b>Note (03/12/2016):</b> There is no <code>/boot/firmware</code> directory, but 
+ <code>/media/sdb6/lib/firmware</code>.  More over, it seems <code>u-boot.bin</code>
+  need to be patched by <code>bcm2836-raspi2-bootblk.bin.ift</code> (, 32K).  I 
+  have no idea what this file is, how it is generated.  <b>Note (03/20/2016):</b> I got 
+  it, <a href="./XvisorOnRaspberryPi2.html#UbootToHYPMode" target="_b">Uboot To HYP 
+  Mode</a>.
+
+   <LI> add this line to config.txt:
+
+<p><code>kernel=u-boot.bin</code></p>
+
+   <LI> save the following lines in a file to configure u-boot:
+
+<p><code># Tell Linux that it is booting on a Raspberry Pi2 </code></p>
+
+<p><code>setenv machid 0x00000c42 </code></p>
+
+<p><code># Set the kernel boot command line </code></p>
+
+<p><code>setenv bootargs "earlyprintk console=tty0 console=ttyAMA0 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait noinitrd" </code></p>
+
+<p><code># Save these changes to u-boot's environment </code></p>
+
+<p><code>saveenv </code></p>
+
+<p><code># Load the existing Linux kernel into RAM </code></p>
+
+<p><code>fatload mmc 0:1 ${kernel_addr_r} kernel7.img </code></p>
+
+<P> <b>Note: (02/01/2016)</b> About fatload: <a href="http://www.wiki.xilinx.com/U-boot" 
+target="_b">U-Boot Commands</a>&nbsp;&nbsp;  
+<a href="https://github.com/Xilinx/u-boot-xlnx" 
+target="_b">Xilinx u-boot repository</a>
+<p><code># Boot the kernel we have just loaded </code></p>
+
+<p><code>bootz ${kernel_addr_r}</code></p>
+
+<P> <b>Note: (02/01/2016)</b> No <b>bootz</b> command, only <b>boot</b>, <b>bootd</b>, 
+<b>bootm</b>, <b>bootp</b>. <b>Note: (03/10/2016)</b> You can enable the 
+<b>bootz</b> command, which boots a raw zImage in your board config file <a target="_b" 
+href="http://git.denx.de/?
+p=u-boot.git;a=blob;f=include/configs/rpi_2.h">(include/configs/rpi_2.h)</a>
+
+<PRE>
+#define CONFIG_CMD_BOOTZ 
+</PRE>    
+
+<P> <b>Note: (03/08/2016)</b> <b>kernel_addr_r</b>
+<PRE>
+/* It is defined in u-boot/include/configs/rpi-common.h */
+#define ENV_MEM_LAYOUT_SETTINGS \
+	"fdt_addr_r=0x00000100\0" \
+	"pxefile_addr_r=0x00100000\0" \
+	"kernel_addr_r=0x01000000\0" \
+	"scriptaddr=0x02000000\0" \
+	"ramdisk_addr_r=0x02100000\0" \
+</PRE>    
+
+<p>and run the following code on the file (change the /path/to/script part so it 
+points to your file) to make the boot.src file for u-boot:</p>
+
+<p><code>mkimage -A arm -O linux -T script -C none -a 0x00000000 -e 
+0x00000000 -n "RPi2 Boot Script" -d /path/to/script 
+/boot/firmware/boot.scr</code></p>
+
+<p>You can now reboot your Rpi2 and keep your fingers crossed. If it fails you can mount 
+the card with a cardreader on another computer/laptop and uncomment the added line in 
+config.txt. Then your Rpi2 will boot as before without u-boot.</p>
+</OL>
+
+  <li> <a href="http://www.stlinux.com/u-boot/introduction" 
+       target="_b">Introduction To U-Boot</a>&nbsp;&nbsp;
+       <a href="./UbootProgramming.html#U-BootProgramming" 
+       target="_b">U-Boot Programming</a>&nbsp;&nbsp;
+       <a href="" 
+       target="_b"></a>&nbsp;&nbsp;
+
+<h5>More Uboot References</h5>
+
+    <OL>
+      <LI><a href="https://github.com/inversepath/usbarmory/wiki/Preparing-a-bootable-microSD-image" 
+          target="_b">Preparing a bootable microSD image</a>
+      <LI><a href="./RPi_U-Boot.html" 
+          target="_b">RPi U-Boot</a>
+      <LI><a href="https://lists.gnu.org/archive/html/qemu-devel/2015-05/msg04835.html" 
+          target="_b">u-boot on qemu-x86</a>
+      <LI><a href="https://lxr.missinglinkelectronics.com/#uboot/doc/README.x86" 
+          target="_b">U-Boot on x86</a>&nbsp;&nbsp;
+<a href="https://lxr.missinglinkelectronics.com/#uboot/doc/driver-model/pci-info.txt" 
+          target="_b">PCI with Driver Model</a>
+      <LI><a href="" 
+          target="_b"></a>
+      <LI><a href="" 
+          target="_b"></a>
+    </OL>
+
+  <li><a href="http://www.cse.iitb.ac.in/synerg/doku.php?
+       id=public:students:lihas:installing-uboot">Installing U boot</a>
+
+<P> 
+<OL>
+  <LI>Building U Boot
+
+
+<PRE>
+# <a href="https://wiki.debian.org/CrossToolchains">CrossToolchains</a>
+$ sudo apt-get install gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabihf
+$ export CROSS_COMPILE=arm-linux-gnueabihf-
+$ sudo apt-get install device-tree-compiler
+# You can clone  your u-boot repository by running:
+$ git clone https://github.com/linux-sunxi/u-boot-sunxi.git
+# Determine build target.  You can list the available u-boot targets by running:
+$ grep sunxi boards.cfg | awk '{print $7}'
+# You will notice that some board names are duplicates, but with _FEL attached. These 
+# are for use with USBBoot, while the standard ones will boot from SD.
+
+# Change directory to U-boot directory
+$ cd u-boot-sunxi
+
+# compile u-boot :
+$ export CROSS_COMPILE=arm-linux-gnueabihf-
+$ make Cubietruck_config
+$ make clean
+$ make
+# If everything compiled fine, you'll have the u-boot.bin file in the root of the 
+# u-boot tree, and sunxi-spl.bin in the spl/ directory.
+</PRE>
+  <LI> Burning U boot to sd card (Second Link)
+
+<P> After building u boot image, it just has to be burned to sd card using the 
+    following command(from link 2):
+
+<PRE>
+$ sudo dd if=u-boot-sunxi-with-spl.bin of=/dev/sdc bs=1024 seek=8
+</PRE>
+
+  <LI> Formatting the card
+
+<P> While formatting the card, the storage map given on the second link must be 
+considered.
+
+  <OL>
+    <LI> Using fdisk, create a new primary partition on the card (so far there are no 
+         partitions, only uboot has been burned on the card), set the starting sector 
+         of the card as 2048.
+
+    <LI> Using fdisk, set the bootable flag of the partition.
+
+    <LI> Now install fat file system on the newly created partition.
+
+<PRE>
+$ sudo mkfs.fat /dev/sdc1
+</PRE>
+  </OL>
+</OL>
+
+ <LI>Burning U boot to card
+
+<h4>u-boot for Allwinner sunxi series of SoCs (A10, A13, A10s, and A20)</h4>
+
+<p> linux-sunxi u-boot is fully SPL enabled which means it supports booting directly 
+on the bare metal with no help from the Allwinner bootloaders. U-Boot SPL fully 
+replaces Allwinner boot0 &amp; boot1.  </p>
+
+<h4>Branch information:</h4>
+
+<p>
+sunxi Main branch, tracks upstream u-boot master. Supports A10, A13, A10s and A20.
+</p>
+
+<p>
+<b>lichee-dev</b> NAND capable replacement for Allwinner A10 u-boot
+</p>
+
+<p>
+<b>lichee-dev-a20</b> NAND capable replacement for Allwinner A20 u-boot
+</p>
+
+<p>
+<b>lichee/</b> Unmodified mirrors of original Allwinner sources
+
+</p>
+
+<h4>Tags/Releases</h4>
+
+<p>
+<b>v2013.07-sunxi.4</b>  Current release. Functionally equivalent to v2013.07-sunxi, 
+only adding u-boot-sunxi-with-spl.bin build output by default.
+</p>
+
+<p>
+<b>v2013.07-sunxi.3</b>  Broken release. See v2013.07-sunxi.4.
+</p>
+
+<p>
+<b>v2013.07-sunxi.2</b>  Old release. Functionally equivalent to v2013.07-sunxi, only 
+adding u-boot.img build output by default.
+</p>
+
+<p>
+<b>v2013.07-sunxi</b>  <b>v2013.04-sunxi</b> ... <b>v2011.09-sun4i</b> Old releases. 
+SPL support for some 512MB systems, based on original Mele A1000 DRAM settings. Do not 
+properly power the CPU core which may cause system instabilities.  
+</p>
+
+<h4>How to compile u-boot</h4>
+
+<p>
+You need a suitable gcc ARM Linux GNUEABI toolchain installed and added to your PATH.
+</p>
+
+<p>
+Then compile u-boot for A10 by running
+</p>
+
+<p>
+make 'boardtype' CROSS_COMPILE=arm-linux-gnueabihf-
+</p>
+
+<p>
+(v2014 release: make 'boardtype'_config CROSS_COMPILE=arm-linux-gnueabihf- )
+</p>
+
+<p>
+See boards.cfg for a list of known board types.
+</p>
+
+<p>
+As of 2013-10-10 the list contains (in the alphabetic order):
+</p>
+
+<PRE>
+A10_MID_1GB
+A10-OLinuXino-Lime
+A10s-OLinuXino-M
+A10s-OLinuXino-M_FEL
+A13-OLinuXino
+A13-OLinuXino_FEL
+A13-OLinuXino_FEL_sdcon
+A13-OLinuXinoM
+A13-OLinuXinoM_FEL
+A13_MID
+A20-OLinuXino_MICRO
+A20-OLinuXino_MICRO_FEL
+Auxtek-T003
+Auxtek-T004
+Bananapi
+ba10_tv_box
+Coby_MID7042
+Coby_MID8042
+Coby_MID9742
+Iteaduino_Plus_A10
+Iteaduino_Plus_A20
+Colombus
+Ippo_q8h
+Cubieboard
+Cubieboard2
+Cubieboard2_FEL
+Cubietruck
+Cubietruck_FEL
+Cubieboard_FEL
+<abbr title="Domain Name System">DNS</abbr>_M82
+EOMA68_A10
+EOMA68_A10_FEL
+EOMA68_A20
+EOMA68_A20_FEL
+EU3000
+Gooseberry_A721
+H6
+Hackberry
+HCore_HC860
+Hyundai_A7HD
+i12-tvbox
+Interra-3
+INet_86VZ
+INet_86VZ_FEL
+INet97F-II
+INet_K70HC
+Jesurun-Q5
+K1001L1C
+Linksprite_pcDuino3
+Marsboard_A10
+Marsboard_A20
+Marsboard_A20_debug
+Megafeis_A08
+Mele_A1000
+Mele_A1000_FEL
+Mele_A1000G
+Mele_A3700
+Merrii_Hummingbird_A20
+merrii_m2
+Mini-X
+Mini-X-1Gb
+Mini-X_A10s
+mk802
+mk802-1gb
+mk802_a10s
+mk802ii_A20
+mk802ii
+mk808c_A20
+pcDuino
+pengpod1000
+pengpod700
+PoV_ProTab2_IPS9
+PoV_ProTab2_IPS_3g
+PoV_ProTab2_XXL
+r7-tv-dongle
+Sanei_N90
+sun4i
+sun4i_sdcon
+sun5i
+sun5i_sdcon
+sun5i_uart1
+uhost_u1a
+Wexler_TAB_7200
+wobo-i5
+xzpad700
+zatab
+</pre>
+
+<p>
+If your board is not listed then see "Adding a new board" below
+</p>
+
+<p>
+Board names ending with _FEL are configured for USB-Booting.
+</p>
+
+<p>
+To build natively on ARM hard-float systems you may need to install soft-float GCC 
+libraries. On Ubuntu ARM and the like install gcc-multilib package to get these. 
+This is due to an u-boot upstream decision to always build u-boot soft-float on ARM.
+</p>
+
+<h4>How to make a bootable sunxi SD-card</h4>
+
+<p>
+A10 &amp; A13 boots the SPL loader from block 8. This then loads actual u-boot from 
+block 40 onwards, counted in 1KB blocks. Replace /dev/sdX with the device name of your 
+media
+</p>
+
+<pre>
+$ dd if=u-boot-sunxi-with-spl.bin of=/dev/sdX bs=1024 seek=8
+</pre>
+
+<p>
+or if you prefer to install the components separately
+</p>
+
+<pre>
+$ dd if=spl/sunxi-spl.bin of=/dev/sdX bs=1024 seek=8
+$ dd if=u-boot.img of=/dev/sdX bs=1024 seek=40
+</pre>
+
+<p>
+If using v2013.07 or earlier then the procedure is slightly different
+</p>
+
+<pre>
+$ dd if=spl/sunxi-spl.bin of=/dev/sdX bs=1024 seek=8
+$ dd if=u-boot.bin of=/dev/sdX bs=1024 seek=32
+</pre>
+
+<p>
+Remember to leave sufficient space for all u-boot files when partitioning the card. 
+Recommended to have first partition start at sector 2048 (1MB), or much higher if 
+using Falcon boot mode. See Storage Map section below for details. 
+</p>
+
+<h4>uEnv.txt support</h4>
+
+<p>
+This version of u-boot support uEnv.txt, and will look for it in the first partition 
+FAT /uEnv.txt or extX /uEnv.txt or extX /boot/uEnv.txt. uEnv.txt contains variables 
+on the form variable=value, one per line. If the variable uenvcmd is set then u-boot 
+will run the commands listed in this variable.
+</p>
+
+<h4>boot.scr support</h4>
+
+<p>
+This version of u-boot supports boot.scr, and will look for it in the first partition 
+FAT /boot.scr or extX /boot.scr or extX /boot/boot.scr. boot.scr contains your needed 
+uboot commands for loading script.bin, kernel. initrd (optional), setting kernel 
+parameters and booting.
+</p>
+
+<p>
+To create boot.scr first make a u-boot script boot.cmd with the u-boot commands you 
+need for booting your system. An example follows:
+</p>
+
+<pre>
+setenv bootargs console=ttyS0 root=/dev/mmcblk0p1 rootwait panic=10 ${extra}
+ext2load mmc 0 0x43000000 boot/script.bin
+ext2load mmc 0 0x48000000 boot/uImage
+bootm 0x48000000
+</pre>
+
+<p>
+Then translate this to a boot.scr by using the mkimage command
+</p>
+
+<pre>
+mkimage -C none -A arm -T script -d boot.cmd boot.scr
+</pre>
+
+<h4>Default boot action</h4>
+
+<p>
+If no boot.scr is found then it will fall back to load script.bin &amp; kernel uImage 
+from the first partition in FAT format
+</p>
+
+<pre>
+fatload mmc 0 0x43000000 script.bin &amp;&amp; fatload mmc 0 0x48000000 ${kernel} &amp;&amp; watchdog 0 &amp;&amp; bootm 0x48000000
+</pre>
+
+<h4>Adding a new board</h4>
+
+<p>
+To add a new board to u-boot you need to collect some information about your board. 
+The most reliable source of this information is to inspect the boot1 file header. 
+Unfortunately it's not entirely trivial how to reach that.
+</p>
+
+<p>
+If you have UART console with access to u-boot loaded from NAND then you can dump the 
+boot1 file header by running
+</p>
+
+<pre>
+md.b 0x42400000 0x2084
+</pre>
+
+<p>
+send the resulting output to me (henrik@henriknordstrom.net) together with a copy of 
+your script.bin and the name of your board.
+</p>
+
+<p>
+Usually you can easily extract script.bin by holding down the key '2' on the console 
+while booting and then connect to the device with USB cable. On most A1x devices the 
+boot partition then shows up as a removable USB device.
+</p>
+
+<p>
+If you have console access but your u-boot do not allow you to halt the boot procedure 
+then you can try replacing uboot.bin with the generic sun4i(A10) or sun5i(A13) versions 
+to exract the information.
+</p>
+
+<p>
+If you don't have console access to u-boot but have a SD breakout board then you can 
+push the generic sun4i_sdcon(A10) or sun5i_sdcon(A13) versions to enable u-boot console 
+on the SD breakout board.
+</p>
+
+<p>
+Be warned that you may need to livesuit the device to restore NAND u-boot version to 
+boot the Android from NAND again.
+</p>
+
+<h4>Watchdog support</h4>
+
+<p>
+The watchdog command can be used to set a watchdog timeout. A timeout of 0 disables 
+the watchdog. The watchdog have an upper limit of approximately 20 seconds.
+</p>
+
+<p>
+You can enable automatic watchdog support by building with CONFIG_WATCHDOG enabled. 
+This makes the watchdog armed by default. Be warned that If the kernel is not up and 
+running and poking the watchdog within the watchdog timeout (approximately 20 seconds) 
+then the watchdog will automatically reboot the system.
+</p>
+
+<h4>Default environment</h4>
+
+<pre>
+baudrate=115200
+scriptaddr=0x44000000
+bootscr=boot.scr
+bootenv=uEnv.txt
+loadbootscr=fatload mmc 0 ${scriptaddr} ${bootscr} || ext2load mmc 0 ${scriptaddr} ${bootscr} || ext2load mmc 0 ${scriptaddr} boot/${bootscr}
+loadbootenv=fatload mmc 0 ${scriptaddr} ${bootenv} || ext2load mmc 0 ${scriptaddr} ${bootenv} || ext2load mmc 0 ${scriptaddr} boot/${bootenv}
+boot_mmc=fatload mmc 0 0x43000000 script.bin &amp;&amp; fatload mmc 0 0x48000000 ${kernel} &amp;&amp; watchdog 0 &amp;&amp; bootm 0x48000000
+bootcmd=if run loadbootenv; then \
+              echo Loaded environment from ${bootenv}; \
+              env import -t ${scriptaddr} ${filesize}; \
+      fi; \
+      if test -n ${uenvcmd}; then \
+              echo Running uenvcmd ...; \
+              run uenvcmd; \
+      fi; \
+      if run loadbootscr; then \
+              echo Jumping to ${bootscr}; \
+              source ${scriptaddr}; \
+      fi; \
+      run setargs boot_mmc;&quot;
+
+bootdelay=3                                                                           
+console=ttyS0,115200                                                                  
+kernel=uImage                                                                         
+loglevel=8                                                                            
+panicarg=panic=10                                                                     
+root=/dev/mmcblk0p2
+setargs=setenv bootargs console=${console} root=${root} loglevel=${loglevel} ${panicarg} ${extraargs}
+stderr=serial                                                                         
+stdin=serial                                                                          
+stdout=serial 
+</pre>
+
+<h4>Storage map</h4>
+
+<p>
+How the SD-Card is used by u-boot-mmc, counted in 512KB sectors / 1KB blocks:
+</p>
+
+<pre>
+sector start      size
+   0      0       8KB Unused, available for partition table etc.
+  16      8       32KB Initial SPL loader
+  80     40       504KB u-boot  (sector 64 / 32KB for 2013.07 and earlier)
+1088    544       128KB environment
+1344    672       128KB Falcon mode boot params
+1600    800        ---- Falcon mode kernel start
+2048   1024           - Free for partitions (higher if using Falcon boot)
+</pre>
+
+<LI><a href="http://www.cse.iitb.ac.in/synerg/doku.php?id=public:students:lihas:installing-xvisor">Installing Xvisor</a>
+
+<LI><a href="http://www.cse.iitb.ac.in/synerg/doku.php?id=public:students:lihas:qemu-networking-cubietruck">Qemu Networking</a>
+
+<LI><a href="http://www.denx.de/wiki/view/DULG/LinuxKernelArgs">uboot - passing boot 
+arguments to kernel</a>
+
+eg. to pass isolcpus as kernel commandline, type the following in uboot shell, obtained 
+during boot.
+
+<PRE>
+setenv bootargs isolcpus=0
+</PRE>
+
+<LI>
+</OL>
+
+
+<a name="BootingRPi2WithUboot"></a><h3>Booting a Raspberry Pi2, with u-boot 
+and HYP enabled&nbsp;&nbsp;</h3>	</header><!-- .entry-header -->
+
+
+<P>
+<a href="https://blog.night-shade.org.uk/2015/05/booting-a-raspberry-pi2-with-u-boot-and-hyp-enabled/">(Source Origin)</a>
+	<div class="entry-content">
+
+<p>I have been playing with my Raspberry Pi2 and a nearly pure build of <a href="https://www.collabora.com/about-us/blog/2015/02/03/debian-jessie-on-raspberry-pi-2/">Debian Jessie</a>. I have now got u-boot and QEMU with hardware acceleration (kvm) working in a fairly clean way.</p>
+
+<p>There are a lot of parts to getting this all working correctly, and I have done this by gluing together a number of blog posts, mailing list posts and a bit of arm knowledge.</p>
+
+<p>First thing to do is to get a working cross compile environment, so you can build on modern x86 hardware which is a lot fast then building on the Pi. Fortunately in modern Debian or Ubuntu it&#8217;s as simple as these commands:</p>
+
+<pre>
+sudo apt-get install gcc-arm-linux-gnueabihf
+export ARCH=arm
+export CROSS_COMPILE=arm-linux-gnueabihf-
+</pre>
+
+<h4>Booting a Raspberry Pi 2 with u-boot</h4>
+
+<p>Using u-boot isn&#8217;t strictly needed but I much prefer u-boot to the Pi&#8217;s normal raw kernel boot. Mainline u-boot has support for the Raspberry Pi 2 so it&#8217;s a fairly simple process of:</p>
+
+<pre>
+git clone git://git.denx.de/u-boot.git
+cd u-boot
+make rpi_2_defconfig
+make all
+</pre>
+
+<p>This will give you a u-boot.bin binary that will work on the Raspberry Pi2, transfer this to your Raspberry Pi and change the kernel in config.txt to read:</p>
+
+<pre>
+kernel=u-boot.bin
+</pre>
+
+<p> For the next part you will need a <a href="http://elinux.org/RPi_Serial_Connection" 
+target="_b">serial console</a> on your Raspberry Pi because the Pi will not autoboot 
+this time. Reboot your Pi and you should see the following message on your serial 
+console:</p>
+
+<pre>
+U-Boot 2015.04-00631-gace97d2 (May 03 2015 - 10:52:52)
+
+DRAM:  944 MiB
+WARNING: Caches not enabled
+RPI: Board rev 16 outside known range
+RPI Unknown model
+MMC:   bcm2835_sdhci: 0
+
+In:    serial
+Out:   lcd
+Err:   lcd
+Net:   Net Initialization Skipped
+No ethernet found.
+Hit any key to stop autoboot:  0
+</pre>
+
+<p>I suggest that you "hand boot" the Pi the first time, to make sure everything 
+works.</p>
+
+<pre>
+# Tell Linux that it is booting on a Raspberry Pi2
+setenv machid 0x00000c42
+# Set the kernel boot command line
+setenv bootargs "earlyprintk console=tty0 console=ttyAMA0 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait noinitrd"
+# Save these changes to u-boot's environment
+saveenv
+# Load the existing Linux kernel into RAM
+fatload mmc 0:1 ${kernel_addr_r} kernel7.img
+# Boot the kernel we have just loaded
+bootz ${kernel_addr_r}
+</pre>
+
+<p>You should now see Linux booting, I have a little boot script setup to run the last 2 commands automatically.  Put the commands in file and use mkimage to build a u-boot wrapper round them. Note this example assumes that you are using the Debian Jessie image I linked at the top, if you are using Raspbian then you will need to use /boot/boot.scr as the output path.</p>
+
+<pre>
+mkimage -A arm -O linux -T script -C none -a 0x00000000 -e 0x00000000 -n "RPi2 Boot Script" -d /path/to/script /boot/firmware/boot.scr
+</pre>
+
+<h4>U-Boot and HYP mode</h4>
+
+<p>The next stage is to allow the Raspberry Pi2 to boot with HYP mode enabled on the CPU. This requires starting in secure mode, enabling HYP and then jumping to u-boot or Linux. I didn&#8217;t work this myself I lifted the code and the technique from a <a href="http://blog.flexvdi.es/2015/02/25/enabling-hyp-mode-on-the-raspberry-pi-2/">blog post</a> by <a class="twitter-atreply pretty-link" href="https://twitter.com/sergiolpascual"><s>@</s>sergiolpascual</a> a <a href="http://www.netbsd.org/">NetBSD</a> developer. He does a much better job of explaining the how and why of this if you are interested.</p>
+
+<p>To build the bootloader stub, clone the git <a href="https://github.com/slp/rpi2-hyp-boot">https://github.com/slp/rpi2-hyp-boot </a>you will need to fix the the gcc path or use the fixed version in my Github <a href="https://github.com/TimJDFletcher/rpi2-hyp-boot">repo</a>. To build type make and you should end up with a file bootblk.bin. The build process is so fast you can build it on the Pi without a problem.</p>
+
+<p>Run this command to stick the HYP bootblock on front of u-boot.bin, again this assumes you are running the Debian Jessie image at the top this post.</p>
+
+<pre>
+cat bootblk.bin /boot/firmware/u-boot.bin &gt; /boot/firmware/u-boot.hyp
+</pre>
+
+<p>You will also need to change /boot/firmware/config.txt to contain the kernel_old option so that the GPU bootloader boots the kernel with secure mode enabled. The contents should now be:</p>
+
+<pre>
+kernel=u-boot.hyp
+kernel_old=1
+</pre>
+
+<h4><a href="http://elinux.org/RPiconfig" target="_b">RPiconfig</a>&nbsp;&nbsp;
+<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=134594"
+       target="_b">Why kernel_old=1</a></h4> 
+
+<P> kernel_old (bool) if 1, load kernel at 0x0
+
+<p>Reboot the Pi again and you should see u-boot and then Linux boot as normal, login and run this command and you should see: &#8220;CPU: All CPU(s) started in HYP mode.&#8221;</p>
+
+<pre>
+dmesg | grep "All CPU"
+</pre>
+
+<p>My next post will be about enabling KVM on the Pi2 and booting your first VM.</p>
+
+
+
+
+<a name="KVMOnPi2"></a>	<h3>KVM on the Raspberry Pi2</h3>
+
+<P><a href="https://blog.night-shade.org.uk/2015/05/kvm-on-the-raspberry-pi2/">(Source 
+Origin)</a>
+
+	<div class="entry-content">
+<p>In my <a href="https://blog.night-shade.org.uk/2015/05/booting-a-raspberry-pi2-with-u-boot-and-hyp-enabled/">last post</a> I wrote about to getting my Pi2 to boot with HYP enabled on all 4 CPUs. The next stage is to get a kernel with KVM enabled and get a VM up and running. Once again most of this method is taken from a <a href="http://blog.flexvdi.es/2015/03/17/enabling-kvm-virtualization-on-the-raspberry-pi-2/">blog post</a> by <a class="twitter-atreply pretty-link" href="https://twitter.com/sergiolpascual"><s>@</s>sergiolpascual</a> I have tidied it up and refined the method of using a single CPU core without patching QEMU.</p>
+
+<h4>Building a KVM enabled kernel for the Pi</h4>
+
+<p>First of all you need to get a KVM enabled kernel for the Pi2 host. These commands checkout the current 3.18 version of the Raspberry Pi foundation&#8217;s kernel tree and apply a <a href="https://github.com/raspberrypi/linux/pull/902">pull request</a> on top of it to enable GIC emulation.</p>
+
+<pre>
+git clone https://github.com/raspberrypi/linux
+cd linux
+git checkout rpi-3.18.y
+git fetch origin pull/902/head:VGIC-emu
+git checkout VGIC-emu
+</pre>
+
+<p>I started off with the same base config as the kernel on my Pi 2. There is a file /proc/config.gz that stores the config the running kernel was built with. Copy this file to your build host, uncompress it and rename it to /working/rpi2/.config that way you will only need to make a few minor changes to the config.</p>
+
+<pre>
+scp user@pi:/proc/config.gz /tmp/config.gz
+mkdir -p /working/rpi2
+zcat /tmp/config.gz &gt; /working/rpi2/.config
+</pre>
+
+<p>Now we need to setup a cross compile environment again and start the kernel config system.</p>
+
+<pre>
+export ARCH=arm
+export CROSS_COMPILE=arm-linux-gnueabihf-
+make O=/working/rpi2 menuconfig
+
+</pre>
+
+<p>I&#8217;ve listed the options that need to be changed to enable KVM support in the kernel, these notes are copied from <a class="twitter-atreply pretty-link" href="https://twitter.com/sergiolpascual"><s>@</s>sergiolpascual</a>&#8216;s post. I have uploaded my <a href="https://blog.night-shade.org.uk/wp-content/uploads/2015/05/config.gz">KVM enabled config</a> with these options set already.</p>
+
+<p>Note the O= option this sets the directory where compiled parts of the kernel are put, it means that your source tree stay clean.</p>
+
+<ul>
+<li><code>Patch physical to virtual translations at runtime</code></li>
+<li><code>General setup -&gt; Control Group support</code></li>
+<li><code>System Type -&gt; Support for Large Physical Address Extension</code></li>
+<li><code>Boot options -&gt; Use appended device tree blob to zImage (EXPERIMENTAL)</code></li>
+<li><code>Boot options -&gt; Supplement the appended DTB with traditional ATAG information</code></li>
+<li><code>Virtualization -&gt; Kernel-based Virtual Machine (KVM) support (NEW)</code>
+<ul>
+<li><strong>DISABLE</strong> <code>Virtualization -&gt; KVM support for Virtual GIC</code></li>
+<li><strong>ENABLE</strong> <code>Virtualization -&gt; KVM support for Emulated GIC</code></li>
+</ul>
+</li>
+</ul>
+<p>Now you just need to build the kernel and install the modules</p>
+
+<pre>
+make O=/working/rpi2 all -j 4
+export INSTALL_MOD_PATH=/tmp/rpi-kernel
+make O=/working/rpi2 modules_install
+</pre>
+
+<p>To build the Pi2 boot image, glue the kernel and DTB file together thus</p>
+
+<pre>
+cat /working/rpi2/arch/arm/boot/zImage /working/rpi2/arch/arm/boot/dts/bcm2709-rpi-2-b.dtb &gt; /tmp/rpi-kernel/kernel7.img
+</pre>
+
+<p>Copy the directory /tmp/rpi-kernel to the Pi2, replace /boot/firmware/kernel7.img (take a backup first) with our new kernel and move the new 3.18.x modules directory to /lib/modules/.</p>
+
+<p>You will need to adjust the Pi&#8217;s kernel command line to add &#8220;isolcpus=3&#8221; to work round a bug. To do this via u-boot run these commands from the u-boot command line:</p>
+
+<pre>
+setenv "${bootargs} isolcpus=3"
+saveenv
+</pre>
+
+<p>A final reboot and you should get this in dmesg</p>
+
+<pre>
+dmesg | grep kvm
+kvm [1]: timer IRQ99
+kvm [1]: Hyp mode initialized successfully
+</pre>
+
+<h4>Booting your first Virtual Machine</h4>
+
+<p>So long as you are running Debian / Raspbian Jessie then you can just run</p>
+
+<pre>
+apt-get install qemu-system
+</pre>
+
+<p>Adding the boot option isolcpus=3 works round an oddity of the Raspberry Pi&#8217;s CPU, discussed in more detail in the <a href="http://blog.flexvdi.es/2015/03/17/enabling-kvm-virtualization-on-the-raspberry-pi-2/">original blog post</a>. We need to ensure that QEMU only runs on this isolated CPU. In the original post this was done by patching QEMU but there is a much easier way, taskset. Taskset allows us to restrict QEMU to only CPU 3 with the &#8220;-c 3-3&#8221; option.</p>
+
+<p>This is my basic run script to boot an ARM VM on the Raspberry Pi2. I used the Linaro prebuilt ARM kernels and root images to test with and have included the URLs in the script.</p>
+
+<pre>
+#!/bin/sh
+
+# Disable the QEMU sound driver
+export QEMU_AUDIO_DRV=none
+
+# Basic system setup an ARM vexpress with 1 CPU, 256M of RAM
+smp=1
+cpu=host
+ram=256
+machine=vexpress-a15
+# Where are the kernel and root images stored
+dir=/root/linaro
+
+# Source: <a href="https://snapshots.linaro.org/ubuntu/images/kvm/latest/zImage-armv7">https://snapshots.linaro.org/ubuntu/images/kvm/latest/zImage-armv7</a> 
+kernel=$dir/zImage-armv7
+# Source: <a href="https://snapshots.linaro.org/ubuntu/images/kvm/latest/vexpress-v2p-ca15-tc1.dtb">https://snapshots.linaro.org/ubuntu/images/kvm/latest/vexpress-v2p-ca15-tc1.dtb</a> 
+dtb=$dir/vexpress-v2p-ca15-tc1.dtb
+# Source: <a href="http://snapshots.linaro.org/ubuntu/images/kvm-guest/36/armhf/kvm-armhf.qcow2.xz">http://snapshots.linaro.org/ubuntu/images/kvm-guest/36/armhf/kvm-armhf.qcow2.xz</a>
+rootfs=$dir/kvm-armhf.qcow2
+# Virtual machine Linux command line
+cmdline="root=/dev/vda2 rw mem=${ram}M console=ttyAMA0 rootwait rootfstype=ext4"
+
+# Use taskset to ensure that QEMU only runs on cpu 3
+taskset -c 3-3 qemu-system-arm -enable-kvm -smp $smp -m $ram -M $machine -cpu host -kernel $kernel -dtb $dtb -append "$cmdline" -drive if=none,id=rootfs,file=$rootfs -device virtio-blk-device,drive=rootfs -netdev user,id=user0 -device virtio-net-device,netdev=user0 -nographic
+</pre>
+
+  </body>
+</html>

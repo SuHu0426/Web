@@ -1,0 +1,449 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head><title>Linux Unified Target - Targetcli</title>
+  </head>
+<body>
+<h2>targetcli 
+<a href="http://linux-iscsi.org/wiki/Targetcli">(Source Origin)</a></h2>
+<p><b>targetcli</b> is the community edition single-node Unified <a href="http://linux-iscsi.org/wiki/Target" title="Target">Target</a> management shell by <a href="http://linux-iscsi.org/wiki/RisingTide_Systems" title="RisingTide Systems">RisingTide Systems</a> (RTS). RTSadmin is the commercial version of targetcli.
+</p>
+<table id="toc" class="toc"><tbody><tr><td><div id="toctitle"><h3>Contents</h3> <span class="toctoggle">[<a href="javascript:toggleToc()" class="internal" id="togglelink">hide</a>]</span></div>
+<ul>
+<li><a href="#Overview">1 Overview</a></li>
+<li><a href="#Linux_distributions">2 Linux distributions</a></li>
+<li><a href="#Quick_start_guide">3 Quick start guide</a>
+<ul>
+<li><a href="#Startup">3.1 Startup</a></li>
+<li><a href="#Navigate_the_object_tree">3.2 Navigate the object tree</a></li>
+<li><a href="#Display_the_object_tree">3.3 Display the object tree</a></li>
+<li><a href="#Display_help">3.4 Display help</a></li>
+<li><a href="#Create_a_backstore">3.5 Create a backstore</a></li>
+<li><a href="#Create_a_target">3.6 Create a target</a></li>
+<li><a href="#Persist_the_configuration">3.7 Persist the configuration</a></li>
+</ul>
+</li>
+<li><a href="#Basic_concepts">4 Basic concepts</a>
+<ul>
+<li><a href="#General">4.1 General</a></li>
+<li><a href="#Working_with_contexts">4.2 Working with contexts</a></li>
+<li><a href="#Command_completion">4.3 Command completion</a></li>
+<li><a href="#Command_syntax">4.4 Command syntax</a></li>
+<li><a href="#Command_chains">4.5 Command chains</a></li>
+<li><a href="#Global_parameters">4.6 Global parameters</a></li>
+</ul>
+</li>
+<li><a href="#Object_tree">5 Object tree</a>
+<ul>
+<li><a href="#Fabric_objects">5.1 Fabric objects</a></li>
+<li><a href="#Storage_objects">5.2 Storage objects</a></li>
+</ul>
+</li>
+</ul>
+</td></tr></tbody></table><script>if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<h3> <span class="mw-headline" id="Overview"> Overview </span></h3>
+<p><i>targetcli</i> comprises a shell that uses the RTS library through a well-defined API. Thus <i>targetcli</i>
+ can easily be replaced or complemented by a UI with other metaphors, 
+such as a GUI, to provide the same functionality by different means.
+</p><p><i>targetcli</i> was released on October 14, 2009<span style="display:none">&nbsp;(<span class="bday dtstart published updated">2009-10-14</span>)</span>, and supports all fabric modules, including <a href="http://linux-iscsi.org/wiki/ISCSI" title="ISCSI">iSCSI</a>, <a href="http://linux-iscsi.org/wiki/Fibre_Channel" title="Fibre Channel">Fibre Channel</a>, <a href="http://linux-iscsi.org/wiki/Fibre_Channel_over_Ethernet" title="Fibre Channel over Ethernet">FCoE</a>, <a href="http://linux-iscsi.org/wiki/InfiniBand" title="InfiniBand">InfiniBand</a>, <a href="http://linux-iscsi.org/wiki/IBM_vSCSI" title="IBM vSCSI">IBM vSCSI</a> and <a href="http://linux-iscsi.org/wiki/Tcm_loop" title="Tcm loop">tcm_loop</a>. It is is based on a modular, extensible architecture, with plug-in modules for additional functionality. 
+</p><p><i>targetcli</i> is available under dual licensing:
+</p>
+<ul><li> The <i>targetcli</i> Community Edition is released under the <a href="http://www.gnu.org/licenses/agpl.html" class="external text" rel="nofollow">GNU Affero General Public License</a> (AGPLv3). The Community Edition supports only the configuration of the <a href="http://linux-iscsi.org/wiki/Target" title="Target">Target</a>. Everyone is welcome to <a href="http://linux-iscsi.org/wiki/Contributing" title="Contributing">contribute</a> to the Community Edition.
+</li><li> The <i>rtsadmin</i> Enterprise Edition is released under the commercial RTS license, and allows the management of complex full storage systems.
+</li></ul>
+<p><i>targetcli</i> consists of three main Python modules:
+</p>
+<ul><li> the underlying <i>rtslib</i> with the API [<a href="http://www.risingtidesystems.com/doc/rtslib-gpl/html" class="external text" rel="nofollow">HTML</a>] (<a href="http://www.risingtidesystems.com/git/?p=rtslib.git;a=summary" class="external text" rel="nofollow">RTSlib</a>)
+</li><li> the <i>configshell</i> that provides extensibility (<a href="http://www.risingtidesystems.com/git/?p=configshell.git;a=summary" class="external text" rel="nofollow">configshell</a>)
+</li><li> the <i>targetcli</i> user shell itself (<a href="http://www.risingtidesystems.com/git/?p=targetcli.git;a=summary" class="external text" rel="nofollow">targetcli</a>)
+</li></ul>
+<h3> <span class="mw-headline" id="Linux_distributions"> Linux distributions </span></h3>
+<p><i>targetcli</i> and <a href="http://linux-iscsi.org/wiki/Target" title="Target">LIO Target</a> are included in most Linux distributions per default. Here is an overview over the most popular distributions:
+</p>
+<table class="table-left">
+<tbody><tr bgcolor="#a0c0f0">
+<th> Distribution
+</th><th> Version<sup id="cite_ref-0" class="reference"><a href="#cite_note-0">[Linux 1]</a></sup>
+</th><th> Archive
+</th><th> Install
+</th><th> Source git<sup id="cite_ref-1" class="reference"><a href="#cite_note-1">[Linux 2]</a></sup>
+</th><th> Documentation
+</th></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/CentOS" title="CentOS">CentOS</a>
+</th><td> 6.2
+</td><td> <a href="http://mirror.centos.org/centos/6.2/os/x86_64/Packages/" class="external text" rel="nofollow">CentOS mirror</a>
+</td><td> <i>su -c 'yum install fcoe-target-utils' </i>
+</td><td> <a href="https://github.com/agrover/targetcli-fb" class="external text" rel="nofollow">targetcli-fb.git</a>
+</td><td> <a href="http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/6.2_Technical_Notes/kernel_tp.html" class="external text" rel="nofollow">Tech Notes</a>
+</td></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/Debian" title="Debian">Debian</a>
+</th><td> <a href="http://packages.debian.org/wheezy/targetcli" class="external text" rel="nofollow">wheezy</a>, <a href="http://packages.debian.org/sid/targetcli" class="external text" rel="nofollow">sid</a>
+</td><td> <a href="http://ftp.debian.org/debian/pool/main/" class="external text" rel="nofollow">Debian pool</a>
+</td><td> <i>su -c 'apt-get install targetcli' </i>
+</td><td> <a href="http://www.risingtidesystems.com/git/?p=targetcli.git;a=summary" class="external text" rel="nofollow">targetcli.git</a>
+</td><td> -
+</td></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/Fedora" title="Fedora">Fedora</a>
+</th><td> <a href="http://rpm.pbone.net/index.php3/stat/4/idpl/17799714/dir/fedora_16/com/targetcli-2.0rc1.fb6-1.fc16.noarch.rpm.html" class="external text" rel="nofollow">16</a>, <a href="http://rpm.pbone.net/index.php3/stat/4/idpl/17772505/dir/fedora_1/com/targetcli-2.0rc1.fb6-1.fc17.noarch.rpm.html" class="external text" rel="nofollow">17/18</a>
+</td><td> <a href="http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/x86_64/os/Packages/" class="external text" rel="nofollow">Fedora Rawhide</a>
+</td><td> <i>su -c 'yum install targetcli' </i>
+</td><td> <a href="https://github.com/agrover/targetcli-fb" class="external text" rel="nofollow">targetcli-fb.git</a>
+</td><td> <a href="https://fedoraproject.org/wiki/Features/KernelTarget" class="external text" rel="nofollow">Target Wiki</a>
+</td></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/OpenSUSE" title="OpenSUSE">openSUSE</a>
+</th><td> 12.1
+</td><td colspan="4"> Manual install from RTS repos
+</td></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/Red_Hat_Enterprise_Linux" title="Red Hat Enterprise Linux">RHEL</a>
+</th><td> 6.2
+</td><td> <a href="http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/x86_64/os/Packages/" class="external text" rel="nofollow">Fedora Rawhide</a>
+</td><td> <i>su -c 'yum install fcoe-target-utils' </i>
+</td><td> <a href="https://github.com/agrover/targetcli-fb" class="external text" rel="nofollow">targetcli-fb.git</a>
+</td><td> <a href="http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/6.2_Technical_Notes/kernel_tp.html" class="external text" rel="nofollow">Tech Notes</a>
+</td></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/Scientific_Linux" title="Scientific Linux">Scientific Linux</a>
+</th><td> <a href="http://www.scientificlinux.org/distributions/6x/62/" class="external text" rel="nofollow">6.2</a>
+</td><td> <a href="http://mirror.mcs.anl.gov/pub/scientific-linux/6.2/x86_64/os/Packages/" class="external text" rel="nofollow">SL Mirror</a>
+</td><td> <i>su -c 'yum install fcoe-target-utils' </i>
+</td><td> <a href="https://github.com/agrover/targetcli-fb" class="external text" rel="nofollow">targetcli-fb.git</a>
+</td><td> <a href="http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/6.2_Technical_Notes/kernel_tp.html" class="external text" rel="nofollow">Tech Notes</a>
+</td></tr>
+<tr>
+<th> <a href="http://www.suse.com/products/server/" class="external text" rel="nofollow">SLES</a>
+</th><td> SP2
+</td><td colspan="4"> Manual install from RTS repos
+</td></tr>
+<tr>
+<th> <a href="http://linux-iscsi.org/wiki/Ubuntu" title="Ubuntu">Ubuntu</a>
+</th><td> <a href="http://packages.ubuntu.com/source/precise/targetcli" class="external text" rel="nofollow">PrecisePangolin v12</a>
+</td><td> <a href="http://archive.ubuntu.com/ubuntu/pool/universe/" class="external text" rel="nofollow">Ubuntu universe</a>
+</td><td> <i>su -c 'apt-get install targetcli' </i>
+</td><td> <a href="http://www.risingtidesystems.com/git/?p=targetcli.git;a=summary" class="external text" rel="nofollow">targetcli.git</a>
+</td><td> -
+</td></tr>
+</tbody></table>
+<ol class="references"><li id="cite_note-0"> The distribution release in which the LIO Target kernel modules were included first.</li>
+<li id="cite_note-1"> Technical <a href="http://linux-iscsi.org/wiki/Support" title="Support">support</a>, and qualified backports to other kernels and distributions are available from <a href="http://linux-iscsi.org/wiki/RTS" title="RTS" class="mw-redirect">RTS</a>.</li></ol>
+<p><i>targetcli</i> also has a complementary open-source SCSI test suite (<a href="http://www.risingtidesystems.com/git/?p=scsi-testsuite.git;a=summary" class="external text" rel="nofollow">scsi-testuite</a>).
+</p>
+<h3> <span class="mw-headline" id="Quick_start_guide"> Quick start guide </span></h3>
+<p>The quick start guide provides simple examples of basic target setups
+ that export one block device residing in a file backstore (<a href="http://linux-iscsi.org/wiki/FILEIO" title="FILEIO" class="mw-redirect">FILEIO</a>).
+</p><p><i>targetcli</i> can creates a comprehensive configuration of 
+storage objects with only a few commands by using smart default settings
+ that auto-complete most of the work. <i>targetcli</i> also supports 
+command and parameter completion via &lt;TAB&gt;, so all available 
+commands and parameters can be listed from all contexts.
+</p>
+<h4> <span class="mw-headline" id="Startup"> Startup </span></h4>
+<p>Invoke <i>targetcli</i> as root from the command prompt of the underlying OS shell:
+</p>
+<pre># targetcli
+Welcome to targetcli:
+ Copyright (c) 2012 by RisingTide Systems LLC.
+ All rights reserved.
+Visit us at http://www.risingtidesystems.com.
+Using ib_srpt fabric module.
+Using qla2xxx fabric module.
+Using iscsi fabric module.
+Using loopback fabric module.
+/&gt;
+</pre>
+<p>Upon <i>targetcli</i> initialization, the underlying RTSlib loads the installed fabric modules, and creates the corresponding <a href="http://linux-iscsi.org/wiki/ConfigFS" title="ConfigFS">ConfigFS</a> mount points (at <i>/sys/kernel/config/target/&lt;fabric&gt;</i>), as specified by the associated spec files (located in <i>/var/target/fabric/fabric.spec</i>).
+</p>
+<h4> <span class="mw-headline" id="Navigate_the_object_tree"> Navigate the object tree </span></h4>
+<p><i>targetcli</i> groups the target stack objects into an hierarchical
+ tree of context objects, and allows navigating them correspondingly. 
+Context objects are named by their full path.
+</p><p><i>cd</i> navigates the object tree. Without parameters, cd 
+presents the full objects tree. The destination path can also be 
+selected via cursor keys.
+</p><p><i>pwd</i> displays the complete current path (the prompt may display an abbreviated path).
+</p>
+<p>Per default, <i>auto_cd_after_create</i> is set to <i>true</i>, which
+ automatically enters an object context (or working directory) after its
+ creation. The examples here are modeled after this behavior.
+</p><p>Optionally, set <i>auto_cd_after_create=false</i> to prevent <i>targetcli</i> from automatically entering new object contexts after their creation:
+</p>
+<pre>/&gt; set global auto_cd_after_create=false
+Parameter auto_cd_after_create is now 'false'.
+/&gt;
+</pre>
+<h4> <span class="mw-headline" id="Display_the_object_tree"> Display the object tree </span></h4>
+<p>Use <i>ls</i> to list the object hierarchy, which is initially empty:
+</p>
+<pre>/&gt; ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [0 Storage Object]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/&gt;
+</pre>
+<h4> <span class="mw-headline" id="Display_help"> Display help </span></h4>
+<p>Use <i>help</i> to get context-sensitive help corresponding to the current or selected object context:
+</p>
+<pre>/&gt; help
+GENERALITIES
+  This is an interactive shell in which you can create, delete and configure
+  configuration objects.
+  [...]
+COMMAND SYNTAX
+  Commands are built using the following syntax:
+  [TARGET_PATH] COMMAND_NAME [OPTIONS]
+  [...]
+AVAILABLE COMMANDS
+  The following commands are available in the current path:
+    - bookmarks action [bookmark]
+    - cd [path]
+    - create [wwn]
+    - delete wwn
+    - exit
+    - get [group] [parameter...]
+    - help [topic]
+    - info
+    - ls [path] [depth]
+    - pwd
+    - refresh
+    - set [group] [parameter=value...]
+    - status
+    - version
+/&gt; backstores/iblock help create
+SYNTAX
+  create name dev [generate_wwn]
+DESCRIPTION
+  Creates an IBlock Storage object. dev is the path to the TYPE_DISK block
+  device to use and the optional generate_wwn parameter is a boolean specifying
+  whether or not we should generate a T10 wwn Serial for the unit (by default,
+  yes).
+/&gt; iscsi/ help create
+SYNTAX
+  create [wwn]
+DESCRIPTION
+  Creates a new target. The wwn format depends on the transport(s) supported by
+  the fabric module. If the wwn is ommited, then a target will be created using
+  either a randomly generated WWN of the proper type, or the first unused WWN in
+  the list of possible WWNs if one is available. If WWNs are constrained to a
+  list (i.e. for hardware targets addresses) and all WWNs are in use, the target
+  creation will fail. Use the info command to get more information abour WWN
+  type and possible values.
+SEE ALSO
+  info
+/&gt;
+</pre>
+<h4> <span class="mw-headline" id="Create_a_backstore"> Create a backstore </span></h4>
+<p>Enter the top-level backstore object, and create one (storage object) using IBLOCK or FILEIO type devices.
+</p><p>For instance, create an IBLOCK backstore from a <i>/dev/sdb</i> block device. Note that this device can be any TYPE_DISK block-device, and it can also use <i>/dev/disk/by-id/</i> symlinks:
+</p>
+<pre>/&gt; cd backstores/
+/backstores&gt; iblock/ create name=my_disk dev=/dev/sdb
+Generating a wwn serial.
+Created iblock storage object my_disk using /dev/sdb.
+Entering new node /backstores/iblock/my_disk.
+/backstores/iblock/my_disk&gt;
+</pre>
+<p><i>targetcli</i> automatically creates a WWN serial ID for the backstore device and then changes the working context to it.
+</p><p>The resulting object hierarchy looks as follows (displayed from the root object):
+</p>
+<pre>/&gt; ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- fileio ............................................... [0 Storage Object]
+  | o- iblock ............................................... [1 Storage Object]
+  | | o- my_disk .......................................... [/dev/sdb activated]
+  | o- pscsi ................................................ [0 Storage Object]
+  | o- rd_dr ................................................ [0 Storage Object]
+  | o- rd_mcp ............................................... [0 Storage Object]
+  o- ib_srpt ........................................................ [0 Target]
+  o- iscsi .......................................................... [0 Target]
+  o- loopback ....................................................... [0 Target]
+  o- qla2xxx ........................................................ [0 Target]
+/&gt;
+</pre>
+<a name="Create_a_target"></a>
+<h4><a href="http://linux-iscsi.org/wiki/ISCSI" title="ISCSI">Create an iSCSI 
+target</a></h4>
+<h4> <span class="mw-headline" id="Persist_the_configuration"> Persist the configuration </span></h4>
+<p>The target configuration can be persisted across reboots by using <i>saveconfig</i> from the root context:
+</p>
+<pre>/&gt; saveconfig
+WARNING: Saving rtsnode1 current configuration to disk will overwrite your boot settings.
+The current target configuration will become the default boot config.
+Are you sure? Type 'yes': yes
+Making backup of srpt/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/srpt_start.sh
+Making backup of qla2xxx/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/qla2xxx_start.sh
+Making backup of loopback/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/loopback_start.sh
+Making backup of LIO-Target/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/lio_backup-2012-02-27_23:19:37.660264.sh
+Making backup of Target_Core_Mod/ConfigFS with timestamp: 2012-02-27_23:19:37.660264
+Successfully updated default config /etc/target/tcm_backup-2012-02-27_23:19:37.660264.sh
+Generated Target_Core_Mod config: /etc/target/backup/tcm_backup-2012-02-27_23:19:37.660264.sh
+Successfully updated default config /etc/target/lio_start.sh
+Successfully updated default config /etc/target/tcm_start.sh
+/&gt; exit
+#
+</pre>
+<h3> <span class="mw-headline" id="Basic_concepts"> Basic concepts </span></h3>
+<p>There are two complementary key concepts that are fundamental to understanding how to use <i>targetcli</i>:
+</p>
+<ul><li> Context sensitivity: The available command-set and options 
+depend on the current context (which is determined by the current 
+working directory).
+</li><li> TAB completion: The full context-sensitive list of commands and their options is available by pressing TAB.
+</li></ul>
+<h4> <span class="mw-headline" id="General"> General </span></h4>
+<p>The fundamental metaphor of <i>targetcli</i> are context objects, 
+which represent the target stack objects. Context objects are unified in
+ a single hierarchical object tree that reflects their logical structure
+ and relations. Context objects are named by their full path in the 
+hierarchical object tree, which allows addressing and navigating them.
+</p><p>'Entering' an object changes the current object context, 
+corresponding to its current working path, which is depicted in the 
+command prompt.
+</p><p><i>pwd</i> alternatively displays the complete current path (e.g., if the prompt displays an abbreviated path for space efficiency).
+</p><p><i>cd</i> navigates the object tree. Without parameters, <i>cd</i> presents the full objects tree. The destination path can be selected via cursor keys.
+</p><p><i>help cd</i> lists context-sensitive navigation tips.
+</p><p>Due to the hierarchical structure of a Target object tree, 
+multiple context changes might be required to reach and enter a 
+particular object. For instance:
+</p>
+<ul><li> Enter an <a href="http://linux-iscsi.org/wiki/ISCSI" title="ISCSI">iSCSI</a> <a href="http://linux-iscsi.org/wiki/Target" title="Target">Target</a>, from there a specific <a href="http://linux-iscsi.org/wiki/TPG" title="TPG" class="mw-redirect">TPG</a> and then a <a href="http://linux-iscsi.org/wiki/Network_Portal" title="Network Portal" class="mw-redirect">Network Portal</a> (attached to that <a href="http://linux-iscsi.org/wiki/TPG" title="TPG" class="mw-redirect">TPG</a>).
+</li><li> Enter an <a href="http://linux-iscsi.org/wiki/Fibre_Channel" title="Fibre Channel">Fibre Channel</a> <a href="http://linux-iscsi.org/wiki/Target" title="Target">Target</a>, and from there directly an <a href="http://linux-iscsi.org/wiki/Endpoint" title="Endpoint" class="mw-redirect">Endpoint</a>.
+</li></ul>
+<h4> <span class="mw-headline" id="Working_with_contexts"> Working with contexts </span></h4>
+<p><i>create context &lt;context_name&gt;</i>, or short <i>#&lt;context_name&gt;</i>,
+ saves the current context under 'name', which simplifies traversal of 
+the object tree. Saved contexts can be restored at any time and remain 
+persistent across sessions.
+</p><p><i>enter context &lt;context_name&gt;</i>, or short <i>@&lt;context_name&gt;</i>,
+ restores the corresponding saved context 'name' and immediately enters 
+it. Saved contexts allow both naming and bookmarking available transport
+ objects.
+</p><p>Each context objects provides context-sensitive operations, i.e. 
+different context objects (or paths) provide different command sets. For
+ instnace, a path pointing at an iSCSI target provides different 
+commands than a path pointing at a storage object.
+</p>
+<h4> <span class="mw-headline" id="Command_completion"> Command completion </span></h4>
+<p>With a unique option, pressing &lt;TAB&gt; once auto-completes the 
+current command being edited. With multiple options, hitting &lt;TAB&gt;
+ twice produces a list of available command completions, if any, and a 
+quick syntax help on the command currently being edited. This is useful 
+when the exact next parameters available for the current command are not
+ known.
+</p><p>Each command parameter can be passed either as a positional parameter, following the order of the command syntax, or as a <i>key=value</i> pair, in any order. Command auto-completion will reflect and present all available options.
+</p><p><i>help</i> followed by any command name lists the full command syntax and description.
+</p>
+<h4> <span class="mw-headline" id="Command_syntax"> Command syntax </span></h4>
+<p>Use <i>&lt;verb&gt;</i> on <i>&lt;object type&gt;</i> and <i>&lt;object specifiers&gt;</i>.
+</p>
+<pre>[&lt;verb&gt;] &lt;object_type&gt; [&lt;object specifier&gt;...]
+</pre>
+<p>Example: <i>create target</i> creates a Target for a 'transport' (<a href="http://linux-iscsi.org/wiki/ISCSI" title="ISCSI">iSCSI</a>, <a href="http://linux-iscsi.org/wiki/Fibre_Channel_over_Ethernet" title="Fibre Channel over Ethernet">FCoE</a>, <a href="http://linux-iscsi.org/wiki/Fibre_Channel" title="Fibre Channel">Fibre Channel</a>, <a href="http://linux-iscsi.org/wiki/InfiniBand" title="InfiniBand">InfiniBand</a>,
+ etc.) in the root context. If the verb is omitted, the default is to 
+use the first available implicit action verb for the object, in that 
+order: <i>enter</i>, <i>list</i> and <i>get</i>.
+</p>
+<pre>&lt;command&gt; [&lt;argument&gt;] [&lt;argument&gt;]
+</pre>
+<p>Apart from generic verbs, there are also global commands, like <i>help</i> or <i>exit</i>. They take optional arguments and do not work on transport context objects or info objects.
+</p>
+<h4> <span class="mw-headline" id="Command_chains"> Command chains </span></h4>
+<p><i>targetcli</i> has the ability to chain commands, which provides 
+powerful semantics for creating complex command sequences. Command 
+chains are constructed by chaining multiple single commands together, 
+separated by a comma:
+</p>
+<pre>command1, command2 [,command...]
+</pre>
+<p>When a command results in a context change (i.e. <i>enter target iqn.1999-03.org.foobar:1234</i> enters that target's context), the next command in the chain executes in that new context. In addition, <i>create context</i> and <i>enter context</i>
+ can be used in command chains, enabling easy scripting of creation, 
+deletion and query operations of objects embedded deeply in the Target 
+object tree.
+</p>
+<h4> <span class="mw-headline" id="Global_parameters"> Global parameters </span></h4>
+<p>There are numerous global and context-sensitive parameters that modify the behavior of <i>targetcli</i>.
+</p><p>Here are two particularly important ones:
+</p>
+<ul><li> <i>auto_cd_after_create</i> {TRUE|FALSE}: If TRUE, automatically enter into the context of new objects upon their creation.
+</li><li> <i>auto_enable_tpgt</i> {TRUE|FAlSE}: If TRUE, automatically enables TPGTs upon creation.
+</li><li> <i>parameter prompt_maxlen</i>: length of context (30 by default, unset to view full context)
+</li></ul>
+<h3> <span class="mw-headline" id="Object_tree"> Object tree </span></h3>
+<p>The Target object hierarchy encompasses both the fabric modules (<a href="http://linux-iscsi.org/wiki/ISCSI" title="ISCSI">iSCSI</a>, <a href="http://linux-iscsi.org/wiki/Fibre_Channel_over_Ethernet" title="Fibre Channel over Ethernet">FCoE</a>, <a href="http://linux-iscsi.org/wiki/Fibre_Channel" title="Fibre Channel">Fibre Channel</a>, <a href="http://linux-iscsi.org/wiki/InfiniBand" title="InfiniBand">InfiniBand</a>, etc.) and the low-level objects used to map the underlying storage objects.
+</p>
+<h4> <span class="mw-headline" id="Fabric_objects"> Fabric objects </span></h4>
+<p>Here is a summary of the iSCSI fabric objects hierarchy (see also the underlying <a href="http://linux-iscsi.org/wiki/ConfigFS#Layout" title="ConfigFS">configFS</a> layout]]):
+</p>
+<pre>+-targetcli
+  |
+  +-Targets
+    | Identified by their WWNs or IQN (for iSCSI).
+    | Targets identify a group of Endpoints.
+    |
+    +-TPGs (Target Portal Groups, iSCSI only)
+      | The TPG is identified by its numerical Tag, starting at 1. It
+      | groups several Network Portals, and caps LUNs and Node ACLs.
+      | For fabrics other than iSCSI, targetcli masks the TPG level.
+      |
+      +-Network Portals (iSCSI only)
+      |   A Network Portal adds an IP address and a port. Without at
+      |   least one Network Portal, the Target remains disabled.
+      |
+      +-LUNs
+      |   LUNs point at the Storage Objects, and are numbered 0-255.
+      |
+      +-ACLs
+        | Identified by initiator WWNs/IQNs, ACLs group permissions
+        | for that specific initiator. If ACLs are enabled, one
+        | NodeACL is required per authorized initiator.
+        |
+        + Mapped LUNs
+            Determine which LUNs an initiator will see. E.g., if
+            Mapped LUN 1 points at LUN 0, the initiator referenced
+            by the NodeACL will see LUN 0 as LUN 1.
+</pre>
+<h4> <span class="mw-headline" id="Storage_objects"> Storage objects </span></h4>
+<p>Here is a summary of the <a href="http://linux-iscsi.org/wiki/Target" title="Target">Target</a> storage object hierarchy:
+</p>
+<pre>+-Root
+  |
+  +-VirtualHBAs
+    | These are the emulated Host Bus Adapters of the TCM layer.
+    | They are identified by their HBA number and their backstore type:
+    |   . iblock - emulates SCSI on top of any TYPE_DISK block device.
+    |   . fileio - emulates SCSI on top of the local filessystem.
+    |   . rd_mcp - ramdisk drive-based SCSI emulation, a bit slower
+    |              ramdisk, but more robust with multiple initiators,
+    |              with a separate memory mapping using memory copy.
+    |   . rd_dr  - ramdisk drive-based SCSI emulation, faster ramdisk,
+    |              using direct memory mapping (use sagaciously).
+    |
+    + Storage Objects
+        The actual Storage Objects that will be exported via iSCSI LUNS.
+        . iblock objects need a name, and the path to a disk device.
+        . fileio objects need a name, the path to a file and a size.
+        . rd_dr and rd_mcp objects only need a name and a size.
+</pre>
+<p>The Target object hierarchy can be populated either manually by using the HBA and storage contexts of <i>targetcli</i>, or directly reference disks and files when creating LUNs. The latter method requires less commands, but despite <i>targetcli</i> trying its best to optimize the underlying storage objects, is not as flexible as manually creating them.
+</p><p>Manual storage object creation is typically necessary for:
+</p>
+<ul><li> Creating a <a href="http://linux-iscsi.org/wiki/FILEIO" title="FILEIO" class="mw-redirect">FILEIO</a> object in asynchronous (write-back cached) mode
+</li><li> Block-IO storage objects (<a href="http://linux-iscsi.org/wiki/IBLOCK" title="IBLOCK" class="mw-redirect">IBLOCK</a>)
+</li><li> <a href="http://linux-iscsi.org/wiki/RAMDISK" title="RAMDISK" class="mw-redirect">RAMDISKs</a>
+</li><li> Non-standard <a href="http://linux-iscsi.org/wiki/WWN" title="WWN" class="mw-redirect">WWN</a>
+</li></ul>

@@ -1,0 +1,52 @@
+$ wget http://www.stats.uwo.ca/faculty/yu/Rmpi/download/linux/Rmpi_0.5-7.tar.gz
+$ R CMD INSTALL Rmpi_0.5-7.tar.gz --configure-args=--with-mpi=/usr/lib/openmpi
+
+Emacs Speaks Statistics (R in Emacs)
+
+Download from : http://packages.debian.org/lenny/ess
+$ sudo dpkg -i ess_5.3.8~svn3917-1_all.deb
+
+# install openPBS / torque
+$ wget http://www.clusterresources.com/downloads/torque/torque-2.4.3.tar.gz
+$ tar zxvf torque-2.4.3.tar.gz
+$ cd torque-2.4.3/
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
+$ sudo pbs_server -t create
+$ echo "$(hostname)" > nodes
+$ sudo mv nodes /var/spool/torque/server_priv/nodes
+$ echo "$(hostname)" > server_name
+$ sudo mv server_name /var/spool/torque/server_name
+$ cat > torque_conf << EOF
+create queue batch
+set queue batch queue_type = Execution
+set queue batch started = True
+set queue batch enabled = True
+set server default_queue = batch
+set server resources_default.nodes = 1
+set server scheduling = True
+set server acl_host_enable = True
+set server acl_hosts = *
+EOF
+$ sudo qmgr < torque_conf
+$ cat >> config << EOF
+\$pbsserver    $(hostname)
+\$logevent     255
+EOF
+$ sudo mv config /var/spool/torque/mom_priv/jobs/config
+$ sudo qterm -t quick
+$ sudo pbs_server
+$ sudo pbs_sched
+$ sudo pbs_mom
+$ sudo pbsnodes -a
+Amath-Client15
+     state = free
+     np = 1
+     ntype = cluster
+     status = opsys=linux,uname=Linux Amath-Client15 2.6.24-25-generic #1 SMP Tue Oct 20 06:49:12 UTC 2009 x86_64,sessions=5918 6009 6358 6820 6889 6897 6904 6922 6932 6962 6964 6978 7070 7114 7128 7354 7458 15795,nsessions=18,nusers=4,idletime=3,totmem=16529404kb,availmem=15972824kb,physmem=16529404kb,ncpus=8,loadave=0.00,netload=1038367676,state=free,jobs=,varattr=,rectime=1262098364
+
+$ sudo cp contrib/init.d/debian.pbs_mom /etc/init.d/pbs_mom
+$ sudo cp contrib/init.d/debian.pbs_sched /etc/init.d/pbs_sched
+$ sudo cp contrib/init.d/debian.pbs_server /etc/init.d/pbs_server

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+  <HEAD>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Cloud Management: Kernel-based Virtual Machine (KVM)</TITLE>
+    <link type="text/css" rel="stylesheet" href="../css/style_2013.css" />
+<style type="text/css">
+h1 { counter-reset: section; }
+h2 { counter-reset: subsection; }
+h3 { counter-reset: subsubsection; }
+h2:before {
+    content: counter(section) ". ";
+    counter-increment: section;
+}
+h3:before {
+    content: counter(section) "." counter(subsection) " ";
+    counter-increment: subsection;
+}
+h4:before {
+    content: counter(section) "." counter(subsection) "." counter(subsubsection) " ";
+    counter-increment: subsubsection;
+}
+table { 
+    border-collapse: collapse; 
+    border: solid thick; 
+}
+colgroup, tbody { 
+    border: solid medium; 
+}
+td {
+    text-align: center;
+    border: solid thin; 
+}
+</style>
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+  </HEAD>
+  <body>
+    <h1>Assignment 1: KVM Web service</h1>
+    <table>
+      <colgroup style="background-color: lightyellow;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" />
+      </colgroup>
+      <colgroup style="background-color: lightblue;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" />
+      </colgroup>
+      <colgroup style="background-color: lightyellow;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" />
+      </colgroup>
+      <colgroup style="background-color: lightblue;">
+	<col width="50" /><col width="50" /><col width="80" /><col width="100" />
+      </colgroup>
+      <thead>
+	<tr>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	  <th>&nbsp;</th>
+	  <th>VM</th>
+	  <th>Network</th>
+	  <th>Service(Web)</th>
+	</tr>
+      </thead>
+      <tbody>
+	<tr>
+	  <td><a target="_blank" href="http://140.120.16.67:8001">A01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8007">B01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8019">C01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8031">D01</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://140.120.16.67:8002">A02</a></td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8008">B02</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8020">C02</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8032">D02</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://140.120.16.67:8003">A03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8009">B03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8021">C03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8033">D03</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://140.120.16.67:8004">A04</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8010">B04</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8022">C04</a></td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td><a target="_blank" href="http://140.120.16.67:9034">D04</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://140.120.16.67:8005">A05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8011">B05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8023">C05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8035">D05</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td><a target="_blank" href="http://140.120.16.67:8006">A06</a></td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8012">B06</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8024">C06</a></td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8036">D06</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8013">B07</a></td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8025">C07</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8037">D07</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8014">B08</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8026">C08</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8038">D08</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8015">B09</a></td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8027">C09</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8039">D09</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8016">B10</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8028">C10</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8040">D10</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8017">B11</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:9029">C11</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8041">D11</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+	<tr>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8018">B12</a></td>
+	  <td>&#10004;</td>
+	  <td></td>
+	  <td></td>
+	  <td><a target="_blank" href="http://140.120.16.67:8030">C12</a></td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td>---</td>
+	  <td><a target="_blank" href="http://140.120.16.67:8042">D12</a></td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	  <td>&#10004;</td>
+	</tr>
+      </tbody>
+    </table>
+    <iframe src="Lab1-FAQ.html" width="100%" height="1200" frameborder="0" marginheight="0" marginwidth="0" seamless></iframe>
+    <hr>
+    註：助教會不定時修改網頁注意事項，遇到問題不妨先重新整理網頁更新內容 ^.^<br>
+    <script language="JavaScript">
+      <!-- Hide JavaScript...
+	   var LastUpdated = document.lastModified;
+	   document.writeln ("This page was last updated " + LastUpdated);
+      // End Hiding -->
+    </script>
+    <address style="text-align: right;">
+      <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+    </address>
+  </body>
+</html>

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Virtual Technelogy: Libvirt</TITLE>
+  <link type="text/css" rel="stylesheet" href="../css/style_2013.css" />
+  <style type="text/css">
+	h1 { counter-reset: section; }
+	h2 { counter-reset: subsection; }
+	h3 { counter-reset: subsubsection; }
+	h2:before {
+    	content: counter(section) ". ";
+    	counter-increment: section;
+	}
+	h3:before {
+    	content: counter(section) "." counter(subsection) " ";
+    	counter-increment: subsection;
+	}
+	h4:before {
+    	content: counter(section) "." counter(subsection) "." counter(subsubsection) " ";
+    	counter-increment: subsubsection;
+	}
+	div.sql {
+    	padding: .1em 0em .1em 0em ;
+	}
+	div.sql:before {
+    	content: "mysql> ";
+    	overflow: auto;
+	}
+  </style>
+  <script>
+  	function ChangeIP()
+  	{
+  		var StackIP = document.getElementById('StackIP');
+  		if(StackIP.value == '')
+  		{
+  			StackIP.value = '[Ubuntu_IP]';
+  		}
+  		var SQLPassword = document.getElementById('SQLPassword');
+  		if(SQLPassword.value == '')
+  		{
+  			SQLPassword.value = '[SQL密碼]';
+  		}
+  		var AdminPassword = document.getElementById('AdminPassword');
+  		if(AdminPassword.value == '')
+  		{
+  			AdminPassword.value = '[管理者密碼]';
+  		}
+  		var ComponentPassword  = document.getElementById('ComponentPassword');
+  		if(ComponentPassword.value == '')
+  		{
+  			ComponentPassword.value = '[Component密碼]';
+  		}
+  		
+  		var VMIP = document.getElementsByClassName('VMIP');
+  		
+  		var SQLPASSWORD = document.getElementsByClassName('SQLPassword');
+  		var ADMINPASSWORD = document.getElementsByClassName('AdminPassword');
+  		var COMPONENTPASSWORD = document.getElementsByClassName('ComponentPassword');
+  		for(var i=0; i < VMIP.length; i++) 
+  		{
+  			VMIP[i].style.color = 'red';
+    		VMIP[i].innerHTML=StackIP.value;
+		}
+		for(var i=0; i < SQLPASSWORD.length; i++) 
+		{
+			SQLPASSWORD[i].style.color = 'dodgerblue';
+			SQLPASSWORD[i].innerHTML = SQLPassword.value;
+		}
+		for(var i=0; i < ADMINPASSWORD.length; i++) 
+		{
+			ADMINPASSWORD[i].style.color = 'green';
+			ADMINPASSWORD[i].innerHTML = AdminPassword.value;
+		}
+		for(var i=0; i < COMPONENTPASSWORD.length; i++) 
+		{
+			COMPONENTPASSWORD[i].style.color = 'gold';
+			COMPONENTPASSWORD[i].innerHTML = ComponentPassword.value;
+		}
+  	}
+  </script>
+</HEAD>
+<BODY>
+	<h1>Lab 3 : OpenStack</h1><br><br>
+	
+	<h2>實驗描述</h2>
+	<p>OpenStack 是一個雲端運算軟體，運來管理叢集資源的管理。</p>
+	<p>而在資源管理上，OpenStack 將資源分割為運算、網路、儲存種類型，並分別使用不同的元件管理。</p>
+	<img style="float:none" src="img/lab3/openstack-software-diagram.png" ><br>
+	<p>本次實驗將讓大家進行 OpenStack 的單機節點安裝。</p>
+	<p>由於實驗時間有限，我們會進行 OpenStack Compute 以及 Dashboard (Web GUI)的安裝。</p><br><br>
+<hr>
+	<h2>實習環境</h2>
+	<table class="nobor">
+      <tr><td class="nobor" valign="top">
+	  <table>
+	    <caption>理學大樓 1002 教室</caption>
+	    <tbody><tr>
+		<td></td>
+		<th width="320">Cloud-A01 ～ Cloud-D12</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>AMD Phenom™ II X6 1065T Processor</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>8G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	  </tbody></table>
+	</td>
+	<td class="nobor" valign="top">
+	  <table>
+	    <caption>理學大樓 821 機房</caption>
+	    <tbody><tr>
+		<td></td>
+		<th width="320">CSIE-Cloud01 ～ CSIE-Cloud06</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>
+		  AMD Opteron™ Processor 6128 * 2
+		  <br>(total 16 cpu cores)</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>32G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G、1T</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	      <tr>
+		<td></td>
+		<th width="320">CSIE-Cloud07、CSIE-Cloud08</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>
+		  AMD Opteron™ Processor 6234 * 2
+		  <br>(total 24 cpu cores)</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>32G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G、1T</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	  </tbody></table>
+	</td>
+    </table>
+    <br>
+    <p>由於 OpenStack 官方推薦使用 Ubuntu 進行安裝，故本次使用安裝 Ubuntu 的虛擬機進行我們安裝 OpenStack的實作環境。</p>
+    <table>
+    	<caption>虛擬機環境</caption>
+    	<tbody><tr>
+		<td></td>
+		<th width="320">Virtual Machine</th>
+	      </tr>
+	      <tr>
+		<th>Location</th>
+		<td>
+		  821 機房伺服器</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>4G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>50G (QCOW2 Format)</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Ubuntu 12.04 Server Edition</td>
+	      </tr></tbody>   	
+    </table>
+<hr>
+	<h2>實習開始前</h2>
+	<form>
+	<p style="color:red">連線機器的IP : <input type="text" id="StackIP"></p>
+	<p style="color:dodgerblue">SQL 資料庫的密碼 :  <input type="text" id="SQLPassword"></p>
+	<p style="color:green">OpenStack 管理者的密碼 : <input type="text" id="AdminPassword"></p>
+	<p style="color:gold">OpenStack 元件的密碼 : <input type="text" id="ComponentPassword"></p>
+	<button type="button" onclick="ChangeIP()">確定</button>
+	</form>
+<hr>
+	<h2>實習內容</h2>
+	<h3>登入與設置虛擬機</h3>
+	<h4>登入虛擬機</h4>
+		<div class="console">
+			<div class="dol">ssh <span class="VMIP"></span></div>
+			
+		</div>
+		<p style="color:red">！重要！：請注意是否登入遠端機器。
+	<h4>更換 source 來源</h4>
+	<p>由於 Ubuntu 在台灣所提供的 Mirror site 十分不穩定，因此我們使用國網中心的鏡像點作為我們安裝套件的來源。</p>
+	<div class="console">
+		<div class="dol">sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak</div>
+		<div class="dol">sudo sed -i 's/tw.archive.ubuntu.com/free.nchc.org.tw/' /etc/apt/sources.list</div>
+		<div class="dol">sudo aptitude update</div>
+		<div class="dol">sudo aptitude safe-upgrade</div>
+	</div><br>
+	<p>由於 OpenStack 被 Ubuntu 分類為 Ubuntu Cloud 中的套件，所以我們要再加入額外的 source 來源。</p>
+	<p style="color:orange">(使用 nano 的溫馨小提醒：Ctrl + o 存檔 、 Ctrl + x 離開)</p>
+	<div class="console">
+		<div class="dol">sudo nano /etc/apt/sources.list</div>
+		<div class="out">
+# 在最後一行加入
+deb http://ubuntu-cloud.archive.canonical.com/ubuntu/ precise-updates/grizzly main</div>
+	</div>
+	<br>
+	<p>最後將 Ubuntu Cloud 套件庫的 key 加入我們的系統，並再更新一次可用套件資訊。</p>
+	<div class="console">
+		<div class="dol">sudo aptitude install ubuntu-cloud-keyring</div>
+		<div class="dol">sudo aptitude update</div>
+	</div><br>
+	<h4>修改網路設定</h4>
+		<p>本次實習利用 Linux Bridge 作為虛擬機網路的橋接器，所以我們必須安裝 bridge-utils 並建立 bridge。</p>
+		<div class="console">
+			<div class="dol">sudo aptitude install bridge-utils</div>
+			<div class="dol">sudo cp /etc/network/interfaces /etc/network/interfaces.bak</div>
+			<div class="dol">sudo nano /etc/network/interfaces</div>
+			<div class="out">auto lo
+iface lo inet loopback
+auto eth0
+iface eth0 inet static 
+    address <span class="VMIP"></span>
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    dns-nameservers 140.120.13.1 140.120.1.2
+    bridge_stp off
+	   bridge_fd 0
+auto br1
+iface br1 inet static
+    address 192.168.2.1 	# 可自訂private IP網段
+    netmask 255.255.255.0
+	   bridge_ports	eth1
+    bridge_stp off
+	   bridge_fd 0
+</div></div>
+<p style="color:red">！注意！：上述的設定檔只會在第一次或重新啓動網路服務時生效，接下來我們直接建立一個 bridge 以供後續操作。</p>
+<div class="console">
+	<div class="dol">sudo brctl addbr br1</div>
+	<div class="dol">sudo brctl show</div>
+	<div class="out">bridge name	bridge id		STP enabled	interfaces
+br1		8000.fe163e8b0584	no		</div>
+<div class="dol">sudo ifconfig br1 up</div>
+<div class="dol">ifconfig br1</div>
+<div class="out">br1       Link encap:Ethernet  HWaddr 9a:8f:86:ca:76:0e
+          inet6 addr: fe80::988f:86ff:feca:760e/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:6 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:468 (468.0 B)</div>
+</div>
+<p>以上為機器初始的設定，接下來我們開始安裝 OpenStack ......</p><br>
+<h3>安裝 MySQL 資料庫</h3>
+<h4>利用 aptitude (或 apt-get) 安裝 MySQL 資料庫</h4>
+<p style="color:orange">使用 aptitude 的溫馨小提醒：若使用 Ubuntu Desktop Edition，是沒有 aptitude 指令的，使用 apt-get 取代即可。</p>
+<div class="console">
+	<div class="dol">sudo aptitude install python-mysqldb mysql-server</div>
+</div>
+	<br><p>輸入密碼兩次：<span class="SQLPassword"></span></p>
+	<img style="float:none" src="img/lab3/mysql.png" ><br><br>
+<h4>修改資料庫的設定</h4>
+<p>MySQL DB 預設只能提供本機存取，為了安裝 OpenStack 的方便，我們設定為任何人都可以存取。</p>
+<div class="console">
+	<div class="dol">sudo cp /etc/mysql/my.cnf /etc/mysql/my.cnf.bak</div>
+	<div class="dol">sudo sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf</div>
+	<div class="dol">sudo service mysql restart</div>
+</div><br>
+<h4>增加 Database 到 MySQL</h4>
+<p>由於往後我們所安裝各個 OpenStack 元件的資訊管理都是透過資料庫，所以我們必須先提供各個元件所使用的 Database 。</p>
+<div class="console">
+	<div class="dol">mysql -u root -p</div>
+	<div class="out">Enter password:					<span style="color:red"># 輸入 SQL 資料庫的密碼:</span><span class="SQLPassword"></span>
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 346
+Server version: 5.5.32-0ubuntu0.12.04.1 (Ubuntu)
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+mysql></div>
+<div class="sql">CREATE DATABASE keystone;</div>
+<div class="sql">GRANT ALL ON keystone.* TO 'keystone'@'%' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<div class="sql">GRANT ALL ON keystone.* TO 'keystone'@'localhost' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<br>
+<div class="sql">CREATE DATABASE glance;</div>
+<div class="sql">GRANT ALL ON glance.* TO 'glance'@'%' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<div class="sql">GRANT ALL ON glance.* TO 'glance'@'localhost' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<br>
+<div class="sql">CREATE DATABASE nova;</div>
+<div class="sql">GRANT ALL ON nova.* TO 'nova'@'%' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<div class="sql">GRANT ALL ON nova.* TO 'nova'@'localhost' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<br>
+<div class="sql">CREATE DATABASE cinder;</div>
+<div class="sql">GRANT ALL ON cinder.* TO 'cinder'@'%' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<div class="sql">GRANT ALL ON cinder.* TO 'cinder'@'localhost' IDENTIFIED BY '<span class="SQLPassword"></span>';</div>
+<br>
+<div class="sql">SHOW DATABASES;</div>
+<div class="out">+--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| <span style="color:red">cinder</span>             |
+| <span style="color:red">glance</span>             |
+| <span style="color:red">keystone</span>           |
+| mysql              |
+| <span style="color:red">nova</span>               |
+| performance_schema |
+| test               |
++--------------------+
+8 rows in set (0.00 sec)
+</div>
+<br>
+<div class="sql">quit</div>
+<div class="dol"></div>
+</div>
+<p>至此，我們將資料庫設定完畢。</p><br>
+<h3>安裝 rabbitMQ 以及 KeyStone</h3>
+<p>本次在 OpenStack 上會進行訊息傳遞以及認證管理的動作，所以本小節介紹傳遞訊息的 rabbitMQ 以及 認證管理服務：KeyStone 的安裝。</p>
+<h4>安裝 rabbitMQ server 與 KeyStone</h4>
+<div class="console">
+	<div class="dol">sudo aptitude install rabbitmq-server keystone</div>
+</div>
+<h4>設定 KeyStone 服務</h4>
+<div class="console">
+	<div class="dol">sudo rm /var/lib/keystone/keystone.db</div>
+	<div class="dol">sudo cp /etc/keystone/keystone.conf /etc/keystone/keystone.conf.bak</div>
+	<div class="dol">sudo  nano /etc/keystone/keystone.conf</div>
+	<div class="out"># On line 78
+connection = mysql://keystone:<span class="SQLPassword"></span>@<span class="VMIP"></span>/keystone</div>
+	<div class="dol">sudo diff /etc/keystone/keystone.conf /etc/keystone/keystone.conf.bak</div>
+	<div class="out">78c78
+< connection = mysql://keystone:<span class="SQLPassword"></span>@<span class="VMIP"></span>/keystone
+---
+> connection = sqlite:////var/lib/keystone/keystone.db</div>
+	<div class="dol">sudo service keystone restart</div>
+	<div class="dol">sudo keystone-manage db_sync</div>
+</div><br>
+<p>由於我們利用 KeyStone 管理憑證還需要設定其他元件的權限，我們利用 OpenStack 官方提供的腳本進行設定。</p>
+<div class="console">
+	<div class="dol">touch keystone_basic.sh  keystone_endpoints_basic.sh</div>
+	<div class="dol">chmod +x keystone_basic.sh  keystone_endpoints_basic.sh</div>
+	<div class="dol">nano keystone_basic.sh</div>
+	<div class="out">#!/bin/sh
+#
+# Keystone basic configuration 
+# Mainly inspired by https://github.com/openstack/keystone/blob/master/tools/sample_data.sh
+# Modified by Bilel Msekni / Institut Telecom
+#
+# Support: openstack@lists.launchpad.net
+# License: Apache Software License (ASL) 2.0
+#
+HOST_IP=<span class="VMIP"></span>
+ADMIN_PASSWORD=${ADMIN_PASSWORD:-<span class="AdminPassword"></span>}
+SERVICE_PASSWORD=${SERVICE_PASSWORD:-<span class="ComponentPassword"></span>}
+export SERVICE_TOKEN="ADMIN"
+export SERVICE_ENDPOINT="http://${HOST_IP}:35357/v2.0"
+SERVICE_TENANT_NAME=${SERVICE_TENANT_NAME:-service}
+get_id () {
+    echo `$@ | awk '/ id / { print $4 }'`
+}
+# Tenants
+ADMIN_TENANT=$(get_id keystone tenant-create --name=admin)
+SERVICE_TENANT=$(get_id keystone tenant-create --name=$SERVICE_TENANT_NAME)
+# Users
+ADMIN_USER=$(get_id keystone user-create --name=admin --pass="$ADMIN_PASSWORD" --email=admin@domain.com)
+# Roles
+ADMIN_ROLE=$(get_id keystone role-create --name=admin)
+KEYSTONEADMIN_ROLE=$(get_id keystone role-create --name=KeystoneAdmin)
+KEYSTONESERVICE_ROLE=$(get_id keystone role-create --name=KeystoneServiceAdmin)
+# Add Roles to Users in Tenants
+keystone user-role-add --user-id $ADMIN_USER --role-id $ADMIN_ROLE --tenant-id $ADMIN_TENANT
+keystone user-role-add --user-id $ADMIN_USER --role-id $KEYSTONEADMIN_ROLE --tenant-id $ADMIN_TENANT
+keystone user-role-add --user-id $ADMIN_USER --role-id $KEYSTONESERVICE_ROLE --tenant-id $ADMIN_TENANT
+# The Member role is used by Horizon and Swift
+MEMBER_ROLE=$(get_id keystone role-create --name=Member)
+# Configure service users/roles
+NOVA_USER=$(get_id keystone user-create --name=nova --pass="$SERVICE_PASSWORD" --tenant-id $SERVICE_TENANT --email=nova@domain.com)
+keystone user-role-add --tenant-id $SERVICE_TENANT --user-id $NOVA_USER --role-id $ADMIN_ROLE
+GLANCE_USER=$(get_id keystone user-create --name=glance --pass="$SERVICE_PASSWORD" --tenant-id $SERVICE_TENANT --email=glance@domain.com)
+keystone user-role-add --tenant-id $SERVICE_TENANT --user-id $GLANCE_USER --role-id $ADMIN_ROLE
+#QUANTUM_USER=$(get_id keystone user-create --name=quantum --pass="$SERVICE_PASSWORD" --tenant-id $SERVICE_TENANT --email=quantum@domain.com)
+#keystone user-role-add --tenant-id $SERVICE_TENANT --user-id $QUANTUM_USER --role-id $ADMIN_ROLE
+CINDER_USER=$(get_id keystone user-create --name=cinder --pass="$SERVICE_PASSWORD" --tenant-id $SERVICE_TENANT --email=cinder@domain.com)
+keystone user-role-add --tenant-id $SERVICE_TENANT --user-id $CINDER_USER --role-id $ADMIN_ROLE
+</div>
+	<div class="dol">nano keystone_endpoints_basic.sh</div>
+	<div class="out">#!/bin/sh
+#
+# Keystone basic Endpoints
+# Mainly inspired by https://github.com/openstack/keystone/blob/master/tools/sample_data.sh
+# Modified by Bilel Msekni / Institut Telecom
+#
+# Support: openstack@lists.launchpad.net
+# License: Apache Software License (ASL) 2.0
+#
+# Host address
+HOST_IP=<span class="VMIP"></span>
+EXT_HOST_IP=<span class="VMIP"></span>
+# MySQL definitions
+MYSQL_USER=keystone
+MYSQL_DATABASE=keystone
+MYSQL_HOST=$HOST_IP
+MYSQL_PASSWORD=<span class="SQLPassword"></span>
+# Keystone definitions
+KEYSTONE_REGION=RegionOne
+export SERVICE_TOKEN=ADMIN
+export SERVICE_ENDPOINT="http://${HOST_IP}:35357/v2.0"
+while getopts "u:D:p:m:K:R:E:T:vh" opt; do
+  case $opt in
+    u)
+      MYSQL_USER=$OPTARG
+      ;;
+    D)
+      MYSQL_DATABASE=$OPTARG
+      ;;
+    p)
+      MYSQL_PASSWORD=$OPTARG
+      ;;
+    m)
+      MYSQL_HOST=$OPTARG
+      ;;
+    K)
+      MASTER=$OPTARG
+      ;;
+    R)
+      KEYSTONE_REGION=$OPTARG
+      ;;
+    E)
+      export SERVICE_ENDPOINT=$OPTARG
+      ;;
+    T)
+      export SERVICE_TOKEN=$OPTARG
+      ;;
+    v)
+      set -x
+      ;;
+    h)
+      cat <<EOF
+Usage: $0 [-m mysql_hostname] [-u mysql_username] [-D mysql_database] [-p mysql_password]
+       [-K keystone_master ] [ -R keystone_region ] [ -E keystone_endpoint_url ] 
+       [ -T keystone_token ]
+          
+Add -v for verbose mode, -h to display this message.
+EOF
+      exit 0
+      ;;
+    \?)
+      echo "Unknown option -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument" >&2
+      exit 1
+      ;;
+  esac
+done  
+if [ -z "$KEYSTONE_REGION" ]; then
+  echo "Keystone region not set. Please set with -R option or set KEYSTONE_REGION variable." >&2
+  missing_args="true"
+fi
+if [ -z "$SERVICE_TOKEN" ]; then
+  echo "Keystone service token not set. Please set with -T option or set SERVICE_TOKEN variable." >&2
+  missing_args="true"
+fi
+if [ -z "$SERVICE_ENDPOINT" ]; then
+  echo "Keystone service endpoint not set. Please set with -E option or set SERVICE_ENDPOINT variable." >&2
+  missing_args="true"
+fi
+if [ -z "$MYSQL_PASSWORD" ]; then
+  echo "MySQL password not set. Please set with -p option or set MYSQL_PASSWORD variable." >&2
+  missing_args="true"
+fi
+if [ -n "$missing_args" ]; then
+  exit 1
+fi
+ 
+keystone service-create --name nova --type compute --description 'OpenStack Compute Service'
+keystone service-create --name cinder --type volume --description 'OpenStack Volume Service'
+keystone service-create --name glance --type image --description 'OpenStack Image Service'
+keystone service-create --name keystone --type identity --description 'OpenStack Identity'
+#keystone service-create --name ec2 --type ec2 --description 'OpenStack EC2 service'
+#keystone service-create --name quantum --type network --description 'OpenStack Networking service'
+create_endpoint () {
+  case $1 in
+    compute)
+    keystone endpoint-create --region $KEYSTONE_REGION --service-id $2 --publicurl 'http://'"$EXT_HOST_IP"':8774/v2/$(tenant_id)s' --adminurl 'http://'"$HOST_IP"':8774/v2/$(tenant_id)s' --internalurl 'http://'"$HOST_IP"':8774/v2/$(tenant_id)s'
+    ;;
+    volume)
+    keystone endpoint-create --region $KEYSTONE_REGION --service-id $2 --publicurl 'http://'"$EXT_HOST_IP"':8776/v1/$(tenant_id)s' --adminurl 'http://'"$HOST_IP"':8776/v1/$(tenant_id)s' --internalurl 'http://'"$HOST_IP"':8776/v1/$(tenant_id)s'
+    ;;
+    image)
+    keystone endpoint-create --region $KEYSTONE_REGION --service-id $2 --publicurl 'http://'"$EXT_HOST_IP"':9292/' --adminurl 'http://'"$HOST_IP"':9292/' --internalurl 'http://'"$HOST_IP"':9292/'
+    ;;
+    identity)
+    keystone endpoint-create --region $KEYSTONE_REGION --service-id $2 --publicurl 'http://'"$EXT_HOST_IP"':5000/v2.0' --adminurl 'http://'"$HOST_IP"':35357/v2.0' --internalurl 'http://'"$HOST_IP"':5000/v2.0'
+    ;;
+ #   ec2)
+ #   keystone endpoint-create --region $KEYSTONE_REGION --service-id $2 --publicurl 'http://'"$EXT_HOST_IP"':8773/services/Cloud' --adminurl 'http://'"$HOST_IP"':8773/services/Admin' --internalurl 'http://'"$HOST_IP"':8773/services/Cloud'
+ #   ;;
+ #   network)
+ #   keystone endpoint-create --region $KEYSTONE_REGION --service-id $2 --publicurl 'http://'"$EXT_HOST_IP"':9696/' --adminurl 'http://'"$HOST_IP"':9696/' --internalurl 'http://'"$HOST_IP"':9696/'
+ #   ;;
+  esac
+}
+for i in compute volume image object-store identity ec2 network; do
+  id=`mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -ss -e "SELECT id FROM service WHERE type='"$i"';"` || exit 1
+  create_endpoint $i $id
+done
+</div>
+	<div class="dol">sudo ./keystone_basic.sh</div>
+	<div class="dol">sudo ./keystone_endpoints_basic.sh</div>
+</div><br>
+<p>新增環境變數，提供給 Console 管理 OpenStack 用。</p>
+<div class="console">
+	<div class="dol">nano ~/stackrc</div>
+	<div class="out">export OS_USERNAME=admin
+export OS_PASSWORD=<span class="AdminPassword"></span>
+export OS_TENANT_NAME=admin
+export OS_AUTH_URL=http://127.0.0.1:5000/v2.0/</div>
+	<div class="dol">source ~/stackrc</div>
+</div><br>
+<p>詢問 KeyStone 有哪些使用者，如果有顯示結果，KeyStone 便設定完成。</p>
+<div class="console">
+	<div class="dol">keystone user-list</div>
+	<div class="out">+----------------------------------+--------+---------+-------------------+
+|                id                |  name  | enabled |       email       |
++----------------------------------+--------+---------+-------------------+
+| b97ef6697d8d4d4f9a357bff7b469f22 | admin  |   True  |  admin@domain.com |
+| abd504c0ddbd4e249e7b22dc3ccb666c | cinder |   True  | cinder@domain.com |
+| a4540d82afb8490a8caa35d81a47ae01 | glance |   True  | glance@domain.com |
+| faf9051d408b4869bc065cb8631e785e |  nova  |   True  |  nova@domain.com  |
++----------------------------------+--------+---------+-------------------+</div>
+</div><br><br>
+<h3>安裝與設定 Glance</h3>
+<p>Glance 提供使用者 VM image 的管理服務，所以我們要安裝 Glance 來做 VM 磁碟的映像檔管理。</p>
+<h4>安裝 Glance</h4>
+<div class="console">
+	<div class="dol">sudo aptitude install glance</div>
+</div><br>
+<h4>設定 Glance</h4>
+<p>首先，我們先設定一個認證授權的 authtoken 選項給 console 管理用。</p>
+<div class="console">
+	<div class="dol">sudo nano /etc/glance/glance-api-paste.ini</div>
+	<div class="out"><span style="color:red"># 在最後一行新增</span>
+[filter:authtoken]
+auth_host = 127.0.0.1
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = service
+admin_user = glance
+admin_password = <span class="ComponentPassword"></span></div>
+</div>
+<div class="console">
+	<div class="dol">sudo nano /etc/glance/glance-registry-paste.ini</div>
+	<div class="out"><span style="color:red"># 在最後一行新增</span>
+[filter:authtoken]
+auth_host = 127.0.0.1
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = service
+admin_user = glance
+admin_password = <span class="ComponentPassword"></span></div>
+</div>
+<p style="color:darkorange">小提醒：上面是兩個不同的設定檔，所以都要做喔！！</p><br>
+<div class="console">
+	<div class="dol">sudo nano /etc/glance/glance-api.conf</div>
+	<div class="out"><span style="color:red"># 第 49 行</span>
+sql_connection = mysql://glance:<span class="SQLPassword"></span>@<span class="VMIP"></span>/glance
+<span style="color:red"># 第 344 行</span>
+admin_tenant_name = service
+admin_user = glance
+admin_password = <span class="ComponentPassword"></span>
+<span style="color:red"># 在最後面新增一行</span>
+flavor = keystone
+</div>
+</div>
+<div class="console">
+	<div class="dol">sudo nano /etc/glance/glance-registry.conf</div>
+	<div class="out"><span style="color:red"># 第 28 行</span>
+sql_connection = mysql://glance:<span class="SQLPassword"></span>@<span class="VMIP"></span>/glance
+<span style="color:red"># 第 78 行</span>
+admin_tenant_name = service
+admin_user = glance
+admin_password = <span class="ComponentPassword"></span>
+<span style="color:red"># 在最後面新增一行</span>
+flavor = keystone</div>
+</div><br>
+<h4>套用設定</h4>
+<div class="console">
+	<div class="dol">sudo glance-manage version_control 0</div>
+	<div class="dol">sudo glance-manage db_sync</div>
+	<div class="dol">sudo service glance-registry restart</div>
+	<div class="dol">sudo service glance-api restart</div>
+</div><br>
+<h4>測試 Glance 工作狀況</h4>
+<p>說明：我們會上傳一個 image 檔案到 Glance，如果我們可以上傳成功，那我們在 Glance 上的設定便大功告成了。</p>
+<div class="console">
+	<div class="dol">glance image-create --is-public true --disk-format qcow2 --container-format bare --name cirros-0.3.0-x86_64  --location https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img</div>
+	<div class="dol">glance image-list</div>
+	<div class="out">+--------------------------------------+---------------------+-------------+------------------+---------+--------+
+| ID                                   | Name                | Disk Format | Container Format | Size    | Status |
++--------------------------------------+---------------------+-------------+------------------+---------+--------+
+| dd2dc33a-37da-4c10-aa0b-8e8c6e49bb91 | cirros-0.3.0-x86_64 | qcow2       | bare             | 9761280 | active |
++--------------------------------------+---------------------+-------------+------------------+---------+--------+</div>	
+</div><br><br>
+<h3>安裝 Libvirt</h3>
+<p>由於 OpenStack 管理虛擬機是利用 Libvirt API 進行管理。因此，我們將如同上次實習一樣安裝 Libvirt 。</p>
+<h4>確認系統支援的虛擬化技術 </h4>
+<div class="console">
+	<div class="dol">egrep '(vmx|svm)' --color=always /proc/cpuinfo</div>
+	<div class="out">flags		: fpu de pse tsc msr pae mce cx8 apic sep mtrr pge 
+mca cmov pat pse36 clflush mmx fxsr sse sse2 syscall nx lm nopl 
+pni cx16 popcnt hypervisor lahf_lm <span style="color:red">svm</span> abm sse4a</div>
+</div>
+<h4>載入 KVM Module</h4>
+<div class="console">
+	<div class="dol">lsmod | grep kvm</div>
+	<div class="out"><span style="color:red">kvm</span>_amd                60205  0
+<span style="color:red">kvm</span>                   455932  1 <span style="color:red">kvm</span>_amd</div>
+</div>
+<p>如果發現 console 完全沒有畫面，請先執行以下指令。</p>
+<div class="console">
+	<div class="dol">sudo modprobe kvm_amd</div>
+	<div class="dol">lsmod | grep kvm</div>
+	<div class="out"><span style="color:red">kvm</span>_amd                60205  0
+<span style="color:red">kvm</span>                   455932  1 <span style="color:red">kvm</span>_amd</div>
+</div>
+<p style="color:red">！！重要！！：如果還是沒有畫面，請馬上舉手詢問助教。</p>
+<h4>安裝 KVM 以及 Libvirt</h4>
+<div class="console">
+	<div class="dol">sudo aptitude install kvm libvirt-bin pm-utils</div>
+</div>
+<h4>設定 Libvirt 的設定檔</h4>
+<p>為了配合 OpenStack 的運作，我們還需要調整 Libvirt 對系統的身份以及裝置管理設定。</p>
+<div class="console">
+	<div class="dol">sudo cp /etc/libvirt/qemu.conf /etc/libvirt/qemu.conf.bak</div>
+	<div class="dol">sudo rm /etc/libvirt/qemu.conf</div>
+	<div class="dol">sudo nano /etc/libvirt/qemu.conf</div>
+	<div class="out">user = "root"
+group = "root"
+cgroup_device_acl = [
+"/dev/null", "/dev/full", "/dev/zero",
+"/dev/random", "/dev/urandom",
+"/dev/ptmx", "/dev/kvm", "/dev/kqemu",
+"/dev/rtc", "/dev/hpet","/dev/net/tun"
+]</div></div>
+<p>修改 Libvirt 管理設定檔。</p>
+<div class="console">
+	<div class="dol">sudo cp /etc/libvirt/libvirtd.conf /etc/libvirt/libvirtd.conf.bak</div>
+	<div class="dol">sudo nano /etc/libvirt/libvirtd.conf</div>
+	<div class="dol">diff /etc/libvirt/libvirtd.conf /etc/libvirt/libvirtd.conf.bak</div>
+	<div class="out">22c22
+< listen_tls = 0
+---
+> #listen_tls = 0
+33c33
+< listen_tcp = 1
+---
+> #listen_tcp = 1
+146c146
+< auth_tcp = "none"
+---
+> #auth_tcp = "sasl"</div>
+</div>
+<div class="console">
+	<div class="dol">sudo cp /etc/init/libvirt-bin.conf /etc/init/libvirt-bin.conf.bak</div>
+	<div class="dol">sudo nano /etc/init/libvirt-bin.conf</div>
+	<div class="dol">diff /etc/init/libvirt-bin.conf /etc/init/libvirt-bin.conf.bak</div>
+	<div class="out">11c11
+< env libvirtd_opts="-d -l"
+---
+> env libvirtd_opts="-d"</div>
+</div>
+<div class="console">
+	<div class="dol">sudo cp  /etc/default/libvirt-bin  /etc/default/libvirt-bin.bak</div>
+	<div class="dol">sudo nano /etc/default/libvirt-bin</div>
+	<div class="dol">diff /etc/default/libvirt-bin  /etc/default/libvirt-bin.bak</div>
+	<div class="out">8c8
+< libvirtd_opts="-d -l"
+---
+> libvirtd_opts="-d"</div>
+</div>
+<h4>刪除預設的 bridge 設定</h4>
+<p>由於我們使用的網路架構會全部交由 OpenStack 控管，所以我們先將 Libvirt 預先配置的橋接器刪除。</p>
+<div class="console">
+	<div class="dol">sudo  virsh net-destroy default</div>
+	<div class="dol">sudo virsh net-undefine default</div>
+</div>
+<h4>重新啓動 Libvirt 服務</h4>
+<div class="console">
+	<div class="dol">sudo service dbus restart</div>
+	<div class="dol">sudo service libvirt-bin restart</div>
+</div>
+<h3>安裝 Nova </h3>
+<h4>安裝 Nova 套件</h4>
+<div class="console">
+<div class="dol">sudo aptitude install nova-compute-kvm nova-api nova-ajax-console-proxy nova-cert nova-consoleauth nova-doc nova-scheduler nova-network nova-novncproxy novnc nova-conductor python-novnc python-nova python-novaclient</div>
+</div>
+<h4>修改 Nova 設定檔</h4>
+<p>如同修改 Glance 設定檔一樣，我們也需要修改 Nova 的設定檔案。</p>
+<div class="console">
+	<div class="dol">sudo nano /etc/nova/api-paste.ini</div>
+	<div class="out"><span style="color:red"># 第 104 行</span>
+admin_tenant_name = service
+admin_user = nova
+admin_password = <span class="ComponentPassword"></span></div>
+</div>
+<div class="console">
+	<div class="dol">sudo nano /etc/nova/nova-compute.conf</div>
+	<div class="out">[DEFAULT]
+libvirt_type=<span style="color:red">kvm</span>
+compute_driver=libvirt.LibvirtDriver</div>
+</div>
+<div class="console">
+	<div class="dol">sudo cp /etc/nova/nova.conf /etc/nova/nova.conf.bak</div>
+	<div class="dol">sudo rm /etc/nova/nova.conf</div>
+	<div class="dol">sudo nano /etc/nova/nova.conf</div>
+	<div class="out"><span style="color:red"># 複製貼上<br></span>
+[DEFAULT]
+# LOGS/STATE
+verbose=false
+debug=false
+logdir=/var/log/nova
+state_path=/var/lib/nova
+lock_path=/var/lock/nova
+root_helper=sudo nova-rootwrap /etc/nova/rootwrap.conf
+# DATABASE
+sql_connection=mysql://nova:<span class="SQLPassword"></span>@<span class="VMIP"></span>/nova
+# AUTHENTICATION
+auth_strategy=keystone
+# SCHEDULER
+compute_scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler
+# RABBITMQ
+rabbit_host=<span class="VMIP"></span>
+# COMPUTE
+compute_driver=libvirt.LibvirtDriver
+connection_type=libvirt
+libvirt_type=kvm
+instance_name_template=instance-%08x
+allow_resize_to_same_host=true
+resume_guests_state_on_host_boot=true
+start_guests_on_host_boot=false
+# APIS
+osapi_compute_extension=nova.api.openstack.compute.contrib.standard_extensions
+enabled_apis= metadata,ec2,osapi_compute
+multihost=true
+nova_url=http://<span class="VMIP"></span>:8774/v1.1/
+api_paste_config=/etc/nova/api-paste.ini
+allow_admin_api=true
+use_deprecated_auth=false
+ec2_dmz_host=<span class="VMIP"></span>
+s3_host=<span class="VMIP"></span>
+# GLANCE
+image_service=nova.image.glance.GlanceImageService
+glance_api_servers=<span class="VMIP"></span>:9292
+# Networking
+network_manager=nova.network.manager.FlatDHCPManager
+force_dhcp_release=true
+dhcpbridge_flagfile=/etc/nova/nova.conf
+dhcpbridge=/usr/bin/nova-dhcpbridge
+firewall_driver=nova.virt.libvirt.firewall.IptablesFirewallDriver
+public_interface=eth0
+# flat_interface=eth1
+flat_network_bridge=br1
+fixed_range=192.168.1.0/24
+# Cinder 
+volume_api_class=nova.volume.cinder.API
+# NOVNC CONSOLE
+novnc_enable=true
+novncproxy_base_url=http://<span class="VMIP"></span>:6080/vnc_auto.html
+vncserver_proxyclient_address=<span class="VMIP"></span>
+vncserver_listen=<span class="VMIP"></span>
+# Change my_ip to match each host
+my_ip=<span class="VMIP"></span></div>
+<div class="dol">sudo nova-manage db sync</div>
+</div>
+<h4>Final check! 重新啓動所有服務</h4>
+<p>我們先編輯一個重新啓動的腳本，在利用腳本重新啓動所有服務。</p>
+<div class="console">
+	<div class="dol">nano ~/restart.sh</div>
+	<div class="out">#!/bin/bash
+for a in rabbitmq-server libvirt-bin nova-network nova-cert nova-compute nova-api nova-conductor nova-scheduler nova-consoleauth; do sudo service "$a" stop; done
+for a in rabbitmq-server libvirt-bin nova-network nova-cert nova-compute nova-api nova-conductor nova-scheduler nova-consoleauth; do sudo service "$a" start; done</div>
+</div>
+<p>重新啓動服務...</p>
+<div class="console">
+	<div class="dol">chmod a+x ~/restart.sh</div>
+	<div class="dol">~/restart.sh</div>
+</div>
+<h4>測試 Nova 是否安裝成功 </h4>
+<div class="console">
+	<div class="dol">sudo nova-manage service list</div>
+	<div class="out">Binary           Host                                 Zone             Status     State Updated_At
+nova-cert        stack02                              internal         enabled    :-)   2013-10-06 09:12:11
+nova-conductor   stack02                              internal         enabled    :-)   2013-10-06 09:12:13
+nova-consoleauth stack02                              internal         enabled    :-)   2013-10-06 09:12:09
+nova-scheduler   stack02                              internal         enabled    :-)   2013-10-06 09:12:14
+nova-network     stack02                              internal         enabled    :-)   2013-10-06 09:12:11
+nova-compute     stack02                              nova             enabled    :-)   2013-10-06 09:12:12</div>
+</div>
+<h4>建立網路環境供虛擬機使用</h4>
+<div class="console">
+	<div class="dol">nova network-create private --fixed-range-v4=192.168.1.0/24 --bridge-interface=br1</div>
+	<div class="dol">sudo nova-manage network list</div>
+	<div class="out">id   	IPv4              	IPv6           	start address  	DNS1           	DNS2           	VlanID         	project        	uuid
+1    	192.168.1.0/24    	None           	192.168.1.2    	8.8.4.4        	None           	None           	None           	50f8656f-df5b-4b50-bf49-47e5ddc40ba0</div>
+	<div class="dol">sudo restart nova-network</div>
+</div>
+<p>大家辛苦了，到這邊我們完成了 OpenStack Compute 的環節。</p><br><br>
+<h3>安裝 Cinder </h3>
+<p>如果上述安裝都完成的話，恭喜大家，我們即將安裝本次實習的最後兩個元件之一 - Cinder。</p>
+<h4>安裝 Cinder 套件</h4>
+<div class="console">
+	<div class="dol">sudo aptitude install cinder-api cinder-scheduler cinder-volume iscsitarget open-iscsi iscsitarget-dkms python-cinderclient tgt</div>
+</div>
+<h4>設定 iSCSI 服務</h4>
+<div class="console">
+	<div class="dol">sudo sed -i 's/false/true/g' /etc/default/iscsitarget</div>
+	<div class="dol">sudo service iscsitarget start</div>
+	<div class="dol">sudo service open-iscsi start</div>
+</div>
+<h4>設定 Cinder 服務</h4>
+<div class="console">
+	<div class="dol">sudo nano /etc/cinder/cinder.conf </div>
+	<div class="out"><span style="color:red"># 最後一行</span><br>
+sql_connection = mysql://cinder:<span class="SQLPassword"></span>@<span class="VMIP"></span>:3306/cinder
+	</div>
+</div>
+<div class="console">
+	<div class="dol">sudo nano /etc/cinder/api-paste.ini </div>
+	<div class="out"><span style="color:red"># 第59行</span><br>
+admin_tenant_name = service
+admin_user = cinder
+admin_password = <span class="ComponentPassword"></span>
+	</div>
+</div>
+<h4>新增 Cinder Volume</h4>
+<p>接下來我們會在我們的機器上新增一個 LVM Volume ，並加入 Cinder 管理。</p>
+<div class="console">
+	<div class="dol">sudo dd if=/dev/zero of=/root/cinder-volumes bs=1M seek=20000 count=0</div>
+	<div class="dol">sudo losetup /dev/loop0 /root/cinder-volumes</div>
+	<div class="dol">sudo losetup -a</div>
+	<div class="out">/dev/loop0: [fd02]:654088 (/root/cinder-volumes)</div>
+	<div class="dol">sudo fdisk /dev/loop0</div>
+	<div class="out">Device contains neither a valid DOS partition table, nor Sun, SGI or OSF disklabel
+Building a new DOS disklabel with disk identifier 0xcebb40d6.
+Changes will remain in memory only, until you decide to write them.
+After that, of course, the previous content won't be recoverable.
+Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
+Command (m for help): <span style="color:red">n</span>
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): <span style="color:red">p</span>
+Partition number (1-4, default 1): <span style="color:red">1</span>
+First sector (2048-40959999, default 2048):<span style="color:red">[直接按Enter]</span>
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-40959999, default 40959999):<span style="color:red">[直接按Enter]</span>
+Using default value 40959999
+Command (m for help): <span style="color:red">t</span>
+Selected partition 1
+Hex code (type L to list codes): <span style="color:red">8e</span>
+Changed system type of partition 1 to 8e (Linux LVM)
+Command (m for help): <span style="color:red">w</span>
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+WARNING: Re-reading the partition table failed with error 22: Invalid argument.
+The kernel still uses the old table. The new table will be used at
+the next reboot or after you run partprobe(8) or kpartx(8)
+Syncing disks.</div>
+</div>
+<div class="console">
+	<div class="dol">sudo pvcreate /dev/loop0</div>
+	<div class="out">  Physical volume "/dev/loop0" successfully created</div>
+	<div class="dol">sudo vgcreate cinder-volumes /dev/loop0</div>
+	<div class="out">  Volume group "cinder-volumes" successfully created</div>
+	<div class="dol">sudo vgdisplay</div>
+	<div class="out">  --- Volume group ---
+  VG Name               cinder-volumes
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               19.53 GiB
+  PE Size               4.00 MiB
+  Total PE              4999
+  Alloc PE / Size       0 / 0
+  Free  PE / Size       4999 / 19.53 GiB
+  VG UUID               tiB9E1-SDok-vpHx-ESV8-kFc2-rkTr-d20g7r</div>
+</div>
+<h4> 更新 Cinder 設定並重新啓動</h4>
+<div class="console">
+	<div class="dol">sudo cinder-manage db sync</div>
+	<div class="dol">sudo service cinder-api restart</div>
+	<div class="dol">sudo service cinder-scheduler restart</div>
+	<div class="dol">sudo service cinder-volume restart</div>
+</div>
+<h3>系統安全設定</h3>
+<h4>新增安全規則：設定虛擬機之間允許通過的封包類型</h4>
+<p>本次實習允許通過的封包類型為 ssh 協定以及 icmp 。</p>
+<div class="console">
+	<div class="dol">nova secgroup-add-rule default tcp 22 22 0.0.0.0/0</div>
+	<div class="dol">nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0</div>
+</div>
+<p>將我們的 ssh 登入金鑰加入 Nova 中，方便後續的登入。</p>
+<div class="console">
+	<div class="dol">ssh-keygen</div>
+	<div class="dol">nova keypair-add --pub_key ~/.ssh/id_rsa.pub mykey</div>
+</div>
+<h4>修改資料夾的所有者，讓 Nova 可以存取 VM 的相關資訊</h4>
+<div class="console">
+	<div class="dol">sudo chown -R nova:nova /var/lib/nova/</div>
+</div><br><br>
+<h3>安裝 Dashboard </h3>
+<p>OpenStack 提供了 Web GUI - Dashboard，透過 Dashboard 我們可以較容易的管理 OpenStack 中的資源。</p>
+<h4>安裝 Dashboard 套件</h4>
+<div class="console">
+	<div class="dol">sudo aptitude install memcached libapache2-mod-wsgi openstack-dashboard</div>
+</div>
+<h4>移除不會用到的 GUI 主題</h4>
+<div class="console">
+	<div class="dol">sudo dpkg --purge openstack-dashboard-ubuntu-theme</div>
+</div>
+<h4>重新啓動網頁服務</h4>
+<div class="console">
+	<div class="dol">sudo service apache2 restart</div>
+	<div class="dol">sudo service memcached restart</div>
+</div><br>
+<h3>大功告成！！</h3>
+<p>Visit with your web browser : http://<span class="VMIP"></span>/horizon</p><br>
+<p>帳號：admin</p>
+<p>密碼：<span class="AdminPassword"></span></p>
+<img style="float:none" src="img/lab3/Dashboard.png">
+<hr>
+<h2>Assignment#3</h2>
+<p>利用已經建立的 OpenStack 設定以下環境：</p>
+<p>1. 安裝兩台虛擬機器，其作業系統皆為 Debian。</p>
+<p>2. 一台虛擬機器上安裝 Apache web server，另一台安裝套件 w3m 。</p>
+<p>3. 需要讓安裝 w3m 的虛擬機可以瀏覽另一台 Debian 網頁伺服器首頁。 </p>
+<div class="console">
+        <div class="dol">sudo iptables -t nat -A POSTROUTING -s [VM網域] -o eth0 -j MASQUERADE
+	<div class="dol">w3m [另一台VM的IP]</div>
+</div>
+<script>
+	ChangeIP();
+</script>
+<hr>
+<p>This original manual is powered by NCHC PerComp Lab. 
+<span style="float:right">The CSS is powered by <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a><br>
+This page is powered by <a href="keuu2002@cs.nchu.edu.tw">Kevin Chen</a></span><br></p>
+</BODY>
+</html>

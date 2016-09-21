@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Virtual Technelogy: Libvirt</TITLE>
+  <link type="text/css" rel="stylesheet" href="../css/style_2013.css" />
+</HEAD>
+<BODY>
+
+<h1>Lab 2: Virtual Technelogy: Libvirt</h1>
+<h2>實驗描述</h2>
+Libvirt is Open Source API,其目的就是在於提供user方便的去配置、新建、修改、監控、控制或者是遷移user' virtual machine,也就是一個管理虛擬機器的工具.
+
+Libvirt目前support的hypervisor有KVM/QEMU, Xen, LXC, OpenVZ, VirtualBOX, Microsoft Hyper-V, VMware等.
+而目前利用Libvirt去開發應用軟體來管理虛擬機器的種類也很多,例如使用指令模式來管理的virsh, virt-image, virt-install等
+或者使用圖形化介面管理的virt-manager, virt-viwer, 使用Web管理的AbiCloud, OVirt, 
+再底下我們會利用virsh指令模式和virt-manager圖形介面模式分別來對虛擬機器做管理.
+<h2>實驗環境</h2>
+理學大樓 1002 教室
+<table border=2>
+  <tr><td width="100">	<th width="320">Cloud-A01 ～ Cloud-D12</tr>
+  <tr><th>CPU			<td align="right">AMD Phenom(tm) II X6 1065T Processor</tr>
+  <tr><th>Memory		<td align="right">8G</tr>
+  <tr><th>Disk spaces	<td align="right">500G、500G</tr>
+  <tr><th>O.S.			<td align="right">Debian squeeze</tr>
+</table>
+<br />
+理學大樓 821 機房
+<table border=2>
+  <tr><td width="100">	<th width="320">CSIE-Cloud01 ～ CSIE-Cloud06</tr>
+  <tr><th>CPU			<td align="right">AMD Opteron(TM) Processor 6128 * 2 <br> (total 16 cpu cores)</tr>
+  <tr><th>Memory		<td align="right">32G</tr>
+  <tr><th>Disk spaces	<td align="right">500G、500G、1T</tr>
+  <tr><th>O.S.			<td align="right">Debian wheezy</tr>
+</table>
+<table border=2>
+  <tr><td width="100">	<th width="320">CSIE-Cloud07、CSIE-Cloud08</tr>
+  <tr><th>CPU			<td align="right">AMD Opteron(TM) Processor 6234 * 2<br> (total 24 cpu cores)</tr>
+  <tr><th>Memory		<td align="right">12G</tr>
+  <tr><th>Disk spaces	<td align="right">500G、500G、1T</tr>
+  <tr><th>O.S.			<td align="right">Debian wheezy</tr>
+</table>
+<br />
+實習機器
+<table border=2>
+  <tr><td width="100">	<th width="320">CSIE-Student*、CSIE-Work*</tr>
+  <tr><th>CPU			<td align="right">AMD Opteron(TM) Processor 6128<br> (total 4 cpu cores)</tr>
+  <tr><th>Memory		<td align="right">4G</tr>
+  <tr><th>Disk spaces	<td align="right">40G</tr>
+  <tr><th>O.S.			<td align="right">Debian wheezy</tr>
+</table>
+
+<h2>安裝實作(Virsh)</h2>
+
+
+<ol>
+<h3><li>安裝 Libvirt/Virsh 所需套件及準備工作.</h3>
+
+
+	<li>安裝 Libvsudo aptitude install libvirt-bin virtinst xtightvncviewer virt-viewerirt 套件
+<div class="console">
+<div class="dol">sudo aptitude update </div>
+<div class="dol">sudo aptitude install libvirt-bin virtinst xtightvncviewer virt-viewer</div></div><br />
+
+	<li>將帳號加入 libvirt 群組後重新登入
+<div class="console"><div class="dol">sudo adduser cloud libvirt</div></div>
+<div class="out">Adding user `cloud' to group `libvirt' ...
+Adding user cloud to group libvirt
+Done.
+</div>
+
+	<li>新增目錄 virsh 用來存放 image 檔.
+<div class="console"><div class="dol">sudo mkdir /src3/virsh; cd /src3/virsh</div>
+<div class="dol">sudo chown cloud:cloud /src3/virsh</div>
+<div class="dol">qemu-img create -f qcow2 virsh-01.img 2G</div></pre></div>
+<div class="out">Formatting 'Virsh-01.img', fmt=qcow2 size=2147483648 encryption=off cluster_size=65536</div>
+	</ul>
+
+<h3><li>Virt-install with iso</h3>
+
+	<ul>
+	<li>將底下指令用滑鼠框起來並利用滑鼠中鍵將底下的指令全部複製到terminal上去執行<br />	
+	<br />
+	<li>利用virsh去定義xml的網路配置,首先要先自行建立xml檔案
+	<div class="console">
+<div class="dol">sudo nano /src3/virsh/network.xml</div></div>
+	<li>將底下指令複製到network.xml檔案裡頭 (Control + o 代表儲存此檔案  Control + x 代表離開此檔案)
+<div class="console">
+	<pre>
+&lt;network&gt;
+  &lt;name&gt;virsh-br2&lt;/name&gt;
+  &lt;bridge name="br2" /&gt;
+  &lt;forward mode="route" /&gt;
+  &lt;ip address="192.168.1.254" netmask="255.255.255.0" /&gt;
+&lt;/network&gt;</pre></div>
+	
+	<li>利用virsh指令將network.xml定義進去
+<div class="console">
+		<pre>
+$sudo virsh net-define /src3/virsh/network.xml
+</pre></div>
+<div class="out">
+<pre>
+Network virsh-network defined from network.xml
+</pre></div>
+<div class="console">
+		<pre>
+$sudo virsh net-list --all
+</pre></div>
+<div class="out">
+<pre>
+Name				State		Autostart
+-----------------------------------------
+default				inactive		no
+virsh-br2			inactive		no
+</pre></div>
+	<li>因為virsh-network state還是inactive的,因此要下底下指令將他active
+	<div class="console">
+		<pre>
+		
+<div class="dol">sudo virsh net-start virsh-br2</div></pre></div>
+<div class="console">
+		<pre>
+$sudo virsh net-list --all
+</pre></div>
+<div class="out">
+<pre>
+Name				State		Autostart
+-----------------------------------------
+default				inactive		no
+virsh-br2			active			no
+</pre></div>
+<div class="console">
+<pre>
+$ wget http://mirror.cs.nchu.edu.tw/debian-7.1.0-amd64-netinst.iso
+</pre></div>
+<div class="console">
+	<pre>
+sudo virt-install \
+--connect qemu:///system \
+--name virsh \
+--ram 512 \
+--os-type linux \
+--hvm \
+--accelerate \
+--cdrom /src3/virsh/debian-7.1.0-amd64-netinst.iso \
+--disk /src3/virsh/virsh-01.img,format=qcow2 \
+--network bridge=br2 \
+--vnc
+</pre></div>
+<div class="out"><pre>
+Starting install...
+Creating domain...</pre></div>
+
+ <li>將剛剛的建立起來的virsh關掉並刪除
+ <div class="console">
+ <pre>
+$sudo virsh destroy virsh
+<div class="out"><pre>
+Domain virsh destroyed
+</pre></div>
+$sudo virsh undefine virsh
+<div class="out"><pre>
+Domain virsh has been undefined
+</pre></div>
+ </pre></div>
+</ul>
+<h3><li>Virt-install with img</h3>
+	<ul>
+	<li>將底下指令用滑鼠框起來並利用滑鼠中鍵將底下的指令全部複製到terminal上去執行
+	
+	<div class="console">
+	<pre>
+sudo virt-install \
+--connect qemu:///system \
+--name virsh1 \
+--ram 512 \
+--hvm \
+--accelerate \
+--disk /src3/virsh/virsh-02.img,format=qcow2 \
+--import \
+--network bridge=br2 \
+--vnc
+</pre></div>
+<div class="out"><pre>
+Starting install...
+Creating domain...</pre></div>
+<br />
+
+	</ul>
+<h3><li>Virtual Machine Network Configuration</h3>
+	<ul>
+	<li>進入虛擬機器配置網路
+<div class="console"><pre>
+sudo nano /etc/network/interface
+</pre></div>
+	<li>修改虛擬機器的網路
+<div class="console"><pre>
+# The loopback network interface
+  auto lo eth0
+  iface inet loopback
+
+#The primary network interface
+  iface eth0 inet static
+	address 192.168.0.1
+	netmask 255.255.255.0
+	gateway 192.168.0.254
+</pre></div>
+	</ul>
+	
+	
+<h3><li>讓虛擬機器能夠對外的溝通(Host端設定)</h3>
+	<ul>
+	<div class="console"><pre>
+$sudo iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o eth0 -j MASQUERADE</pre></div>
+<div class="console"><pre>
+$sudo sysctl net.ipv4.ip_forward=1</pre></div>
+<div class="console"><pre>
+$vncviewer localhost     	#可以透過vnc protocol連到虛擬機器,在ping外網看連線是否成功</pre></div></ul></ol>
+<h2>安裝實作(Virt-Manager)</h2>
+<ol>
+	<h3><li>安裝virt-manager所需要的套件及準備工作</h3><ul>
+	<li>登入各組之機器
+<div class="console"><pre>$ ssh -X cloud@'Server-IP'</pre></div><br />
+	<li>安裝virt-manager套件
+<div class="console"><pre>
+$sudo apt-get install virt-manager</pre></div>
+	<li>新增目錄virtIMG用來存放image檔.
+<div class="console"><pre>
+$cd          #確保你在home directory裡面
+$mkdir virtIMG; cd virtIMG
+$qemu-img create -f qcow2 virt-01.img 2G</pre></div>
+<div class="out"><pre>
+Formatting 'virsh-01.img', fmt=qcow2 size=2147483648 encryption=off cluster_size=65536
+</pre></div>
+</ul>
+<h3><li>新增storage pool.</h3>
+<ul>
+<li>開啟 virt-manager 主視窗 Virtual Machine Manager 
+<div class="console"><pre>$ virt-manager</pre></div>
+<br />
+	<img src="img/lab2/1.png"><br/>
+	<br />
+	<li>點選 Virtual Machine Manager 主視窗的 Edit ---> Connection Details ---> storage 會呈現如下的畫面，點選左下角十字按鈕 add pool<br />
+	<br />
+	<img src="img/lab2/2.png"><br/>
+	<br />
+	<li>命名儲存池：KVMIMG ( 定義 image 檔所存放的路徑，以方便去使用)<br />
+	<br />
+	<img src="img/lab2/3.png"><br />
+	<br />
+	
+	<li>指定儲存池路徑 <br />
+	<br />
+	<img src="img/lab2/4.png"><br />
+	<br />
+
+	<li>成功新增儲存池的畫面<br />
+	<br />
+	<img src="img/lab2/5.png"><br />
+	<br /></ul>
+<h3><li>新增Network Interfaces</h3>
+<ul>
+	<li>點選 Virtual Machine Manager 主視窗的 Edit ---> Connection Details ---> Network Interfaces 會呈現如下的畫面，點選左下角十字按鈕 add pool<br />
+	<img src="img/lab2/image-1.png"><br />
+	<li>Interface Type 選擇 Bridge<br />
+	<img src="img/lab2/image-2.png"><br />
+	<li>依圖片設置並點選IP setting的configure去設定bridge的IP address<br />
+	<img src="img/lab2/image-3.png"><br />
+	<li>選擇手動設定並點選ipv4將bridge ip輸入<br />
+	<img src="img/lab2/image-4.png"><br />
+</ul>
+<h3><li>用 virt-manager 製作虛擬機器.</h3>
+<ul>
+<li>Step 1 of 5<br />
+	<br />
+	點選 Virtual Machine Manager 左上角的電腦圖示 Create a new virtual machine，出現如下圖所視的視窗;<br />
+	<br />
+	接著給予虛擬機器名稱：主機上面的名稱，並選擇欲安裝的方式，在此選擇的方式為 Local install media ( ISO image or CDROM )<br />
+	<br />
+	<img src="img/lab2/image-7.png"><br />
+	<br />
+	
+	<li>Step 2 of 5<br />
+	<br />
+	指定 iso 檔存放位置並指名作業系統與其版本<br />
+	<br />
+	<img src="img/lab2/7.png"><br />
+	<br />
+	
+	<li>Step 3 of 5<br />
+	<br />
+	給 memory 和 cpu 大小<br />
+	<br />
+	<img src="img/lab2/8.png"><br />
+	<br />
+	
+	<li>Step 4 of 5<br />
+	<br />
+	選擇事先準備好的空的 image <br />
+	<br />
+	<img src="img/lab2/9.png"><br />
+	<br />
+	
+	<li>Step 5 of 5<br />
+	<br />
+	虛擬網路選用剛剛建立的Bridge去做連接，點選上圖的 Finish 後便開始虛擬機器的安裝<br />
+	<br />
+	<img src="img/lab2/image-5.png"><br />
+	<br />
+	
+	<li>點選 Finish 後便如實體機器灌機般開始安裝虛擬機器的作業系統<br />
+	<br />
+	<img src="img/lab2/image-9.png"><br />
+	<br />
+	至此, 已完成了用 Virt-manager 創建一個新的虛擬機器<br />
+	<br />
+</ul>
+
+<h3><li>使用預先建置好的image來開啟虛擬機器</h3>
+<ul>
+	<li>將已經灌好作業系統的虛擬機器 import 的作法如下： 
+<div class="console"><pre>$ cp /src3/KVM/img/VM-01.img /src3/virtIMG/Virt-02.img
+$ cp /src3/KVM/img/VM-01.img /src3/virtIMG/Virt-03.img</pre></div>
+	<br />
+	<li>step 1 of 4 <br />
+	<br />
+	如前面所述用 virt-manager 製作虛擬機器的方式開始另一個虛擬機器的製作，差別在這裡選擇 Import existing disk image <br />
+	<br />
+	<img src="img/lab2/image-8.png"><br />
+	<br />
+
+	
+	<li>step 2 of 4 <br />
+	<br />
+	此時所選擇的則是我們事先已建置好的 image (template)，也就是 Virt-02.img<br /> 
+	<br />
+	<img src="img/lab2/12.png"><br />
+	<br />
+
+	<li>step 3 of 4 <br />
+	<br />
+	其餘步驟則同於上述新增虛擬機器的方法<br /> 
+	<br />
+	<img src="img/lab2/13.png"><br />
+	<br />
+	
+	<li>step 4 of 4   記得要點開Advanced options點選	br3 <br />
+	<br />
+	<img src="img/lab2/image-5.png"><br />
+	<br />
+	
+	<li>按下 Finish 之後即可進入作業系統<br />
+	<br />
+	<img src="img/lab2/grub.png"><br />
+	<br />
+	
+	<li>建好後可看見用 virt-manager 管理兩部虛擬機器的畫面 <br />
+	<br />
+	<img src="img/lab2/image-10.png"><br />
+	<br />
+	</ul>
+	<h3><li>Monitor and manage the remote host ( A：本機端　B：欲監控端 ).</h3>
+	<ul>
+	<li>下載套件 ssh-askpass 作遠端認證用<b>(A and B)</b>
+<div class="console"><pre>$ sudo apt-get install ssh-askpass</pre></div>
+	<li>產生 key 來做遠端認證 <b>(A)</b>
+<div class="console"><pre>$ ssh-keygen -t rsa -N ""</pre></div>
+<div class="out"><pre>cloud@CSIE-Demo:~$ ssh-keygen -t rsa -N ""
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/cloud/.ssh/id_rsa): 
+Your identification has been saved in /home/cloud/.ssh/id_rsa.
+Your public key has been saved in /home/cloud/.ssh/id_rsa.pub.
+The key fingerprint is:
+ac:be:5f:73:95:97:23:12:79:c0:8e:25:99:4f:c2:24 cloud@CSIE-Demo
+The key's randomart image is:
++--[ RSA 2048]----+
+|       Eo.+.     |
+|        .* +o    |
+|          Oo .   |
+|       . . oo  ..|
+|        S  . .oo.|
+|       .    .....|
+|      .   o .    |
+|     .   . o     |
+|      oo.        |
++-----------------+</div>
+<div class="console"><pre>$ ssh-copy-id -i /home/cloud/.ssh/id_rsa.pub cloud@[node B IP]</pre></div>
+<div class="out"><pre>cloud@CSIE-Demo:~$ ssh-copy-id -i /home/cloud/.ssh/id_rsa.pub cloud@140.120.16.79
+cloud@140.120.16.79's password: 
+Now try logging into the machine, with "ssh 'cloud@140.120.16.79'", and check in:
+
+  .ssh/authorized_keys
+
+to make sure we haven't added extra keys that you weren't expecting.</pre></div>
+<br />
+	<li>在 Virtual Machine Manager 主視窗點選 File ---> Add Connection 並設定遠端連線<br />
+	<br />注意：<b>Hostname 必須填欲監控遠端機器 (B) 的 IP</b><br />
+	<br />
+	<img src="img/lab2/image-11.png"><br />
+	<br />
+	<li>遠端連線設定成功<br />
+	<br />
+	<img src="img/lab2/17.png"><br />
+<br />
+</ul>
+<h3><li>Live Migration.</h3>
+	<ul>
+	<li>虛擬機器線上遷移<br />
+	<br />
+	在系統管理的工作中，若發生一些硬體問題時，通常需要停機來進行修復，因此也必須停止對外服務。<br />
+	<br />
+	如果是透過虛擬化技術來建置服務環境時，當有一台實體主機需要停機維護時，就可以利用線上遷移的功能將虛擬機器移至另一台實體主機中繼續執行。<br />
+	
+	<br />
+	<img src="img/lab2/27.png"><br />
+	<br />
+	<li><b>先將自己的虛擬機器 LM-[組別] 關閉，並且離開 virt-manager 主畫面</b><br />
+	<br />
+	<li>拷貝對方的 image 檔來互相進行 migration (也就是兩組的虛擬機器，互相遷移到對方的實習機器執行)
+	<div class="console"><pre>$ scp [對方組別IP]:/src3/virtIMG/LM-[對方組別].img /src3/virtIMG/</pre></div>
+	<br />
+	<li>務必確認在 virtIMG 裡有自己和對方的 img 檔
+	<div class="console"><pre>$ ls -l /src3/virtIMG/</pre></div>
+	<div class="out"><pre>total 4194312
+-rw-r--r-- 1 cloud cloud 2147483648 Nov 6 22:00 LM-19.img
+-rw-r--r-- 1 root  root  2147483648 Nov 6 22:13 LM-20.img
+	</pre></div>
+	<br />
+		
+	<li>修改自己虛擬機器的 XML 檔案
+	<div class="console"><pre>$ ls -l /etc/libvirt/qemu/</pre></div>
+	<div class="out"><pre>total 8
+-rw------- 1 root root 2123 Oct 31 16:26 LM-[組別].xml
+drwxr-xr-x 3 root root 4096 Oct 19 21:56 networks</pre></div>
+	<div class="console"><pre>$ sudo cp /etc/libvirt/qemu/LM-[組別].xml /etc/libvirt/qemu/LM-[組別].xml.orig
+$ sudo nano /etc/libvirt/qemu/LM-[組別].xml
+$ sudo diff /etc/libvirt/qemu/LM-[組別].xml /etc/libvirt/qemu/LM-[組別].xml.orig</pre></div>
+	<div class="out"><pre>30c30
+<	&#060;driver name='qemu' type='raw' cache='none'&#047;>
+---
+>	&#060;driver name='qemu' type='raw'&#047;></pre></div>
+	<li>修改後重新啟動服務
+	<div class="console"><pre>$ sudo /etc/init.d/libvirt-bin restart</pre></div>
+	<div class="out"><pre>[ ok ] Restarting libvirt management daemon: /usr/sbin/libvirtd.</pre></div><br />
+	<li>開啟虛擬機器 LM-[組別] 之後，在該台 VM 上按滑鼠右鍵選擇 Migrate <br />
+	<br />
+	<img src="img/lab2/m1.png"><br />
+	<br />
+	<li>點開 Advanced Options，勾選和輸入欲遷移的<b>目的 IP </b><br />
+	<br />
+	<img src="img/lab2/m2.png"><br />
+	<br />
+	<li>確定後按下 Migrate，即可看到自己的虛擬機器遷移到對方實習機器的過程<br />
+	<br />
+	<img src="img/lab2/m3.png"><br />
+	<br />
+	<li>同樣的，對方的虛擬機器遷移到自己實習機器上<br />
+	<br />
+	<img src="img/lab2/m4.png"><br />
+	<br />
+	<li>當遷移工作都完成後，就可以看到自己的虛擬機器已經被轉到對方的實習機器上繼續運作了<br />
+	<br />
+	<img src="img/lab2/m5.png"><br />
+	<br />
+	</ul>
+
+
+
+</ol>
+
+<h1>References</h1>
+	<ol>
+	<li><a href="http://libvirt.org/index.html" target="_blank"> libvirt </a>
+	<li><a href="http://wiki.libvirt.org/page/VirtualNetworking" target="_blank"> libvirt : Virtual Networking </a>
+	<li><a href="http://virt-manager.org/index.html" target="_blank"> Virtual Machine Manager </a>
+	<li><a href="http://josephj.com/article/understand-ssh-key/" target="_blank"> SSH 免密碼登入 </a>
+	<li><a href="http://www.spps.tp.edu.tw/documents/memo/iptables/iptables.htm" target="_blank"> 使用 iptables 建置 Linux 防火牆 </a>
+	</ol>
+
+</BODY>
+</html>

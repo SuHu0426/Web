@@ -1,0 +1,364 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Network Namespace</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+</head>
+<body>
+  <h1>Introduction</h1>
+  <p>A namespace wraps a global system resource in an abstraction that makes
+    it appear to the processes within the namespace that  they  have  their
+    own  isolated  instance  of the global resource.  Changes to the global
+    resource are visible to other processes that are members of the  names‐
+    pace,  but  are invisible to other processes.  One use of namespaces is
+    to implement containers.
+  <p>Linux provides the following namespaces:
+<table border="0">
+  <tr><th align="left">Namespace<th align="left">Constant<th align="left">Isolates</tr>
+  <tr><td>IPC(Interprocess Communication)<td>CLONE_NEWIPC<td>System V IPC, POSIX message queues</tr>
+  <tr><td>Network<td>CLONE_NEWNET<td>Network devices, stacks, ports, etc.</tr>
+  <tr><td>Mount<td>CLONE_NEWNS<td>Mount points</tr>
+  <tr><td>PID<td>CLONE_NEWPID<td>Process IDs</tr>
+  <tr><td>User<td>CLONE_NEWUSER<td>User and group IDs</tr>
+  <tr><td>UTS(UNIX Time-sharing System)<td>CLONE_NEWUTS<td>Hostname and NIS domain name</tr>
+</table>
+
+    
+<h2>Network Namespace</h2>
+  <p>A network namespace is logically another copy of the network stack, with its own
+    routes, firewall rules, and network devices.
+  <p>We can use network namespace to isolate networks.
+  <p>For example:<br>
+    <img src="img/NetworkNamespaceEx1.png" alt="figure 1"><br>
+    figure 1
+  </p>
+
+  <h2>Lab 1</h2>
+  <p>Build an environment likes figure 1.
+<pre class="mdol">
+<code>man ip-netns</code>
+<code class="out">SYNOPSIS
+       ip [ OPTIONS ] netns  { COMMAND | help }
+
+       ip netns { list }
+
+       ip netns { add | delete } NETNSNAME
+
+       ip netns identify PID
+
+       ip netns pids NETNSNAME
+
+       ip netns exec NETNSNAME command ...
+
+       ip netns monitor
+
+[...]
+</code>
+<code>sudo ip netns add h1</code>
+<code>sudo ip netns add h2</code>
+<code>ip netns list</code>
+<code class="out">h2
+h1
+</code>
+<code>man ip-link</code>
+<code class="out">SYNOPSIS
+       ip [ OPTIONS ] link  { COMMAND | help }
+
+       OPTIONS := { -V[ersion] | -s[tatistics] | -r[esolve] | -f[amily] { inet | inet6
+               | ipx | dnet | link } | -o[neline] }
+
+       ip link add [ link DEVICE ] [ name ] NAME
+               [ txqueuelen PACKETS ]
+               [ address LLADDR ] [ broadcast LLADDR ]
+               [ mtu MTU ] [ index IDX ]
+               [ numtxqueues QUEUE_COUNT ] [ numrxqueues QUEUE_COUNT ]
+               type TYPE [ ARGS ]
+
+       TYPE := [ bridge | bond ] can | dummy | hsr | ifb | ipoib | macvlan | macvtap |
+               vcan | veth | vlan | vxlan | ip6tnl | ipip | sit | gre | gretap | ip6gre
+               | ip6gretap ]
+
+       ip link delete DEVICE type TYPE [ ARGS ]
+
+       ip link set { DEVICE | group GROUP } { up | down | arp { on | off } |
+               promisc { on | off } |
+               allmulticast { on | off } |
+               dynamic { on | off } |
+               multicast { on | off } |
+               txqueuelen PACKETS |
+               name NEWNAME |
+               address LLADDR | broadcast LLADDR |
+               mtu MTU |
+               netns PID |
+               netns NETNSNAME |
+               alias NAME |
+               vf NUM [ mac LLADDR ] [ vlan VLANID [ qos VLAN-QOS ] ] [ rate TXRATE ] [
+               max_tx_rate TXRATE ] [ min_tx_rate TXRATE ] [ spoofchk { on | off } ] [
+               state { auto | enable | disable} ] |
+               master DEVICE
+               nomaster  }
+
+       ip link show [ DEVICE | group GROUP ]
+[...]
+</code>
+<code>sudo ip link add h1_eth0 type veth peer name s1_eth1</code>
+<code>sudo ip link add h2_eth0 type veth peer name s1_eth2</code>
+<code>ip link</code>
+<code class="out">7: s1_eth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether a6:b9:19:d8:07:43 brd ff:ff:ff:ff:ff:ff
+8: h1_eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether e2:78:34:9c:a7:7a brd ff:ff:ff:ff:ff:ff
+9: s1_eth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether be:62:d6:3d:2a:21 brd ff:ff:ff:ff:ff:ff
+10: h2_eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether ce:3a:f4:d3:39:80 brd ff:ff:ff:ff:ff:ff
+</code>
+<code>sudo ip link set h1_eth0 netns h1</code>
+<code>sudo ip link set h2_eth0 netns h2</code>
+<code>ip link</code>
+<code class="out">7: s1_eth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether a6:b9:19:d8:07:43 brd ff:ff:ff:ff:ff:ff
+9: s1_eth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether be:62:d6:3d:2a:21 brd ff:ff:ff:ff:ff:ff
+</code>
+<code>sudo ip netns exec h1 ifconfig -a</code>
+<code class="out">h1_eth0 Link encap:Ethernet  HWaddr e2:78:34:9c:a7:7a  
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback  
+          LOOPBACK  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+</code>
+<code>sudo ip netns exec h2 ifconfig -a</code>
+<code class="out">h2_eth0 Link encap:Ethernet  HWaddr ce:3a:f4:d3:39:80  
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback  
+          LOOPBACK  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+</code>
+<code>sudo ip netns exec h1 ifconfig lo up</code>
+<code>sudo ip netns exec h1 ifconfig h1_eth0 192.168.0.101/24 up</code>
+<code>sudo ip netns exec h2 ifconfig lo up</code>
+<code>sudo ip netns exec h2 ifconfig h2_eth0 192.168.0.102/24 up</code>
+<code>sudo ovs-vsctl add-br s1</code>
+<code>sudo ovs-vsctl add-port s1 s1_eth1</code>
+<code>sudo ovs-vsctl add-port s1 s1_eth2</code>
+<code>sudo ovs-vsctl show</code>
+<code class="out">Bridge "s1"
+        Port "s1_eth1"
+            Interface "s1_eth1"
+        Port "s1"
+            Interface "s1"
+                type: internal
+        Port "s1_eth2"
+            Interface "s1_eth2"
+</code>
+<code>sudo ovs-ofctl show s1</code>
+<code class="out">OFPT_FEATURES_REPLY (xid=0x2): dpid:00008e5a379b6344
+n_tables:254, n_buffers:256
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS ARP_MATCH_IP
+actions: output enqueue set_vlan_vid set_vlan_pcp strip_vlan mod_dl_src mod_dl_dst mod_nw_src mod_nw_dst mod_nw_tos mod_tp_src mod_tp_dst
+ 1(s1_eth1): addr:5e:d6:f1:8d:dc:88
+     config:     PORT_DOWN
+     state:      LINK_DOWN
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ 2(s1_eth2): addr:2e:1e:ab:0f:50:c0
+     config:     PORT_DOWN
+     state:      LINK_DOWN
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ LOCAL(s1): addr:8e:5a:37:9b:63:44
+     config:     PORT_DOWN
+     state:      LINK_DOWN
+     speed: 0 Mbps now, 0 Mbps max
+OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0
+</code>
+<code>sudo ifconfig s1_eth1 up</code>
+<code>sudo ifconfig s1_eth2 up</code>
+<code>sudo ip netns exec h1 ping -c 3 192.168.0.102</code>
+<code>sudo ovs-ofctl show s1</code>
+<code class="out">OFPT_FEATURES_REPLY (xid=0x2): dpid:00008e5a379b6344
+n_tables:254, n_buffers:256
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS ARP_MATCH_IP
+actions: output enqueue set_vlan_vid set_vlan_pcp strip_vlan mod_dl_src mod_dl_dst mod_nw_src mod_nw_dst mod_nw_tos mod_tp_src mod_tp_dst
+ 1(s1_eth1): addr:5e:d6:f1:8d:dc:88
+     config:     0
+     state:      0
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ 2(s1_eth2): addr:2e:1e:ab:0f:50:c0
+     config:     0
+     state:      0
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ LOCAL(s1): addr:8e:5a:37:9b:63:44
+     config:     PORT_DOWN
+     state:      LINK_DOWN
+     speed: 0 Mbps now, 0 Mbps max
+OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0
+</code>
+</pre>
+<p>Restore lan.
+<pre class="mdol">
+<code>sudo ovs-vsctl del-port s1 s1_eth2</code>
+<code>sudo ovs-vsctl del-port s1 s1_eth1</code>
+<code>sudo ovs-vsctl del-br s1</code>
+<code>sudo ip link del s1_eth2</code>
+<code>sudo ip link del s1_eth1</code>
+<code>sudo ip netns del h2</code>
+<code>sudo ip netns del h1</code>
+</pre>
+
+<h2>Lab 2</h2>
+<p>VLAN 802.1Q<br>
+  <img src="img/NetworkNamespaceEx2.png" alt="figure 2"><br>
+    figure 2
+<pre class="mdol">
+<code>sudo aptitude install vlan</code>
+<code>cat start-topo.sh</code>
+<code class="out">#! /bin/bash
+
+sudo modprobe 8021q
+sudo ip netns add h1
+sudo ip netns add h2
+sudo ip netns add h3
+sudo ip netns add h4
+sudo ip link add h1_eth0 type veth peer name s1_eth1
+sudo ip link add h2_eth0 type veth peer name s1_eth2
+sudo ip link add h3_eth0 type veth peer name s1_eth3
+sudo ip link add h4_eth0 type veth peer name s1_eth4
+sudo ip link set h1_eth0 netns h1
+sudo ip link set h2_eth0 netns h2
+sudo ip link set h3_eth0 netns h3
+sudo ip link set h4_eth0 netns h4
+sudo ip netns exec h1 ifconfig lo up
+sudo ip netns exec h2 ifconfig lo up
+sudo ip netns exec h3 ifconfig lo up
+sudo ip netns exec h4 ifconfig lo up
+sudo ip netns exec h1 ifconfig h1_eth0 up
+sudo ip netns exec h2 ifconfig h2_eth0 up
+sudo ip netns exec h3 ifconfig h3_eth0 up
+sudo ip netns exec h4 ifconfig h4_eth0 up
+sudo ip netns exec h1 vconfig add h1_eth0 101
+sudo ip netns exec h2 vconfig add h2_eth0 101
+sudo ip netns exec h3 vconfig add h3_eth0 102
+sudo ip netns exec h4 vconfig add h4_eth0 102
+sudo ip netns exec h1 ifconfig h1_eth0.101 192.168.0.101/24 up
+sudo ip netns exec h2 ifconfig h2_eth0.101 192.168.0.102/24 up
+sudo ip netns exec h3 ifconfig h3_eth0.102 192.168.0.103/24 up
+sudo ip netns exec h4 ifconfig h4_eth0.102 192.168.0.104/24 up
+sudo ovs-vsctl add-br s1
+sudo ovs-vsctl add-port s1 eth0
+sudo ovs-vsctl set port eth0 trunks=101,102
+sudo ovs-vsctl add-port s1 s1_eth1 -- set Interface s1_eth1 ofport_request=101
+sudo ovs-vsctl add-port s1 s1_eth2 -- set Interface s1_eth2 ofport_request=102
+sudo ovs-vsctl add-port s1 s1_eth3 -- set Interface s1_eth3 ofport_request=103
+sudo ovs-vsctl add-port s1 s1_eth4 -- set Interface s1_eth4 ofport_request=104
+sudo ifconfig s1_eth1 up
+sudo ifconfig s1_eth2 up
+sudo ifconfig s1_eth3 up
+sudo ifconfig s1_eth4 up
+</code>
+<code>sudo ovs-vsctl show</code>
+<code class="out">97300b24-0486-4520-aae9-13a4b940a2be
+    Bridge "s1"
+        Controller "tcp:127.0.0.1"
+        Port "s1"
+            Interface "s1"
+                type: internal
+        Port "s1_eth2"
+            Interface "s1_eth2"
+        Port "s1_eth4"
+            Interface "s1_eth4"
+        Port "s1_eth3"
+            Interface "s1_eth3"
+        Port "eth0"
+            trunks: [101, 102]
+            Interface "eth0"
+        Port "s1_eth1"
+            Interface "s1_eth1"
+    ovs_version: "2.4.90"
+</code>
+</pre>
+<p>Remind: Remenber to turn on the ethernet cards.
+<pre class="mdol">
+<code>sudo ovs-ofctl show s1</code>
+<code class="out">OFPT_FEATURES_REPLY (xid=0x2): dpid:000050e54942f540
+n_tables:254, n_buffers:256
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS ARP_MATCH_IP
+actions: output enqueue set_vlan_vid set_vlan_pcp strip_vlan mod_dl_src mod_dl_dst mod_nw_src mod_nw_dst mod_nw_tos mod_tp_src mod_tp_dst
+ 1(eth0): addr:50:e5:49:42:f5:40
+     config:     0
+     state:      0
+     current:    1GB-FD AUTO_NEG
+     advertised: 10MB-HD 10MB-FD 100MB-HD 100MB-FD 1GB-HD 1GB-FD COPPER AUTO_NEG AUTO_PAUSE AUTO_PAUSE_ASYM
+     supported:  10MB-HD 10MB-FD 100MB-HD 100MB-FD 1GB-HD 1GB-FD COPPER AUTO_NEG
+     speed: 1000 Mbps now, 1000 Mbps max
+ 101(s1_eth1): addr:fa:26:b7:71:2a:50
+     config:     0
+     state:      0
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ 102(s1_eth2): addr:26:b1:a4:a9:ee:44
+     config:     0
+     state:      0
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ 103(s1_eth3): addr:6a:04:c0:61:94:75
+     config:     0
+     state:      0
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ 104(s1_eth4): addr:9e:a2:3d:e4:95:ff
+     config:     0
+     state:      0
+     current:    10GB-FD COPPER
+     speed: 10000 Mbps now, 0 Mbps max
+ LOCAL(s1): addr:50:e5:49:42:f5:40
+     config:     PORT_DOWN
+     state:      LINK_DOWN
+     speed: 0 Mbps now, 0 Mbps max
+OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0
+</code>
+<code>cat stop-topo.sh</code>
+<code class="out">sudo ovs-vsctl del-br s1
+sudo ip netns del h1
+sudo ip netns del h2
+sudo ip netns del h3
+sudo ip netns del h4
+sudo rmmod 8021q
+</code>
+<code>ifconfig -a</code>
+</pre>
+
+<!-- 頁底 -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+      <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+      // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> ChiSheng Su </a>
+  </address>
+</div>
+</body>
+</html>

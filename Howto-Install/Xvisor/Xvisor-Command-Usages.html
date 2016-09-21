@@ -1,0 +1,566 @@
+
+<h4>vmm builtin commands:</h4>
+<PRE>
+hsu@amd-6:/src3/Xvisor/xvisor-next$ nm ./build/vmm.elf | grep -o -e "cmd_[a-zA-Z]*_usage"
+cmd_blockdev_usage <a href="#blockdev">blockdev</a>
+cmd_chardev_usage <a href="#chardev">chardev</a>
+cmd_devtree_usage <a href="#devtree">devtree</a>
+cmd_echo_usage <a href="#echo">echo</a>
+cmd_fb_usage <a href="#fb">fb</a>
+cmd_guest_usage <a href="#guest">guest</a>
+cmd_heap_usage <a href="#heap">heap</a>
+cmd_help_usage <a href="#help">help</a>
+cmd_host_usage <a href="#host">host</a>
+cmd_input_usage <a href="#input">input</a>
+cmd_memory_usage <a href="#memory">memory</a>
+cmd_module_usage <a href="#module">module</a>
+cmd_rbd_usage <a href="#rbd">rbd</a>
+cmd_reset_usage <a href="#reset">reset</a>
+cmd_shutdown_usage <a href="#shutdown">shutdown</a>
+cmd_sleep_usage <a href="#sleep">sleep</a>
+cmd_stdio_usage <a href="#stdio">stdio</a>
+cmd_thread_usage <a href="#thread">thread</a>
+cmd_vcpu_usage <a href="#vcpu">vcpu</a>
+cmd_vdisk_usage <a href="#vdisk">vdisk</a>
+cmd_version_usage <a href="#version">version</a>
+cmd_vfs_usage <a href="#vfs">vfs</a>
+cmd_vinput_usage <a href="#vinput">vinput</a>
+cmd_vserial_usage <a href="#vserial">vserial</a>
+cmd_wallclock_usage <a href="#wallclock">wallclock</a>
+</PRE>
+
+<OL>
+  <LI><a name="blockdev">blockdev<a> usage
+
+<PRE>
+# Line 40 in commands/cmd_blockdev.c 
+static void cmd_blockdev_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   blockdev help\n");
+	vmm_cprintf(cdev, "   blockdev list\n");
+	vmm_cprintf(cdev, "   blockdev info <name>\n");
+	vmm_cprintf(cdev, "   blockdev dump8 <name> [length] [offset]\n");
+}
+</PRE>
+
+  <LI><a name="chardev">chardev</a> usage
+
+<PRE>
+# Line 39 in commands/cmd_chardev.c
+static void cmd_chardev_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   chardev help\n");
+	vmm_cprintf(cdev, "   chardev list\n");
+}
+</PRE>
+
+  <LI><a name="devtree">devtree</a> usage
+
+<PRE>
+# Line  40 in commands/cmd_devtree.c
+static void cmd_devtree_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   devtree help\n");
+	vmm_cprintf(cdev, "   devtree attr show <node_path>\n");
+	vmm_cprintf(cdev, "   devtree attr set  <node_path> <attr_name> "
+						"<attr_type> <attr_val0> "
+						"<attr_val1> ...\n");
+	vmm_cprintf(cdev, "   devtree attr get  <node_path> <attr_name>\n");
+	vmm_cprintf(cdev, "   devtree attr del  <node_path> <attr_name>\n");
+	vmm_cprintf(cdev, "   devtree node show <node_path>\n");
+	vmm_cprintf(cdev, "   devtree node dump <node_path>\n");
+	vmm_cprintf(cdev, "   devtree node add  <node_path> <node_name>\n");
+	vmm_cprintf(cdev, "   devtree node copy <node_path> <node_name> "
+						"<src_node_path>\n");
+	vmm_cprintf(cdev, "   devtree node del  <node_path>\n");
+	vmm_cprintf(cdev, "Note:\n");
+	vmm_cprintf(cdev, "   <node_path> = unix like path of node "
+			  "(e.g. / or /host/cpus or /guests/guest0)\n");
+	vmm_cprintf(cdev, "   <attr_type> = unknown|string|bytes|"
+					   "uint32|uint64|"
+			  		   "physaddr|physsize|"
+					   "virtaddr|virtsize\n");
+}
+</PRE>
+  <LI><a name="echo">echo</a> usage
+
+<PRE>
+# Line 37 in  commands/cmd_echo.c 
+static void cmd_echo_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage: ");
+	vmm_cprintf(cdev, "   echo <message>\n");
+}
+</PRE>
+
+  <LI><a name="fb">fb</a> usage
+
+<PRE>
+# Line 43 in  commands/cmd_fb.c  
+static void cmd_fb_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   fb help\n");
+	vmm_cprintf(cdev, "   fb list\n");
+	vmm_cprintf(cdev, "   fb info <fb_name>\n");
+	vmm_cprintf(cdev, "   fb blank <fb_name> <value>\n");
+	vmm_cprintf(cdev, "   fb fillrect <fb_name> <x> <y> <w> <h> <c> "
+		    "[<rop>]\n");
+	vmm_cprintf(cdev, "   fb logo <fb_name> [<x>] [<y>] [<w>] [<h>]\n");
+	vmm_cprintf(cdev, "   fb image <fb_name> <image_path> [<x>] [<y>]\n");
+}
+</PRE>
+
+  <LI><a name="guest">guest</a> usage
+
+<PRE>
+# Line 41 in  commands/cmd_guest.c  
+static void cmd_guest_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   guest help\n");
+	vmm_cprintf(cdev, "   guest list\n");
+	vmm_cprintf(cdev, "   guest create  <guest_name>\n");
+	vmm_cprintf(cdev, "   guest destroy <guest_name>\n");
+	vmm_cprintf(cdev, "   guest reset   <guest_name>\n");
+	vmm_cprintf(cdev, "   guest kick    <guest_name>\n");
+	vmm_cprintf(cdev, "   guest pause   <guest_name>\n");
+	vmm_cprintf(cdev, "   guest resume  <guest_name>\n");
+	vmm_cprintf(cdev, "   guest halt    <guest_name>\n");
+	vmm_cprintf(cdev, "   guest dumpmem <guest_name> <gphys_addr> "
+			  "[mem_sz]\n");
+	vmm_cprintf(cdev, "   guest region  <guest_name> <gphys_addr>\n");
+	vmm_cprintf(cdev, "Note:\n");
+	vmm_cprintf(cdev, "   <guest_name> = node name under /guests "
+			  "device tree node\n");
+}
+</PRE>
+
+  <LI><a name="heap">heap</a> usage
+
+<PRE>
+# Line 41 in  commands/cmd_heap.c  
+static void cmd_heap_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   heap help\n");
+	vmm_cprintf(cdev, "   heap info\n");
+	vmm_cprintf(cdev, "   heap state\n");
+	vmm_cprintf(cdev, "   heap dma_info\n");
+	vmm_cprintf(cdev, "   heap dma_state\n");
+}
+</PRE>
+  <LI><a name="help">help</a> usage
+
+<PRE>
+# Line 269 in  core/vmm_cmdmgr.c
+static void cmd_help_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage: ");
+	vmm_cprintf(cdev, "   help\n");
+	vmm_cprintf(cdev, "   help <cmd_name1> [<cmd_name2>] ...\n");
+}
+</PRE>
+
+  <LI><a name="host">host</a> usage
+
+<PRE>
+# Line 52 in  commands/cmd_host.c  
+static void cmd_host_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   host help\n");
+	vmm_cprintf(cdev, "   host info\n");
+	vmm_cprintf(cdev, "   host cpu info\n");
+	vmm_cprintf(cdev, "   host cpu stats\n");
+	vmm_cprintf(cdev, "   host irq stats\n");
+	vmm_cprintf(cdev, "   host irq set_affinity <hirq> <hcpu>\n");
+	vmm_cprintf(cdev, "   host extirq stats\n");
+	vmm_cprintf(cdev, "   host ram info\n");
+	vmm_cprintf(cdev, "   host ram bitmap [<column count>]\n");
+	vmm_cprintf(cdev, "   host vapool info\n");
+	vmm_cprintf(cdev, "   host vapool state\n");
+	vmm_cprintf(cdev, "   host vapool bitmap [<column count>]\n");
+	vmm_cprintf(cdev, "   host resources\n");
+	vmm_cprintf(cdev, "   host bus_list\n");
+	vmm_cprintf(cdev, "   host bus_device_list <bus_name>\n");
+	vmm_cprintf(cdev, "   host class_list\n");
+	vmm_cprintf(cdev, "   host class_device_list <class_name>\n");
+}
+</PRE>
+
+  <LI><a name="input">input</a> usage
+
+<PRE>
+# Line 39 in  commands/cmd_input.c  
+static void cmd_input_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   input help\n");
+	vmm_cprintf(cdev, "   input devices\n");
+	vmm_cprintf(cdev, "   input handlers\n");
+}
+</PRE>
+
+  <LI><a name="memory">memory</a> usage
+
+<PRE>
+# Line 93 in  commands/cmd_memory.c  
+static void cmd_memory_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage: ");
+	vmm_cprintf(cdev, "   memory help\n");
+	vmm_cprintf(cdev, "   memory dump8    <phys_addr> <count>\n");
+	vmm_cprintf(cdev, "   memory dump16   <phys_addr> <count>\n");
+	vmm_cprintf(cdev, "   memory dump32   <phys_addr> <count>\n");
+	vmm_cprintf(cdev, "   memory crc32    <phys_addr> <count>\n");
+#if CONFIG_CRYPTO_HASH_MD5
+	vmm_cprintf(cdev, "   memory md5      <phys_addr> <count>\n");
+#endif
+#if CONFIG_CRYPTO_HASH_SHA256
+	vmm_cprintf(cdev, "   memory sha256      <phys_addr> <count>\n");
+#endif
+	vmm_cprintf(cdev, "   memory modify8  <phys_addr> "
+						"<val0> <val1> ...\n");
+	vmm_cprintf(cdev, "   memory modify16 <phys_addr> "
+						"<val0> <val1> ...\n");
+	vmm_cprintf(cdev, "   memory modify32 <phys_addr> "
+						"<val0> <val1> ...\n");
+	vmm_cprintf(cdev, "   memory copy     <phys_addr> <src_phys_addr> "
+						"<byte_count>\n");
+}
+</PRE>
+
+<P> <b>Note: (02/24/2016)</b> Probably, this copy command is implemented in the 
+<a target="_b" 
+href="https://github.com/avpatel/xvisor-next/blob/master/tests/arm32/common/basic/arm_main.c#L90">arm_main.c (Line 90)</a>
+  <LI><a name="module">module</a> usage
+
+<PRE>
+# Line 39 in  commands/cmd_module.c  
+static void cmd_module_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   module help\n");
+	vmm_cprintf(cdev, "   module list\n");
+	vmm_cprintf(cdev, "   module info <index>\n");
+	vmm_cprintf(cdev, "   module unload <index>\n");
+}
+</PRE>
+
+  <LI><a name="rbd">rbd</a> usage
+
+<PRE>
+# Line 39 in  commands/cmd_rbd.c  
+static void cmd_rbd_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   rbd help\n");
+	vmm_cprintf(cdev, "   rbd list\n");
+	vmm_cprintf(cdev, "   rbd create <name> <phys_addr> <phys_size>\n");
+	vmm_cprintf(cdev, "   rbd destroy <name>\n");
+}
+</PRE>
+
+  <LI><a name="reset">reset</a> usage
+
+<PRE>
+# Line 37 in  commands/cmd_reset.c  
+static void cmd_reset_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage: ");
+	vmm_cprintf(cdev, "   reset\n");
+}
+</PRE>
+  <LI><a name="shutdown">shutdown</a> usage
+
+<PRE>
+# Line in  commands/cmd_shutdown.c  
+</PRE>
+
+  <LI><a name="sleep">sleep</a> usage
+
+<PRE>
+# Line 38 in  commands/cmd_sleep.c  
+static void cmd_sleep_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage: ");
+	vmm_cprintf(cdev, "   sleep <number of seconds>\n");
+}
+</PRE>
+
+  <LI><a name="stdio">stdio</a> usage
+
+<PRE>
+# Line 39 in  commands/cmd_stdio.c  
+static void cmd_stdio_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   stdio help\n");
+	vmm_cprintf(cdev, "   stdio device\n");
+	vmm_cprintf(cdev, "   stdio change_device <chardev_name>\n");
+	vmm_cprintf(cdev, "   stdio loglevel\n");
+	vmm_cprintf(cdev, "   stdio change_loglevel <loglevel>\n");
+}
+</PRE>
+
+  <LI><a name="thread">thread</a> usage
+
+<PRE>
+# Line 40 in  commands/cmd_thread.c  
+static void cmd_thread_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   thread help\n");
+	vmm_cprintf(cdev, "   thread list\n");
+}
+</PRE>
+  <LI><a name="vcpu">vcpu</a> usage
+
+<PRE>
+# Line 46 in  commands/cmd_vcpu.c  
+static void cmd_vcpu_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   vcpu help\n");
+	vmm_cprintf(cdev, "   vcpu list\n");
+	vmm_cprintf(cdev, "   vcpu orphan_list\n");
+	vmm_cprintf(cdev, "   vcpu normal_list\n");
+	vmm_cprintf(cdev, "   vcpu monitor [<output_chardev_name>]\n");
+	vmm_cprintf(cdev, "   vcpu reset   <vcpu_id>\n");
+	vmm_cprintf(cdev, "   vcpu kick    <vcpu_id>\n");
+	vmm_cprintf(cdev, "   vcpu pause   <vcpu_id>\n");
+	vmm_cprintf(cdev, "   vcpu resume  <vcpu_id>\n");
+	vmm_cprintf(cdev, "   vcpu halt    <vcpu_id>\n");
+	vmm_cprintf(cdev, "   vcpu dumpreg <vcpu_id>\n");
+	vmm_cprintf(cdev, "   vcpu dumpstat <vcpu_id>\n");
+}
+</PRE>
+
+  <LI><a name="vdisk">vdisk</a> usage
+
+<PRE>
+# Line 36 in  commands/cmd_vdisk.c  
+static void cmd_vdisk_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   vdisk help\n");
+	vmm_cprintf(cdev, "   vdisk list\n");
+	vmm_cprintf(cdev, "   vdisk detach <vdisk_name>\n");
+	vmm_cprintf(cdev, "   vdisk attach <vdisk_name> <block_device_name>\n");
+}
+</PRE>
+  <LI><a name="version">version</a> usage
+
+<PRE>
+# Line 37 in  commands/cmd_version.c  
+static void cmd_version_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage: ");
+	vmm_cprintf(cdev, "   version\n");
+}
+</PRE>
+
+  <LI><a name="vfs">vfs</a> usage
+
+<PRE>
+# Line 59 in  commands/cmd_vfs.c  
+static void cmd_vfs_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   vfs help\n");
+	vmm_cprintf(cdev, "   vfs fslist\n");
+	vmm_cprintf(cdev, "   vfs mplist\n");
+	vmm_cprintf(cdev, "   vfs mount <bdev_name> <path_to_mount> "
+			  "[wait_sec]\n");
+	vmm_cprintf(cdev, "   vfs umount <path_to_unmount>\n");
+	vmm_cprintf(cdev, "   vfs ls <path_to_dir>\n");
+	vmm_cprintf(cdev, "   vfs cat <path_to_file>\n");
+#if CONFIG_CRYPTO_HASH_MD5
+	vmm_cprintf(cdev, "   vfs md5 <path_to_file>\n");
+#endif
+#if CONFIG_CRYPTO_HASH_SHA256
+	vmm_cprintf(cdev, "   vfs sha256 <path_to_file>\n");
+#endif
+	vmm_cprintf(cdev, "   vfs run <path_to_file>\n");
+	vmm_cprintf(cdev, "   vfs mv <old_path> <new_path>\n");
+	vmm_cprintf(cdev, "   vfs rm <path_to_file>\n");
+	vmm_cprintf(cdev, "   vfs mkdir <path_to_dir>\n");
+	vmm_cprintf(cdev, "   vfs rmdir <path_to_dir>\n");
+	vmm_cprintf(cdev, "   vfs module_load <path_to_module_file>\n");
+	vmm_cprintf(cdev, "   vfs fdt_load <devtree_path> "
+			  "<devtree_root_name> <path_to_fdt_file> "
+			  "[<alias0>,<attr_name>,<attr_type>,<value>] "
+			  "[<alias1>,<attr_name>,<attr_type>,<value>] ...\n");
+	vmm_cprintf(cdev, "   vfs host_load <host_phys_addr> "
+			  "<path_to_file> [<file_offset>] [<byte_count>]\n");
+	vmm_cprintf(cdev, "   vfs host_load_list <path_to_list_file>\n");
+	vmm_cprintf(cdev, "   vfs guest_load <guest_name> <guest_phys_addr> "
+			  "<path_to_file> [<file_offset>] [<byte_count>]\n");
+	vmm_cprintf(cdev, "   vfs guest_load_list <guest_name> "
+			  "<path_to_list_file>\n");
+	vmm_cprintf(cdev, "Note:\n");
+	vmm_cprintf(cdev, "   <attr_type> = unknown|string|bytes|"
+					   "uint32|uint64|"
+			  		   "physaddr|physsize|"
+					   "virtaddr|virtsize\n");
+}
+</PRE>
+
+  <LI><a name="vinput">vinput</a> usage
+
+<PRE>
+# Line 40 in  commands/cmd_vinput.c  
+static void cmd_vinput_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   vinput help\n");
+	vmm_cprintf(cdev, "   vinput keyboards\n");
+	vmm_cprintf(cdev, "   vinput keyboard_event <vkeyboard_name> "
+			  "<keycode>\n");
+	vmm_cprintf(cdev, "   vinput mouses\n");
+	vmm_cprintf(cdev, "   vinput mouse_event <vmouse_name> "
+			  "<dx> <dy> <dz> <left|right|middle|none>\n");
+}
+</PRE>
+  <LI><a name="vserial">vserial</a> usage
+
+<PRE>
+# Line 39 in  commands/cmd_vserial.c  
+static void cmd_vserial_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   vserial bind <name>\n");
+	vmm_cprintf(cdev, "   vserial dump <name> [<byte_count>]\n");
+	vmm_cprintf(cdev, "   vserial help\n");
+	vmm_cprintf(cdev, "   vserial list\n");
+}
+</PRE>
+
+  <LI><a name="wallclock">wallclock</a> usage
+
+<PRE>
+# Line 39 in  commands/cmd_wallclock.c  
+static void cmd_wallclock_usage(struct vmm_chardev *cdev)
+{
+	vmm_cprintf(cdev, "Usage:\n");
+	vmm_cprintf(cdev, "   wallclock help\n");
+	vmm_cprintf(cdev, "   wallclock get_time\n");
+	vmm_cprintf(cdev, "   wallclock set_time <hour>:<min>:<sec> "
+			      "<day> <month> <year> [+/-<tz_hour>:<tz_min]\n");
+	vmm_cprintf(cdev, "   wallclock get_timezone\n");
+	vmm_cprintf(cdev, "   wallclock set_timezone +/-<tz_hour>:<tz_min\n");
+	vmm_cprintf(cdev, "Note:\n");
+	vmm_cprintf(cdev, "   <hour>    = any value between 0..23\n");
+	vmm_cprintf(cdev, "   <minute>  = any value between 0..59\n");
+	vmm_cprintf(cdev, "   <second>  = any value between 0..59\n");
+	vmm_cprintf(cdev, "   <day>     = any value between 0..31\n");
+	vmm_cprintf(cdev, "   <month>   = Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|"
+						"Sep|Oct|Nov|Dec\n");
+	vmm_cprintf(cdev, "   <year>    = any value greater than 1970\n");
+	vmm_cprintf(cdev, "   <tz_hour> = timezone hour\n");
+	vmm_cprintf(cdev, "   <tz_min>  = timezone minutes\n");
+}
+</PRE>
+</OL>
+
+<h4>Arm Commands:</h4> 
+
+<PRE>
+$ cat ./tests/arm32/common/basic/arm_main.c | grep "void\ arm_cmd"
+void arm_cmd_help(int argc, char **argv)
+void arm_cmd_hi(int argc, char **argv)
+void arm_cmd_hello(int argc, char **argv)
+void arm_cmd_wfi_test(int argc, char **argv)
+void arm_cmd_mmu_setup(int argc, char **argv)
+void arm_cmd_mmu_state(int argc, char **argv)
+void arm_cmd_mmu_test(int argc, char **argv)
+void arm_cmd_mmu_cleanup(int argc, char **argv)
+void arm_cmd_timer(int argc, char **argv)
+void arm_cmd_dhrystone(int argc, char **argv)
+void arm_cmd_hexdump(int argc, char **argv)
+void arm_cmd_copy(int argc, char **argv)
+void arm_cmd_start_linux(int argc, char **argv)
+void arm_cmd_start_linux_fdt(int argc, char **argv)
+void arm_cmd_linux_cmdline(int argc, char **argv)
+void arm_cmd_linux_memory_size(int argc, char **argv)
+void arm_cmd_autoexec(int argc, char **argv)
+void arm_cmd_go(int argc, char **argv)
+void arm_cmd_reset(int argc, char **argv)
+</PRE>
+
+
+<a href=https://github.com/avpatel/xvisor-next/blob/master/tests/arm32/common/basic/arm_main.c#L60" target="_b">void arm_cmd_help(int argc, char **argv)</a>
+<PRE>
+{
+	arm_puts("<b>help        - List commands and their usage\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>hi          - Say hi to basic firmware\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>hello       - Say hello to basic firmware\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>wfi_test    - Run wait for irq instruction test for basic firmware\n</b>");
+	arm_puts("<b>            Usage: wfi_test [&lt;msecs>]\n</b>");
+	arm_puts("<b>            &lt;msecs>  = delay in milliseconds to wait for\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>mmu_setup   - Setup MMU for basic firmware\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>mmu_state   - MMU is enabled/disabled for basic firmware\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>mmu_test    - Run MMU test suite for basic firmware\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>mmu_cleanup - Cleanup MMU for basic firmware\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>timer       - Display timer information\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>dhrystone   - Dhrystone 2.1 benchmark\n</b>");
+	arm_puts("<b>            Usage: dhrystone [&lt;iterations>]\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>hexdump     - Dump memory contents in hex format\n</b>");
+	arm_puts("<b>            Usage: hexdump &lt;addr> &lt;count>\n</b>");
+	arm_puts("<b>            &lt;addr>  = memory address in hex\n</b>");
+	arm_puts("<b>            &lt;count> = byte count in hex\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>copy        - Copy to target memory from source memory\n</b>");
+	arm_puts("<b>            Usage: copy &lt;dest> &lt;src> &lt;count>\n</b>");
+	arm_puts("<b>            &lt;dest>  = destination address in hex\n</b>");
+	arm_puts("<b>            &lt;src>   = source address in hex\n</b>");
+	arm_puts("<b>            &lt;count> = byte count in hex\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>start_linux - Start linux kernel (atags mechanism)\n</b>");
+	arm_puts("<b>            Usage: start_linux &lt;kernel_addr> [&lt;initrd_addr>] [&lt;initrd_size>]\n</b>");
+	arm_puts("<b>            &lt;kernel_addr>  = kernel load address\n</b>");
+	arm_puts("<b>            &lt;initrd_addr>  = initrd load address (optional)\n</b>");
+	arm_puts("<b>            &lt;initrd_size>  = initrd size (optional)\n</b>");
+	arm_puts("\n");
+#ifdef BOARD_FDT_SUPPORT
+	arm_puts("<b>start_linux_fdt - Start linux kernel (device-tree mechanism)\n</b>");
+	arm_puts("<b>            Usage: start_linux_fdt &lt;kernel_addr> &lt;fdt_addr> [&lt;initrd_addr>] [&lt;initrd_size>]\n</b>");
+	arm_puts("<b>            &lt;kernel_addr>  = kernel load address\n</b>");
+	arm_puts("<b>            &lt;fdt_addr>     = fdt blob address\n</b>");
+	arm_puts("<b>            &lt;initrd_addr>  = initrd load address (optional)\n</b>");
+	arm_puts("<b>            &lt;initrd_size>  = initrd size (optional)\n</b>");
+	arm_puts("\n");
+#endif
+	arm_puts("<b>linux_cmdline - Show/Update linux command line\n</b>");
+	arm_puts("<b>           Usage: linux_cmdline [&lt;new_linux_cmdline>]\n</b>");
+	arm_puts("<b>           &lt;new_linux_cmdline>  = linux command line\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>linux_memory_size - Show/Update linux memory size\n</b>");
+	arm_puts("<b>            Usage: linux_memory_size [&lt;memory_size>]\n</b>");
+	arm_puts("<b>            &lt;memory_size>  = memory size in hex\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>autoexec    - autoexec command list from flash\n</b>");
+	arm_puts("<b>           Usage: autoexec\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>go          - Jump to a given address\n</b>");
+	arm_puts("<b>            Usage: go &lt;addr>\n</b>");
+	arm_puts("<b>            &lt;addr>  = jump address in hex\n</b>");
+	arm_puts("\n");
+	arm_puts("<b>reset       - Reset the system\n</b>");
+	arm_puts("\n");
+}
+</PRE>

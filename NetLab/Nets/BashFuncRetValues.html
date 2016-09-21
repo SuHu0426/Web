@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html class="js" xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head><title>Returning Values from Bash Functions | Linux Journal</title>
+  </head>
+  <body class="not-front not-logged-in">
+ <h3 class="title">Returning Values from Bash Functions 
+<a href="http://www.linuxjournal.com/content/return-values-bash-functions">(Source 
+Origin)</h3>
+<P> Sep 11, 2009 &nbsp;By&nbsp;<a href="http://www.linuxjournal.com/users/mitch-frazier" 
+title="View user profile.">Mitch Frazier</a>
+
+<p> Bash functions, unlike functions in most programming languages do not allow you to 
+return a value to the caller.  When a bash function ends, its return value is its 
+status: zero for success, non-zero for failure. To return values, you can set a global 
+variable with the result, or use command substitution, or you can pass in the name of a
+variable to use as the result variable.  The examples below describe these different 
+mechanisms.</p>
+
+<p> Although bash has a <b>return</b> statement, the only thing you can specify with it 
+is the function's status, which is a numeric value like the value specified in an 
+<b>exit</b> statement. The status value is stored in the <it>$?</it> variable. If a 
+function does not contain a <b>return</b> statement, its status is set based on the 
+status of the last statement executed in the function. To actually return arbitrary 
+values to the caller you must use other mechanisms.</p>
+
+<p> The simplest way to return a value from a bash function is to just set a global 
+variable to the result. Since all variables in bash are global by default this is 
+easy:</p>
+
+<pre>
+function myfunc()
+{
+    myresult='some value'
+}
+
+myfunc
+echo $myresult
+</pre>
+
+<p> The code above sets the global variable <b>myresult</b> to the function result.
+Reasonably simple, but as we all know, using global variables, particularly in large 
+programs, can lead to difficult to find bugs.</p>
+
+<p> A better approach is to use local variables in your functions. The problem then 
+becomes how do you get the result to the caller.  One mechanism is to use command 
+substitution:</p>
+
+<pre>
+function myfunc()
+{
+    local  myresult='any value'
+    echo "$myresult"
+}
+
+result=$(myfunc)   # or result=`myfunc`
+echo $result
+echo $myresult     # The global variable myresult still hold its original value.
+some value
+</pre>
+
+<p> Here the result is output to the stdout and the caller uses command substitution 
+to capture the value in a variable. The variable can then be used as needed.</p>
+
+<p>The other way to return a value is to write your function so that it accepts a 
+variable name as part of its command line and then set that variable to the result of 
+the function:</p>
+
+<pre>
+function myfunc()
+{
+    local  __resultvar=$1
+    local  myresult='some value'
+    eval $__resultvar="'$myresult'"
+}
+
+myfunc result
+echo $result
+</pre>
+
+<p> Since we have the name of the variable to set stored in a variable, we can't set 
+the variable directly, we have to use <b>eval</b> to actually do the setting. The 
+<b>eval</b> statement basically tells bash to interpret the line twice, the first 
+interpretation above results in the string <b>result='some value'</b> which is then 
+interpreted once more and ends up setting the caller's variable.</p>
+
+<p> When you store the name of the variable passed on the command line, make sure you 
+store it in a local variable with a name that won't be (unlikely to be) used by the 
+caller (which is why I used <b>__resultvar</b> rather than just <b>resultvar</b>).
+If you don't, and the caller happens to choose the same name for their result variable 
+as you use for storing the name, the result variable will not get set.  For example, 
+the following does not work:</p>
+
+<pre>
+function myfunc()
+{
+    local  result=$1
+    local  myresult='no value'
+    eval $result="'$myresult'"
+}
+
+myfunc result
+echo $result
+</pre>
+
+<p> The reason it doesn't work is because when <b>eval</b> does the second interpretation
+and evaluates <b>result='some value'</b>, <b>result</b> is now a local variable
+in the function, and so it gets set rather than setting the caller's result variable.</p>
+
+<p>For more flexibility, you may want to write your functions so that they combine both 
+result variables and command substitution:</p>
+
+<pre>
+function myfunc()
+{
+    local  __resultvar=$1
+    local  myresult='nice value'
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$myresult'"
+    else
+        echo "$myresult"
+    fi
+}
+
+myfunc result
+echo $result
+result2=$(myfunc)
+echo $result2
+</pre>
+
+<p>Here, if no variable name is passed to the function, the value is output
+to the standard output.</p>
+
+  </div>
+      <h4 class="title">
+      <a href="http://www.linuxjournal.com/content/return-values-bash-functions#comment-343091" class="active">Bash can return integer values from functions</a>          </h4>
+  
+  
+
+  <div class="submitted">
+    Submitted by Dave Miller (not verified) on Fri, 09/18/2009 - 16:13.  </div>
+
+  <div class="content">
+    <p>If you only want to return an integer value from a bash function, the will work:<br>
+<code><br>
+#!/bin/bash</code></p>
+<p>function return_code_test ()<br>
+{<br>
+    return 50<br>
+}</p>
+<p>return_code_test<br>
+echo "return_code_test returned $?"<br>
+</p>
+      </div>
+
+  
+</div></div> <!-- /comment-inner, /comment -->
+<a id="comment-342923"></a>
+<div class="comment comment-published even"><div class="comment-inner clear-block">
+
+      <h4 class="title">
+      <a href="http://www.linuxjournal.com/content/return-values-bash-functions#comment-342923" class="active">some thoughts on returning variables</a>          </h4>
+  
+  
+
+  <div class="submitted">
+    Submitted by <a href="http://www.linuxjournal.com/users/smoser" title="View user profile.">smoser</a> on Mon, 09/14/2009 - 08:23.  </div>
+
+  <div class="content">
+    <p>The difference in speed between assignment and eval is possibly 
+not significant, but the difference between either and fork is large.  
+If you're calling a function thousands of times, the fork method 
+"myvar=$(myfunc())" will be much slower.</p>
+<p>I write most of my bash functions to simply set the ${_RET} variable.</p>
+      </div>
+
+  
+</div></div> <!-- /comment-inner, /comment -->
+<div class="indented"><a id="comment-359661"></a>
+<div class="comment comment-published odd last comment-by-anon"><div class="comment-inner clear-block">
+
+      <h4 class="title">
+      <a href="http://www.linuxjournal.com/content/return-values-bash-functions#comment-359661" class="active">some thoughts on returning variables</a>          </h4>
+  
+  <div class="submitted">
+    Submitted by mario.q (not verified) on Mon, 11/22/2010 - 03:46.  </div>
+
+  <div class="content">
+    <p>for control the result in a function, i use "echo" as return value.<br>
+In this way i can call the function in any script position and verify the result.<br>
+-----------------------------<br>
+#!/bin/bash</p>
+<p>cmdPing=`which ping`<br>
+pingThis="qqqperl.com"</p>
+<p>ckping(){<br>
+xpingThis=`$cmdPing -c1 $pingThis &amp;&gt;/dev/null`</p>
+<p>	if [ $? == 0 ];then<br>
+		echo "true"<br>
+		return 10<br>
+	else<br>
+		echo "false"<br>
+		return 20<br>
+	fi<br>
+}</p>
+<p>ckping<br>
+echo "$? this is the return of the function"</p>
+<p>echo "############################"<br>
+echo "$? this is the echo return"</p>
+<p>echo -e "<br>
+-------------------------<br>
+now call the function"</p>
+<p>if [[ "$(ckping)" == "true" ]];then<br>
+	echo -e "</p>
+<p>\t $pingThis ok </p>
+<p>"<br>
+	#wget -N $pingThis/myDownload<br>
+else<br>
+	echo -e "</p>
+<p>\t  $pingThis no pong</p>
+<p>"<br>
+fi<br>
+echo "-------------------------"</p>
+<p>sorry for my poor English<br>
+ciao Mario</p>
+      </div>
+</body></html>

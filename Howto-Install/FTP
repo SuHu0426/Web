@@ -1,0 +1,18 @@
+$ sudo apt-get install proftpd
+$ sudo usermod -s /usr/sbin/nologin 702b
+## Add /usr/sbin/nologin to /etc/shells
+$ sudo nano /etc/shells 
+$ sudo adduser 702b
+$ sudo adduser 702b nogroup
+$ sudo mkdir /home/702b/Music/
+$ sudo mount --bind /src4/Music/ /home/702b/Music/
+## Add or change
+$ gksudo emacs /etc/proftpd/proftpd.conf 
+ServerName			"SNMLab-GGone"
+ServerType			standalone
+Port				702
+RootLogin            off
+SetEnv		     TZ :/etc/localtime
+TimesGMT	     off
+$ sudo /etc/init.d/proftpd start
+

@@ -1,0 +1,371 @@
+$ sudo aptitude update ;sudo aptitude safe-upgrade 
+$ sudo aptitude install build-essential
+$ wget http://www.softether-download.com/files/softether/v4.09-9451-beta-2014.06.09-tree/Linux/SoftEther%20VPN%20Server/64bit%20-%20Intel%20x64%20or%20AMD64/softether-vpnserver-v4.09-9451-beta-2014.06.09-linux-x64-64bit.tar.gz
+$ tar zxvf softether-vpnserver-v4.09-9451-beta-2014.06.09-linux-x64-64bit.tar.gz 
+$ cd vpnserver
+$ make
+--------------------------------------------------------------------
+
+SoftEther VPN Server (Ver 4.09, Build 9451, Intel x64 / AMD64) for Linux Install Utility
+Copyright (c) SoftEther Project at University of Tsukuba, Japan. All Rights Reserved.
+
+--------------------------------------------------------------------
+
+
+Do you want to read the License Agreement for this software ?
+
+ 1. Yes
+ 2. No
+
+Please choose one of above number: 
+1
+
+...
+
+Did you read and understand the License Agreement ?
+(If you couldn't read above text, Please read 'ReadMeFirst_License.txt'
+ file with any text editor.)
+
+ 1. Yes
+ 2. No
+
+Please choose one of above number: 
+1
+
+Did you agree the License Agreement ?
+
+1. Agree
+2. Do Not Agree
+
+Please choose one of above number: 
+1
+--------------------------------------------------------------------
+The preparation of SoftEther VPN Server is completed !
+
+
+*** How to switch the display language of the SoftEther VPN Server Service ***
+SoftEther VPN Server supports the following languages:
+  - Japanese
+  - English
+  - Simplified Chinese
+
+You can choose your prefered language of SoftEther VPN Server at any time.
+To switch the current language, open and edit the 'lang.config' file.
+
+
+*** How to start the SoftEther VPN Server Service ***
+
+Please execute './vpnserver start' to run the SoftEther VPN Server Background Service.
+And please execute './vpncmd' to run the SoftEther VPN Command-Line Utility to configure SoftEther VPN Server.
+Of course, you can use the VPN Server Manager GUI Application for Windows on the other Windows PC in order to configure the SoftEther VPN Server remotely.
+--------------------------------------------------------------------
+
+make[1]: Leaving directory '/home/jssu/Downloads/vpnserver'
+
+$ cd ..
+$ sudo mv vpnserver /usr/local
+$ cd /usr/local/vpnserver
+$ sudo chmod 600 *
+$ sudo chmod 700 vpnserver
+$ sudo chmod 700 vpncmd
+
+# If you like SoftEther to start as a service on startup create a file named vpnserver in /etc/init.d directory and change it to the following:
+$ sudo nano /etc/init.d/vpnserver
+
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          vpnserver
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $network $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: SoftEther VPN Server
+### END INIT INFO
+ 
+DAEMON=/usr/local/vpnserver/vpnserver
+LOCK=/var/lock/subsys/vpnserver
+test -x $DAEMON || exit 0
+case "$1" in
+start)
+$DAEMON start
+touch $LOCK
+;;
+stop)
+$DAEMON stop
+rm $LOCK
+;;
+restart)
+$DAEMON stop
+sleep 3
+$DAEMON start
+;;
+*)
+echo "Usage: $0 {start|stop|restart}"
+exit 1
+esac
+exit 0
+
+
+$ sudo mkdir /var/lock/subsys
+$ sudo chmod 755 /etc/init.d/vpnserver
+$ sudo /etc/init.d/vpnserver start
+SoftEther VPN Server Service Started.
+
+$ sudo update-rc.d vpnserver defaults
+insserv: warning: script 'vpnserver' missing LSB tags and overrides
+
+$ cd /usr/local/vpnserver
+$ vpncmd 
+vpncmd command - SoftEther VPN Command Line Management Utility
+SoftEther VPN Command Line Management Utility (vpncmd command)
+Version 4.09 Build 9451   (English)
+Compiled 2014/06/09 02:49:22 by yagi at pc25
+Copyright (c) SoftEther VPN Project. All Rights Reserved.
+
+By using vpncmd program, the following can be achieved. 
+
+1. Management of VPN Server or VPN Bridge 
+2. Management of VPN Client
+3. Use of VPN Tools (certificate creation and Network Traffic Speed Test Tool)
+
+Select 1, 2 or 3: 3
+
+VPN Tools has been launched. By inputting HELP, you can view a list of the commands that can be used.
+
+VPN Tools>check
+Check command - Check whether SoftEther VPN Operation is Possible
+---------------------------------------------------
+SoftEther VPN Operation Environment Check Tool
+
+Copyright (c) SoftEther VPN Project.
+All Rights Reserved.
+
+If this operation environment check tool is run on a system and that system passes, it is most likely that SoftEther VPN software can operate on that system. This check may take a while. Please wait...
+
+Checking 'Kernel System'... 
+              Pass
+Checking 'Memory Operation System'... 
+              Pass
+Checking 'ANSI / Unicode string processing system'... 
+              Pass
+Checking 'File system'... 
+              Pass
+Checking 'Thread processing system'... 
+              Pass
+Checking 'Network system'... 
+              Pass
+
+All checks passed. It is most likely that SoftEther VPN Server / Bridge can operate normally on this system.
+
+The command completed successfully.
+
+VPN Tools>exit
+
+Change Admin Password
+$ vpncmd 
+1. Management of VPN Server or VPN Bridge 
+Specify the host name or IP address of the computer that the destination VPN Server or VPN Bridge is operating on. 
+By specifying according to the format 'host name:port number', you can also specify the port number. 
+(When the port number is unspecified, 443 is used.)
+If nothing is input and the Enter key is pressed, the connection will be made to the port number 8888 of localhost (this computer).
+Hostname of IP Address of Destination: 
+
+# press Enter without typing anything to connect to the localhost server
+
+If connecting to the server by Virtual Hub Admin Mode, please input the Virtual Hub name. 
+If connecting by server admin mode, please press Enter without inputting anything.
+Specify Virtual Hub Name: 
+
+# again press Enter without inputting anything to connect to server by server admin mode.
+Connection has been established with VPN Server "localhost" (port 443).
+
+You have administrator privileges for the entire VPN Server.
+
+VPN Server>ServerPasswordSet
+ServerPasswordSet command - Set VPN Server Administrator Password
+Please enter the password. To cancel press the Ctrl+D key.
+
+Password: *********
+Confirm input: *********
+
+
+The command completed successfully.
+
+
+Step 6: Create A Virtual Hub
+
+VPN Server>HubCreate myVPN
+HubCreate command - Create New Virtual Hub
+Please enter the password. To cancel press the Ctrl+D key.
+
+Password: *********
+Confirm input: *********
+
+
+The command completed successfully.
+
+VPN Server>Hub myVPN
+Hub command - Select Virtual Hub to Manage
+The Virtual Hub "myVPN" has been selected.
+The command completed successfully.
+
+VPN Server/myVPN>
+
+
+Step 7: Enable SecureNAT
+
+VPN Server/myVPN>SecureNatEnable
+SecureNatEnable command - Enable the Virtual NAT and DHCP Server Function (SecureNat Function)
+The command completed successfully.
+
+VPN Server/myVPN>
+
+
+Step 8: Create and Manage Users
+
+VPN Server/myVPN>UserCreate test
+UserCreate command - Create User 
+Assigned Group Name: 
+
+User Full Name: test
+
+User Description: test
+
+The command completed successfully.
+
+VPN Server/myVPN>
+
+# In this tutorial we use Password as the user authentication mode for our test user, so using this command set a password for user test:
+
+VPN Server/myVPN>UserPasswordSet test
+UserPasswordSet command - Set Password Authentication for User Auth Type and Set Password
+Please enter the password. To cancel press the Ctrl+D key.
+
+Password: ********
+Confirm input: ********
+
+
+The command completed successfully.
+
+VPN Server/myVPN>
+
+# Step 9: Setup L2TP/IPSec
+
+VPN Server/myVPN>IPsecEnable
+IPsecEnable command - Enable or Disable IPsec VPN Server Function
+Enable L2TP over IPsec Server Function (yes / no): yes
+
+Enable Raw L2TP Server Function (yes / no): yes
+
+Enable EtherIP / L2TPv3 over IPsec Server Function (yes / no): yes
+
+Pre Shared Key for IPsec (Recommended: 9 letters at maximum): 123456789
+
+Default Virtual HUB in a case of omitting the HUB on the Username: myVPN
+
+The command completed successfully.
+
+VPN Server/myVPN>
+
+# Step 10: Setup SSTP/OpenVPN
+
+skip
+
+
+
+######################################################################
+# Step 11: Connecting to SoftEther VPN Server (Client Configuration) #
+
+
+http://www.softether-download.com/files/softether/
+$ wget http://www.softether-download.com/files/softether/v4.09-9451-beta-2014.06.09-tree/Linux/SoftEther%20VPN%20Client/64bit%20-%20Intel%20x64%20or%20AMD64/softether-vpnclient-v4.09-9451-beta-2014.06.09-linux-x64-64bit.tar.gz
+$ tar zxvf softether-vpnclient-v4.09-9451-beta-2014.06.09-linux-x64-64bit.tar.gz
+$ cd vpnclient
+$ make
+$ 1 1 1
+$ cd ..
+$ sudo mv vpnclient /usr/local
+$ cd /usr/local/vpnclient
+$ sudo chmod 600 *
+$ sudo chmod 700 vpnclient
+$ sudo chmod 700 vpncmd
+$ vpnclient start
+$ vpncmd
+# Choose 2 to enter Management of VPN Client mode, and then press enter to connect to and manage the local VPN client you just installed.
+
+VPN Client>NicCreate VPNadapter
+NicCreate command - Create New Virtual Network Adapter
+The command completed successfully.
+
+VPN Client>AccountCreate GotoSoftEther
+AccountCreate command - Create New VPN Connection Setting
+Destination VPN Server Host Name and Port Number: 140.120.16.87:443
+
+Destination Virtual Hub Name: myVPN
+
+Connecting User Name: test
+
+Used Virtual Network Adapter Name: VPNadapter
+
+The command completed successfully.
+
+VPN Client>AccountPasswordSet GotoSoftEther
+AccountPasswordSet command - Set User Authentication Type of VPN Connection Setting to Password Authentication
+Please enter the password. To cancel press the Ctrl+D key.
+
+Password: ********
+Confirm input: ********
+
+
+Specify standard or radius: standard
+
+The command completed successfully.
+
+VPN Client>AccountConnect GotoSoftEther
+AccountConnect command - Start Connection to VPN Server using VPN Connection Setting
+The command completed successfully.
+
+VPN Client>AccountStatusGet GotoSoftEther
+AccountStatusGet command - Get Current VPN Connection Setting Status
+Item                                      |Value
+------------------------------------------+------------------------------------------
+VPN Connection Setting Name               |GotoSoftEther
+Session Status                            |Connection Completed (Session Established)
+VLAN ID                                   |-
+Server Name                               |140.120.16.87
+Port Number                               |TCP Port 443
+Server Product Name                       |SoftEther VPN Server (64 bit)
+Server Version                            |4.09
+Server Build                              |Build 9451
+Connection Started at                     |2014-06-30 (Mon) 16:19:56
+First Session has been Established since  |2014-06-30 (Mon) 16:19:56
+Current Session has been Established since|2014-06-30 (Mon) 16:19:56
+Number of Established Sessions            |1 Times
+Half Duplex TCP Connection Mode           |No (Full Duplex Mode)
+VoIP / QoS Function                       |Enabled
+Number of TCP Connections                 |2
+Maximum Number of TCP Connections         |2
+Encryption                                |Enabled (Algorithm: RC4-MD5)
+Use of Compression                        |No (No Compression)
+Physical Underlay Protocol                |Standard TCP/IP (IPv4)
+UDP Acceleration is Supported             |Yes
+UDP Acceleration is Active                |Yes
+Session Name                              |SID-TEST-8
+Connection Name                           |CID-11
+Session Key (160 bit)                     |42C940D8887C4AB30951E9185F5978AED6EE5269
+Bridge / Router Mode                      |No
+Monitoring Mode                           |No
+Outgoing Data Size                        |6,301 bytes
+Incoming Data Size                        |3,192 bytes
+Outgoing Unicast Packets                  |6 packets
+Outgoing Unicast Total Size               |492 bytes
+Outgoing Broadcast Packets                |19 packets
+Outgoing Broadcast Total Size             |3,441 bytes
+Incoming Unicast Packets                  |3 packets
+Incoming Unicast Total Size               |258 bytes
+Incoming Broadcast Packets                |8 packets
+Incoming Broadcast Total Size             |488 bytes
+The command completed successfully.
+
+VPN Client>AccountDisconnect GotoSoftEther
+

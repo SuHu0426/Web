@@ -1,0 +1,99 @@
+at ac11 
+$ sudo apt-get update
+$ sudo apt-get install sshfs build-essential flex bison byacc vim
+## byacc sshfs vim vim-runtime
+$ cd /src2/; sudo mkdir GlusterFS; sudo chown hsu:hsu GlusterFS; cd GlusterFS/;
+
+###=====###
+For debian packages please contact "Debian GlusterFS Team"
+
+mailto: pkg-glusterfs-devel@lists.alioth.debian.org
+
+http://packages.debian.org/squeeze/libdb4.7
+http://packages.debian.org/squeeze/libglusterfs0
+http://packages.debian.org/squeeze/libglusterfs-dev
+http://packages.debian.org/squeeze/glusterfs-server
+http://packages.debian.org/squeeze/glusterfs-client
+http://packages.debian.org/squeeze/glusterfs-examples
+###=====###
+
+$ ls -l /etc/glusterfs/
+total 8
+-rw-r--r-- 1 root root 1940 2009-07-21 20:09 glusterfsd.vol
+-rw-r--r-- 1 root root 2061 2009-07-21 20:09 glusterfs.vol
+
+$ sudo emacs /etc/glusterfs/glusterfs-server.vol &
+$ cat glusterfs-server.vol 
+# file: /etc/glusterfs/glusterfs-server.vol
+ 
+volume posix
+  type storage/posix
+  option directory /home
+end-volume
+ 
+volume locks
+  type features/locks
+  subvolumes posix
+end-volume
+ 
+volume brick
+  type performance/io-threads
+  option thread-count 8
+  subvolumes locks
+end-volume
+ 
+ 
+volume server
+  type protocol/server
+  option transport-type tcp
+  option auth.addr.brick.allow 192.168.0.*
+  subvolumes brick
+
+$ sudo update-rc.d glusterfs-server defaults
+$ sudo /etc/init.d/glusterfs-server start
+$ sudo glusterfsd -f /etc/glusterfs/glusterfs-server.vol
+
+at ac14
+
+$ sudo apt-get update
+$ sudo apt-get install sshfs build-essential flex bison byacc vim
+$ cd /src2/; sudo mkdir GlusterFS; sudo chown hsu:hsu GlusterFS; cd GlusterFS/;
+$ scp ac11:`pwd`/* .
+$ sudo dpkg -i *
+
+$ sudo emacs /etc/glusterfs/glusterfs-client.vol &
+
+$ cat /etc/glusterfs/glusterfs-client.vol
+volume remote1
+  type protocol/client
+  option transport-type tcp
+  option remote-host 192.168.0.4
+  option remote-subvolume brick
+end-volume
+
+volume replicate
+  type cluster/replicate
+  subvolumes remote1
+end-volume
+
+volume writebehind
+  type performance/write-behind
+  option window-size 1MB
+  subvolumes replicate
+end-volume
+
+volume cache
+  type performance/io-cache
+  option cache-size 512MB
+  subvolumes writebehind
+end-volume
+
+$ sudo glusterfs -f /etc/glusterfs/glusterfs-client.vol /mnt/tmp
+or
+$ sudo mount -t glusterfs /etc/glusterfs/glusterfs-client.vol /mnt/tmp
+
+$ ls -l /mnt/tmp
+total 24
+drwxr-xr-x  4 hsu  hsu   4096 2009-04-11 17:48 CHinese
+drwxr-xr-x 29 hsu  hsu   4096 2009-09-09 16:04 hsu
+drwx------  2 root root 16384 2009-04-10 17:03 lost+found

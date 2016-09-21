@@ -1,0 +1,147 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TFTP Server & DHCP Server - network installation</title>
+    <link type="text/css" rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+<h2>TFTP Server</h2>
+<pre>
+$ sudo aptitude install tftpd-hpa tftp-hpa
+$ cd /etc/default
+$ sudo cp tftpd-hpa tftpd-hpa.orig
+$ more tftpd-hpa
+<code>
+# /etc/default/tftpd-hpa
+TFTP_USERNAME="tftp"
+TFTP_DIRECTORY="/home/hsu/tftp"
+TFTP_ADDRESS="192.168.180.11:69"
+TFTP_OPTIONS="--secure"
+</code>
+$ sudo /etc/init.d/tftpd-hpa start
+</pre>
+<h2>DHCP Server</h2>
+<pre>
+$ sudo aptitude install isc-dhcp-server
+$ cd /etc/dhcp/
+$ sudo cp dhcpd.conf dhcpd.conf.orig
+$ more dhcpd.conf
+<code>
+ddns-update-style none;
+# option domain-name "example.org";
+option domain-name-servers 140.120.13.1, 140.120.1.2;
+default-lease-time 600;
+max-lease-time 7200;
+log-facility local7;
+subnet 192.168.180.0 netmask 255.255.255.0 {
+       range 192.168.180.100 192.168.180.200;
+       filename "pxelinux.0";       # PXE boot loader filename
+       next-server 192.168.180.11;  # TFTP server address
+       option routers 192.168.180.1;
+       option subnet-mask 255.255.255.0;
+}
+#########################################################################
+# We've also used next-server to point to the TFTP server we're using
+# (which is the same host as our DHCP server, but doesn't need to be). 
+# We've chosen the default name of pxelinux.0 as the name of the file 
+# for booting clients to request.
+# 
+# If you want to configure static ipaddress for some machines follow this
+# 
+# host hostname {
+# hardware ethernet 00:B0:CF:8B:49:37;
+# fixed-address 192.0.0.19;
+# }
+#########################################################################
+</code>
+$ sudo /etc/init.d/isc-dhcp-server restart
+</pre>
+<h2>Network Boot (TFTP+PXE)</h2>
+<p>Set BIOS LAN Boot enable or PXE Boot mode</br>
+File Descriptions
+</p>
+<ol>
+	<li>gpxelinux.0 PXE boot loader</li>
+	<li>menu.c32 text menu module</li>
+	<li>vesamenu.c32 graphic menu module</li>
+	<li>reboot.c32 reboot module</li>
+	<li>chain.c32 chain loader module</li>
+	<li>memdisk memory disk emulator</li>
+      </ol>
+<pre>
+$ cd
+$ mkdir tftp; cd tftp
+$ sudo aptitude install syslinux
+$ find / -name pxelinux.0 2>/dev/null
+/usr/lib/syslinux/pxelinux.0
+$ ls -l /usr/lib/syslinux/
+$ cd /usr/lib/syslinux/
+$ cp pxelinux.0 gpxelinux.0 menu.c32 vesamenu.c32 reboot.c32 chain.c32 memdisk /home/hsu/tftp
+$ mkdir pxelinux.cfg; cd pxelinux.cfg
+$ more default
+<code>
+# Default boot option to use
+DEFAULT menu.c32
+# Prompt user for selection
+PROMPT 0
+# Menu Configuration
+MENU WIDTH 80
+MENU MARGIN 10
+MENU PASSWORDMARGIN 3
+MENU ROWS 12
+MENU TABMSGROW 18
+MENU CMDLINEROW 18
+MENU ENDROW 24
+MENU PASSWORDROW 11
+MENU TIMEOUTROW 20
+MENU TITLE Main Menu
+# Menus
+LABEL 0
+	MENU DEFAULT Local HardDisk
+	LOCALBOOT 0
+LABEL 1.1
+	MENU LABEL Debian Squeeze
+	KERNEL images/squeeze/amd64/linux
+	APPEND desktop=lxde vga=788 initrd=images/squeeze/amd64/initrd.gz  --
+LABEL 1.2
+	MENU LABEL Debian Squeeze rescue
+	KERNEL images/squeeze/amd64/linux
+	APPEND vga=788 initrd=images/squeeze/amd64/initrd.gz rescue/enable=true  --
+LABEL 2.1
+	MENU LABEL Debian Testing (Wheezy)
+	KERNEL images/testing/amd64/linux
+	APPEND desktop=lxde vga=788 initrd=images/testing/amd64/initrd.gz  --
+LABEL 2.2
+	MENU LABEL Debian Testing (Wheezy) rescue
+	KERNEL images/testing/amd64/linux
+	APPEND vga=788 initrd=images/testing/amd64/initrd.gz rescue/enable=true  --
+</code>
+$ more graphics.conf 
+<code>
+menu color tabmsg 37;40      #80ffffff #00000000
+menu color hotsel 30;47      #40000000 #20ffffff
+menu color sel 30;47      #40000000 #20ffffff
+menu color scrollbar 30;47      #40000000 #20ffffff
+menu MASTER PASSWD yourpassword
+menu WIDTH 80
+menu MARGIN 22
+menu PASSWORDMARGIN 26
+menu ROWS 6
+menu TABMSGROW 15
+menu CMDLINEROW 15
+menu ENDROW 24
+menu PASSWORDROW 12
+menu TIMEOUTROW 13
+menu VSHIFT 6
+menu PASSPROMPT Enter Password:
+NOESCAPE 1
+ALLOWOPTIONS 0
+</code>
+$ cd ..
+$ mkdir images; cd images
+$ mkdir -p $Distribution/$ARCH/$Release
+</pre>
+<p>* For each "Release" and "ARCH" Copy vmlinuz and initrd.img from /images/pxeboot/ directory of that $Release/$ARCH to /tftp/images/$Distribution/$ARCH/$Release</p>
+</br></br></br></br>
+</body>
+</html>

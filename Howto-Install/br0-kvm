@@ -1,0 +1,4 @@
+sudo apt-get install libvirt-bin libvirt-dev libvirt-doc
+sudo apt-get install virt-manager
+ps aux|grep libvirt
+sudo virt-manager &

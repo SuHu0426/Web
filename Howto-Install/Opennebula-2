@@ -1,0 +1,33 @@
+
+
+Install node
+
+at front
+onelist add ac12 im_kvm vmm_kvm tm_ssh
+...
+onehost create ac10 im_kvm vmm_kvm tm_ssh
+
+
+
+
+$ sudo apt-get install opennebula-node
+$  add~~~~~~~~~~~~~~~~
+
+$ sudo -u oneadmin ssh ac12
+## add ac12 at known_hosts 
+$ exit
+
+# don't ask yes or no 
+sudo sh -c "ssh-keygen -f .ssh/known_hosts -F ac12 1>> /etc/ssh/ssh_known_hosts"
+
+#Edit /usr/lib/one/tm_commands/ssh/tm_clone.sh
+#Fix scp image file error
+
+hsu@Amath-Client10:~$ sudo emacs  /usr/lib/one/tm_commands/ssh/tm_clone.sh
+hsu@Amath-Client10:~$ diff /usr/lib/one/tm_commands/ssh/tm_clone.sh /usr/lib/one/tm_commands/ssh/tm_clone.sh.orig
+52,55d51
+< Amath*)
+<     log "Cloning $SRC"
+<     exec_and_log "scp /src3/ONE/image/debian.img $DST"
+<    ;;
+

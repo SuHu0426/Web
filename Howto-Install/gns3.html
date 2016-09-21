@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>GNS3 note</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  </head>
+<body>
+<h1><a href="https://www.gns3.com/" target="_blank">Graphical Network Simulator-3 (GNS3)</a></h1>
+
+<p>Graphical Network Simulator-3 is a network software emulator first released in 2008. It allows the combination of virtual and real devices, used to simulate complex networks. It uses Dynamips emulation software to simulate Cisco IOS.
+<p>GNS3 is used by many large companies including Exxon, Walmart, AT&amp;T and NASA, and is also popular for preparation of network professional certification exams. As of 2015, the software has been downloaded 11 million times.
+
+<h2>Part 1: Installation Steps (2016-07) (via pip on Devuan Jessie)</h2>
+<p>Install gns3-server and gns3-gui via python3-pip.
+<pre class="mdol">
+<code>sudo aptitude install python3-pip</code>
+<code>sudo aptitude install python3-pyqt5 python3-pyqt5.qtsvg</code>
+<code>sudo pip3 install gns3-server</code>
+<code>sudo pip3 install gns3-gui</code>
+</pre>
+
+<h3>Enable docker support.</h3>
+<p>Docker support is a new feature of GNS3 version 1.5. The goal is not to simulate the deployment of a container infrastructure in production but use containers as kind of light computer replacing heavy Qemu VMs or VPCS when tools like telnet, nmap etc. are needed.</p>
+<a href="/Howto-Install/docker.html" target="_blank">My Docker notes</a>
+<pre class="mdol">
+<code>sudo aptitude install docker.io</code>
+<code>sudo adduser cssu docker</code>
+<code>docker run hello-world</code>
+</pre>
+
+
+<h3>Enable KVM support.</h3>
+<pre class="mdol">
+<code>sudo aptitude install qemu-system</code>
+<code>gns3</code>
+</pre>
+
+<h3>Install uBridge</h3>
+<p>uBridge is a simple application to create user-land bridges between various technologies. Currently bridging between UDP tunnels, Ethernet and TAP interfaces is supported. Packet capture is also supported.</p>
+<pre class="mdol">
+<code>sudo aptitude install build-essential libpcap-dev</code>
+<code>git clone git://github.com/GNS3/ubridge.git</code>
+<code>cd ubridge</code>
+<code>make</code>
+<code>sudo make install</code>
+<code class="out">chmod +x ubridge
+cp ubridge /usr/local/bin
+setcap cap_net_admin,cap_net_raw=ep /usr/local/bin/ubridge
+make: setcap: Command not found
+Makefile:82: recipe for target 'install' failed
+make: *** [install] Error 127</code>
+<code>sudo aptitude install libcap2-bin</code>
+<code>sudo make install</code>
+<code class="out">chmod +x ubridge
+cp ubridge /usr/local/bin
+setcap cap_net_admin,cap_net_raw=ep /usr/local/bin/ubridge
+</code>
+</pre>
+
+<h2>Part 2: Configurations</h2>
+<p>Here are the main settings that we have modified.
+  <h3>Working directories (Local paths)</h3>
+  <img src="img/gns3/LocalPaths.png">
+  <h3>Customize</h3>
+  <ul>
+    <li>Customize Xterm (Console)
+      <p>Set font size and enable scrollbar.
+<pre class="mdol">
+<code>xlsfonts</code>
+<code class="out">xterm -fn 10x20 -sb -rightbar -T "%d" -e "telnet %h %p"</code>
+</pre>
+    <li>Enable Debian serial port console
+<pre class="mdol">
+<code>cat /etc/default/grub</code>
+<code class="out">...
+GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,19200n8 net.ifnames=0 biosdevname=0"
+...
+GRUB_TERMINAL=serial
+GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"
+...
+</code>
+<code>sudo update-grub</code>
+<code>diff /etc/inittab /etc/inittab.orig</code>
+<code class="out">55,59c55,59
+&lt; #2:23:respawn:/sbin/getty 38400 tty2
+&lt; #3:23:respawn:/sbin/getty 38400 tty3
+&lt; #4:23:respawn:/sbin/getty 38400 tty4
+&lt; #5:23:respawn:/sbin/getty 38400 tty5
+&lt; #6:23:respawn:/sbin/getty 38400 tty6
+---
+&gt; 2:23:respawn:/sbin/getty 38400 tty2
+&gt; 3:23:respawn:/sbin/getty 38400 tty3
+&gt; 4:23:respawn:/sbin/getty 38400 tty4
+&gt; 5:23:respawn:/sbin/getty 38400 tty5
+&gt; 6:23:respawn:/sbin/getty 38400 tty6
+63c63
+&lt; T0:23:respawn:/sbin/getty -L ttyS0 19200 vt100
+---
+&gt; #T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
+</code>
+<code>sudo aptitude install xfonts-base xfonts-wqy xfonts-100dpi xfonts-75dpi</code>
+</pre>
+    <li>Autologin serial console
+<pre class="mdol">
+<code>diff /etc/inittab /etc/inittab.orig</code>
+<code class="out">55,59c55,59
+&lt; #2:23:respawn:/sbin/getty 38400 tty2
+&lt; #3:23:respawn:/sbin/getty 38400 tty3
+&lt; #4:23:respawn:/sbin/getty 38400 tty4
+&lt; #5:23:respawn:/sbin/getty 38400 tty5
+&lt; #6:23:respawn:/sbin/getty 38400 tty6
+---
+&gt; 2:23:respawn:/sbin/getty 38400 tty2
+&gt; 3:23:respawn:/sbin/getty 38400 tty3
+&gt; 4:23:respawn:/sbin/getty 38400 tty4
+&gt; 5:23:respawn:/sbin/getty 38400 tty5
+&gt; 6:23:respawn:/sbin/getty 38400 tty6
+63c63
+&lt; T0:23:respawn:/sbin/getty <span class="red">--autologin cloud</span> -L ttyS0 19200 vt100
+---
+&gt; #T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
+</code>
+</pre>
+    <li>sudo without password
+<pre class="mdol">
+<code>sudo cat /etc/sudoers</code>
+<code class="out">...
+cloud	ALL=(ALL) NOPASSWD:ALL
+...</code>
+</pre>
+  </ul>
+
+  
+  <h3>KVM command</h3>
+<pre class="mdol">
+  <code>/usr/bin/qemu-system-x86_64 -name Debian-Stretch-2 -m 512M -smp cpus=1 -enable-kvm -boot order=c \
+    -drive file=/src4/GNS3/projects/NAT/project-files/qemu/ee2132ea-41cf-429d-88e0-3a65dc8a2ad5/hda_disk.qcow2,if=virtio,index=0,media=disk \
+    <span class="red">-serial telnet:127.0.0.1:2001,server,nowait</span> \
+    -monitor tcp:127.0.0.1:56186,server,nowait -net none \
+    -device virtio-net-pci,mac=00:00:ab:2a:d5:00,netdev=gns3-0 \
+    -netdev socket,id=gns3-0,udp=127.0.0.1:10000,localaddr=127.0.0.1:10003 \
+    <span class="red">-nographic</span></code>
+</pre>
+
+
+
+<h2>Part 3: Demo: NAT Reflection (NAT Hairpin)</h2>
+<img src="img/gns3/NAT-arch.png">
+<h3>Interfaces setting</h3>
+<pre class="madm">
+<code>show interfaces</code>
+<code class="out"> ethernet eth1 {
+     address 192.168.0.254/24
+     duplex auto
+     hw-id 00:00:ab:c7:80:00
+     smp_affinity auto
+     speed auto
+ }
+ ethernet eth2 {
+     address 140.120.15.180/26
+     duplex auto
+     hw-id 00:00:ab:c7:80:01
+     smp_affinity auto
+     speed auto
+ }
+</code>
+</pre>
+
+<h3>Destination NAT</h3>
+<p>Redirect public IP address <b>INSIDE</b> private IP.
+<pre class="madm">
+<code>show nat destination</code>
+<code class="out"> rule 80 {
+     description http
+     destination {
+         address MY-Public-IP-Addr
+         port 80
+     }
+     inbound-interface <span class="red">any</span>]
+     protocol tcp
+     translation {
+         address 192.168.0.1
+     }
+ }
+</code>
+</pre>
+
+<h3>Sourece NAT</h3>
+<p>Allow private IP to access Internet.
+<pre class="madm">
+<code>show nat source</code>
+<code class="out"> rule 1 {
+     description toWAN
+     destination {
+     }
+     outbound-interface eth2
+     source {
+         address 192.168.0.0/24
+     }
+     translation {
+         address masquerade
+     }
+ }
+</code>
+</pre>
+
+<h3>NAT Reflection: <b>INSIDE</b></h3>
+<p>A typical problem with using NAT and hosting public servers is the ability for internal systems to reach an internal server using it's external IP address. The solution to this is usually the use of split-DNS to correctly point host systems to the internal address when requests are made internally. Because many smaller networks lack DNS infrastructure, a work-around is commonly deployed to facilitate the traffic by NATing the request from internal hosts to the source address of the internal interface on the firewall. This technique is commonly reffered to as <b>NAT Reflection</b>, or <b>Hairpin NAT</b>.
+<pre class="madm">
+<code>show nat source rule 2</code>
+<code class="out"> rule 2 {
+     description "NAT Reflection: INSIDE"
+     destination {
+         address 192.168.0.0/24
+     }
+     outbound-interface eth1
+     source {
+         address 192.168.0.0/24
+     }
+     translation {
+         address masquerade
+     }
+ }
+</code>
+</pre>
+
+<!-- START References -->
+<h1>References</h1>
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/Graphical_Network_Simulator-3" target="_blank">Graphical Network Simulator-3 wiki</a>
+  <li><a href="http://www.brianlinkletter.com/set-up-gns3-with-open-source-routers/" target="_blank">Set Up GNS3 with Open-Source Routers</a>
+  <li><a href="http://vyos.net/wiki/User_Guide" target="_blank">VyOS User Guide NAT Reflection</a>
+  <li><a href="https://hub.docker.com/u/gns3/" target="_blank">GNS3 Container Images</a>
+  <li><a href="" target="_blank"></a> 
+</ul>
+<!-- END References -->
+
+<hr>
+<script type="text/javascript">
+<!-- Hide JavaScript...
+var LastUpdated = document.lastModified;
+document.writeln ("This page was last updated " + LastUpdated);
+// End Hiding -->
+</script>
+<address style="text-align: right;"><a href="mailto:cssu@cs.nchu.edu.tw">Chi-She
+ng Su</a></address>
+
+</body>
+</html>

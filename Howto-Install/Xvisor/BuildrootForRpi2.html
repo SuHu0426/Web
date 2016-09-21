@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+
+<html class=" js" prefix="og: http://ogp.me/ns#" lang="en-US"><!--<![endif]-->
+  <head><title>Embedded Linux Development on Raspberry PI using Buildroot -
+               part1 - EmbeddedForU</title>
+  </head>
+<body class="single single-post">
+  <h3 class="entry-title">Embedded Linux Development on Raspberry PI using
+    Buildroot - part1
+  <a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part1/">(Source Origin)</a></h3>
+									
+	<div class="below-title-meta">
+		<div class="adt">
+		By        <span class="author">
+         <a href="http://www.embeddedforu.com/author/swami/" title="Posts by Minion" rel="author">Minion</a>        </span>
+         <span class="meta-sep">|</span> 
+         June 15, 2016 
+         </div>
+		 <div class="adt-comment">
+		 <a class="link-comments" href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part1/#comments">2 Comments</a> 
+         </div>       
+     </div><!-- below title meta end -->
+			
+						
+			</header><!-- .entry-header -->
+
+				<div class="entry-content">
+			<p>Let us automate embedded Linux development using buildroot.</p>
+
+<p>In this post, I'm going to describe the procedure to create a 
+complete Embedded Linux software for Raspberry Pi using buildroot. We 
+will be configuring buildroot to create a complete package which 
+includes following components <span id="more-973"></span></p>
+
+<ul>
+  <li>Rpi-firmware</li>
+  <li>Kernel</li>
+  <li>zImage</li>
+  <li>Device tree</li>
+  <li>Rootfs</li>
+  <li>Cross compiler</li>
+</ul>
+
+<p>These components are pretty much necessary to boot Raspberry Pi 
+board. Only sad part here is, Rpi buildroot default configuration won't 
+generate u-boot bootloader, which is a conventional embedded Linux 
+component. In fact, Rpi demos doesn't come with u-boot.</p>
+
+<p>So, in the part-2, we will customize the buildroot and add support for u-boot.</p>
+
+<h4><span style="color: #0000ff;">Development Environment :</span></h4>
+
+<p>Nothing much required for buildroot setup.</p>
+
+<ul>
+  <li>Software
+  <ul>
+    <li>Ubuntu 14.04</li>
+  </ul></li>
+  <li>Others
+  <ul>
+    <li>Internet to download buildroot and packages</li>
+  </ul></li>
+</ul>
+
+<h4><span style="color: #0000ff;">Required Ubuntu tools and dependencies:</span></h4>
+
+<p>Common tools are required such as, minicom, git, ncurses etc... Run 
+below commands as a root user to install in your Ubuntu computer.</p>
+
+<pre>
+$ sudo apt-get install minicom git ncurses-dev gedit flex bison 
+$ sudo apt-get install texinfo g++ gettext u-boot-tools autoconf
+</pre>
+
+
+<h4><span style="color: #0000ff;">Raspberry Pi BSP development with Buildroot:</span></h4>
+
+<p>Let's get started with buildroot setup.</p>
+
+<p><strong>1.</strong>  Run below command to clone mainline buildroot source.</p>
+
+<pre>
+$ git clone git://git.buildroot.net/buildroot
+</pre>
+
+
+<p><strong>2.</strong> Change directory to buildroot</p>
+
+<pre>
+$ cd buildroot/
+</pre>
+
+
+<p><strong>3. </strong>Checkout a particular git tag or git branch. To verify available buildroot tags, run below command.</p>
+
+<pre>
+$ git tag
+</pre>
+
+
+<p>Now checkout a particular tag or branch based on the requirement. Say latest 2016 tag.</p>
+
+<pre>
+$ git checkout 2016.02 -b 2016.02
+</pre>
+
+
+<p><strong>4.</strong> Once done with checkout process,  have a glance at buildroot folder structure.</p>
+
+<pre>
+$ ls
+</pre>
+
+
+<p><strong>5.</strong> Now, you need to identify and apply the raspberry pi board specific configuration.</p>
+
+<p>In the buildroot, configuration files are available in the 
+'./configs' folder. Run below command to verify the list of available 
+configuration files.</p>
+
+<pre>
+$ ls configs/
+</pre>
+
+
+<p><strong>6.</strong> In particular, to find raspberry configuration run below command.</p>
+
+<pre>
+$ ls configs/raspberrypi*
+</pre>
+
+
+<p>You will get terminal messages as shown below.</p>
+
+<pre>
+$ ls configs/raspberrypi*
+ configs/raspberrypi2_defconfig  configs/raspberrypi_defconfig
+</pre>
+
+
+<p>So, there are two configuration files available. Since, there is a 
+change in the ARM core of rpi previous versions and Rpi-2,3, its is 
+required to have two different configuration files.</p>
+
+<p>raspberrypi2_defconfig - This configuration is for raspberry pi 2 and later versions of boards</p>
+
+<p>raspberrypi_defconfig - This configuration is for raspberry pi cm, 
+raspberry pi b, raspberry pi b+ boards and other earlier versions.</p>
+
+<p><strong>7.</strong> Now apply desired configuration file.</p>
+
+<p>For raspberry Pi A/B A+/B+ boards, run this command</p>
+
+<pre>
+$ make raspberrypi_defconfig
+</pre>
+
+
+<p>For Raspberry PI 2 run this command</p>
+
+<pre>
+$ make raspberrypi2_defconfig
+</pre>
+
+
+<p><strong>8.</strong> No compile the buildroot.</p>
+
+<pre>
+$ make -j4
+</pre>
+
+
+<p>Compilation process takes several hours based on in the Internet 
+speed and type of host machine. You may also get build errors during 
+compilation . So try to monitor the build process.</p>
+
+<p><strong>9.</strong> Once done with the compilation, final images will be stored in the below path.</p>
+
+<pre>
+$ ls output/images/
+</pre>
+
+
+<p><a href="http://www.embeddedforu.com/wp-content/uploads/2016/06/RPI-Buildroot.png"><img class="aligncenter size-full wp-image-983" src="http://www.embeddedforu.com/wp-content/uploads/2016/06/RPI-Buildroot.png" alt="RPI Buildroot" srcset="http://www.embeddedforu.com/wp-content/uploads/2016/06/RPI-Buildroot.png 866w, http://www.embeddedforu.com/wp-content/uploads/2016/06/RPI-Buildroot-300x35.png 300w, http://www.embeddedforu.com/wp-content/uploads/2016/06/RPI-Buildroot-768x90.png 768w, http://www.embeddedforu.com/wp-content/uploads/2016/06/RPI-Buildroot-660x78.png 660w" sizes="(max-width: 866px) 100vw, 866px" height="102" width="866"></a></p>
+
+<pre>
+bcm2708-rpi-b-plus.dtb  - Rpi B+ and A + device tree
+bcm2708-rpi-b.dtb       - Rpi B and A  device tree 
+bcm2708-rpi-cm.dtb      - Rpi Computer module device tree
+rootfs.ext4             - Root filesystem 
+rpi-firmware/
+|--- bootcode.bin        - Second stage bootloader
+|--- cmdline.txt         - For Boot parameter
+|--- config.txt          - System configuration file 
+|--- fixup.dat           - For SDRAM configuration b/w CPU and GPU
+|--- start.elf           - GPU firmware
+zImage                   - Kernel image
+
+sdcard.img               - Disk image for SD cards
+</pre>
+
+
+<p><strong>10. </strong>Other important component is cross compiler, which can be found in the below path.</p>
+
+<pre>
+$ ls output/host/usr/bin/arm-buildroot-linux-uclibcgnueabihf-*
+</pre>
+
+
+<p>Now, you are done with basic buildroot setup for Raspberry PI boards.
+ We will be using this buildroot setup for future development.</p>
+
+<h4><span style="color: #0000ff;">Create bootable SD card:</span></h4>
+
+<p>Disk image makes our life more easier. Follow below post and flash sdcard.img to a SD card.</p>
+
+<blockquote><p>win32diskimager: <a href="http://www.embeddedforu.com/tutorials/how-to-write-a-raw-disk-image-to-removable-storage-medium-using-win32diskimager/">How to write raw disk image to removable storage device</a></p></blockquote>
+
+<!--
+<p><iframe class="wp-embedded-content" sandbox="allow-scripts" security="restricted" src="http://www.embeddedforu.com/tutorials/how-to-write-a-raw-disk-image-to-removable-storage-medium-using-win32diskimager/" data-secret="xYTgqULkkP" title=""win32diskimager: How to write raw disk image to removable storage device" — EmbeddedForU" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" height="351" width="600"></iframe></p> -->
+
+<p>In the upcoming post, we will see the procedure to boot till Linux prompt.</p>
+					</div><!-- .entry-content -->
+		
+		<footer class="entry-meta">
+		<span>Category: <a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/" rel="category tag">Raspberry Pi</a></span> <span></span> 
+           						</footer><!-- .entry-meta -->
+	</article><!-- #post -->
+				<nav class="nav-single">
+<div class="assistive-text">Post navigation</div>
+
+<OL>
+    <LI><a href="http://www.embeddedforu.com/tutorials/how-to-write-a-raw-disk-image-to-removable-storage-medium-using-win32diskimager/" rel="prev">win32diskimager: How to write raw disk image to removable storage device</a></span>
+
+    <LI><a href="http://www.embeddedforu.com/embedded-linux/beaglebone/beaglebone-black-embedded-linux-development-with-buildroot/" rel="next">Beaglebone Black Embedded Linux Development with Buildroot : part-1</a></span>
+</OL>      
+				</nav><!-- .nav-single -->
+
+				
+<div id="comments" class="comments-area">
+
+	
+  <h4 class="comments-title">2 thoughts on "<span>Embedded Linux Development
+      on Raspberry PI using Buildroot - part1</span>"</h4>
+
+<ol class="commentlist">
+  <li id="comment-341"><p>Pingback: <a href="#Part2">Embedded Linux
+	Development on Raspberry PI using Buildroot - part2 -
+	EmbeddedForU</a> </p></li><!-- #comment-## -->
+  <li id="comment-358"><p>Pingback: <a href="#CompileUboot"
+	rel="external nofollow" class="url">How to compile mainline u-boot
+	for Raspberry Pi ? - EmbeddedForU</a> </p></li><!-- #comment-## -->
+</ol><!-- .commentlist -->
+
+
+<a name="Part2"></a><h3 class="entry-title">Embedded Linux Development on
+  Raspberry PI using  Buildroot - part2
+ <a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part2-2/">(Source Origin)</a></h3>
+									
+	<div class="below-title-meta">
+		<div class="adt">
+		By        <span class="author">
+         <a href="http://www.embeddedforu.com/author/swami/" title="Posts by Minion" rel="author">Minion</a>        </span>
+         <span class="meta-sep">|</span> 
+         June 20, 2016 
+         </div>
+		 <div class="adt-comment">
+		 <a class="link-comments" href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part2-2/#respond">0 Comment</a> 
+         </div>       
+     </div><!-- below title meta end -->
+			
+						
+			</header><!-- .entry-header -->
+
+				<div class="entry-content">
+			<p>In this post, you are going boot raspberry pi with embedded Linux.
+ You will also see the procedure to enable the serial console, as it is 
+disabled by default.</p>
+
+<p><span id="more-1039"></span></p>
+
+<h4><span style="color: #0000ff;">Recall:</span></h4>
+
+<p>In the previous post, we have seen the procedure to create a complete
+ embedded Linux package using buildroot. At the end of the post, we 
+discussed the procedure to flash 'sdcard.img' to SD card.</p>
+<blockquote style="display: none;" data-secret="mhs8Mmudiv" class="wp-embedded-content"><p><a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part1/">Embedded Linux Development on Raspberry PI using Buildroot - part1</a></p></blockquote>
+
+
+<!-- <p><iframe class="wp-embedded-content" sandbox="allow-scripts" security="restricted" src="BuildrootRpi2_files/a.html" data-secret="mhs8Mmudiv" title=""Embedded Linux Development on Raspberry PI using Buildroot - part1" — EmbeddedForU" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" height="372" width="600"></iframe></p>-->
+
+<p>We also covered the steps to connect Raspberry Pi UART to computer.</p>
+<blockquote style="display: none;" data-secret="r0rftplv7p" class="wp-embedded-content"><p><a href="http://www.embeddedforu.com/embedded-linux/how-to-connect-raspberry-pi-uart-to-a-computer/">How to connect Raspberry Pi UART to a computer</a></p></blockquote>
+
+<!-- <p>
+<iframe class="wp-embedded-content" sandbox="allow-scripts" security="restricted" src="BuildrootRpi2_files/a_002.html" data-secret="r0rftplv7p" title=""How to connect Raspberry Pi UART to a computer" — EmbeddedForU" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" height="351" width="600"></iframe></p>-->
+
+<h4><span style="color: #0000ff;">Development Environment :</span></h4>
+
+<p>Below components required for the development.</p>
+
+<ul>
+  <li>Software
+  <ul>
+    <li>Ubuntu 14.04</li>
+  </ul></li>
+  <li>Hardware
+  <ul>
+    <li>Raspberry Pi</li>
+    <li>SD card with buildroot embedded Linux components</li>
+    <li>USB to UART converter for serial console</li>
+  </ul></li>
+</ul>
+
+<h4><span style="color: #0000ff;">Boot Raspberry Pi with Embedded Linux OS:</span></h4>
+
+<p>After flashing sdcard.img to memory card using win32diskimager, you should see two partitions.</p>
+
+<p><a href="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-Pi.png"><img class="aligncenter size-full wp-image-1048" src="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-Pi.png" alt="Embedded Linux Raspberry Pi" srcset="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-Pi.png 377w, http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-Pi-300x182.png 300w" sizes="(max-width: 377px) 100vw, 377px" height="229" width="377"></a></p>
+
+<h5><span style="color: #0000ff;">Primary partition :</span></h5>
+
+<p>Primary partition should contain all components as shown below picture. I have briefed about each component in the part-1 post.</p>
+
+<p><a href="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-boot-partition.png"><img class="aligncenter size-full wp-image-1049" src="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-boot-partition.png" alt="Embedded Linux Raspberry pi boot partition" srcset="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-boot-partition.png 550w, http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-boot-partition-300x148.png 300w" sizes="(max-width: 550px) 100vw, 550px" height="271" width="550"></a></p>
+
+<h5><span style="color: #0000ff;">Second partition:</span></h5>
+
+<p>Second partition contains root filesystem. Buildroot took complete 
+pain of creating this folder structure and placing the components into 
+respective folders.</p>
+
+<p>Later, I will discuss about the significance of each folder and the procedure to create your own filesystem.</p>
+
+<p><a href="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-root-filesystem.png"><img class="aligncenter size-full wp-image-1050" src="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-root-filesystem.png" alt="Embedded Linux Raspberry pi root filesystem" srcset="http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-root-filesystem.png 895w, http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-root-filesystem-300x72.png 300w, http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-root-filesystem-768x185.png 768w, http://www.embeddedforu.com/wp-content/uploads/2016/06/Embedded-Linux-Raspberry-pi-root-filesystem-660x159.png 660w" sizes="(max-width: 895px) 100vw, 895px" height="216" width="895"></a></p>
+
+<h5><span style="color: #0000ff;">Enable Serial console:</span></h5>
+
+<p>Serial console is very important component in embedded Linux. Since, 
+raspberry pi board has very limited pinouts available, all Linux demos 
+disables serial console and use those pins as GPIOs.</p>
+
+<p>So, when you boot default buildroot demo images will not see any 
+debug information on serial console. You will only see below message.</p>
+
+<pre>
+Uncompressing Linux... done, booting the kernel.
+</pre>
+
+
+<p>You really don't know whether the booting is successful or not.</p>
+
+<p>So, to enable serial console, You need to do below modification.</p>
+
+<h6><span style="color: #0000ff;">1. Change command Line args:</span></h6>
+
+<ul>
+  <li>In SD card boot partition, open command cmdline.txt file</li>
+  <li>By default, you will only see below line</li>
+</ul>
+
+<pre>
+root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+</pre>
+
+
+<ul>
+  <li>Delete entire line, and copy and paste below line to enable serial
+      console</li>
+</ul>
+
+<pre>
+dwc_otg.lpm_enable=0 console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
+</pre>
+
+
+<p>Understanding the arguments</p>
+
+<pre>
+dwc_otg.lpm_enable=0    - Disable LPM support to fix few USB issues
+console=ttyAMA0,115200  - To divert serial console log to UART
+kgdboc=ttyAMA0,115200   - To divert kernel debug messages to UART
+root=/dev/mmcblk0p2     - SD card's second partition has root filesystem
+rootfstype=ext4         - Root filesystem partition type
+rootwait                - Wait for SD card response
+</pre>
+
+
+<h6><span style="color: #0000ff;">2. Change inittab:</span></h6>
+
+<p>To allow login over serial console, you need to do below steps</p>
+
+<ul>
+  <li>In the root filesystem partition, go to 'etc' folder</li>
+  <li>Find and open 'inittab' file, (may be root permissions required)</li>
+  <li>Find below line</li>
+</ul>
+
+<pre>
+# Put a getty on the serial port
+</pre>
+
+
+<ul>
+  <li>Now, Add this line after that.</li>
+</ul>
+
+<pre>
+ttyAMA0::respawn:/sbin/getty -L  ttyAMA0 115200 vt100
+</pre>
+
+
+<p>This line is responsible for getting login prompt, and other shell messages to serial console.</p>
+<span class="ig-divider normal"></span>
+
+<p>"raspbian os" users may find above line somewhat strange. In 
+raspbian, to enable serial console, you need to add below line in 
+inittab file</p>
+
+<pre>
+T0:23:respawn:/sbin/getty -L  ttyAMA0 115200 vt100
+</pre>
+
+<span class="ig-divider normal"></span>
+
+<h5><span style="color: #0000ff;">Boot the board:</span></h5>
+
+<p>Now insert the SD card and connect the power supply. You should see console logs and login prompt.</p>
+
+<p>Enter login name as 'root'.</p>
+
+<pre>
+[    2.964755] smsc95xx 1-1.1:1.0 eth0: register 'smsc95xx' at usb-20980000.usba
+[    3.025044] uart-pl011 20201000.uart: no DMA platform data                   
+            
+Welcome to Buildroot           
+buildroot login:
+</pre>
+
+
+<p>Yup, your first step towards embedded Linux development is completed.</p>
+
+<h4><span style="color: #0000ff;">What's next ?</span></h4>
+
+<p>In the next post, you will</p>
+
+<ul>
+  <li>see the procedure to enable u-boot in the buildroot</li>
+  <li>do necessary modification to boot raspberry Pi with uboot.</li>
+  <li>see TFTP boot</li>
+  <li>see NFS boot</li>
+</ul>
+
+<span class="ig-divider normal"></span>
+
+<p>Great day</p>
+
+<p>Minion</p>
+					</div><!-- .entry-content -->
+		
+<footer class="entry-meta">
+<span>Category: <a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/" rel="category tag">Raspberry Pi</a></span> <span></span> 
+</footer><!-- .entry-meta -->
+	</article><!-- #post -->
+				<nav class="nav-single">
+ <div class="assistive-text">Post navigation</div>
+
+ <OL>
+    <LI><a href="http://www.embeddedforu.com/embedded-linux/beaglebone/beaglebone-black-embedded-linux-development-with-buildroot/" rel="prev">Beaglebone Black Embedded Linux Development with Buildroot : part-1</a></span>
+
+    <LI><a href="#CompileUboot" rel="next">How to compile mainline u-boot for Raspberry Pi ?</a></span>
+</OL>
+				</nav><!-- .nav-single -->
+
+				
+<div id="comments" class="comments-area">
+		
+<a name="CompileUboot"></a><h3 class="entry-title">How to compile mainline 
+u-boot for Raspberry Pi ? 
+<a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/how-to-compile-mainline-u-boot-for-raspberry-pi/">(Source Origin)</h3>
+									
+	<div class="below-title-meta">
+		<div class="adt">
+		By        <span class="author">
+         <a href="http://www.embeddedforu.com/author/swami/" title="Posts by Minion" rel="author">Minion</a>        </span>
+         <span class="meta-sep">|</span> 
+         July 2, 2016 
+         </div>
+		 <div class="adt-comment">
+		 <a class="link-comments" href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/how-to-compile-mainline-u-boot-for-raspberry-pi/#respond">0 Comment</a> 
+         </div>       
+     </div><!-- below title meta end -->
+			
+						
+			</header><!-- .entry-header -->
+
+				<div class="entry-content">
+<p>U-boot is a powerful and famous open source bootloader. It 
+supports multiple architectures, processors and contains many features. 
+In this post, let's compile Das u-boot bootloader for raspberry pi 
+boards.</p>
+
+<p><span id="more-1075"></span></p>
+
+<h4><span style="color: #0000ff;">Recall :</span></h4>
+
+<p>In the previous post, we discussed the procedure to create complete a
+ embedded Linux BSP using buildroot. We also discussed the procedure to 
+boot the board till Linux prompt etc ..</p>
+<div class="ig-shortcode ig-shortcode-accordion"> <div class="ig-shortcode-toggle "><h5 class="toggle-heading">Embedded Linux Development on Raspberry PI using Buildroot - part1</h5><div class="toggle-content"><p></p>
+<blockquote style="display: none;" data-secret="hIKXOB2XNa" class="wp-embedded-content"><p><a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part1/">Embedded Linux Development on Raspberry PI using Buildroot - part1</a></p></blockquote>
+
+<!--<p><iframe class="wp-embedded-content" sandbox="allow-scripts" security="restricted" src="CompileuUboot_files/a.html" data-secret="hIKXOB2XNa" title="“Embedded Linux Development on Raspberry PI using Buildroot - part1” — EmbeddedForU" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" height="200" width="600"></iframe></p>-->
+
+<p></p></div></div><p></p>
+
+<p></p><div class="ig-shortcode-toggle "><h5 class="toggle-heading">Embedded Linux Development on Raspberry PI using Buildroot - part2</h5><div class="toggle-content"><p></p>
+<blockquote style="display: none;" data-secret="2DbCvHlnvY" class="wp-embedded-content"><p><a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part2-2/">Embedded Linux Development on Raspberry PI using Buildroot - part2</a></p></blockquote>
+
+<!--<p><iframe class="wp-embedded-content" sandbox="allow-scripts" security="restricted" src="CompileuUboot_files/a.html" data-secret="hIKXOB2XNa" title="“Embedded Linux Development on Raspberry PI using Buildroot - part1” — EmbeddedForU" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" height="200" width="600"></iframe></p>-->
+
+<blockquote style="display: none;" data-secret="2DbCvHlnvY" class="wp-embedded-content"><p><a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part2-2/">Embedded Linux Development on Raspberry PI using Buildroot - part2</a></p></blockquote>
+
+<!--<p><iframe class="wp-embedded-content" sandbox="allow-scripts" security="restricted" src="CompileuUboot_files/a_002.html" data-secret="2DbCvHlnvY" title="“Embedded Linux Development on Raspberry PI using Buildroot - part2” — EmbeddedForU" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" height="200" width="600"></iframe></p>-->
+
+<p></p></div></div> </div>
+
+<h4><span style="color: #0000ff;">Development Environment :</span></h4>
+
+<p>For u-boot compilation, noting much required</p>
+<ul>
+<li>Software
+<ul>
+<li>Ubuntu 14.04</li>
+</ul>
+</li>
+<li>Others
+<ul>
+<li>Internet</li>
+</ul>
+</li>
+</ul>
+
+<h4><span style="color: #0000ff;">Install cross compiler and export environment variables:</span></h4>
+
+<p>If you have any cross compiler like the one generated from buildroot in the previous posts, then export that.</p>
+
+<p>Else, you can run below command to get a ARM based linaro cross compiler.</p>
+
+<pre>
+$ sudo apt-get install gcc-arm-linux-gnueabi
+</pre>
+
+<p>Export below environment variables. These variables informs to the 
+build environment to use ARM architecture, and use ARM cross compiler 
+instead of native GCC compiler.</p>
+
+<pre>
+$ export ARCH=arm
+$ export CROSS_COMPILE=arm-linux-gnueabi-
+</pre>
+
+
+<p>Cross verify the environment by running below command</p>
+
+<pre>
+$ echo $CROSS_COMPILE
+$ echo $ARCH
+</pre>
+
+
+<p>You should get response as below. If you see an empty response, then the environment variables have not set properly.</p>
+
+<pre>
+minion@ubuntu:~/minion/rpi/u-boot$ echo $CROSS_COMPILE
+arm-linux-gnueabi-
+minion@ubuntu:~/minion/rpi/u-boot$ echo $ARCH
+arm
+</pre>
+
+
+<h4><span style="color: #0000ff;">Download U-boot source and checkout latest branch:</span></h4>
+
+<p>As always, we will use mainline Denx u-boot source for our development. Run below command to download that.</p>
+
+<pre>
+$ git clone git://git.denx.de/u-boot.git
+</pre>
+
+
+<p>After successful download, checkout a latest tag.</p>
+
+<pre>
+$ git checkout v2016.05 -b v2016.05
+</pre>
+
+
+<p><a href="http://www.embeddedforu.com/wp-content/uploads/2016/07/RPIuBOOT.png"><img class="aligncenter size-full wp-image-1088" src="http://www.embeddedforu.com/wp-content/uploads/2016/07/RPIuBOOT.png" alt="RPI+uBOOT" srcset="http://www.embeddedforu.com/wp-content/uploads/2016/07/RPIuBOOT.png 703w, http://www.embeddedforu.com/wp-content/uploads/2016/07/RPIuBOOT-300x87.png 300w, http://www.embeddedforu.com/wp-content/uploads/2016/07/RPIuBOOT-660x191.png 660w" sizes="(max-width: 703px) 100vw, 703px" height="203" width="703"></a></p>
+
+<h4><span style="color: #0000ff;">Apply configuration files:</span></h4>
+
+<p>Our next step is to find the appropriate configuration files and apply to the build environment.</p>
+
+<p>In the latest u-boot, all configuration files are available in the configs folder.</p>
+
+<pre>
+$ ls configs/
+</pre>
+
+
+<p>In specific, to verify the list of configuration files for raspberry Pi boards, run below command.</p>
+
+<pre>
+$ ls configs/rpi_*
+</pre>
+
+
+<p>Responce of the command is something as shown below in the latest u-boot.</p>
+
+<pre>
+minion@ubuntu:~/minion/rpi/u-boot$ ls configs/rpi_*
+<span style="color: #cc99ff;">configs/rpi_2_defconfig      configs/rpi_3_defconfig</span>
+<span style="color: #cc99ff;">configs/rpi_3_32b_defconfig  configs/rpi_defconfig</span>
+</pre>
+
+
+<p>In this branch we have 4 defconfig files. All config file names are informative.  Just a brief about each file</p>
+
+<pre>
+rpi_defconfig        - For Raspberry pi A, A+, B, B+
+rpi_2_defconfig      - For Raspberry pi 2 board
+rpi_3_defconfig      - For Raspberry pi 3 board
+rpi_3_32b_defconfig  - For Raspberry pi 3 32 bit u-boot
+</pre>
+
+
+<p>Now apply appropriate configuration file. Command is as shown below.</p>
+
+<p>$ make &lt; def configuration file &gt;</p>
+
+<p>Choose required tab and apply accordingly</p>
+<div class="ig-shortcode-tabs"><div class="ig-shortcode-tab-buttons"><a class="active" href="#">RPI A A+ B B+</a><a href="#">RPI 2</a><a href="#">RPI 3</a><a href="#">RPI 3 32 bit</a></div><div style="display: block;" class="ig-shortcode-tabpane">
+	        <p></p>
+
+<pre>
+$ make rpi_defconfig
+</pre>
+
+
+<p></p></div>
+		   <div style="display: none;" class="ig-shortcode-tabpane">
+	        <p></p>
+
+<pre>
+$ make rpi_2_defconfig
+</pre>
+
+
+<p></p></div>
+		   <div style="display: none;" class="ig-shortcode-tabpane">
+	        <p></p>
+
+<pre>
+$ make rpi_3_defconfig
+</pre>
+
+
+<p></p></div>
+		   <div style="display: none;" class="ig-shortcode-tabpane">
+	        <p></p>
+
+<pre>
+$ make rpi_3_32b_defconfig
+</pre>
+
+
+<p></p></div>
+		   </div>
+
+<p>After applying the configuration, you will get below messages in the terminal.,</p>
+
+<pre>
+#
+# configuration written to .config
+#
+</pre>
+
+
+<h4><span style="color: #0000ff;">Compile u-boot:</span></h4>
+
+<p>Now. just issue make command to build the source. Compilation takes around one minute.</p>
+
+<pre>
+$ make -j4
+</pre>
+
+
+<p>Once compilation is done, you will see below messages in the terminal.</p>
+
+<pre>
+  OBJCOPY examples/standalone/hello_world.bin
+  OBJCOPY examples/standalone/hello_world.srec
+  LD      u-boot
+  OBJCOPY u-boot.srec
+  OBJCOPY u-boot-nodtb.bin
+  SYM     u-boot.sym
+  COPY    u-boot.bin
+  $
+</pre>
+
+<h4><span style="color: #0000ff;">What Next:</span></h4>
+
+<p>In the upcoming posts, lets discuss the procedure to boot raspberry 
+pi along with u-boot. We will also explore the other features of u-boot.</p>
+					</div><!-- .entry-content -->
+		
+<footer class="entry-meta">
+<span>Category: <a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/" rel="category tag">Raspberry Pi</a></span> <span></span> 
+</footer><!-- .entry-meta -->
+	</article><!-- #post -->
+				<nav class="nav-single">
+					<div class="assistive-text">Post navigation</div>
+					<span class="nav-previous"><a href="http://www.embeddedforu.com/embedded-linux/raspberry-pi/embedded-linux-development-on-raspberry-pi-using-buildroot-part2-2/" rel="prev">Embedded Linux Development on Raspberry PI using Buildroot - part2</a></span>
+					<span class="nav-next"></span>
+				</nav><!-- .nav-single -->
+
+				
+</body></html>

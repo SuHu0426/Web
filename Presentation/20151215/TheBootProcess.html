@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html dir="ltr" class="js desktop" lang="en">
+  <head><title>The Boot Process [OpenWrt Wiki]</title>
+  </head>
+
+<body>
+  <OL>
+    <LI><a href="#TheBootProcess">The Boot Process</a>
+    <LI><a href="#LinuxWontBoot">Linux Won't Boot</a>
+  </OL>  
+
+<a name="TheBootProcess"></a>  <h4 style="cursor: pointer;" class="toggle open"><strong></strong>Table of Contents</h4>
+
+<ul style="" class="toc">
+<li><a href="#process_trinity">Process Trinity</a>
+<ul class="toc">
+<li><a href="#bootloader">Bootloader</a></li>
+<li><a href="#kernel">Kernel</a></li>
+<li><a href="#init">Init</a>
+<ul class="toc">
+<li><a href="#vanilla_startup_scripts">Vanilla Startup Scripts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#detailed_boot_sequence">Detailed boot sequence</a>
+<ul class="toc">
+<li><a href="#boot_loader">Boot loader</a></li>
+<li><a href="#etcpreinit_script">/etc/preinit script</a></li>
+<li><a href="#busybox_init">Busybox init</a></li>
+</ul>
+</li>
+<li><a href="#etcrcdrcs_script_at_startup">/etc/rc.d/rcS Script At Startup</a></li>
+<li><a href="#notes">Notes</a></li>
+</ul>
+
+
+<!-- TOC END -->
+
+<h3 class="sectionedit1" id="the_boot_process">The Boot Process
+<a href="https://wiki.openwrt.org/doc/techref/process.boot">(Source Origin)</a></h3>
+
+<table class="inline">
+	<tbody><tr class="row0">
+		<td class="col0"> Please also see <a href="https://wiki.openwrt.org/doc/techref/requirements.boot.process" class="wikilink1" title="doc:techref:requirements.boot.process">requirements.boot.process</a><br>
+This guide it not up-to-date! It does not mention <a href="https://wiki.openwrt.org/doc/techref/procd" class="wikilink1" title="doc:techref:procd">procd</a> </td>
+	</tr>
+</tbody></table>
+
+<p>
+This guide shall help you understand, e.g.
+</p>
+<ul>
+<li> When is it time for <a href="https://wiki.openwrt.org/doc/howto/kexec" class="wikilink1" title="doc:howto:kexec">kexec</a> and when for <a href="https://wiki.openwrt.org/doc/howto/extroot" class="wikilink1" title="doc:howto:extroot">extroot</a> (see particularly <a href="https://wiki.openwrt.org/doc/howto/extroot/extroot.theory" class="wikilink1" title="doc:howto:extroot:extroot.theory">extroot.theory</a>)?
+</li>
+<li> How does the <a href="https://wiki.openwrt.org/doc/howto/generic.failsafe" class="wikilink1" title="doc:howto:generic.failsafe">OpenWrt FailSafe</a> work?
+</li>
+<li> the <a href="https://wiki.openwrt.org/doc/techref/flash.layout" class="wikilink1" title="doc:techref:flash.layout">Flash.Layout</a> and the combination of <a href="https://wiki.openwrt.org/doc/techref/filesystems#implementationinopenwrt" class="wikilink1" title="doc:techref:filesystems">Utilization of file systems in OpenWrt</a>
+</li>
+<li> When does the tmpfs get mounted and <code>/tmp</code> symlinked to it and <code>/var</code> symlinked to <code>/tmp</code>?
+</li>
+</ul>
+<ul>
+<li> <a href="https://wiki.openwrt.org/doc/techref/preinit_mount" class="wikilink1" title="doc:techref:preinit_mount">Preinit mount</a>  Preinit, Mount Root, and First Boot Scripts
+</li>
+<li> <a href="https://wiki.openwrt.org/doc/techref/initscripts" class="wikilink1" title="doc:techref:initscripts">Init Scripts</a>     Init script implementation reference
+</li>
+<li> <a href="https://wiki.openwrt.org/doc/techref/block_mount" class="wikilink1" title="doc:techref:block_mount">Block Mount</a>      Block Device Mounting
+</li>
+</ul>
+
+
+
+<h3 class="sectionedit3" id="process_trinity">Process Trinity</h3>
+
+
+<p>
+The Machine gets powered on and some very very basic very low level hardware stuff gets done. You could connect to it over the <a href="https://wiki.openwrt.org/doc/hardware/port.jtag" class="wikilink1" title="doc:hardware:port.jtag">JTAG Port</a> port and issue commands.
+</p>
+
+
+
+<h4 class="sectionedit4" id="bootloader">Bootloader</h4>
+
+<ol>
+<li> the <a href="https://wiki.openwrt.org/doc/techref/bootloader" class="wikilink1" title="doc:techref:bootloader">bootloader</a> on the flash gets executed
+</li>
+<li> the bootloader performs the <a href="https://en.wikipedia.org/wiki/Power-on%20self-test" class="interwiki iw_wp" title="https://en.wikipedia.org/wiki/Power-on self-test">POST</a>, which is a low-level hardware initialization
+</li>
+<li> the bootloader decompresses the Kernel image from its (known!) location on the flash storage into main memory (=RAM)
+</li>
+<li> the bootloader executes the Kernel with <code>init=...</code> option (default is <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etcpreinit" class="wikilink1" title="doc:howto:notuci.config">/etc/preinit</a></code>)
+</li>
+</ol>
+
+
+
+<h4 class="sectionedit5" id="kernel">Kernel</h4>
+
+<ol>
+<li> the Kernel further bootstraps itself (sic!)
+</li>
+<li> issues the command/op-code <code>start_kernel</code>
+</li>
+<li> kernel scans the mtd partition <em>rootfs</em> for a valid superblock and mounts the SquashFS partition (which contains <code>/etc</code>) once found. (More info at <a href="https://wiki.openwrt.org/doc/techref/filesystems#technicaldetails" class="wikilink1" title="doc:techref:filesystems">technical.details</a>)
+</li>
+<li> <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etcpreinit" class="wikilink1" title="doc:howto:notuci.config">/etc/preinit</a></code> does pre-initialization setups (create directories, mount fs, /proc, /sys, ... )
+</li>
+<li> the Kernel <code>mounts</code> any other partition (e.g. jffs2 partition) under <em>rootfs (root file system)</em>. see <a href="https://wiki.openwrt.org/doc/techref/flash.layout" class="wikilink1" title="doc:techref:flash.layout">flash.layout</a>, <a href="https://wiki.openwrt.org/doc/techref/preinit_mount#mountrootfilesystem" class="wikilink1" title="doc:techref:preinit_mount">preinit and root mount</a>, and also <a href="https://en.wikipedia.org/wiki/udev" class="interwiki iw_wp" title="https://en.wikipedia.org/wiki/udev">udev</a> <img src="TheBootProcess_files/fixme.gif" class="icon" alt="FIXME"> <strong>make sure</strong>
+</li>
+<li> if "INITRAMFS" is not defined, calls <code>/sbin/init</code> (the mother of all processes)
+</li>
+<li> finally some <em>kernel thread</em> becomes the userspace <code><a href="http://linux.die.net/man/8/init" class="urlextern" title="http://linux.die.net/man/8/init" rel="nofollow">init</a></code> process
+</li>
+</ol>
+
+
+
+<h4 class="sectionedit6" id="init">Init</h4>
+
+
+<p>
+The user space starts when kernel mounts <em>rootfs</em> and the very first program to run is (by default) <code>/sbin/init</code>. Please remember, that the interface between application and kernel is the <code><a href="https://wiki.openwrt.org/doc/devel/links.software.libraries#cstandardlibrary" class="wikilink1" title="doc:devel:links.software.libraries">clib</a></code> and the syscalls it offers.
+</p>
+<ol>
+<li> init reads <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etcinittab" class="wikilink1" title="doc:howto:notuci.config">/etc/inittab</a></code> for the "sysinit" entry (default is "::sysinit:/etc/init.d/rcS S boot")
+</li>
+<li> init calls <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etcinitdrcs" class="wikilink1" title="doc:howto:notuci.config">/etc/init.d/rcS</a> S boot</code>
+</li>
+<li> <code>rcS</code> executes the symlinks to the actual startup scripts located in <code>/etc/rc.d/S##xxxxxx</code> with option <code>"start"</code>:
+</li>
+<li> after rcS finishes, system should be up and running
+</li>
+</ol>
+
+
+
+<h5 id="vanilla_startup_scripts">Vanilla Startup Scripts</h5>
+
+
+<p>
+<strong><em>NOTE:</em></strong> <a href="https://wiki.openwrt.org/doc/packages" class="wikilink1" title="doc:packages">Packages</a> you install with <code><a href="https://wiki.openwrt.org/doc/techref/opkg" class="wikilink1" title="doc:techref:opkg">opkg</a></code> will likely add additional scripts!
+</p>
+<table class="inline">
+	<tbody><tr class="row0">
+		<td class="col0 leftalign"> S05defconfig  </td><td class="col1"> 
+create config files with default values for platform (if config file is 
+not exist), really does this on first start after OpenWRT installed 
+(copy unexisted files from /etc/defconfig/$board/ to /etc/config/) </td>
+	</tr>
+	<tr class="row1">
+		<td class="col0 leftalign"> S10boot       </td><td class="col1"> starts hotplug-script, mounts filesystesm, starts .., starts syslogd, ... </td>
+	</tr>
+	<tr class="row2">
+		<td class="col0 leftalign"> S39usb        </td><td class="col1 leftalign"> <code>mount -t usbfs none /proc/bus/usb</code>  </td>
+	</tr>
+	<tr class="row3">
+		<td class="col0 leftalign"> S40network    </td><td class="col1"> start a network subsystem (run /sbin/netifd, up interfaces and wifi </td>
+	</tr>
+	<tr class="row4">
+		<td class="col0 leftalign"> S45firewall   </td><td class="col1"> create and implement firewall rules from /etc/config/firewall </td>
+	</tr>
+	<tr class="row5">
+		<td class="col0 leftalign"> S50cron       </td><td class="col1 leftalign"> starts <code>crond</code>, see  <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etccrontabsroot" class="wikilink1" title="doc:howto:notuci.config">/etc/crontabs/root</a></code> for configuration  </td>
+	</tr>
+	<tr class="row6">
+		<td class="col0 leftalign"> S50dropbear   </td><td class="col1 leftalign"> starts <code>dropbear</code>, see  <code><a href="https://wiki.openwrt.org/doc/uci/dropbear" class="wikilink1" title="doc:uci:dropbear">/etc/config/dropbear</a></code> for configuration  </td>
+	</tr>
+	<tr class="row7">
+		<td class="col0 leftalign"> S50telnet     </td><td class="col1 leftalign"> checks for root password, if non is set, <code>/usr/sbin/telnetd</code> gets started  </td>
+	</tr>
+	<tr class="row8">
+		<td class="col0 leftalign"> S60dnsmasq    </td><td class="col1 leftalign"> starts <code>dnsmasq</code>, see  <code><a href="https://wiki.openwrt.org/doc/uci/dhcp" class="wikilink1" title="doc:uci:dhcp">/etc/config/dhcp</a></code> for configuration  </td>
+	</tr>
+	<tr class="row9">
+		<td class="col0 leftalign"> S95done       </td><td class="col1 leftalign"> executes <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etcrclocal" class="wikilink1" title="doc:howto:notuci.config">/etc/rc.local</a></code>  </td>
+	</tr>
+	<tr class="row10">
+		<td class="col0 leftalign"> S96led        </td><td class="col1"> load a LED configuration from /etc/config/system and set up LEDs (write values to /sys/class/leds/*/*) </td>
+	</tr>
+	<tr class="row11">
+		<td class="col0 leftalign"> S97watchdog   </td><td class="col1"> start the watchdog daemon (/sbin/watchdog) </td>
+	</tr>
+	<tr class="row12">
+		<td class="col0 leftalign"> S99sysctl     </td><td class="col1 leftalign"> interprets <code><a href="https://wiki.openwrt.org/doc/howto/notuci.config#etcsysctlconf" class="wikilink1" title="doc:howto:notuci.config">/etc/sysctl.conf</a></code>  </td>
+	</tr>
+</tbody></table>
+
+<p>
+The <code>init</code> daemon will run all the time. On a shutdown command, <code>init</code>
+</p>
+<ol>
+<li> reads <code>/etc/inittab</code> for shutdown (default is "::shutdodwn:/etc/init.d/rcS K stop")
+</li>
+<li> <code>init</code> calls <code>/etc/init.d/rcS K stop</code>
+</li>
+<li> rcS executes the shutdown scripts located in /etc/rc.d/K##xxxxxx with option "stop"
+</li>
+<li> system halts/reboots
+</li>
+</ol>
+<table class="inline">
+	<tbody><tr class="row0">
+		<td class="col0"> K50dropbear </td><td class="col1"> kill all instances of dropbear </td>
+	</tr>
+	<tr class="row1">
+		<td class="col0 leftalign"> K90network  </td><td class="col1"> down all interfaces and stop netifd </td>
+	</tr>
+	<tr class="row2">
+		<td class="col0 leftalign"> K98boot     </td><td class="col1"> stop logger daemons: /sbin/syslogd and /sbin/klogd </td>
+	</tr>
+	<tr class="row3">
+		<td class="col0 leftalign"> K99umount   </td><td class="col1 leftalign"> writes caches to disk, unmounts all filesystems  </td>
+	</tr>
+</tbody></table>
+
+
+
+<h3 class="sectionedit9" id="detailed_boot_sequence">Detailed boot sequence</h3>
+
+<ul>
+<li> <a href="http://docs.blackfin.uclinux.org/doku.php?id=bootloaders" class="urlextern" title="http://docs.blackfin.uclinux.org/doku.php?id=bootloaders" rel="nofollow">boot process example for blackfin devices</a>
+</li>
+</ul>
+
+
+
+<h4 class="sectionedit10" id="boot_loader">Boot loader</h4>
+
+
+<p>
+After the bootloader (grub, in this example) initializes and parses any 
+options that are presented at the boot menu, the bootloader loads the 
+kernel.
+</p>
+
+<p>
+Example from the openwrt-x86-ext2-image.kernel file entry for normal boot:
+</p>
+<ul>
+<li> "kernel  /boot/vmlinuz root=/dev/hda2 init=/etc/preinit [rest of options]"
+</li>
+</ul>
+
+<p>
+This entry in the boot/grub/menu.lst file tells grub that the kernel is 
+located under the /boot directory and the filename is vmlinuz. The rest 
+of the lines are the options that are passed to the kernel. To see how 
+the kernel was started, you can view the options by reading the 
+/proc/cmdline file. You can see what options were passed from grub by 
+logging into the device and typing "cat /proc/cmdline".
+</p>
+
+<p>
+For my test system, the options that were passed to the kernel at load time was:
+</p>
+<ul>
+<li> "root=/dev/hda2 rootfstype=ext2 init=/etc/preinit  noinitrd console=ttyS0,38400,n,8,1 reboot=bios"
+</li>
+</ul>
+
+<p>
+The options are:
+</p>
+<ol>
+<li> <strong>root</strong>: root device/partition where the rest of the OpenWrt system is located
+</li>
+<li> <strong>rootfstype</strong>: Format for the root partition - ext2 in this example
+</li>
+<li> <strong>init</strong>: The first program to call after the kernel is loaded and initialized
+</li>
+<li> <strong>noinitrd</strong>: All 
+drivers for access to the rest of the system are built into the kernel, 
+so no need to load an initial ramdisk with extra drivers
+</li>
+<li> <strong>console</strong>: Which 
+device to accept console login commands from - talk to ttyS0 (first 
+serial port) at 38400 speed using no flow control, eight data bits and 
+one stop bit. See the kernel documentation for other options
+</li>
+<li> <strong>reboot</strong>: Not sure, but I believe that this option tells the kernel how to perform a reboot
+</li>
+</ol>
+
+<p>
+The first program called after the kernel loads is located at the kernel
+ options entry of the boot loader. For grub, the entry is located in the
+ openwrt-.image.kernel.image file in the /boot/grub/menu.lst file.
+</p>
+
+<p>
+[ NOTE: See the man page on grub for all of the grub parameters ] In 
+this example, the entry "init=/etc/preinit" tells the kernel that the 
+first program to run after initializing is  "preinit" found in the 
+"/etc" directory located on the disk "/dev/hda" and partition "hda2".
+</p>
+
+
+
+<h4 class="sectionedit11" id="etcpreinit_script">/etc/preinit script</h4>
+
+
+<p>
+The preinit script's primary purpose is initial checks and setups for 
+the rest of the startup scripts. One primary job is to mount the /proc 
+and /sys pseudo filesystems so access to status information and some 
+control functions are made available. Another primary function is to 
+prepare the /dev directory for access to things like console, tty, and 
+media access devices. The final job of preinit is to start the init 
+daemon process itself.
+</p>
+
+
+
+<h4 class="sectionedit12" id="busybox_init">Busybox init</h4>
+
+
+<p>
+Init is considered the "Mother Of All Processes" since it controls 
+things like starting daemons, changing runlevels, setting up the 
+console/pseudo-consoles/tty access daemons, as well as some other 
+housekeeping chores.
+</p>
+
+<p>
+Once init is started, it reads the /etc/inittab configuration file to 
+tell it what process to start, monitor for certain activities, and when 
+an activity is triggered to call the relevant program.
+</p>
+
+<p>
+The init program used by busybox is a minimalistic daemon. It does not 
+have the knowledge of runlevels and such, so the config file is somewhat
+ abbreviated from the normal init config file. If you are running a full
+ linux desktop, you can "man inittab" and read about the normal init 
+process and entries. Fields are separated by a colon and are defined as:
+</p>
+<ul>
+<li> [ID] : [Runlevel(s)] : [Action] : [Process to execute ]
+</li>
+</ul>
+
+<p>
+For busybox init, the only fields needed are the "ID" (1st), "Action" 
+(3rd) and "Process" (4th) entries. Busybox init has several caveats from
+ a normal init: the ID field is used for controlling TTY/Console, and 
+there are no defined runlevels. A minimalistic /etc/inittab would look 
+like:
+</p>
+<ol>
+<li> ::sysinit:/etc/init.d/rcS S boot
+</li>
+<li> ::shutdown:/etc/init.d/rcS K stop
+</li>
+<li> tts/0::askfirst:/bin/ash -login
+</li>
+<li> ttyS0::askfirst:/bin/ash -login
+</li>
+<li> tty1::askfirst:/bin/ash -login
+</li>
+</ol>
+
+<p>
+Lines 1 and 2 with a blank ID field indicate they are not specific to 
+any terminal or console. The other lines are directed to specific 
+terminals/consoles.
+</p>
+
+<p>
+Notice that both the "sysinit" and "shutdown" actions are calling the 
+same program (the "/etc/init.d/rcS" script). The only difference is the 
+options that are passed to the rcS script. This will become clearer 
+later on.
+</p>
+
+<p>
+At this point, init has parsed the configuration file and is looking for
+ what to do next. So, now we get to the "sysinit" entry: call 
+/etc/init.d/rcS with the options "S" and "boot"
+</p>
+
+
+
+<h3 class="sectionedit13" id="etcrcdrcs_script_at_startup">/etc/rc.d/rcS Script At Startup</h3>
+
+
+<p>
+At this point, all basic setup has been done, all programs and 
+system/configuration files are accessible, and we are now ready to start
+ the rest of the processes.
+</p>
+
+<p>
+The rcS script is pretty simplistic in it's function - it's sole purpose
+ is to execute all of the scripts in the /etc/rc.d directory with the 
+appropriate options. if you paid attention to the sysinit entry, the rcS
+ script was called with the "S" and "boot" options. Since we called rcS 
+with 2 options ("S" and "boot"), the rcS script will substitute $1 with 
+"S" and $2 with "boot". The relevant lines in rcS are:
+</p>
+
+<p>
+</p><pre class="code">   -  for i in /etc/rc.d/$1* ; do
+  2.      [ -x $i ] &amp;&amp; $i $2
+  3.  done</pre>
+
+<p></p>
+
+<p>
+The basic breakdown is:
+</p>
+<ol>
+<li> Execute the following line once for every entry (file/link) in the /etc/rc.d directory that begins with "S"
+</li>
+<li> If the file is executable, execute the file with the option "boot"
+</li>
+<li> Repeat at step 1, replacing $i with the next filename until there are no more files to check
+</li>
+</ol>
+
+<p>
+Unlike Microsoft programs, Linux uses file permissions rather than 
+filename extensions to tell it if this entry is executable or not. For 
+an explanation of file permissions, see "man chmod" on a Linux/Unix 
+machine on explanations for permissions and executable files.
+</p>
+
+<p>
+If you look at the /etc/rc.d directory, you may notice that some scripts
+ have relevant links for startup, but no shutdown (i.e., 
+/etc/init.d/httpd), while some others have no startup script, but do 
+have a shutdown script (i.e., /etc/init.d/umount).
+</p>
+
+<p>
+In the case of httpd (the webserver), it doesn't matter if it dies or not, there's nothing to clean up before quitting.
+</p>
+
+<p>
+On the other hand, the umount script MUST be executed before shutdown to
+ ensure that all data is flushed to the media before unmounting of any 
+relevant storage media, otherwise data corruption could occur. There's 
+no need to call unmount at startup, since storage media mounting is 
+handled somewhere else (like /etc/preinit), so there's no startup script
+ for this one.
+</p>
+
+<p>
+After the last startup script is executed, you should have a fully operational OpenWrt system.
+</p>
+
+
+
+<h3 class="sectionedit14" id="notes">Notes</h3>
+
+<ul>
+<li> See also <a href="https://en.wikipedia.org/wiki/Booting" class="interwiki iw_wp" title="https://en.wikipedia.org/wiki/Booting">Booting</a> on the boot process in general.
+</li>
+<li> <a href="https://wiki.openwrt.org/doc/howto/log.essentials" class="wikilink1" title="doc:howto:log.essentials">log.essentials</a> busybox-klogd and busybox-syslogd
+</li>
+<li> watchdog: <a href="http://www.google.com/search?sclient=psy&amp;hl=en&amp;source=hp&amp;q=openwrt+watchdog&amp;btnG=Search" class="urlextern" title="http://www.google.com/search?sclient=psy&amp;hl=en&amp;source=hp&amp;q=openwrt+watchdog&amp;btnG=Search" rel="nofollow">http://www.google.com/search?sclient=psy&amp;hl=en&amp;source=hp&amp;q=openwrt+watchdog&amp;btnG=Search</a>
+</li>
+<li> <code>pppd</code> is configured only in <a href="https://wiki.openwrt.org/doc/uci/network" class="wikilink1" title="doc:uci:network">network</a>, need this for you <a href="https://wiki.openwrt.org/doc/howto/internet.connection" class="wikilink1" title="doc:howto:internet.connection">internet.connection</a>
+</li>
+<li> see <a href="https://en.wikipedia.org/wiki/init" class="interwiki iw_wp" title="https://en.wikipedia.org/wiki/init">init</a>, <a href="http://linux.die.net/man/8/init" class="urlextern" title="http://linux.die.net/man/8/init" rel="nofollow">init manpage</a>, <a href="http://linux.die.net/sag/init-intro.html" class="urlextern" title="http://linux.die.net/sag/init-intro.html" rel="nofollow">http://linux.die.net/sag/init-intro.html</a>
+</li>
+</ul>
+
+
+
+                    <!-- wikipage stop -->
+                                    
+
+<bdi>doc/techref/process.boot.txt</bdi>
+<P>Last modified: 2016/01/13 23:03 by <bdi>tmomas</bdi>
+
+                            <!-- /content -->
+
+            <hr class="a11y">
+
+<a name="CustomInitramfs"></a><h3>Custom Initramfs 
+  <a href="https://wiki.gentoo.org/wiki/Custom_Initramfs#Init">(Source
+    Origin)</a></h3>
+
+<a name="BusyboxRefinements"></a><h3>Busybox refinements
+  <a href="https://groups.google.com/forum/#!msg/xvisor-devel/vBwI5MeYGms/Ulk_O7SYHwAJ">(Source origin)</a></h3>
+
+<P> The last line in the following <b>init</b> script probably is incorrect, since 
+    <b>init</b> in busybox does not accept argument.  See the <a target="_b" 
+    href="https://busybox.net/downloads/BusyBox.html">Documentation for Busybox</a>.  
+    Also, <a href="http://unix.stackexchange.com/questions/95955/what-is-the-meaning-of-in-a-shell-script" 
+    target="_b">meaning of $* in a shell script</a>
+  <PRE>
+$ cat tests/common/busybox/init
+#!/bin/sh
+# devtmpfs does not get automounted for initramfs
+/bin/mount -t devtmpfs devtmpfs /dev
+exec 0</dev/console
+exec 1>/dev/console
+exec 2>/dev/console
+exec /sbin/init $*
+
+$ cat tests/common/busybox/inittab
+::sysinit:/etc/init.d/rcS
+::askfirst:/bin/sh
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/umount -a -r
+::restart:/sbin/init
+  </PRE>
+<a name="EmbeddedInitramfs"></a><h3>Embedded Initramfs vs. Eexternal One
+  <a href="http://unix.stackexchange.com/questions/208515/difference-in-execution-of-init-with-embedded-vs-external-initramfs">(Source origin)</a></h3>
+
+<PRE>
+#!/bin/sh
+
+dmesg -n 1
+
+mount -t devtmpfs none /dev
+mount -t sysfs none /sys
+mount -t proc none /proc
+echo "Welcome"
+while true
+do
+    setsid cttyhack /bin/sh
+done
+</PRE>
+
+<a name=""></a><h3>Linux Module 
+  <a href="http://nano-chicken.blogspot.tw/search/label/Embedded">(Source
+    Origin)</a></h3>
+
+<P> We probably need to turn on the PROC_FS and SYSFS options in the linux .config file, 
+    see the file: <code>/src3/kernel/Arm-Defconf/config-04-14-2016</code> 
+
+<PRE>
+     . 
+     . 
+     . 
+#
+# Pseudo filesystems
+#
+CONFIG_PROC_FS=y
+CONFIG_PROC_SYSCTL=y
+CONFIG_PROC_PAGE_MONITOR=y
+# CONFIG_PROC_CHILDREN is not set
+CONFIG_KERNFS=y
+CONFIG_SYSFS=y
+     . 
+     . 
+     . 
+</PRE>
+
+<PRE>
+#!/bin/sh
+#Mount things needed by this script
+mount -t tmpfs -o size=64k,mode=0755 tmpfs /dev
+mkdir /dev/pts
+mount -t devpts devpts /dev/pts
+/bin/mount -t proc proc /proc
+/bin/mount -t sysfs sysfs /sys
+
+#Create all the symlinks to /bin/busybox
+/bin/busybox --install -s
+
+#Create device nodes
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+/sbin/mdev -s
+
+exec /sbin/init
+</PRE>
+
+
+<a name="LinuxWontBoot"></a><h3 lang="en">Common Problems - Linux kernel
+      doesnt boot
+  <a href="https://developer.ridgerun.com/wiki/index.php/Common_Problems_-_Linux_kernel_doesnt_boot">(Source Origin)</a></h3>
+
+  <p>What can you do if the Linux kernel doesn't boot to the login prompt?
+    This page will give you some ideas. </p>
+
+  <h4>Contents</h4>
+
+      <span class="toctoggle">&nbsp;[<a href="#" class="internal" id="togglelink">hide</a>]&nbsp;</span></div>
+<ul>
+  <li><a href="#Starting_kernel_..."><span class="tocnumber">1</span>
+      <span class="toctext">Starting kernel ...</span></a>
+  <ul>
+    <li><a href="#Wrong_kernel_console_configuration"><span
+	 class="tocnumber">1.1</span> <span class="toctext">Wrong kernel
+	  console configuration</span></a></li>
+    <li><a href="#Mismatch_U-boote_ID_and_Linux_ID"><span
+	 class="tocnumber">1.2</span> <span class="toctext">Mismatch between
+	  u-boot machine ID and Linux machine ID</span></a></li>
+    <li><a href="#Corrupt_kernel_image"><span class="tocnumber">1.3</span>
+	<span class="toctext">Corrupt kernel image</span></a></li>
+  </ul></li>
+</ul>
+
+<h4><span id="Starting_kernel_...">Starting kernel ...</span></h4>
+
+<p>There can be several causes to the problem that causes <b>Starting
+    kernel ...</b> to be the last output you see. </p>
+
+<p>Example output: </p>
+
+<pre>## Booting kernel from Legacy Image at 82000000 ...
+   Image Name:   "RR Linux Kernel"
+   Created:      2011-05-26  13:20:46 UTC
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    4401664 Bytes = 4.2 MiB
+   Load Address: 80008000
+   Entry Point:  80008000
+   Verifying Checksum ... OK
+   Loading Kernel Image ... OK
+OK
+
+Starting kernel ...
+</pre> 
+
+  <p>and then no more console output. </p>
+
+<p>The last data sent to the console by u-boot is the string <i>Starting
+    kernel ...</i>. The next output is generated by Linux. If you are not
+  seeing any output after <i>Starting kernel ...</i>, then something has
+  gone wrong with either Linux sending the output to the right UART,
+  <a href="http://www.tldp.org/HOWTO/Serial-HOWTO-18.html"
+  target="_b">(Universal Asynchronous Receiver Transmitter)</a>, a mismatch
+  in u-boot and kernel images, or the kernel image is corrupt.</p>
+
+<h5><span id="Wrong_kernel_console_configuration">Wrong kernel console
+    configuration</span></h5>
+
+  <p>It is possible that Linux is booting just fine, but sending the boot 
+output to a different UART. Reboot the hardware and interrupt auto-boot 
+so that u-boot is active. Run the following u-boot command. </p>
+
+<pre>
+  echo ${bootargs}
+</pre> 
+
+  <p>If you are using a DM365 or DM368, you should have </p>
+
+<pre>
+  console=ttyS0,115200n8
+</pre> 
+
+  <p>in the <i>bootargs</i> string. </p>
+
+  <h5><span id="Mismatch_U-boote_ID_and_Linux_ID">Mismatch between u-boot
+      machine ID and Linux machine ID</span></h5>
+
+<p>When the bootloader passes control to the kernel, u-boot creates a data
+  structure that includes a machine ID value. When Linux starts, it reads
+  the data structure and if the machine ID doesn't match the value built
+  into the kernel, then Linux spins in a loop and doesn't generate any
+  output. The logic behind the kernel feature is to make sure the wrong
+  kernel image doesn't run and damage the hardware or the file system
+  contents.</p>
+
+<p>uboot gives you a way of setting the machine ID to use:</p>
+
+<pre>
+  setenv machid d79 # 3449
+</pre>
+
+<p>For ARM processors, the very first Linux kernel to run is found in
+  <tt><a href="http://lxr.free-electrons.com/source/arch/arm/kernel/head.S#L80"
+ target="_b">arch/arm/kernel/head.S</a></tt>: </p>
+
+<pre>
+  ENTRY(stext)
+	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9 @ ensure svc mode
+						@ and irqs disabled
+	mrc	p15, 0, r9, c0, c0		@ get processor id
+	bl	__lookup_processor_type		@ r5=procinfo r9=cpuid
+	movs	r10, r5				@ invalid processor (r5=0)?
+	beq	__error_p			@ yes, error 'p'
+	bl	__lookup_machine_type		@ r5=machinfo
+	movs	r8, r5				@ invalid machine (r5=0)?
+	beq	__error_a			@ yes, error 'a'
+</pre> 
+
+<p>You can see if the machine ID is invalid, the code jumps to
+  <tt>__error_a</tt>, which is defined in <a  
+href="http://lxr.free-electrons.com/source/arch/arm/kernel/head-common.S#L192" 
+target="_b">arch/arm/kernel/head-common.S<a>, and in simplified form looks
+like: </p>
+
+<pre>
+__error_a:
+#ifdef CONFIG_DEBUG_LL
+	mov	r4, r1				@ preserve machine ID
+	adr	r0, str_a1
+	bl	printascii
+
+...
+	b	__error
+
+str_a1:	.asciz	"\nError: unrecognized/unsupported machine ID (r1 = 0x"
+#endif
+
+__error:
+1:	mov	r0, r0
+	b	1b
+</pre> 
+
+<p>You can see an error message is printed if you build the kernel with 
+CONFIG_DEBUG_LL defined (enabled using <tt>make config</tt> Kernel 
+configuration ---&gt; Kernel hacking ---&gt; Kernel low-level debugging 
+functions). </p>
+
+<p>Using the factory NAND contents booting a Linux kernel with LeopardBoard 
+365 support products (with CONFIG_DEBUG_LL defined): </p>
+
+<pre>
+## Booting kernel from Legacy Image at 82000000 ...
+   Image Name:   "RR Linux Kernel"
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    4410144 Bytes =  4.2 MB
+   Load Address: 80008000
+   Entry Point:  80008000
+   Verifying Checksum ... OK
+   Loading Kernel Image ... OK
+OK
+
+Starting kernel ...
+
+
+Error: unrecognized/unsupported machine ID (r1 = 0x00000793).
+
+Available machine support:
+
+ID (hex)	NAME
+00000a59	DM365 Leopard
+
+Please check your kernel config and/or bootloader.
+</pre> 
+
+<p>If there is a machine mismatch, the processor will loop forever at 
+<tt>__error</tt>. If CONFIG_DEBUG_LL is not defined, then there is no output 
+after <b>Starting kernel ...</b>. </p>
+
+<p>If you want to override the machine check to enable booting a kernel with 
+a machine ID that doesn't match the one set by u-boot, then add the 
+<tt>#if 0 / #endif</tt> to 
+<tt>$DEVDIR/kernel/linux-*/arch/arm/kernel/head.S</tt> as shown below: </p>
+
+<pre>
+ENTRY(stext)
+	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9 @ ensure svc mode
+						@ and irqs disabled
+	mrc	p15, 0, r9, c0, c0		@ get processor id
+	bl	__lookup_processor_type		@ r5=procinfo r9=cpuid
+	movs	r10, r5				@ invalid processor (r5=0)?
+	beq	__error_p			@ yes, error 'p'
+	bl	__lookup_machine_type		@ r5=machinfo
+	movs	r8, r5				@ invalid machine (r5=0)?
+#if 0
+	beq	__error_a			@ yes, error 'a'
+#endif
+</pre> 
+
+<p>I have found this approach to work sometimes, but not all the time. If 
+there is too much difference in how u-boot configures the processor and the 
+other hardware and what is expected by Linux, you still will not be able to 
+boot.</p>
+
+<h5><span id="Corrupt_kernel_image">Corrupt kernel image</span></h5>
+
+<p>If both the console setting and the machine ID are configured properly, 
+then the most common problem is the kernel image is corrupted.</p>
+
+<p>First use a known good set of images to verify there is no hardware problem.
+ Compare the u-boot bootargs used in the known good images to the bootargs you 
+ are attempting to use. An invalid <i>mem=</i> setting, for example, could 
+ cause Linux to not boot. </p>
+
+<p>After you have verified your hardware is working correctly, you can rebuild 
+the kernel following these steps: </p>
+
+<pre>
+cd $DEVDIR/kernel
+make clean
+cd $DEVDIR
+make
+make install
+</pre> 
+
+<p>Hopefully rebuilding the kernel will resolve the problem.</p>
+
+</body></html>

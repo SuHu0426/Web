@@ -1,0 +1,579 @@
+<a name="RPi_U-Boot"></a><h3 lang="en">RPi U-Boot 
+<a href="http://elinux.org/RPi_U-Boot">(Source Origin)</a></h3>
+
+<table cellspacing="0" cellpadding="0" style="clear: right; margin-bottom: .5em; float: right; padding: .5em 0 .8em 1.4em; background: none; width: auto;">
+<tr>
+<td> <div id="toc" class="toc"><div id="toctitle"><h4>Contents</h4></div>
+<ul>
+<li><a href="#Overview">1 Overview</a></li>
+<li><a href="#Get_the_source">2 Get the source</a>
+<ul>
+<li><a href="#Mainline">2.1 Mainline</a></li>
+<li><a href="#Stephen_Warren.27_branch">2.2 Stephen Warren's work-in-progress branch</a></li>
+<li><a href="#Oleksandr_Tymoshenko">2.3 Oleksandr Tymoshenko's branch</a></li>
+<li><a href="#Marco_Schuster">2.4 Marco Schuster's branch</a></li>
+</ul>
+</li>
+<li><a href="#Get_an_ARM_compiler">3 Get an ARM compiler</a>
+<ul>
+<li><a href="#Ubuntu_packages">3.1 Ubuntu packages</a></li>
+<li><a href="#Raspberry_Pi_Tools">3.2 Raspberry Pi Foundation Tools</a></li>
+<li><a href="#Linaro_Compilers">3.3 Linaro Compilers</a></li>
+<li><a href="#QEMU-based_chroot">3.4 QEMU-based chroot</a></li>
+</ul>
+</li>
+<li><a href="#Compile_the_source">4 Compile the source</a></li>
+<li><a href="#Copy_U-Boot_to_your_SD_card">5 Copy U-Boot to your SD card</a></li>
+<li><a href="#Test_U-Boot">6 Test U-Boot</a></li>
+<li><a href="#Kernel_Command-Line">7 Kernel Command-Line</a></li>
+<li><a href="#Booting_from_an_SD_card">8 Booting from an SD card</a></li>
+<li><a href="#Network_boot_via_TFTP">9 Network boot via TFTP</a>
+<ul>
+<li><a href="#Configure_DHCP_server">9.1 Configure DHCP server</a></li>
+<li><a href="#Configure_TFTP_Server">9.2 Configure TFTP Server</a></li>
+<li><a href="#Boot_Using_Dynamic_IP">9.3 Boot Using Dynamic IP</a></li>
+<li><a href="#Boot_Using_Static_IP">9.4 Boot Using Static IP</a></li>
+</ul>
+</li>
+<li><a href="#U-Boot_script_files">10 U-Boot script files</a>
+<ul>
+<li><a href="#uEnv.txt">10.1 uEnv.txt</a></li>
+<li><a href="#boot.scr.uimg">10.2 boot.scr.uimg</a></li>
+<li><a href="#DHCP_boot">10.3 "DHCP" boot</a></li>
+<li><a href="#PXE">10.4 PXE</a></li>
+<li><a href="#boot_targets">10.5 boot_targets</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+</td></tr></table>
+
+
+<br><br>
+<b>Software &amp; Distributions:</b>
+
+<p><i><a href="http://elinux.org/RPi_Software" title="RPi Software">Software</a> - an 
+overview.</i></b>
+
+<p><i><a href="http://elinux.org/RPi_Distributions" title="RPi 
+Distributions">Distributions</a> - operating systems and development environments for 
+the Raspberry Pi. </i></b>
+
+<p><i><a href="http://elinux.org/RPi_Kernel_Compilation" 
+title="RPi Kernel Compilation">Kernel Compilation</a> - advice on compiling a 
+kernel.</i></b>
+
+<p><i>
+<a href="http://elinux.org/RPi_Performance" title="RPi Performance">Performance</a> - 
+measures of the Raspberry Pi's performance.</i></b>
+
+<p><i>
+<a href="http://elinux.org/RPi_Programming" title="RPi Programming">Programming</a> - 
+programming languages that might be used on the Raspberry Pi.</i></p>
+
+
+<a name="Overview"></a><h3>Overview</h3>
+
+<p><a rel="nofollow" href="http://www.denx.de/wiki/U-Boot">Das 
+U-Boot</a>, often abbreviated to just U-Boot, is a bootloader commonly used on embedded 
+systems. U-Boot can be used on the RPi to add flexibility by allowing other boot 
+configurations to be used on top of the single specified file on the SD card. If you 
+wish to run an upstream kernel, booting it via U-Boot is recommended.</b>
+
+<p>This page explains how to get U-Boot working on the RPi, and explains how to boot 
+images off both the SD card and over TFTP from the network.</p>
+
+
+<a name="Get_the_source"></a><h3>Get the source</h3>
+
+<p>Various forks of U-Boot contain (different levels of) support for the Raspberry Pi. 
+You will to download the source from one of the locations below; pick one, and ignore 
+the others.</b>
+
+<p>If you don't need USB networking or keyboard support in U-Boot, the mainline 
+repository is recommended. If you do need USB networking or keyboard support in U-Boot, 
+Stephen Warren's repository is recommended.</p>
+
+
+<a name="Mainline"></a><h4>Mainline</h4>
+
+<p>The primary repository for U-Boot is 
+<a href="http://git.denx.de/u-boot.git">http://git.denx.de/u-boot.git</a> master branch. 
+At this point in time, you should expect to use this repository for all purposes. This 
+version supports the UART (serial port), SD card, HDMI display, and USB high-speed 
+devices. USB low-/full-speed (USB 1.0) devices do not currently work. USB Ethernet 
+devices are typically high-speed and hence work, and USB keyboards are typically 
+low-/full-speed devices and hence do not currently work.</b>
+
+<p>To download this repository into a new local repository (this is what you want if 
+you don't know better):</p>
+
+<pre>
+git clone <a href="http://git.denx.de/u-boot.git">http://git.denx.de/u-boot.git</a>
+</pre>
+
+<p>To add this repository to an existing local repository:</p>
+
+<pre>
+git remote add u-boot <a href="http://git.denx.de/u-boot.git" 
+target="_b">http://git.denx.de/u-boot.git</a>
+git fetch u-boot
+git checkout -b your_branch_name u-boot/master
+</pre>
+
+<a name="Stephen_Warren.27_branch"></a><h4>Stephen Warren's work-in-progress branch</h4>
+
+<p>Stephen Warren works on RPi support in mainline U-Boot. Some patches will appear in 
+his work-in-progress repository before they get upstream. His work-in-progress 
+repository is 
+<a href="http://github.com/swarren/u-boot" 
+target="_b">http://github.com/swarren/u-boot</a> branch rpi_dev. Note that this 
+branch is often rebased, and may contain work other than mainline-quality RPi-related 
+patches.</b>
+
+<p>To download this repository into a new local repository (this is what you want if 
+you don't know better):</p>
+
+<pre>
+git clone <a href="http://github.com/swarren/u-boot" 
+target="_b">http://github.com/swarren/u-boot</a>
+git checkout -b rpi_dev origin/rpi_dev
+</pre>
+
+<p>To add this repository to an existing local repository:</p>
+
+<pre>
+git remote add github_swarren_u-boot <a href="http://github.com/swarren/u-boot" 
+target="_b">http://github.com/swarren/u-boot</a>
+git fetch github_swarren_u-boot
+git checkout -b rpi_dev github_swarren_u-boot/rpi_dev
+</pre>
+
+<a name="Oleksandr_Tymoshenko"></a><h4>Oleksandr Tymoshenko's branch</h4>
+
+<p>Oleksandr's branch contains working USB support. Pre-built tarballs can be found 
+<a href="http://people.freebsd.org/~gonzo/arm/rpi/">here</a>. These releases are 
+meant to boot FreeBSD; if you're booting Linux, copy only the u-boot binary to your 
+boot partition and follow the instructions later on this page.</b>
+
+<p>To build it yourself, get the source from 
+<a href="http://github.com/gonzoua/u-boot-pi" 
+target="_b">http://github.com/gonzoua/u-boot-pi</a> branch rpi.</b>
+
+<p>To download this repository into a new local repository (this is what you want if 
+you don't know better):</p>
+
+<pre>
+git clone -b rpi <a href="http://github.com/gonzoua/u-boot-pi" 
+target="_b">http://github.com/gonzoua/u-boot-pi</a>
+</pre>
+
+<p>To add this repository to an existing local repository:</p>
+
+<pre>
+git remote add github_gonzoua_u-boot-pi <a href="http://github.com/gonzoua/u-boot-pi" 
+target="_b">http://github.com/gonzoua/u-boot-pi</a>
+git fetch github_gonzoua_u-boot-pi
+git checkout -b your_branch_name github_gonzoua_u-boot-pi/rpi
+</pre>
+
+<p>You can download a source tarball from 
+<a href="https://github.com/gonzoua/u-boot-pi/archive/rpi.tar.gz" 
+target="_b">this link</a>.</p>
+
+
+<a name="Marco_Schuster"></a><h4>Marco Schuster's branch</h4>
+
+<p>This branch is based off mainline HEAD and adds FDT/ATAG cmdline passthrough; this 
+makes loading and compositing the FDT yourself in u-boot unneccessary.</b>
+
+<p>To build it, go to <a href="https://github.com/msmuenchen/u-boot" 
+target="_b">https://github.com/msmuenchen/u-boot</a>. The debian_rpi branch contains 
+a replacement debian/ packaging directory.</b>
+
+<p>To build a Debian package (recommended to do on a RPi or a qemu-static buildroot, 
+cross-compiling is untested and unsupported), run </p>
+
+<pre>
+debian/rules binary
+</pre>
+
+<p>inside the directory and install the debian package built one level up. This will 
+automatically modify config.txt to boot with u-boot and always boot from the kernel 
+with the mpst current version number, provided it has been installed using one of the 
+standard kernel images (linux-image-rpi-rpfv/linux-image-rpi2-rpfv).</b>
+
+<p>A working uboot.env is supplied with the package; take care that it will be 
+overwritten on reinstalls. fw_printenv/fw_setenv are installed together with a 
+fw_env.config.</p>
+
+
+<a name="Get_an_ARM_compiler"></a><h3>Get an ARM compiler</h3>
+
+<p>If you are building U-Boot on a Raspberry Pi, or other ARM platform, you can skip 
+this step; the native compiler already generates ARM instructions.</b>
+
+<p>If you are building U-Boot on a different system, e.g. an x86 PC, you will need an 
+ARM cross-compiler. Pick one of the options below, and ignore the others.</b>
+
+<p>The toolchain you pick needs to have its associated libgcc compiled in a manner that 
+is compatible with the RPi's ARM CPU. If this is not the case, see the section below 
+that describes the Linaro compiler.</p>
+
+
+<a name="Ubuntu_packages"></a><h4>Ubuntu packages</h4>
+
+<p>(Stephen Warren recommends this option)</b>
+
+<p>Ubuntu includes an ARM cross compiler in its standard package step. You can install 
+it as follows:</p>
+
+<pre>
+apt-get install gcc-arm-linux-gnueabi
+</pre>
+
+<p>Each time you start a new shell to compile U-Boot, run the following first:</p>
+
+<pre>
+export CROSS_COMPILE=arm-linux-gnueabi-
+</pre>
+
+<p>Other distributions likely also provide ARM cross-compilers. Consult distro-specific 
+documentation for details.</p>
+
+
+<a name="Raspberry_Pi_Tools"></a><h4>Raspberry Pi Foundation Tools</h4>
+
+<p>The Raspberry Pi Foundation provides a compiler in their tools repository. You can 
+obtain it by:</p>
+
+<pre>
+cd $HOME
+git clone <a href="http://github.com/raspberrypi/tools" 
+target="_b">http://github.com/raspberrypi/tools</a> rpi-tools
+</pre>
+
+<p>Each time you start a new shell to compile U-Boot, run one of the following first, 
+depending on which particular toolchain you want to use:</p>
+
+<pre>
+export CROSS_COMPILE=$HOME/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-
+export CROSS_COMPILE=$HOME/rpi-tools/arm-bcm2708/arm-bcm2708-linux-gnueabi/bin/arm-bcm2708-linux-gnueabi-
+export CROSS_COMPILE=$HOME/rpi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/bin/
+</pre>
+
+<a name="Linaro_Compilers"></a><h4>Linaro Compilers</h4>
+
+<p>The Linaro compilers (at least those current as of 20140210) contain a non-multilib 
+libgcc that is compiled for a newer CPU architecture than the RPI's CPU. Hence, by 
+default, the Linaro compiler will generate a U-Boot image that doesn't work. To solve 
+this, run the following before compiling U-Boot:</p>
+
+<pre>
+export USE_PRIVATE_LIBGCC=yes
+</pre>
+
+<p>You can also create or edit the file <tt>arch/arm/cpu/arm1176/bcm2835/config.mk</tt>, 
+with the following content:</p>
+
+<pre>
+USE_PRIVATE_LIBGCC = yes
+</pre>
+
+<p>Make sure you perform a clean build after making setting 
+<tt>USE_PRIVATE_LIBGCC</tt>.</p>
+
+
+<a name="QEMU-based_chroot"></a><h4>QEMU-based chroot</h4>
+
+<p>This is a bit more complex, but especially useful if you have problems setting up 
+your toolchain. You will need a Debian host system with the following packages:</p>
+
+<pre>
+coreutils kpartx e2fsprogs dosfstools mount tar util-linux debootstrap qemu-user-static
+</pre>
+
+<p>Then, build yourself a chroot:</p>
+
+<pre>
+debootstrap --no-check-gpg --foreign --arch armhf stretch /opt/buildroot/ <a href="http://mirrordirector.raspbian.org/raspbian">http://mirrordirector.raspbian.org/raspbian</a>
+cp /usr/bin/qemu-arm-static /opt/buildroot/usr/bin
+mount /dev /opt/buildroot/dev -o bind
+mount /dev/pts /opt/buildroot/dev/pts -o bind
+mount /sys /opt/buildroot/sys -o bind
+mount /proc /opt/buildroot/proc -o bind
+chroot /opt/buildroot/ /debootstrap/debootstrap --second-stage
+(wait, this will take time)
+(check using mount if all the bindmounts are still present. re-bind them if they're not, in case debootstrap has unmounted them)
+chroot /opt/buildroot vi /etc/apt/sources.list
+(remove the default, set deb <a href="http://mirrordirector.raspbian.org/raspbian">http://mirrordirector.raspbian.org/raspbian</a> main contrib non-free and deb-src <a href="http://mirrordirector.raspbian.org/raspbian">http://mirrordirector.raspbian.org/raspbian</a> main contrib non-free)
+chroot /opt/buildroot/ apt-get update
+chroot /opt/buildroot/ apt-get install build-essential
+chroot /opt/buildroot/ apt-get build-dep u-boot
+</pre>
+
+<p>When you want to enter the chroot, run</p>
+
+<pre>
+chroot /opt/buildroot /bin/bash (this enters a shell where you can do compilations etc)
+</pre>
+
+<p>Note that prior to entering you have to bind-mount and after leaving unbind the 
+mounts. Otherwise YOU WILL RUN INTO TROUBLE.</p>
+
+
+<a name="Compile_the_source"></a><h3>Compile the source</h3>
+
+<p>(Remember to set up CROSS_COMPILE first, as described above.)</b>
+
+<p>Then, in the U-Boot source directory, run one of the following to configure the 
+source tree to build for the Raspberry Pi:</p>
+
+<pre>
+# current version of U-Boot as of 17.8.2015
+make rpi_defconfig
+# or
+make rpi_2_defconfig
+# Older versions of U-Boot:
+make rpi_b_defconfig
+
+# even older versions:
+make rpi_b_config
+</pre>
+
+<p>Then, perform the actual build:</p>
+
+<pre>
+make -j8 -s
+</pre>
+
+<p>You may wish to change the "8" in "-j8" to match the number of CPUs on your build 
+system, or whatever make job limit you find works best.</b>
+
+<p>The build process should take no more than a few minutes. This should generate 
+<tt>u-boot.bin</tt>.</p>
+
+
+<a name="Copy_U-Boot_to_your_SD_card"></a><h3>Copy U-Boot to your SD card</h3>
+
+<p>The RPi binary firmware can boot U-Boot just like it can boot a downstream kernel. 
+As such, you can simply copy <tt>u-boot.bin</tt> to <tt>kernel.img</tt> on the SD card. 
+You shouldn't need any options in config.txt for this to work; in fact, you may simply 
+want to delete config.txt completely (but keep a backup!). Something like the following 
+should work, as root:</b>
+
+<p>Once, to back up your original config.txt:</p>
+
+<pre>
+mount /dev/sdb1 /mnt/tmp
+mv /mnt/tmp/config.txt /mnt/tmp/config.txt.pre-uboot
+umount /mnt/tmp
+</pre>
+
+<p>Every time you want to copy a new U-Boot binary to the SD card:</p>
+
+<pre>
+mount /dev/sdb1 /mnt/tmp
+cp u-boot.bin /mnt/tmp/kernel.img
+umount /mnt/tmp
+</pre>
+
+<p>Alternatively, you may wish not to rename the U-Boot binary. If so, the following 
+should work, as root:</b>
+
+<p>Once, to back up your original config.txt:</p>
+
+<pre>
+mount /dev/sdb1 /mnt/tmp
+mv /mnt/tmp/config.txt /mnt/tmp/config.txt.pre-uboot
+umount /mnt/tmp
+</pre>
+
+<p>Every time you want to copy a new U-Boot binary to the SD card:</p>
+
+<pre>
+mount /dev/sdb1 /mnt/tmp
+cp u-boot.bin /mnt/tmp/
+echo 'kernel=u-boot.bin' &gt; /mnt/tmp/config.txt
+umount /mnt/tmp
+</pre>
+
+<p>In the commands above, you may need to replace "/dev/sdb1" with a different device 
+filename, depending on where your SD card reader shows up. <tt>cat /proc/partitions</tt> 
+should help you locate the correct device filename.</p>
+
+
+<a name="Test_U-Boot"></a><h3>Test U-Boot</h3>
+
+<p>Boot up the RPi with your new U-Boot image. You should see U-Boot load on the screen 
+(HDMI), and also on the serial port output (if you have it connected up).</p>
+
+
+<a name="Kernel_Command-Line"></a><h3>Kernel Command-Line</h3>
+
+<p>In all of the example commands shown below to boot a kernel:</p>
+
+
+<ul>
+  <li> You may omit <tt>earlyprintk</tt> if you're not doing kernel development/testing, 
+       and are not experiencing early boot problems.</li>
+  <li> You may omit <tt>console=ttyAMA0</tt> if you don't want to use the serial 
+       console.</li>
+  <li> You may omit <tt>console=tty0</tt> if you don't want to use a virtual terminal 
+       console (HDMI/USB keyboard).</li>
+  <li> The <tt>root=</tt> option is correct for a Raspbian image. You may need to adjust 
+       this if your partition layout is different.</li>
+  <li> The same applies for <tt>rootfstype=</tt> option. The default FS type is EXT4. 
+       You will need to change it if using a different filesystem.</li>
+</ul>
+
+<a name="Booting_from_an_SD_card"></a><h3>Booting from an SD card</h3>
+
+<p>If your kernel uses Device Tree (it is true for a default upstream kernel image):</p>
+
+<pre>
+# swarren's branch already sets this automatically, so you can skip this
+# Mainline U-Boot will set the following automatically soon
+setenv fdtfile bcm2835-rpi-b.dtb
+
+mmc dev 0
+fatload mmc 0:1 ${kernel_addr_r} zImage
+fatload mmc 0:1 ${fdt_addr_r} ${fdtfile}
+setenv bootargs earlyprintk console=tty0 console=ttyAMA0 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait noinitrd
+bootz ${kernel_addr_r} - ${fdt_addr_r}
+</pre>
+
+<p>To boot a kernel that doesn't use Device Tree:</p>
+
+<pre>
+mmc dev 0
+fatload mmc 0:1 ${kernel_addr_r} zImage
+setenv bootargs earlyprintk console=ttyAMA0 console=tty1 root=/dev/mmcblk0p2 rootwait
+bootz ${kernel_addr_r}
+</pre>
+
+<p><br /></p>
+
+
+<a name="Network_boot_via_TFTP"></a><h3>Network boot via TFTP</h3>
+
+<a name="Configure_DHCP_server"></a><h4>Configure DHCP server</h4>
+
+<p>If you don't want to use a static IP for the RPi, you'll need to make sure it's 
+attached to a network with an active DHCP server.</p>
+
+
+<a name="Configure_TFTP_Server"></a><h4>Configure TFTP Server</h4>
+
+<p>You will need to have a TFTP server installed and configured. Place your zImage and 
+DTB file(s) in the TFTP root directory, and ensure that the file permissions are set 
+accordingly (everyone should have read access - use <tt>chmod a+r zImage</tt> if 
+unsure).</p>
+
+<a name="Boot_Using_Dynamic_IP"></a><h4>Boot Using Dynamic IP</h4>
+
+<p>To boot a kernel that doesn't use Device Tree:</p>
+
+<pre>
+usb start
+dhcp ${kernel_addr_r} zImage
+setenv bootargs earlyprintk console=ttyAMA0 console=tty1 root=/dev/mmcblk0p2 rootwait
+bootz ${kernel_addr_r}
+</pre>
+
+<p>If your kernel uses Device Tree:</p>
+
+<pre>
+# swarren's branch already sets this automatically, so you can skip this
+# Mainline U-Boot will set the following automatically soon
+setenv fdtfile bcm2835-rpi-b.dtb
+
+usb start
+dhcp ${kernel_addr_r} zImage
+tftp ${fdt_addr_r} ${fdtfile}
+setenv bootargs earlyprintk console=ttyAMA0 console=tty1 root=/dev/mmcblk0p2 rootwait
+bootz ${kernel_addr_r} - ${fdt_addr_r}
+</pre>
+
+<a name="Boot_Using_Static_IP"></a><h4>Boot Using Static IP</h4>
+
+<p>To boot a kernel that doesn't use Device Tree:</p>
+
+<pre>
+usb start
+setenv serverip &lt;tftp_server_ip&gt;
+setenv ipaddr &lt;a_spare_ip_address&gt;
+tftp ${kernel_addr_r} zImage
+setenv bootargs earlyprintk console=ttyAMA0 console=tty1 root=/dev/mmcblk0p2 rootwait
+bootz ${kernel_addr_r}
+</pre>
+
+<p>If your kernel uses Device Tree:</p>
+
+<pre>
+# swarren's branch already sets this automatically, so you can skip this
+# Mainline U-Boot will set the following automatically soon
+setenv fdtfile bcm2835-rpi-b.dtb
+
+usb start
+setenv serverip &lt;tftp_server_ip&gt;
+setenv ipaddr &lt;a_spare_ip_address&gt;
+tftp ${kernel_addr_r} zImage
+tftp ${fdt_addr_r} ${fdtfile}
+setenv bootargs earlyprintk console=ttyAMA0 console=tty1 root=/dev/mmcblk0p2 rootwait
+bootz ${kernel_addr_r} - ${fdt_addr_r}
+</pre>
+
+<a name="U-Boot_script_files"></a><h3>U-Boot script files</h3>
+
+<a name="uEnv.txt"></a><h4>uEnv.txt</h4>
+
+<p>swarren's branch (and soon mainline) load file <tt>/uEnv.txt</tt> from the SD card 
+prior to auto-booting and/or entering the command-line. This file can be used to 
+customize the U-Boot environment at an early stage. Each line, of the format 
+<tt>name=value</tt>, sets one environment variable.</p>
+
+
+<a name="boot.scr.uimg"></a><h4>boot.scr.uimg</h4>
+
+<p>swarren's branch and mainline both search all known storage devices for a file 
+name <tt>boot.scr.uimg</tt> (or <tt>boot.scr</tt>) in either <tt>/</tt> or 
+<tt>/boot</tt>. The SD card is searched, as is any USB storage device if USB support 
+is enabled in U-Boot. The commands described in the various booting sections above may 
+be placed into this file, and will be automatically executed by U-Boot once the autoboot 
+timer expires.</b>
+
+<p>To create this file:</p>
+
+<pre>
+vi boot.scr
+# Place the relevant set of boot commands into the file
+mkimage -A arm -O linux -T script -C none -n boot.scr -d boot.scr boot.scr.uimg
+</pre>
+
+<p>Now, copy <tt>boot.scr.uimg</tt> to your SD card.</p>
+
+
+<a name="DHCP_boot"></a><h4>"DHCP" boot</h4>
+
+<p>swarren's branch (and mainline once USB support lands there) both attempt to download 
+a file named <tt>boot.scr.uimg</tt> from a TFTP server. Create the file as described in 
+the previous section, and place it in your TFTP server's data directory.</p>
+
+
+<a name="PXE"></a><h4>PXE</h4>
+
+<p>swarren's branch (and mainline once USB support lands there) both attempt to download 
+and execute an extlinux/syslinux 
+(<a href="http://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/" 
+target="_b">BootLoaderSpec</a>) config file from a TFTP server. Create e.g. 
+<tt>pxelinux.cfg/default</tt> in the TFTP server's data directory. An interactive menu 
+will be displayed for the various boot options described in this file.</p>
+
+
+<a name="boot_targets"></a><h4>boot_targets</h4>
+
+<p>The U-Boot environment variable <tt>boot_targets</tt> may be used to configure which 
+auto-boot targets are executed at boot. uEnv.txt may be used to configure this 
+variable.</p>

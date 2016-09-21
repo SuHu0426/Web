@@ -1,0 +1,105 @@
+http://www.tacc.utexas.edu/perfexpert/perfexpert-installation-guide/
+
+$ sudo mkdir /src1/PerfExpert
+$ sudo chown hsu:hsu PerfExpert/
+$ cd PerfExpert/
+
+$ wget http://icl.cs.utk.edu/projects/papi/downloads/papi-4.1.2.1.tar.gz
+$ wget https://outreach.scidac.gov/frs/download.php/566/hpctoolkit-5.0.1-release.tar.gz
+$ wget https://outreach.scidac.gov/frs/download.php/567/hpctoolkit-externals-5.0.1-release.tar.gz
+$ wget https://webspace.utexas.edu/asr596/www/perfexpert/downloads/hpcdata.tar.gz
+$ wget https://github.com/ashay/PerfExpert/tarball/master --no-check-certificate
+$ mv master ashay-PerfExpert-05762b6.tar.gz
+
+$ sudo apt-get install libxml2 libxml2-dev libdwarf openjdk-6-jdk openjdk-6-jre ant
+
+$ tar zxvf papi-4.1.2.1.tar.gz
+$ cd papi-4.1.2.1/src
+$ ./configure
+$ make
+$ sudo make install
+
+$ tar zxvf hpctoolkit-externals-5.0.1-release.tar.gz
+$ cd hpctoolkit-externals-5.0.1-r3440/
+$ mkdir BUILD && cd BUILD
+$ ../configure --with-mpi=/usr/lib/openmpi
+$ make install
+
+$ tar zxvf hpctoolkit-5.0.1-release.tar.gz
+$ cd hpctoolkit-5.0.1-r3440/
+$ mkdir BUILD && cd BUILD
+$ sudo mkdir /src2/hpctoolkit
+$ sudo chown hsu:hsu /src2/hpctoolkit
+$ ../configure --prefix=/src2/hpctoolkit --with-externals=/src1/PerfExpert/hpctoolkit-externals-5.0.1-r3440/BUILD
+$ make install
+
+$ tar zxvf ashay-PerfExpert-05762b6.tar.gz
+$ cd ashay-PerfExpert-05762b6/
+$ export PAPI_HEADERS=/usr/local/include
+$ export PAPI_LIBS=/usr/local/lib
+$ export PERFEXPERT_HOME=/src2/PerfExpert
+$ make
+
+$ wget https://webspace.utexas.edu/asr596/www/perfexpert/downloads/source.c
+$ gcc -lpapi -o source source.c
+$ export PERFEXPERT_HPCTOOLKIT_HOME=/src2/hpctoolkit
+$ /src2/PerfExpert/perfexpert_run_exp source 
+$ export PERFEXPERT_HPCDATA_HOME=/src1/PerfExpert/hpcdata
+$ /src2/PerfExpert/perfexpert 0.1 experiment.xml
+Input file: "experiment.xml"
+Total running time for "experiment.xml" is 7.93 sec
+
+Function compute() (100% of the total runtime)
+===============================================================================
+ratio to total instrns      %  0.........25...........50.........75........100
+   - floating point     :    6 ***
+   - data accesses      :   12 ******
+
+-------------------------------------------------------------------------------
+performance assessment    LCPI good......okay......fair......poor......bad....
+* overall               :  1.4 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+upper bound estimates
+* data accesses         :  1.7 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   - L1d hits           :  0.3 >>>>>>
+   - L2d hits           :  0.1 >
+   - L2d misses         :  1.4 >>>>>>>>>>>>>>>>>>>>>>>>>>>
+* instruction accesses  :  0.4 >>>>>>>>>
+   - L1i hits           :  0.4 >>>>>>>>>
+   - L2i hits           :  0.0 >
+   - L2i misses         :  0.0 >
+* data TLB              :  0.3 >>>>>>
+* instruction TLB       :  0.0 >
+* branch instructions   :  0.1 >
+   - correctly predicted:  0.1 >
+   - mispredicted       :  0.0 >
+* floating-point instr  :  0.2 >>>>
+   - fast FP instr      :  0.2 >>>>
+   - slow FP instr      :  0.0 >
+
+Loop in function compute() (100% of the total runtime)
+===============================================================================
+ratio to total instrns      %  0.........25...........50.........75........100
+   - floating point     :    6 ***
+   - data accesses      :   12 ******
+
+-------------------------------------------------------------------------------
+performance assessment    LCPI good......okay......fair......poor......bad....
+* overall               :  1.4 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+upper bound estimates
+* data accesses         :  1.7 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   - L1d hits           :  0.3 >>>>>>
+   - L2d hits           :  0.1 >
+   - L2d misses         :  1.4 >>>>>>>>>>>>>>>>>>>>>>>>>>>
+* instruction accesses  :  0.4 >>>>>>>>>
+   - L1i hits           :  0.4 >>>>>>>>>
+   - L2i hits           :  0.0 >
+   - L2i misses         :  0.0 >
+* data TLB              :  0.3 >>>>>>
+* instruction TLB       :  0.0 >
+* branch instructions   :  0.1 >
+   - correctly predicted:  0.1 >
+   - mispredicted       :  0.0 >
+* floating-point instr  :  0.2 >>>>
+   - fast FP instr      :  0.2 >>>>
+   - slow FP instr      :  0.0 >
+

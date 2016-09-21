@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>My Docker notes</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  </head>
+<body>
+<h1>My Docker notes</h1>
+
+<p>If you want to simulate real world containers infrastructure you could deploy an OS on Qemu and start container within it.
+  <h3>Advantage of Docker containers Versus a small Qemu VM</h3>
+<p>Containers use their host kernel which means they consume less RAM and CPU power. Docker container images are also available from a extensive registry (Docker hub), you can fork them in order to add your own tools and create custom containers.
+  <h3>Docker containers are not real VM</h3>
+<p>To make it clear even if in GNS3 we use container to emulate computers it's not the case in real world.  Containers use your kernel and run a single program not the whole operating system.</p>
+<a href="https://www.gns3.com/support/docs/docker-2">https://www.gns3.com/support/docs/docker-2</a>
+<h2>Debian</h2>
+<h3>installation steps</h3>
+<pre class="mdol">
+<code>sudo aptitude install docker.io</code>
+<code>sudo adduser cssu docker</code>
+<code>docker run hello-world</code>
+</pre>
+
+<h2>Devuan, Debian (Docker official archive mirror)</h2>
+<h3>installation steps</h3>
+<ul>
+  <li>On Debian Jessie
+<pre class="mdol">
+<code>deb https://apt.dockerproject.org/repo debian-jessie main</code>
+</pre>
+  <li>On Debian Stretch/Sid
+<pre class="mdol">
+<code>deb https://apt.dockerproject.org/repo debian-stretch main</code>
+</pre>
+  <li>Update the APT package index and verify that APT is pulling from the right repository.
+<pre class="mdol">
+<code>sudo apt-get update</code>
+<code>sudo apt-get install apt-transport-https ca-certificates</code>  
+<code>sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D</code>  
+<code>sudo apt-cache policy docker-engine</code>
+</pre>
+  <li>Install Docker
+<pre class="mdol">
+<code>sudo aptitude install docker-engine</code>
+<code>sudo adduser cloud docker</code>
+<code>docker run hello-world</code>
+</pre>
+
+<h3>customize</h3>
+<ul>
+  <li>without root
+<pre class="mdol">
+<code>sudo adduser cloud docker</code>
+</pre>
+<p>logout or reboot.</p>
+  <li>Test.
+<pre class="mdol">
+<code>docker run hello-world</code>
+<code class="out">Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+c04b14da8d14: Pull complete
+Digest: sha256:0256e8a36e2070f7bf2d0b0763dbabdd67798512411de4cdcf9431a1feb60fd9
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker Hub account:
+ https://hub.docker.com
+
+For more examples and ideas, visit:
+ https://docs.docker.com/engine/userguide/
+
+</code>
+</pre>
+  <li><a href="https://docs.docker.com/engine/userguide/networking/default_network/build-bridges/" target="_blank">Build your own bridge</a><br>
+    <a href="http://containertutorials.com/network/ovs_docker.html" target="_blank">Using OVS bridge for docker networking</a>
+    <a href="https://gist.github.com/noteed/8656989" target="_blank">Running Docker on two hosts, bridged with Open vSwitch</a>
+    <a href="https://github.com/openvswitch/ovs/blob/master/utilities/ovs-docker" target="_blank">ovs-docker</a>
+</ul>
+
+<!-- START References -->
+<h1>References</h1>
+<ul>
+  <li><a href="https://docs.docker.com/" target="_blank">Docker Documentation</a>
+  <li><a href="https://docs.docker.com/engine/installation/linux/debian/" target="_blank">Installation on Debian</a>
+  <li><a href="https://www.gns3.com/support/docs/docker-2" target="_blank">GNS3 Docker</a>
+<!--  <li><a href="" target="_blank"></a>
+  <li><a href="" target="_blank"></a> -->
+</ul>
+<!-- END References -->
+
+<hr>
+<script type="text/javascript">
+<!-- Hide JavaScript...
+var LastUpdated = document.lastModified;
+document.writeln ("This page was last updated " + LastUpdated);
+// End Hiding -->
+</script>
+<address style="text-align: right;"><a href="mailto:cssu@cs.nchu.edu.tw">Chi-She
+ng Su</a></address>
+
+</body>
+</html>

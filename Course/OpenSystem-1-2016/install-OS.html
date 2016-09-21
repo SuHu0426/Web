@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Install Debian Operating System</title>
+    <link type="text/css" rel="stylesheet" href="../css/style_2016.css" />
+<!--    <style type="text/css">
+h1 { counter-reset: section; }
+h2 { counter-reset: subsection; }
+h3 { counter-reset: subsubsection; }
+h2:before {
+    content: counter(section) ". ";
+    counter-increment: section;
+}
+h3:before {
+    content: counter(section) "." counter(subsection) " ";
+    counter-increment: subsection;
+}
+h4:before {
+    content: counter(section) "." counter(subsection) "." counter(subsubsection) " ";
+    counter-increment: subsubsection;
+}
+select {
+	text-align: center;
+}
+    </style> -->
+    <style>
+table {
+    border-spacing: 0px;
+    border: 2px solid;
+    line-height: 150%;
+}
+
+td {
+    border: 1px solid;
+}
+
+th {
+    border: 1px solid;
+    font-size: 17px;
+    font-weight: bold;
+    font-family: Consolas,monospace;
+}
+pre {
+    margin: 0px 0px 0px 0px;
+}
+    </style>
+  </head>
+<body>
+  <h1>OpenSystem Lab1: Install Debian Operating System</h1>
+  <div style="float: right;"><input type="button" id="PrintMode" class="ctlbtn" value="Switch to Print Mode"/></div>
+  <ol>
+    <h2><li>實驗描述</h2>
+    本實驗示範如何安裝 Debian 作業系統。
+    <h2><li>實驗環境</h2>
+  
+    <table>
+      <caption>理學大樓 1002 教室</caption>
+      <tbody><tr>
+	  <td></td>
+	  <th width="320">Cloud-A01 ～ Cloud-D12</th>
+        </tr>
+        <tr>
+	  <th>CPU</th>
+	  <td>AMD Phenom™ II X6 1065T Processor</td>
+        </tr>
+        <tr>
+	  <th>Memory</th>
+	  <td>8G</td>
+        </tr>
+        <tr>
+	  <th>Disk spaces</th>
+	  <td>500G、500G</td>
+        </tr>
+        <tr>
+	  <th>O.S.</th>
+	  <td>Debian Stretch</td>
+        </tr>
+    </tbody></table> 
+    <hr>
+    
+    <h2><li>實習簡介</h2>
+    <p>本實作內容主要目的：讓同學學會如何安裝作業系統，以下將帶各位同學實習安裝 Debian 作業系統。
+      將來大家都有機會接觸到 Linux 作業系統，在正式學習如何操作 Linux 系統之前，必須先學會如何自行安裝（重新安裝）作業系統！</p>
+    <p>由於燒錄光碟片成本耗大，因此在課堂上我們使用網路開機方式來安裝作業系統，同學回家後將網路開機改為光碟開機，其餘過程均與課堂上大同小異。</p>
+    <p>以下操作過程均建立在網路環境具有動態主機設定通訊協定(DHCP, 自動取得 IP) 情境下。</p> 
+
+    <h2><li>環境參數</h2>
+    <p>為了避免輸入錯誤以及方便設置使用環境，我們使用下列按鈕來快速取代各個不同參數。</p> 
+    <p>
+      <select id="hostcn_a" class="num" style="text-align: center;">
+        <option value="-1">A 排機器代號</option>
+      </select>
+      <select id="hostcn_b" class="num" style="text-align: center;">
+        <option value="-1">B 排機器代號</option>
+      </select>
+      <select id="hostcn_c" class="num" style="text-align: center;">
+        <option value="-1">C 排機器代號</option>
+      </select>
+      <select id="hostcn_d" class="num" style="text-align: center;">
+        <option value="-1">D 排機器代號</option>
+      </select>
+    </p>
+    <p>您的 IP 位址是：<span class="hostIP" style="color: red;">[Host-IP]</span></p>
+    
+    <hr>
+  
+    <h2><li>實習內容</h2>
+    <ol>
+      <h3><li>準備工作</h3>
+      <ol>
+        <li>取得安裝來源<br>
+          <a href="https://www.debian.org/index.zh-tw.html" target="newwindow">Debian 臺灣站</a>
+          <p>將光碟映像檔<a href="http://cdimage.debian.org/debian-cd/8.4.0/amd64/iso-cd/debian-8.4.0-amd64-netinst.iso" target="_blank">debian-8.4.0-amd64-netinst.iso</a> 下載下來後，燒錄成光碟片。或是參考 <a href="http://unetbootin.sourceforge.net/"  target="newwindow">UNetbootin</a>，製作可開機 USB 碟來使用</p>
+          <p>若是家中環境使得安裝過程中沒有網路可以使用 (例如使用撥接上網 pppoe)，請至<a href="http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/" target="_blank">cdimage.debian.org</a>下載<a href="http://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-8.4.0-amd64-lxde-CD-1.iso" target="_blank">debian-8.4.0-amd64-lxde-CD-1.iso </a>完整版光碟檔案。</p>
+
+        <li>修改 BIOS 開機次序<br>
+          詳情請見課堂演示，或參考<a href="https://www.debian.org/releases/sarge/i386/ch03s06.html.zh_TW#bios-setup" target="newwindow">安裝前硬體和作業系統的相關設定</a>。
+      </ol>
+      <h3><li>安裝流程</h3>
+      <p>安裝過程請參考以下各圖</p>
+      <table class="nobor">
+        <tr>
+          <td class="nobor">	  
+            <input type="button" id="prev" value="prev">
+            <!--<span id="page" style="width: 30px; text-align: center;  display: block; float: left;"></span>-->
+            <input type="text" id="page" value="" maxlength="2" style="width: 30px; text-align: center;">
+            <input type="button" id="next" value="next">
+	    <br>
+	    <img width="800" height="600" id="install_img">
+          <td class="nobor"><div id="content"></div>
+      </table>
+
+      <p>硬碟分割與掛載</p>
+      <table>
+        <caption>硬碟分割表</caption>
+        <tr><th>分割區編號<th>類型<th>大小<th>可開機<th>格式化<th>檔案系統<th>掛載位置</tr>
+        <tr><td>#1<td>primary<td align="right">512 MB<td align="center">B<td align="center">F<td align="center">ext2<td>/boot</tr>
+        <tr><td>#2<td>primary<td align="right">5 GB<td><td align="center">F<td align="center">ext4<td>/</tr>
+        <tr><td>#3<td>primary<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/usr</tr>
+        <tr><td>#5<td>logical<td align="right">10 GB<td><td align="center">F<td align="center">ext4<td>/var</tr>
+        <tr><td>#6<td>logical<td align="right">10 GB<td><td align="center">F<td align="center">ext4<td>/usr/local</tr>
+        <tr><td>#7<td>logical<td align="right">10 GB<td><td align="center">F<td align="center">ext4<td>/tmp</tr>
+        <tr><td>#8<td>logical<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/home</tr>
+        <tr><td>#9<td>logical<td align="right">16 GB<td><td align="center">F<td align="center">swap<td>swap</tr>
+        <tr><td>#10<td>logical<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/src1</tr>
+        <tr><td>#11<td>logical<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/src2</tr>
+        <tr><td>#12<td>logical<td align="right">120 GB<td><td align="center">F<td align="center">ext4<td>/src3</tr>
+        <tr><td>#13<td>logical<td align="right">120 GB<td><td align="center">F<td align="center">ext4<td>/src4</tr>
+        <tr><td>#14<td>logical<td align="right">40 GB<td><td align="center">F<td align="center">ext4<td>/backup</tr>
+        <tr><td>#15<td>logical<td align="right">125 GB<td><td align="center">F<td align="center">ext4<td>/video</tr>
+      </table>
+      <p>由於我們現在要建立全新的電腦系統，因此將所有分割區都格式化。若將來想要重新安裝作業系統，並保留個人資料只需要格式化分割區9 以前的分割區。</p>
+    </ol>
+
+    <h2><li>設定作業系統</h2>
+    <ol>
+      <h3><li>設定網路</h3>
+      <ol>
+        <li>使用圖形化界面的 Wicd network-manager(舊版為 network-manager) 來設定網路。<br>
+          <table class="nobor">
+            <tr>
+              <td class="nobor">	  
+                <input type="button" id="netconf_prev" value="prev"/><span id="netconf_page">01</span><input type="button" id="netconf_next" value="next"/>
+                <br>
+                <img src="../OpenSystem-1-2014/img/net001.png" width="800" height="600" id="netconf_img">
+              <td class="nobor"><div id="netconf_content"><p>登入後的畫面，首先我們在右下方時間左邊的圖示上按下右鍵。</p></div>
+          </table>
+        <li>使用指令來設定網路。<br>
+          <p>首先我們先將自己的帳號加入 sudoers，儘量避免使用 root 帳號會比較安全一點！</p>
+          <div class="console">
+            <div class="dol">su</div>
+            <div class="adm">adduser cloud sudo</div>
+            <div class="adm">cp /etc/sudoers /etc/sudoers.orig</div>
+            <div class="adm">nano /etc/sudoers</div>
+            <pre><div class="out">#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# Please consider adding local content in /etc/sudoers.d/ instead of
+# directly modifying this file.
+#
+# See the man page for details on how to write a sudoers file.
+#
+Defaults        env_reset
+Defaults        mail_badpass
+Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# Host alias specification
+# User alias specification
+# Cmnd alias specification
+# User privilege specification
+root    ALL=(ALL:ALL) ALL
+cloud   ALL=(ALL:ALL) ALL
+
+# Allow members of group sudo to execute any command
+%sudo   ALL=(ALL:ALL) ALL
+# See sudoers(5) for more information on "#include" directives:
+</div></pre>
+            <div class="adm">exit</div>
+          </div>
+          <p>再來我們要將 Wicd (or network-manager) 移除，雖然圖形界面似乎很便利，但是他常常會出來搞鬼！</p>
+          <div class="console">
+            <div class="dol">sudo dpkg -P wicd wicd-daemon wicd-gtk</div>
+          </div>
+          <p>若要移除 network-manager 則
+            <div class="console">
+              <div class="dol">sudo dpkg -P network-manager network-manager-gnome</div>
+            </div>
+          <p>手動修改設定檔，養成好習慣，更改任何設定檔之前要先備份！</p>
+          <div class="console">
+            <div class="dol">cd /etc/network</div>
+            <div class="dol">sudo cp interfaces interfaces.orig</div>
+            <div class="dol">sudo nano interfaces</div>
+            <pre><div class="out"># This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+# The loopback network interface
+auto lo
+iface lo inet loopback
+auto eth0
+iface eth0 inet static
+    address <span class="hostIP" style="color: red;">[Host-IP]</span>
+    netmask 255.255.255.0
+    gateway 192.168.102.254
+</div></pre>
+          </div>
+          <p>接著是設定 DNS servers，一樣要記得先備份！</p>
+          <div class="console">
+            <div class="dol">cd /etc</div>
+            <div class="dol">ls -l resolv.conf</div>
+            <div class="dol">sudo rm resolv.conf</div>
+            <div class="dol">sudo nano resolv.conf</div>
+            <pre><div class="out">nameserver 140.120.13.1
+nameserver 140.120.1.2
+nameserver 8.8.8.8
+</div></pre>
+          </div>
+
+        <li>修改開機參數（關閉裝置命名）
+          <p>新版 Debian 預設會啟用裝置命名功能，此功能看似酷炫，實際使用上會對我們帶來許多不必要的麻煩，既有的設定也全都要修改，因此我們把這個功能關閉。</p>
+          <div class="console">
+            <div class="dol">cd /tmp</div>
+            <div class="dol">wget -nc http://www.cs.nchu.edu.tw/~snmlab/OpenSystem-1-2016/files/grub</div>
+            <div class="dol">sudo mv /etc/default/grub /etc/default/grub.orig</div>
+            <div class="dol">sudo mv grub /etc/default</div>
+            <div class="dol">sudo update-grub</div>
+          </div>
+          
+        <li>安裝驅動程式<br>
+          <p>補齊欠缺的 kernel modules。</p>
+          <div class="console">
+            <div class="dol">wget -nc http://www.cs.nchu.edu.tw/~snmlab/OpenSystem-1-2016/files/sources.list</div>
+            <div class="dol">sudo mv /etc/apt/sources.list /etc/apt/sources.list.orig</div>
+            <div class="dol">sudo mv sources.list /etc/apt/sources.list</div>
+            <div class="dol">sudo apt-get update</div>
+            <div class="dol">sudo apt-get install aptitude linux-headers-amd64 firmware-linux-nonfree firmware-realtek</div>
+          </div>
+    <!--
+        <li>修改 GRUB 開機選單<br>
+          <p>為了不影響其它課程使用, 我們安裝完以後將預設系統改為第二顆硬碟(sdb). (第二週同學)</p>
+          <div class="console">
+            <div class="dol">sudo rm /etc/grub.d/0[89]_Debian-*</div>
+            <div class="dol">wget -nc http://mirror.cs.nchu.edu.tw/08_Debian-Jessie-Disk2</div>
+            <div class="dol">wget -nc http://mirror.cs.nchu.edu.tw/09_Debian-Jessie-Disk1</div>
+            <div class="dol">sudo cp 0[89]_Debian-* /etc/grub.d</div>
+            <div class="dol">sudo chmod +x /etc/grub.d/0[89]_Debian-*</div>
+            <div class="dol">sudo update-grub</div>
+          </div>
+          <p>為了不影響其它課程使用, 我們安裝完以後將預設系統改為穩定那顆硬碟. (第一週同學)</p>
+          <div class="console">
+            <div class="dol">wget -nc http://mirror.cs.nchu.edu.tw/08_Debian-Wheezy-Disk2</div>
+            <div class="dol">wget -nc http://mirror.cs.nchu.edu.tw/09_Debian-Jessie-Disk1</div>
+            <div class="dol">sudo cp 0[89]_Debian-* /etc/grub.d</div>
+            <div class="dol">sudo chmod +x /etc/grub.d/0[89]_Debian-*</div>
+            <div class="dol">sudo update-grub</div>
+          </div>
+    -->
+          <p>最後，重開機試試看設定是否都正確！</p>
+      </ol>
+    </ol>
+  </ol>
+  
+<br><br><br><br>
+<!-- 頁底 -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+      <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+      // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+    <!-- ====== Installation graphics ====== -->
+    <script>
+    function setImgText() {
+        $.getJSON( "ajax/explain.json", function() {
+            //console.log( "get explain.json success" );
+        })
+            .done(function ( json ) {
+                //console.log( "get explain.json done" );
+                //console.log( json.explain + "\n\n" + json.explain[0]["img"] );
+                $('#page').val( count + 1);
+                $('#install_img').attr('src', 'img/' + json.explain[count]["img"] );
+                $('#content').html("<p>" + json.explain[count]["text"] + "</p>");
+            })
+            .fail(function() {
+                console.log( "get explain.json fail" );
+            })
+    }
+
+var count = 0;
+setImgText();
+
+$('#page').change(function() {
+    input = parseInt($('#page').val(), 10);
+    console.log( "input: " + input  );
+    if ( Math.floor(input) == input && $.isNumeric(input) ) {
+        count = input - 1;
+        if (count<0) {
+	    count = 0;
+        }
+        if (count>57) {
+	    count = 57;
+        }
+        setImgText();
+    }
+    console.log( "input: " + input + "\ncount: " + count);
+});
+$('#prev').click(function() {
+    count--;
+    if (count<0) {
+	count = 0;
+    }
+    setImgText();
+    console.log( "count: " + count);
+});
+$('#next').click(function() {
+    count++;
+    if (count>57) {
+	count = 57;
+    }
+    setImgText();
+    console.log( "count: " + count);
+});
+    </script>
+    <!-- ====== End Installation graphics ====== -->
+    <!-- Replace hostname and IP etc... -->
+    <script>
+var host_code_name = [
+    "A00","A01","A02","A03","A04","A05","A06",
+    "B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12",
+    "C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12",
+    "D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D11","D12"];
+var host_num = [];
+for (var i=0; i<43; i++){
+    host_num.push(i);
+}
+$.each( host_num , function(index, val){
+    if (index < 7) {
+        $("#hostcn_a").append('<option value="'+val+'">'+host_code_name[index]+'</option>');
+    } else if (index < 19) {
+        $("#hostcn_b").append('<option value="'+val+'">'+host_code_name[index]+'</option>');
+    } else if (index < 31) {
+        $("#hostcn_c").append('<option value="'+val+'">'+host_code_name[index]+'</option>');
+    } else if (index < 43) {
+        $("#hostcn_d").append('<option value="'+val+'">'+host_code_name[index]+'</option>');
+    }
+});
+$(".num").change(function(){
+    var ip_addr = new Number($(this).val())+100;
+    var tmp = $(this).val();
+    $(".num").val( -1 );
+    $(this).val( tmp );
+    $(".hostIP").html("192.168.102."+ip_addr);
+    //$(".hostname").html("CSIE-"+$("this option[value='0']").text());
+});
+    </script>
+    <!-- END Replace hostname and IP etc... -->
+    <script>
+    var HostIP = [];
+    var Mode = 0;
+    var HexRnd = function(length) {
+    var characters = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+    var randomString = '';
+    for (var i = 0; i < length; i++ ) {
+	randomString = randomString + characters[Math.floor(Math.random()*15)];
+    }
+    //console.debug(randomString);
+    return randomString;
+}
+jQuery(document).ready(function() {
+    //====== Print Mode ======//
+    $("#PrintMode").click(function() {
+	if (Mode == 0) {
+	    Mode = 1;
+	    $('div').css('background-color', 'white');
+	    $('div').css('color', 'black');
+	    $('img').hide();
+	    $(this).val('Switch to Display Mode');
+	} else {
+	    Mode = 0;
+	    $('.console').css('background-color', 'black');
+	    $('.console').css('color', 'white');
+	    $('.adm').css('background-color', '');
+	    $('.adm').css('color', '');
+	    $('.dol').css('background-color', '');
+	    $('.dol').css('color', '');
+	    $('img').show();
+	    $(this).val('Switch to Print Mode');
+	}
+    });
+    //====== End Print Mode ======//
+
+	//====== Network Configuration graphics ======//
+    var change_netconf_content = function() {
+	console.debug("Change Content" + netconf_count);
+	var netconf_i = parseInt(netconf_count,10);
+	var netconf_content_text = ['', 
+	'登入後的畫面，首先我們在右下方時間左邊的圖示上按下右鍵。', 
+	'接接點選 Edit Connections...。', 
+	'先選取左邊的 Wired connection 1，接著點又方的 Edit 按鈕。', 
+	'在 Device MAC address: 欄位點選向下三角形的符號，接個選取 eth0 那張網路卡。', 
+	'點選上方分頁的 IPv4 Settins 來到本頁設定。', 
+	'點選 Method: 欄位，選擇 Manual。', 
+	'點選 +Add 的按鈕來新增網路設定。', 
+	'依序輸入您的 IP address, Netmask 與 Gateway 資料。<br>Address：<span class="hostIP" style="color: red;">[Host-IP]</span><br>Netmask：255.255.255.0<br>Gateway：192.168.102.254<br>DNS servers：140.120.13.1,140.120.1.2,8.8.8.8<br>檢查一下後按下 Save', 
+	'確認無誤就可點 Close 關閉。', 
+	'接著這次使用"左鍵"點選 network-manager 圖示，點選 "Wireed connection 1" 來讓設定生效。', 
+	'在左下方工具列上點選右鍵，接著選擇 "Application Launch Bar" Settings。', 
+	'這個畫面可以幫我們設定哪些常用的程式要放到 Launch Bar' , 
+	'點選一下 Accessories 前方的三角形展開選項。', 
+	'選擇右方的 LXTerminal，接著按下 +Add 按鈕便會加入到左方。確認無誤後按下 Close', 
+	'點選左下方多出來的 Terminal 圖示，以開啟終端機。' 
+	];
+	$('#netconf_content').html("<p>" + netconf_content_text[netconf_i] + "</p>");
+    }
+    var netconf_count = 1;
+    $('#netconf_prev').click(function() {
+	netconf_count--;
+	if (netconf_count<2) {
+	    netconf_count = 1;
+	}
+	if (netconf_count<10) {
+	    netconf_count = "0"+netconf_count;
+	}
+	$('#netconf_img').attr('src', '../OpenSystem-1-2014/img/net0' + netconf_count + '.png');
+	$('#netconf_page').html(netconf_count);
+	change_netconf_content();
+    });
+    $('#netconf_next').click(function() {
+	netconf_count++;
+	if (netconf_count>15) {
+	    netconf_count = 15;
+	}
+	if (netconf_count<10) {
+	    netconf_count = "0"+netconf_count;
+	}
+	$('#netconf_img').attr('src', '../OpenSystem-1-2014/img/net0' + netconf_count + '.png');
+	$('#netconf_page').html(netconf_count);
+	change_netconf_content();
+    });
+	//====== End Network Configuration graphics ======//
+});             
+	</script>
+    
+</body>
+</html>

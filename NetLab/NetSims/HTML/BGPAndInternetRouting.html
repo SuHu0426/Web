@@ -1,0 +1,364 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html class=" js" xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Border Gateway Protocol, The Routing Protocol of the Internet - IGP, 
+               OSPF, BGP, As, Oh My! - Tutorials - LinuxPlanet</title>
+  </head>
+
+<body onload="welcomeUser();">
+
+<div class="date">January 27, 2014</div>
+
+<OL>
+  <LI><a href="#InternetRouting">Internet Routing and Peering</a>
+  <LI><a href="#BGP">Border Gateway Protocol</a>
+</OL>
+				
+<a name="InternetRouting"></a> <h3>Networking 101:  Understanding Internet Routing 
+and Peering  
+<a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3613781/Networking-101--Understanding-Internet-Routing-and-Peering.htm">(Source Origin)</a></h3>
+
+
+    <h4 class="leader"><span style="font-weight:bold;color:#003399;">Best of ENP:</span>
+ Internet routing involves a lot of players and a lot of pieces.  Before
+ we delve into Internet routing protocols, here are the broad strokes.</h4>
+		  		
+        <div id="articleInfo" class="left">
+            By&nbsp;<a href="http://www.enterprisenetworkingplanet.com/author/6240/Charlie-Schluting">Charlie Schluting</a> | Posted Nov 14, 2007  
+
+    <p>What exactly is the Internet? This article will explain the concepts
+ required to understand BGP, our next Networking 101 topic. Shipping 
+packets around the Internet requires the cooperation of separate 
+organizations, so it isn't as straightforward as learning about an IGP 
+routing mechanism.</p>
+
+    </div>
+<div id="relatedArticles" class="left">
+    <div class="header">
+        <h5>Related Articles</h5>
+    </div>
+    <div class="content">
+        <ul>
+                    <li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3612166/Networking-101-Understanding-OSPF-Routing-Part-2.htm">Networking 101: Understanding OSPF Routing (Part 2)</a></li>
+                    <li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3610496/Networking-101-Understanding-OSPF-Routing.htm">Networking 101: Understanding OSPF Routing</a></li>
+                    <li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3609151/Networking-101-Understanding-RIP-Routing.htm">Networking 101: Understanding RIP Routing</a></li>
+                    <li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3607381/Networking-101-Understanding-Routing.htm">Networking 101: Understanding Routing</a></li>
+                </ul>
+    </div>
+</div>
+
+    <div class="articleContent">
+<p>Starting at the service provider level, let's use an example of a local ISP that isn't very big. 
+
+</p><p>JoeBob ISP is going to need an ISP itself before it can ship a 
+customer's traffic to the Internet. It should start by forming distinct 
+relationships with two different tier 1 ISPs. These are the big players:
+ Level 3, AT&amp;T, Cogent, XO, etc. JoeBob ISP will "peer" with these 
+ISPs, in a BGP sense. This means that they will form a BGP session, and 
+exchange routes. The big ISP will send all of the Internet's routes to 
+JoeBob, which amounts to just fewer than 200,000 routes at this time. 
+We'll get into the details of how that works in the BGP article.</p>
+
+<p>JoeBob ISP will pay a certain dollar amount per MB of traffic sent. 
+It's connected to two ISPs, so it will likely have two different prices.
+ BGP magic can be done to favor the cheaper link, in that case. The crux
+ of the matter is that JoeBob ISP is getting routes from another ISP, 
+and it can do what it wishes with them. Some traffic can be sent to 
+either tier 1 ISPs, and some can be sent elsewhere.</p>
+
+
+<p>Peering agreements aren't just for the ISP-to-ISP BGP sessions, they 
+are also used to negotiate company to company traffic flows. Even the 
+small ISP can sometimes hop onto a local exchange, and peer with other 
+companies, schools or ISPs in the area. An exchange is a network 
+connection point, and every city has at least one. All the major players
+ in an area will connect to the exchange, and maintain their own routers
+ within. If they decide to peer with a friend, they can simply have the 
+exchange operators patch some fiber through to their friend's rack, and 
+viola, free packets. There's normally a port charge to connect to 
+exchanges, and I didn't mention anything about how you'd get traffic 
+from your site to the exchange. That takes fiber (money) too.</p>
+
+<p>Peering with others isn't a very common practice for small local 
+ISPs, but this is exactly how larger ISPs (and even schools) operate. 
+Sometimes an ISP will even provide its peers' routes to customers, and 
+allow that traffic for free. The capability of the ISP to do this 
+depends on the specifics of the peering agreements.</p>
+
+<p>On the topic of peering, there are two types of exchanges: public and private. 
+
+</p><p>A public exchange will allow most anyone to become a member. 
+Public peering doesn't imply that you all of a sudden get free routes to
+ every ISP that's on the exchange; rather it simply means that you can 
+connect to the exchange, sometimes for free. One very popular exchange 
+is the SIX, or Seattle Internet Exchange. If you are already a tenant of
+ the Westin building in Seattle, you can pay them to patch you into the 
+SIX closet. Once you get an IP from the SIX operator, you're on. After 
+that, however, you must form peering arrangements with the other BGP 
+speakers in the exchange.</p>
+
+<p>The SIX and the PAIX are the most popular west-coast exchanges. A few
+ people operate the SIX with a few Cisco switches in a rack. Essentially
+ every major carrier and service provider now connects to the SIX, 
+including Google, XO and AT&amp;T broadband. The PAIX started life in 
+Palo Alto, and is operated by Switch and Data now. It too is a public 
+exchange, and it also runs private peering alongside its public 
+offerings. </p>
+
+<p>Then there's private peering. 
+
+</p><p>Most public exchanges have 100Mb or 1Gb connections participants 
+can connect to. If you're a very large ISP, you need (many) 10Gb links 
+to handle all your traffic. The problem is that public exchanges don't 
+normally have the funds to provide this type of service reliably. 
+Private peering provides an SLA (service level agreement), and most of 
+the time that comes with better hardware to handle the traffic. There's 
+always ongoing public vs. private peering debates that are quite 
+entertaining, but never really lead anywhere. If you're going to need 
+custom solutions, like trunking two links together, then private peering
+ is where you'll likely end up.</p>
+
+<p>Peering is the opposite of transit. Transit providers, like tier 1 
+ISPs, give you all the Internet routes you pay for (normally all of 
+them), and take care of everything else. A company's ISP is a transit 
+provider, and so is the ISP that services a smaller ISP. ISPs that have 
+peering along with their transit will generally send everything they can
+ through the peer, and everything else onto the transit provider.</p>
+
+<p>The concept of a default-free router means that you have a router 
+that gets a full Internet routing table. If your transit provider 
+doesn't send you a route for some network, and you don't have any other 
+knowledge of it through your other peers, then it's simply unreachable. 
+There is no "default router" that you simply send everything to in hopes
+ that it will do the right thing.</p>
+
+<p>When an ISP becomes large enough that tier 1 ISPs are sending a big 
+portion of their traffic to said ISP, then peering agreements will 
+normally happen. Peering is really motivated by two factors: money, and 
+traffic efficiency. Often times two ISPs will notice that they talk 
+between each other quite often, but their traffic has to travel half way
+ around the world before it reaches the other. If the growing ISP is 
+geographically disperse enough, they will be able to peer in many 
+different exchanges, and pretty soon most of their traffic will no 
+longer have to use a transit provider anymore. Anyone with enough muscle
+ to get peering arranged with the big players, and their own 
+infrastructure in all of these places, is probably a major service 
+provider already.</p>
+
+<p>That's a very quick rundown of how the Internet works. There are a 
+lot more layers involved than we've implied, but this is the gist of how
+ the Internet works. Come back next week to discover how the routing 
+works between all of these separate entities. It's quite fascinating.</p>
+
+<a name="BGP"></a><h3>Border Gateway Protocol, The Routing Protocol of the Internet 
+<a href="http://www.linuxplanet.com/linuxplanet/tutorials/6580/1">(Source 
+Origin)</a></h3>
+
+<h4>IGP, OSPF, BGP, As, Oh My!</h4>
+		
+  <ul class="noBullets">
+    <li>November 12, 2008</li>
+    <li>By Charlie Schluting</li>
+  </ul>			
+	</div>
+	
+
+<!--content_start--><p></p><P> The Border Gateway Protocol is the routing protocol of 
+the Internet. BGP itself isn't too complex, but the concepts behind 
+autonomous-system-based routing can be strange to newcomers. In this article we hope 
+to provide a short overview of how BGP works, along with the problems it solves and 
+causes.<p></p>
+
+
+<P> From <a href="#InternetRouting" target="newwindow">last week's overview of Internet 
+routing</a>, you should realize that routing in the Internet is comprised of two parts: 
+the internal fine-grained portions that are managed by an IGP such as OSPF, and the 
+interconnections of those autonomous systems (AS) via BGP.<p></p>
+
+<p>Everyone on the Internet has at least one unique AS number, and they 
+use BGP to advertise their networks to their peers. BGP is a path-vector
+ protocol, because it advertises the paths required to get to a certain 
+destination. BGP does not say anything about how a packet will get 
+routed within the AS, nor does it know about the entire network as OSPF 
+does. BGP can be called a distance-vector protocol, because it's 
+similar, excluding a few twists.</p>
+
+<p>BGP itself is a Layer 4 protocol that sits on top of TCP. BGP is much
+ simpler than OSPF, because it doesn't have to worry about the things 
+TCP will handle. This works because BGP is very connection-oriented 
+anyway, since it requires two manually configured peers, who configure 
+their routers then exchange routes. BGP peers (neighbors) will generally
+ be directly connected, but some masochists like to set up BGP sessions 
+between multi-hop peers---which is okay, since BGP uses TCP (port 179) and
+ doesn't rely on broadcasts or link-local multicast.</p>
+
+<P> BGP-4 (BGP-3 didn't do CIDR) updates are packets comprised of the 
+following: a network, a subnet, and some attributes. We make routing 
+decisions based on the attributes, mainly the AS-Path attribute. A BGP 
+update could contain the following information: "I can get to network 
+1.1.1.0/12 via AS numbers 8,19,2000,5." A very important aspect of BGP 
+to understand is that the AS-Path itself is an anti-loop mechanism. 
+Routers will not import any routes that contain themselves in the 
+AS-Path.<p></p>
+
+<p>If you, as a router, import a route and then advertise it to one of 
+your peers, you must prepend your own AS to the AS-Path before 
+announcing the route. Naturally, this provides a "path" that one can 
+take, as the route is advertised further from the source AS. Generally, 
+but not always, routers will choose the shortest path to an AS. BGP only
+ knows about these paths based on updates it receives. Unlike RIP (that 
+distance-vector protocol) BGP does not broadcast its entire routing 
+table. At boot, your peer will hand over their entire table, but after 
+that everything relies on updates received.</p>
+
+<p>Route updates are stored in a Routing Information Base (RIB). A 
+routing table will only store one route per destination, but the RIB 
+usually contains multiple paths to a destination. It is up to the router
+ to decide which routes will make it into the routing table, i.e. which 
+paths will actually be used. In the event that a route is withdrawn, 
+another to the same place can be taken from the RIB. The RIB is only 
+used to keep track of possible routes we could use. We never advertise a
+ route to a peer that we aren't using, because that would be false 
+information. We only advertise what we have in our routing table. If a 
+route withdrawal is received and it only existed in the RIB, we don't 
+need to send an update to our peers, instead we silently delete it from 
+the RIB. The RIB entries never time out, they stick around until we 
+think that route is no longer valid.</p>
+
+<!--  ARTICLE BODY START -->
+<p>A great deal of routing on the Internet is said to be policy-based. 
+Sometimes you'll have an expensive link that you only want to use when 
+necessary, or perhaps you'll have a link that you can use to send 
+traffic only to certain parties. Many times the BGP attribute 
+"Community" will be used to identify a set of routes. If you want to let
+ your neighbor know some secret information about a route, you can set a
+ community number before you export those routes. These numbers are 
+completely arbitrary, so whatever you send must be agreed upon a priori 
+to have some sort of meaning.</p>
+
+<p>Another important BGP attribute is the Multi-Exit Discriminator 
+(MED). This is used to tell a remote AS that we prefer a specific exit 
+point, even though we may have many. This is very important in iBGP, the
+ IGP version of BGP that will be covered next time.</p>
+
+
+<p>To get a true sense of how BGP works, it's important to spend some time talking 
+about the issues that plague the Internet.</p>
+
+<p>First, we have a very big problem with routing table growth. If 
+someone decides to deaggregate a network that used to be a single /16 
+network, they could potentially start advertising hundreds of new 
+routes. Every router on the Internet will get every new route when this 
+happens. People are constantly pressured to aggregate, or combine 
+multiple routes into a single advertisement. Aggregation isn't always 
+possible, especially if you want to break up a /19 into two /20's that 
+will be geographically separate. Routing tables are approaching 200,000 
+routes now, and for a time they were appearing to grow exponentially.</p>
+
+
+<p>Second, there is always a concern that someone will "advertise the 
+Internet." If some large ISP's customer suddenly decides to advertise 
+everything, and the ISP accepts the routes, all of the Internet's 
+traffic will be sent to the small customer's AS. There's a simple 
+solution to this, and it's called route filtering. It's quite simple to 
+set up filters so that your routers won't accept routes from customers 
+that you aren't expecting, but many large ISPs will still accept the 
+equivalent of "default" from peers that have no likelihood of being able
+ to provide transit. </p>
+
+<p>Finally, we come to flapping. BGP has a mechanism to "hold down" 
+routes that appear to be flaky. Routes that flap, or come and go, 
+usually aren't reliable enough to send traffic to. If routes flap 
+frequently, the load on all Internet routes will increase due to the 
+processing of updates every time someone disappears and reappears. 
+Dampening will prevent BGP peers from listening to all routing updates 
+from flapping peers. The amount of time one is in hold-down increases 
+exponentially with every flap. It's annoying when you have a faulty 
+link, since it can be more than an hour before you can get to many 
+Internet sites, but it is very necessary.</p>
+
+<p>This has been a very quick discussion of BGP; enough to get you 
+thinking the right way about the protocol but is by no means 
+comprehensive. Spend some time reading the RFCs if you're tasked with 
+operating a BGP router: your peers will appreciate it.</p>
+
+
+<p>
+</p><p><em>When he's not writing for Enterprise Networking Planet or 
+riding his motorcycle, Charlie Schluting is the Associate Director of 
+Computing Infrastructure at Portland State University. Charlie also 
+operates <a href="http://omnitraining.net/">OmniTraining.net</a>, and recently finished <cite><a href="http://stores.lulu.com/schluting">Network Ninja</a></cite>, a must-read for every network engineer.</em></p><p>
+<em>Article courtesy of <a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3615896">Enterprise Networking Planet</a>, originally published June 23, 2006</em>	<!--  ARTICLE BODY END -->
+
+<p>
+</p><div style="background: #003399; border: 1px solid #000; padding: 10px; color:#ffffff; margin-left: 50px; margin-right: 50px;"><font color="#ffffff" face="Arial,Helvetica,Geneva,sans-serif" size="3">
+<strong>In a Nutshell</strong><br>
+
+<ul>
+<li> BGP is the path-vector protocol that provides routing information for
+autonomous systems on the Internet via its AS-Path attribute.
+
+</li><li>Peers that have been manually configured to exchange routing
+information will form a TCP connection and begin speaking BGP. There is
+no discovery in BGP.
+</li><li>Medium-sized business usually get into BGP for the purpose of true
+multi-homing for their entire network.
+
+</li></ul>
+</font>
+</div><!--content_stop-->
+<div class="toolbox noBullets colRight">
+
+<p></p><table style="border-collapse: collapse;" align="left" border="1" 
+cellpadding="3" cellspacing="5" hspace="5" vspace="5" width="200">
+<tbody>
+<tr bgcolor="#003399">
+<td>
+<center><font color="#FFFFFF" face="Arial,Helvetica,Geneva,sans-serif" size="2"><strong><font size="3">More
+Networking 101</font></strong></font></center>
+<font color="#FFFFFF" face="Arial,Helvetica,Geneva,sans-serif" size="-1">
+<ul>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3561551">
+<font color="#FFFFFF">IP
+Addresses</font></a></li>
+
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3566521">
+<font color="#FFFFFF">Subnets and CIDR</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3569916">
+<font color="#FFFFFF">Subnets</font></a></li>
+<li><a href="http://www.wi-fiplanet.com/tutorials/article/0,,10724_3575541,00.html">
+<font color="#FFFFFF">Layers</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3577261">
+<font color="#FFFFFF">the Data Link Layer</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3580966">
+<font color="#FFFFFF">Spanning Tree</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3584166">
+<font color="#FFFFFF">ICMP</font></a></li>
+
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3585916">
+<font color="#FFFFFF">The Internet Protocol</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3593936">
+<font color="#FFFFFF">TCP, the Protocol</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3595616">
+<font color="#FFFFFF">TCP In More Depth</font></a></li>
+<li><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3600606">
+<font color="#FFFFFF">Internet Governance</font></a></li>
+<li><font color="#FFFFFF"><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3607381">
+<font color="#FFFFFF">Routing</font></a></font></li>
+<li><font color="#FFFFFF"><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3609151">
+<font color="#FFFFFF">RIP Routing</font></a></font></li>
+
+<li><font color="#FFFFFF"><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3610496">
+<font color="#FFFFFF">OSPF Routing</font></a></font></li>
+<li><font color="#FFFFFF"><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3612166">
+<font color="#FFFFFF">OSPF Routing (Part 2)</font></a> </font></li>
+<li><font color="#FFFFFF"><a href="http://www.enterprisenetworkingplanet.com/netsp/article.php/3613781">
+<font color="#FFFFFF">Internet Routing and Peering</font></a></font></li>
+
+</ul>
+</font>
+</td>
+</tr>
+</tbody>
+</table>
+
+</body></html>

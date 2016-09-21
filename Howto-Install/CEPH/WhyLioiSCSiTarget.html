@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Evaluating LIO Linux iSCSI target</title>
+  </head>
+<body class="">
+<h4 class="date-header"><span>Jun 8, 2012</span></h4>
+          <div class="date-posts">
+        
+<div class="post-outer">
+<div class="post hentry" itemscope="itemscope" itemtype="http://schema.org/BlogPosting">
+<a name="7513635041434523916"></a>
+<h3>Evaluating LIO Linux iSCSI target 
+<a href="http://ymmt2005.blogspot.com/2012/06/evaluating-lio-linux-iscsi-target.html">(Source 
+Origin)</a></h3>
+<div class="post-header">
+<div class="post-header-line-1"></div>
+</div>
+<div class="post-body entry-content" id="post-body-7513635041434523916" 
+itemprop="articleBody">
+<div>
+I'd like to share some notes on <a href="http://en.wikipedia.org/wiki/LIO_Target" 
+target="_blank">LIO</a>, a new <a href="http://en.wikipedia.org/wiki/ISCSI" 
+target="_blank">iSCSI</a> target in Linux kernel, as there are not so much of 
+information about it.<br>
+<ol>
+<li><a href="#info">General information</a></li>
+<li><a href="#concept">Concepts</a></li>
+<li><a href="#targetcli">Using targetcli</a></li>
+<li><a href="#rtslib">Using rtslib</a></li>
+<li><a href="#resize">Resizing LUN</a></li>
+<li><a href="#split">Protect against split-brain</a></li>
+<li><a href="#summary">Summary</a></li>
+</ol>
+</div>
+<h3 id="info">General information</h3>
+Before LIO, the iSCSI target implementation in Ubuntu was 
+<a href="http://iscsitarget.sourceforge.net/" target="_blank">iET</a>. 
+&nbsp;Compared to iET, LIO is implemented as a pure kernel driver. 
+&nbsp;Operations for LIO is done via 
+<a href="http://www.mjmwired.net/kernel/Documentation/filesystems/configfs/" 
+target="_blank">configFS</a> special filesystem.<br>
+<br>
+These packages are related to LIO:<br>
+<ul>
+<li>targetcli<br>provides <a href="./Targetcli.html" 
+target="_blank">targetcli</a> command-line utility. &nbsp;This is the standard way 
+to manipulate LIO.</li>
+<li>python-rtslib<br>
+provides <a href="http://www.risingtidesystems.com/support.html#Documentation" 
+target="_blank">rtslib</a>, a full-fledged python API library over configFS.</li>
+</ul>
+<div>
+Web sites:</div>
+<div>
+<ul>
+<li><a href="http://linux-iscsi.org/wiki/Main_Page">http://linux-iscsi.org/</a><br>The 
+project main web site.</li>
+<li><a href="#ATaleTwoScsiTargets" target="_blank">A tale of two iSCSI 
+targets</a><br>How LIO replaced other iSCSI implementations.</li>
+</ul>
+<h3 id="concept">Concepts</h3>
+In addition to the standard iSCSI concepts, you should know some LIO specific ones.
+For the standard concepts, read <a href="http://tools.ietf.org/html/rfc3720" 
+target="_blank">RFC3720</a>.
+<ul>
+  <li>Fabric<br>LIO supports several other fabrics than iSCSI. Look for 
+      <b>/var/target/fabric/</b> directory for available fabric specifications.</li>
+  <li>Backstores<br>LIO supports several storage types as backing storage for LUNs. 
+      Specifically, <b>PSCSI</b> passes SCSI commands through to a (real) SCSI 
+      device. <b>IBLOCK</b> emulates SCSI devices on top of block devices such as LVM 
+      logical volume.</li>
+</ul>
+<h3 id="targetcli">Using targetcli</h3>
+How to setup:</div>
+<pre>
+$ sudo apt-get install --no-install-recommends targetcli python-urwid
+$ sudo reboot
+</pre>
+<div>
+To avoid <a href="http://ubuntuforums.org/showthread.php?t=1989876" target="_blank">a 
+bug in targetcli package</a>, python-urwid package need to be installed explicitly.
+Basic usage is described in this page:<br>
+<ul>
+<li><a href="./Targetcli.html">Targetcli</a></li>
+</ul>
+<div>
+There are few other documentations or manuals for it.
+Use context help inside targetcli command as follows:</div>
+<pre>
+$ sudo targetcli
+/&gt; help
+(snip)
+AVAILABLE COMMANDS
+  The following commands are available in the current path:
+    - bookmarks action [bookmark]
+    - cd [path]
+    - exit
+    - get [group] [parameter...]
+    - help [topic]
+    - ls [path] [depth]
+    - pwd
+    - refresh
+    - saveconfig
+    - set [group] [parameter=value...]
+    - status
+    - version
+/&gt; cd backstores/pscsi
+/backstores/pscsi&gt; help
+(snip)
+AVAILABLE COMMANDS
+(snip)
+    - create name dev
+    - delete name
+&gt; help create
+SYNTAX
+  create name dev
+DESCRIPTION
+  Creates a PSCSI storage object, with supplied name and SCSI device. The SCSI
+  device dev can either be a path name to the device, in which case it is
+  recommended to use the /dev/disk/by-id hierarchy to have consistent naming
+  should your physical SCSI system be modified, or an SCSI device ID in the
+  H:C:T:L format, which is not recommended as SCSI IDs may vary in time.</pre>
+<div>
+<h3 id="rtslib">Using rtslib</h3>
+First, there is <a href="https://bugs.launchpad.net/ubuntu/+source/rtslib/+bug/1009645" 
+target="_blank">a bug</a>
+ in the current rtslib (2.1-2). &nbsp;Fix it, or you will fail to set 
+some parameters. &nbsp;Since targetcli is built on top of rtslib, this 
+bug affects targetcli too. &nbsp;Apply the following patch:
+<br>
+<div>
+<hr>
+<pre>
+--- /usr/lib/python2.7/dist-packages/rtslib/node.py     2012-06-06 17:59:41.515308657 +0000
++++ node.py     2012-06-06 17:59:50.185146504 +0000
+@@ -189,7 +189,7 @@
+                               % str(parameter))
+         else:
+             try:
+-                fwrite(path, "%s \n" % str(value))
++                fwrite(path, "%s\n" % str(value))
+             except IOError, msg:
+                 msg = msg[1]
+                 raise RTSLibError("Cannot set parameter %s: %s"
+</pre>
+<hr>
+<P> HTML API documentation is available at /usr/share/doc/python-rtslib/doc/html/.<br>
+Run python web server as follows; point your browser to port 8000 to read documents.<br>
+<pre>
+$ cd /usr/share/doc/python-rtslib/doc/html
+$ python -m SimpleHTTPServer &amp;
+</pre>
+To initialize iSCSI fabric:<br>
+<div>
+<hr>
+<pre>
+from rtslib.target import *
+fabric = FabricModule('iscsi')
+if not fabric.exists:
+    for mod in fabric.load(): pass
+if not fabric.exists:
+    error('failed to load iSCSI fabric modules')
+</pre>
+<hr>
+<P>To create a storage object:<br>
+<div>
+<hr>
+<pre>
+from rtslib.tcm import *
+bs = IBlockBackstore(0)
+storage = None
+for s in bs.storage_objects:
+    if s.name == 'NAME':
+        storage = s
+        break
+if storage is None:
+    storage = bs.storage_object('NAME', '/dev/ubuntu/VOLUME')
+</pre>
+<hr>
+<P> To create a target, target portal group, LUN, and network portal:</div>
+<hr>
+<pre>
+from rtslib.target import *
+  
+target = Target(fabric, 'iqn.2012-06.com.cybozu:NAME')
+tpg = TPG(target, 1)
+if len(tpg.luns) == 0:
+    tpg.lun(0, storage, 'NAME at HOST')
+tpg.network_portal('IP', 3260)
+tpg.set_attribute('authentication', '0')
+tpg.set_attribute('generate_node_acls', '1')
+tpg.set_attribute('demo_mode_write_protect', '0')
+tpg.set_parameter('InitialR2T', 'No')
+  
+tpg.enable = True
+</pre>
+<hr>
+<h3 id="resize">Resizing LUN</h3>
+Unlike iET, LUN can be easiy extended by using lvresize.  Initiators need to rescan 
+the session, though.<br>
+<pre>
+INITIATOR$ sudo blockdev --getsize64 /dev/sdb
+1073741824
+TARGET$ sudo lvresize -L 2g /dev/ubuntu/test
+INITIATOR$ sudo iscsiadm -m session -R
+Rescanning session [sid: 1, target: iqn.2012-06.com.cybozu:test, portal: 10.xx.xx.xx,3260]
+INITIATOR$ sudo blockdev --getsize64 /dev/sdb
+2147483648
+</pre>
+<div>
+<h3 id="split">Protect against split-brain</h3>
+In our environment, iSCSI initiators are virtual machines which, when 
+malfunctioned, will be restored on another server.  That means two 
+or more same VM instances <i>can</i> run at once.  It is disastrous that these 
+VMs write to one iSCSI target LUN at the same time.<br>
+<br>
+To eliminate such possible split-brain problems, we restrict a target 
+portal group (TPG) can have just one session by applying this patch to 
+LIO.<br>
+<div>
+<hr>
+<pre>
+--- linux-3.2.0/drivers/target/iscsi/iscsi_target_login.c       2012-06-07 05:37:34.000000000 +0000
++++ iscsi_target_login.c        2012-06-07 05:34:22.866487169 +0000
+@@ -1107,6 +1107,20 @@
+                goto new_sess_out;
+        }
+  
++       /* Cybozu */
++       if (zero_tsih) {
++               int error = 0;
++               spin_lock_bh(&np->np_thread_lock);
++               if( tpg->nsessions > 0 )
++                       error = 1;
++               spin_unlock_bh(&np->np_thread_lock);
++
++               if( error ) {
++                       pr_err("Detected possible split brain\n");
++                       goto new_sess_out;
++               }
++       }
++
+        if (zero_tsih) {
+                if (iscsi_login_zero_tsih_s2(conn) < 0) {
+                        iscsi_target_nego_release(login, conn);
+</pre>
+<hr>
+<P> This is quite a dirty and imprecise hack, but <i>just enough</i> for us.<br>
+<br>
+Note that <a href="http://tools.ietf.org/html/rfc3720#section-12.2" target="_blank">MaxConnections</a>
+ session parameter does not prevent this problem.  Even if two 
+iSCSI initiators share the same IQN, sessions may be identified 
+differently because iSCSI sessions are identified by a random numeric 
+session ID.</div>
+<br>
+<h3 id="summary">Summary</h3>
+This article describes LIO and related API and a utility.<br>
+Bugs lurking in the current Ubuntu are also addressed.<br>
+<br>
+A kernel patch to restrict session numbers for a TPG is also presented.<br>
+<br>
+Hope this helps.<br>
+<br>
+Yamamoto, Hirotaka <a href="https://twitter.com/ymmt2005" target="_blank">@ymmt2005</a><br>
+<a name="ATaleTwoScsiTargets"></a><h3>A tale of two SCSI targets 
+<a href="http://lwn.net/Articles/424004/">(Source Origin)</a></h3>
+</div>
+<div class="ArticleText">
+<div class="GAByline">
+           <p>January 22, 2011</p>
+           <p>This article was contributed by Goldwyn Rodrigues</p>
+           </div>
+<P> At the end of 2010, <a href="http://lwn.net/Articles/420691">the LIO
+project was chosen</a> to replace STGT as the in-kernel SCSI target
+implementation. There were two main contenders (LIO and SCST) which tried
+to get their code into the Linux kernel tree.  This article will  compare
+the two projects and try to describe what these implementations have to offer.
+ <h4>
+What are SCSI targets?
+</h4>
+<p>
+The SCSI subsystem uses a sort of client-server model. Typically a computer
+is the client or "initiator," requesting that blocks be written to or read
+from a "target," which is usually a data storage device. The SCSI target
+subsystem enables a computer node to behave as a SCSI storage device, responding
+to storage requests by other SCSI initiator nodes. This opens up the possibility
+of creating custom SCSI devices and putting intelligence behind the storage.
+</p><p>
+An example of an intelligent SCSI target is 
+<a href="http://www.datadomain.com/products/appliances.html">Data Domain's
+online backup appliance</a>, which supports de-duplication (thus saving
+space). The appliance, functioning as a SCSI target, is a computer node which
+intelligently writes only those blocks which are not already stored, and
+increases the reference counts of the blocks which are already present, thus
+writing only the blocks which have changed since the last backup. On the
+other side of the SCSI link,
+the initiator sees the appliance as a normal, shared SCSI storage device and
+uses its regular backup application to write to the target.
+</p><p>
+The most common implementation of the SCSI target subsystem is an iSCSI
+server, which uses a standard TCP/IP encapsulation of SCSI to export a SCSI
+device over the network. Most SCSI target projects started with the idea
+supporting iSCSI targets before supporting other protocols. Since only a network 
+interface is needed to act as both an iSCSI initiator and an iSCSI target, 
+supporting iSCSI doesn't require any special hardware beyond a network port, 
+which almost every computer has these days. However, most SCSI
+targets can be supported with existing initiator cards, so if you have a
+Fibre, SAS, or Parallel SCSI card, it should be possible to use one of
+the SCSI target projects to make your computer into a SCSI target for
+the particular SCSI bus supported by the card.
+</p><h4>
+Current Status
+</h4>
+<p>
+The Linux kernel SCSI subsystem currently uses STGT to implement the
+SCSI target functionality; STGT was introduced into the Linux kernel at the
+end of 2006 by 
+Fujita Tomonori. It has a library in the kernel which assists the in-kernel
+target drivers. All target processing happens in  user space, which may
+lead to performance bottlenecks.
+</p><p>
+Two out-of-tree kernel SCSI target solutions were contenders to replace
+STGT: <a href="http://www.linux-iscsi.org/">LIO</a> and 
+<a href="http://scst.sourceforge.net/">SCST</a>. SCST has been 
+<a href="http://thread.gmane.org/gmane.linux.kernel/628313/focus=640460">pushing to
+be included in the Linux kernel</a> since at least 2008.  It was decided then 
+that the STGT project could serve the kernel for a little longer. As time passed, 
+the design limitations of STGT were encountered and a replacement sought. The
+main criteria for a replacement SCSI target subsystem
+defined by James Bottomley, the SCSI maintainer, were:
+</p><ol>
+   <li> That it would be a drop in replacement for STGT (our current in-kernel
+target mode driver), since there is room for only one SCSI target
+infrastructure.
+   </li><li> That it used a modern sysfs-based control and configuration plane.
+   </li><li> That the code was reviewed as clean enough for inclusion. 
+</li></ol>
+The first condition proved to be too restrictive; it was not possible to
+avoid breaking the ABI entirely.  So the current goal, instead, is to find
+a way to gracefully transition STGT users to the new interface.
+<p>
+Hints of LIO replacing the STGT project came in 
+the <a href="http://lwn.net/Articles/400589/">2010 Linux Storage and Filesystem
+Summit.</a>  Christoph Hellwig volunteered to review and clean
+up the code; he managed to reduce the code-base by around 10,000 lines to
+make it 
+ready to merge into the kernel.
+</p><h4>
+Comparison
+</h4>
+<p>
+Both projects have drawn comparison charts of their feature lists which are
+available on their respective web sites: 
+<a href="http://www.linux-iscsi.org/wiki/Features">LIO</a> and 
+<a href="http://scst.sourceforge.net/comparison.html">SCST.</a> However, before
+exploring the differences, lets compare the similarities. Both projects
+implement an in-kernel SCSI target core. They provide local SCSI targets
+similar to loop devices, which comes in handy for using targets in virtualized
+environments. Both projects support iSCSI, which was one of the initial and main
+motivations for both projects. 
+</p><p>
+Back-storage handlers are available on both projects in kernel space as
+well as for user space. Back-storage handlers allow target administrators
+to control how devices are exported to the initiators. For example, a
+pass-through handler allows exporting the SCSI hardware as it is, instead
+of masking the details of that hardware, while a virtual-disk handler
+allows exporting of files as virtual disk to the initiator.
+</p><p>
+Both projects support Persistent Reservations (PR); a feature for I/O
+fencing and failover/retakeover of storage devices in high-availability
+clusters. Using the PR commands, an initiator can establish, preempt,
+query, or reset a reservation policy with a specified target. During a
+failover takeover, the new virtual resource can reset the reservation
+policy of the old virtual resource, making device takeover easier and
+faster.
+</p><h4>SCST</h4>
+<p>
+The main users of the SCSI target subsystem are storage companies providing
+storage solutions to the industry. Most of these storage solutions are
+plug-and-play appliances which can be attached to the storage network and
+used with little or no configuration. SCST boasts of a wider user base, which
+probably comes from the fact that they have wider range of transport support.
+</p><p>
+SCST supports both Qlogic and Emulex fibre channel cards whereas LIO
+supports only Qlogic target drives for now, and it is still in its beta stages of
+development. SCST supports the 
+<a href="http://en.wikipedia.org/wiki/SCSI_RDMA_Protocol">SCSI RDMA Protocol
+(SRP)</a>, and claims to be ahead in terms of 
+development with respect to <a href="http://en.wikipedia.org/wiki/FCoE">Fibre
+Channel over Ethernet (FCoE)</a>, LSI's
+Parallel/Wide SCSI Fibre Channel, and 
+<a href="http://en.wikipedia.org/wiki/Serial_attached_SCSI">Serial Attached SCSI
+(SAS).</a> It already has
+support for 
+<a href="http://publib.boulder.ibm.com/infocenter/powersys/v3r1m5/index.jsp?
+topic=/iphb1/iphb1_vios_concepts_stor.htm">IBM's
+pSeries Virtual SCSI</a>. 
+<a href="http://scst.sourceforge.net/users.html">Companies</a> such as 
+<a href="http://scalableinformatics.com/"> Scalable Informatics</a>, 
+<a href="http://www.storwize.com/">Storewize</a>, and 
+<a href="http://open-e.com/">Open-e</a>
+have developed PnP appliance products which rely on these target
+transports based on SCST.
+</p><p>
+SCST supports notifications of session changes using asynchronous event
+notification (AEN). AEN is a protocol feature that may be used
+by SCSI targets to notify a SCSI initiator of events that occur in the target,
+when the target is not serving a request. This enables
+initiators to be notified of changes at the target end, such as devices added,
+removed, resized, or media changes. This way the initiators can see any target
+changes in a plug-and-play manner.
+</p><p>
+The SCST developers claim that their design conforms to more SCSI standards
+in terms of robustness 
+and safety. The SCSI protocol requires that if an initiator clears a
+reservation 
+held by another initiator, the reservation holder must be notified about the
+reservation clearance or else several initiators could change reservation data,
+ultimately corrupting it. SCST is capable of implementing safe RESERVE/RELEASE
+operations on devices to avoid such corruption.
+</p><p>
+According to the SCSI protocol, the initiator and target can communicate with
+each other to decide on the transfer size. An incorrect transfer size
+communicated by the initiator can lead to target device lockups or a crash. 
+SCST safeguards against miscommunication of transfer sizes or transfer
+directions to avoid such a situation. The code claims to have a good memory
+management policy to avoid out-of-memory (OOM) situations. It can also limit the
+number of initiators that can connect to the target to avoid resource usage by
+too many connections. It also offers per-portal visibility control, which
+means that it can be configured in such a way that a target is visible to a
+particular subset of initiators only.
+</p><h4>LIO</h4>
+<p>
+The LIO project began with the iSCSI design as its core objective, and
+created a generic SCSI target subsystem to support iSCSI. Simplicity  has
+been a major 
+design goal and hence LIO is easier to understand.  Beyond that, the LIO
+developers have shown more willingness to work with the kernel developers
+as James <a href="http://www.spinics.net/lists/linux-scsi/msg49038.html">pointed out</a>
+to SCST maintainer Vladislav Bolkhovitin:
+</p><div class="BigQuote">
+Look, let me try to make it simple:  It's not about the community you
+bring to the table, it's about the community you have to join when you
+become part of the linux kernel.  The interactions in the wider
+community are critical to the success of an open source project.  You've
+had the opportunity to interact with a couple of them:  sysfs we've
+covered elsewhere, but in the STGT case you basically said, here's our
+interface, use it. LIO actually asked what they wanted and constructed
+something to fit.  Why are you amazed then when the STGT people seem to
+prefer LIO?
+</div>
+<p>
+The LIO project also boasts of features which are either not present in SCST
+or are in early development phases. For example, LIO supports asymmetric
+logical unit 
+assignment (ALUA). ALUA allows a target administrator to manage the access
+states and path attributes of the targets. This allows the multipath routing
+method to select the best possible path to optimize usage of available
+bandwidth, depending on the current access states of the targets. In other
+words, the path taken by the initiator in a multipath environment can be
+manipulated by target administrator by changing the access states.
+</p><p>
+LIO supports 
+<a href="http://en.wikipedia.org/wiki/Management_information_base">Management
+Information Base (MIB)</a> which makes management of SCSI
+devices simpler. The SCSI target devices export management
+information values described in <a href="http://tools.ietf.org/html/rfc4455">SCSI 
+MIB RFC-4455</a> which is  
+picked up by an SNMP agent. This feature extends to iSCSI devices and is
+beneficial in managing a storage network with multiple SCSI devices.
+</p><p>
+An error in the iSCSI connection can happen at three different levels: the
+session, digest, or connection level. Error recovery can be initiated
+at each of these levels, which makes sure that the recovery is made at the
+current level, and the error does not pass through to the next one. Error
+recovery starts with detecting a broken connection. In reponse, the iSCSI
+initiator driver 
+establishes another TCP connection to the target, then it informs the
+target that the  SCSI command path is being changed to 
+the new TCP connection. The target can then continue processing 
+SCSI commands on the new TCP connection. The upper level SCSI driver remains
+unaware that a new TCP connection has been established and that control has
+been transferred to the new connection. The iSCSI Session remains active during
+the period and does not have to be reinstated. LIO supports a maximum Error
+Recovery Level (ERL) of 2, which means that it can recover errors at the
+session, digest, or connection levels.  SCST supports an ERL of 0, which
+means 
+it can recover from session-level errors only and that all connection
+oriented errors are communicated to the SCSI driver.
+</p><p>
+LIO also supports "multiple connections per session" (MC/S). MC/S allows the
+initiator to open multiple connections between the initiator and target, either
+on the same or a different physical link. Hence, in case of a failure of
+one path, 
+the established session can use another path without terminating the session.
+MC/S can also be used for load balancing across all established connections.
+Architectural session command ordering is preserved across those communication
+paths.
+</p><p>
+The LIO project also claims that its code is used in a number of 
+<a href="http://www.linux-iscsi.org/wiki/Ecosystem">appliance products and
+deployments</a> though the user base does not seem to be as varied as that of
+SCST. 
+</p><p>
+No comparison can be complete without a performance comparison. SCST developers
+have <a href="http://article.gmane.org/gmane.linux.scsi/38108">released</a> their 
+performance numbers from time to time. However, all their
+numbers were compared against STGT. The SCST comparison
+page speaks of SCST performing better than LIO, but the results were drawn on
+source-code study and not using real-world tests. SCST blames LIO for not
+releasing performance numbers, and there exist no performance data (to my
+knowledge) which would compare apples to apples.
+</p><p>
+The decision has finally been made, though, with quite a bit of opposition.
+Now comes the task of getting all the niche features which LIO lacks to
+be ported from SCST to LIO.  While the decision was contentious, it is yet
+another example of the difficulty of getting something merged without
+being able to cooperate with the kernel development community.</p>
+<hr align="left" width="60%">
+<a name="CommAnchor425172"></a>
+</p><div class="CommentBox">
+  <p class="CommentTitle">A tale of two SCSI targets</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Jan 27, 2011 19:02 UTC (Thu) by <b>jeremiah</b> 
+    </p>
+    <div class="FormattedComment">
+I know it hurts to have someone else's code chosen for mainline 
+inclusion. But I really hope the SCST folks and the LIO folks can work 
+together. It seems that the combined feature set of these two packs a 
+heck of a punch. I think this is an area that extremely important and 
+underrated. Most people can't afford expensive SAN tech. And having the 
+ability to use a simple linux box as a full FC/iSCSI/AoE disk array is 
+just incredible, esp. when it can be used as all 3 at the same time. As 
+the standards change it's nice to be able to utilize new hardware and 
+designs w/o losing your investment in old infrastructure. <br>
+</div>
+  </div>
+     
+</div>
+<a name="CommAnchor425207"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">A tale of two SCSI targets</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Jan 27, 2011 22:15 UTC (Thu) by <b>dougg</b> 
+    </p>
+    <div class="FormattedComment">
+Thanks for the writeup. Even for those of us who are close to the 
+action, it is difficult to get an overview. One small criticism: the 
+title should be "A tale of two iSCSI targets". Explaining the term "SCSI
+ target" is difficult and the definitive document (SAM-5) does not help 
+in that regard. iSCSI is one of many SCSI transports (and recently a new
+ one was proposed: SOP (SCSI over PCIe)). So I question this statement: 
+"The most common implementation of the SCSI target subsystem is an iSCSI
+ server, ...". IMO USB (storage) keys are the most common (and worst) 
+implementation of the SCSI target subsystem.<br>
+</div>
+  </div>
+   
+</div>
+<div class="Comment">
+<a name="CommAnchor425262"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">A tale of two SCSI targets</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Jan 27, 2011 23:48 UTC (Thu) by <b>martinfick</b> 
+    </p>
+    <div class="FormattedComment">
+<font class="QuotedText">&gt; So I question this statement: "The most 
+common implementation of the SCSI target subsystem is an iSCSI server, 
+...". IMO USB (storage) keys are the most common (and worst) 
+implementation of the SCSI target subsystem.</font><br>
+ <p>
+I suspect that he meant a SCSI target implemented in linux.  I could be 
+wrong, but I doubt those USB storage keys are running linux (yet), are 
+they?<br>
+</p></div>
+  </div>
+   
+</div>
+<a name="CommAnchor425344"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">SCSI target, iSCSI target or SCSI target framework ?</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Jan 28, 2011 11:16 UTC (Fri) by <b>abacus</b> 
+    </p>
+    Maybe <em>A tale of two SCSI target frameworks</em> would be a 
+better title ? While LIO started as an iSCSI target (and its source code
+ still shows this), SCST has been designed from the start as a generic 
+SCSI target framework.
+  </div>
+   
+</div>
+<a name="CommAnchor425357"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">A tale of two SCSI targets</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Jan 28, 2011 13:03 UTC (Fri) by <b>zdzichu</b> 
+(guest, #17118)
+       [<a href="https://lwn.net/Articles/425357/">Link</a>]
+    </p>
+    <div class="FormattedComment">
+But isn't SCSI target framework about much more than iSCSI? Like Solaris's COMSTAR 
+<a href="http://hub.opensolaris.org/bin/view/Project+comstar/WebHome">http://hub.opensolaris.org/bin/view/Project+comstar/WebHome</a> ?<br>
+</div>
+  </div>
+   
+</div>
+</div>
+<a name="CommAnchor425345"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">SCSI target users</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Jan 28, 2011 11:21 UTC (Fri) by <b>abacus</b> 
+    </p>
+    A quote from the article:<br><br><em>The main users of the SCSI target subsystem 
+are storage companies providing storage solutions to the industry.</em><br><br>I'm
+ not sure that's correct. Many organizations are using software iSCSI 
+target implementations as a storage server for virtual machines, e.g. in
+ combination with VMware ESX. These organizations install the iSCSI 
+target software themselves instead of buying a storage product from a 
+storage company.
+  </div></div>
+<a name="CommAnchor454631"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">A tale of two SCSI targets</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Aug 11, 2011 10:04 UTC (Thu) by <b>slashdot</b> 
+(guest, #22014)
+       [<a href="https://lwn.net/Articles/454631/">Link</a>]
+    </p>
+    <div class="FormattedComment">
+How can something which essentially just provides a network block device
+ (which means read, write and barrier) be so complicated?<br>
+<p>
+Does all this apparent insane bloat need to be in the kernel?<br>
+</p> </div></div></div>
+<div class="Comment">
+<a name="CommAnchor454896"></a>
+<div class="CommentBox">
+  <p class="CommentTitle">A tale of two SCSI targets</p>
+  <div class="CommentBody">
+    <p class="CommentPoster">Posted Aug 13, 2011 17:56 UTC (Sat) by <b>abacus</b> 
+    </p>
+    <em>Does all this apparent insane bloat need to be in the kernel?</em>
+<br>
+<br>
+Implementing a storage target in the kernel allows faster operation than a comparable 
+implementation in user space.
+  </div></div></div>
+</td> <!-- MC -->
+<td class="RightColumn">
+</td>
+</tr></tbody></table></td>
+</tr></tbody></table><!-- endpage -->
+        <center>
+        <p>
+        <font size="-2">
+        Copyright 2011, Eklektix, Inc.<br>
+        Comments and public postings are copyrighted by their creators.<br>
+        Linux  is a registered trademark of Linus Torvalds<br>
+        </font>
+        </p></center>
+<h3><a href="http://scst.sourceforge.net/comparison.html">Four Linux SCSI 
+Targets</a></h3>    
+<h3><a href="http://linux-iscsi.org/index.php/LIO-Target">Lio Target</a></h3>

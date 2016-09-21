@@ -1,0 +1,179 @@
+<!DOCTYPE html><html>
+<head>
+<title></title>
+</head>
+<body>
+<h3>INR Border Gateway Protocol
+<a href="https://www.os3.nl/_media/2009-2010/courses/inr/w7-bgp.pdf">(Source 
+Origin)</a></h3>
+<P>E.P. Schatborn <a href="mailto:eelco@os3.nl">(eelco@os3.nl)</a>
+<P>15 March 2010
+
+<h4>Abstract</h4>
+
+<P> Today we will be setting up BGP. As with OSPF and RIP we will be using 
+Quagga, using your own configuration files. 
+
+<a name="Sec1"></a><h4>1 Preparation</h4> 
+
+<P> For this assignment you will need an IP address in an IX network, an IPv4 network 
+range and a private AS-number to set up your own network. Figure <a href="#Fig1">1</a>
+ lists your assigned numbers. 
+
+<UL>
+  <LI> Choose a configuration from a previous assignment and renumber the IP addresses 
+       to addresses in your designated IPv4 range. This network should have at least 
+       two routers and two subnets. This will be the network that you attach to the 
+       exchange. 
+  <LI> Choose one router in your network, and designate it as a border router. Create 
+       a tap interface to the physical network. Disable OSPF/RIP on this interface and 
+       configure BGP on this router. 
+  <LI> Connect your router to the network of the OS3-IX using the instructions in 
+       section <a href="#Sec2">2</a>.
+</UL>
+ 
+
+<P> The OS3 Internet exchange OS3-IX is a LAN-based Internet exchange. It is a simple 
+Ethernet LAN, with IP addresses 172.16.0.0/24 for its members. Like the AMS-IX, the 
+OS3-IX has technical policies <a href="#Ref1">1</a>.  Members are not allowed to use 
+the following protocols on the AMS-IX LAN: Spanning Tree Protocol (STP), Open Shortest 
+Path First (OSPF) or Routing Information Protocol (RIP). 
+
+
+<a name="Sec2"></a><h4>2 Building an Internet Exchange</h4> 
+
+<P> Today we will work on coupling together our UML instances, which run inside the 
+DomUs. We will be using the secondary bridge so that we are not bothered by traffic 
+coming from the regular internet. Make sure it is running correctly. 
+
+
+<P> <a name=2></a>Xen assigns random MAC addresses to your interfaces in a HVM. To 
+ensure we do not have clashes on the network, figure <a href="#Fig1">1</a> lists 
+your assigned MAC address range for your interfaces.  Once you have configured your 
+HVM (re)start it and log in to it. Then enter the following commands on the DomU: 
+
+<PRE>
+ $ sudo chmod 666 /dev/net/tun 
+ $ sudo brctl addbr br0 
+ $ sudo brctl addif br0 eth1 
+ $ sudo ip link set eth1 up 
+ $ sudo ip link set br0 up 
+ $ sudo tunctl -t tap0 -u &lt;your username&gt; 
+ $ sudo brctl addif br0 tap0 
+ $ sudo ip link set tap0 up 
+</PRE>
+
+
+<P> You can now boot your UML through your own preferred script and use the uml 
+mconsole like so: 
+
+<PRE>
+ $ uml_mconsole BGPROUTER config ethx=tuntap,tap0 
+</PRE>
+
+
+<P> Once that is done, you can log in to the UML instance. You should now have an extra 
+interface. To verify that it works, you can do the following: 
+
+<PRE>
+ $ ip address add 172.16.0.xx/24 dev ethx 
+</PRE>
+
+Start your UML network and check if you can ping a machine in the exchange LAN: 
+
+<PRE>
+ $ ping 172.16.0.8 
+</PRE>
+
+
+<a name="Sec3"></a><h4>3 Peering and Transit</h4> 
+
+<UL>
+  <LI> Now set up BGP on your router using your assigned AS-number. 
+  <LI> Work together ith the other members at your table to set up peering. Use your 
+       border routers to peer with one of your group members. Test if the connectivity 
+       between the networks is as you expected, and document your findings. 
+  <LI> In your group, enable transit one by one, until all networks can reach each 
+       other.  Document the changes you made to the networks. What does the network in 
+       your group look like, and what are the relations? 
+  <LI> Now choose two members to set up peering with other tables that have also 
+       finished setting up peering with each other. Write the peering setup on the 
+       board so that the rest of the class knows who's peering with who. 
+</UL>
+
+<a name=3-1></a><h5>3.1 Bogon IP addresses</h5> 
+
+<P> Bogon IP blocks <a href="#Ref2">2</a> are IP ranges that are announced in BGP, even 
+though the range has not been assigned by IANA. How this can be used by spammers to 
+avoid identification? 
+
+
+<UL>
+  <LI> Select a network to act as a 'rogue network', announcing bogus IP ranges. Can 
+       the other networks filter these bogon announcements? How can the Bogon IP list 
+       like <a href="http://www.completewhois.com/bogons/">bogons</a> (from 
+       http://www.completewhois.com/) help you? Would you peer with AS 112? 
+</UL>
+
+
+<a name="Fig1"></a><PRE>
+IPv4 range  AS number  User        MAC address(es)    OS3-IX LAN 
+10.11.0.0/16    64611  Vic        00:01:01:0B:00:00  172.16.0.11 
+10.12.0.0/16    64612  Sebastian  00:01:01:0C:00:00  172.16.0.12 
+10.13.0.0/16    64613  Roel       00:01:01:0D:00:00  172.16.0.13 
+10.14.0.0/16    64614  Niels      00:01:01:0E:00:00  172.16.0.14 
+10.15.0.0/16    64615  Michiel    00:01:01:0F:00:00  172.16.0.15 
+10.16.0.0/16    64616  Marvin     00:01:01:10:00:00  172.16.0.16 
+10.17.0.0/16    64617  Marcus     00:01:01:11:00:00  172.16.0.17 
+10.18.0.0/16    64618  Laurens    00:01:01:12:00:00  172.16.0.18 
+10.19.0.0/16    64619  Kevin      00:01:01:13:00:00  172.16.0.19 
+10.20.0.0/16    64620  JeroenK    00:01:01:14:00:00  172.16.0.20 
+10.21.0.0/16    64621  JeroenV    00:01:01:15:00:00  172.16.0.21 
+10.22.0.0/16    64622  Daan       00:01:01:16:00:00  172.16.0.22 
+10.23.0.0/16    64623  Cosmin     00:01:01:17:00:00  172.16.0.23 
+10.24.0.0/16    64624  Berry      00:01:01:18:00:00  172.16.0.24 
+10.25.0.0/16    64625  Axel       00:01:01:19:00:00  172.16.0.25 
+10.26.0.0/16    64626  ArthurS    00:01:01:1A:00:00  172.16.0.26 
+10.27.0.0/16    64627  ArthurvK   00:01:01:1B:00:00  172.16.0.27 
+10.28.0.0/16    64628  Alex       00:01:01:1C:00:00  172.16.0.28 
+10.29.0.0/16    64629  Taarik     00:01:01:1D:00:00  172.16.0.29 
+10.30.0.0/16    64630  Yanick     00:01:01:1E:00:00  172.16.0.30 
+10.31.0.0/16    64631  Joeri      00:01:01:1F:00:00  172.16.0.31 
+</PRE>
+
+Figure 1: AS and IP numbers per student 
+
+<a name="Sec4"></a><h4>4 Bonus</h4> 
+
+<UL>
+  <LI> What happens if one network in your group adds a local preference? What if 
+       everyone does this? 
+  <LI> Create a second border router in your network, using a second tap interface. 
+       Enable iBGP between your routers. Separate the two peering relations in your 
+       group into two routers, with a connection in between, and experiment with 
+       different settings on both routers. Can you do load balancing? 
+</UL>
+
+<a name="References"></a><h4>References</h4>
+
+<OL>
+  <LI><a name="Ref1"></a> <a href="http://www.ams-ix.net/technical/allowed.html" 
+                             target="newwindow">ams-ix allowed</a>
+  <LI><a name="Ref2"></a> <a href="http://www.completewhois.com/bogons/" 
+                             target="newwindow">bogons</a>
+</OL>
+
+<a name="outline"></a><h4>Document Outline</h4>
+<ul>
+   <li><a href="#Sec1">Preparation</a></li>
+   <li><a href="#Sec2">Building an Internet Exchange</a></li>
+   <li><a href="#Sec3">Peering and Transit</a>
+     <ul>
+       <li><a href="#3-1">Bogon IP addresses</a></li>
+     </ul>
+   <li><a href="#Sec4">Bonus</a></li>
+</ul>
+
+
+</body>
+</html>

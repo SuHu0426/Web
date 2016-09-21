@@ -1,0 +1,2685 @@
+<h2>SDN, OpenFlow, Network Virtualization, Open vSwitch</h2>
+<P> According to my understanding:
+<OL>
+  <LI> SDN: Introduce the concept of separation of Control and Data planes of network 
+       mechanism.  Reference: <a href="#SDNHistory" target="newwindow">History of 
+       Software-Defined Networking</a>
+  <LI> OpenFlow: The protocol to implement SDN.  Reference: 
+       <a href="http://networkheresy.com/2011/09/09/openflows-beginnings/" 
+       target="newwindow">OpenFlow's Beginnings</a> There is also <a 
+       href=#OF-Primer><b>OF-Config</b></a> (1.1), basically a mean to enable 
+       remote configuration of datapaths on an OpenFlow switch. 
+  <LI> Open vSwitch: The main focus of Nicira, acquired by VMware, is hypervisor-based 
+       soft switching and virtual networks built directly between hypervisors. Open 
+       vSwitch can act like a simple layer-2 learning switch, or it could be 
+       programmed through OpenFlow extended with numerous Nicira-developed features, 
+       <a href="http://blog.ioshints.info/2011/10/what-is-nicira-really-up-to.html" 
+       target="newwindow">(extracted from here)</a>.
+       Reference: <a href="https://github.com/homework/openvswitch/blob/master/WHY-OVS" 
+       target="newwindow">Why Open vSwitch?</a> Open vSwitch supports 
+       <a href="https://github.com/osrg/openvswitch/blob/master/OPENFLOW-1.1%2B" 
+       target="newwindow">OpenFlow-1.1+, (1.2, 1.3)</a>
+  <LI> Network Virtualization: Network virtualization today tries to provide a suitable 
+       basic unit of operations. Unsurprisingly, the abstraction is of a "virtual 
+       network". A virtual network should both support the basic abstractions provided 
+       by physical networks today (L2, L3, tagging, counters, ACLs, etc.) as well as 
+       introduce a logical abstraction that encompasses all of these to be used as the 
+       basis for operation. And just like the compute analog, this logical abstraction 
+       should support all of the operational niceties we've come to expect from 
+       virtualization: dynamic creation, deletion, migration, configuration, 
+       snapshotting, and roll-back.  Reference: <a href="#NetworkVirtualization" 
+       target="newwindow">Network Virtualization</a>
+</OL>
+<h2><a href="./OpenvSwitchTutorial.html">Open vSwitch Tutorial</a></h2>
+<P> Open vSwitch, acquired by VMware, probably would be the best bet for us to 
+ investigate the route toward Network Virtualization.  In this tutorial, you 
+ will learn how to setup environment for <b>OpenFlow</b> and <b>OpenvSwitch</b> 
+ related protocol and package.  Also, how to create (virtual) route and switch 
+ via Open vSwitch.  At least, I expect the network performance shoud be much 
+ better than the real network! Did I expect too much?
+<h2>Related Subjects</h2>
+<OL>
+  <LI><a href="./SdnOpenFlowPracticing.html" target="newwindow">Field Practicing</a>
+  <LI><a href="http://yuba.stanford.edu/~casado/of-sw.html" 
+      target="newwindow">List of OpenFlow Software Projects</a>  
+  <LI><a href="http://networkheresy.com/2011/06/05/what-openflow-is-and-more-importantly-what-its-not/" 
+      target="newwindow">What OpenFlow is (and more importantly, what it's not)</a>  
+  <LI><a href="#OFShapeNetwork" 
+      target="newwindow">OpenFlow takes networks in a different direction</a>
+  <LI><a href="http://networkheresy.com/2011/06/06/an-extremely-brief-conceptual-introduction-to-open-vswitch/" 
+      target="newwindow">An Extremely Brief Conceptual Introduction to Open vSwitch</a>
+  <LI><a href="#NetworkVirtualization" 
+      target="newwindow">Network Virtualization</a>&nbsp;&nbsp;
+      <a href="#VPNNetVirt" target="newwindow">VPNs, meet Network Virtualization</a>
+  <LI><a href="#TunnelingNetVirt" target="newwindow">Tunneling for Network 
+      Virtualization</a>
+  <LI><a href="#TunnelingOverhead" target="newwindow">The Overhead of Software 
+      Tunneling</a>
+  <LI><a href="http://networkheresy.com/2012/03/04/network-virtualization-encapsulation-and-stateless-tcp-transport-stt/" 
+      target="newwindow">Network Virtualization, Encapsulation, and Stateless Transport 
+      Tunneling (STT)</a>
+  <LI><a href="#SDNHistory" target="newwindow">History of 
+      Software-Defined Networking</a>
+  <LI><a href="#TruthSDN" target="newwindow">The Truth about 
+      Software-defined Networking</a>
+  <LI><a href="http://networkheresy.com/2011/06/06/presentation-on-sdn-and-high-level-network-abstractions/" 
+      target="newwindow">Presentation on SDN and High-Level Network Abstractions</a>
+  <LI><a href="http://networkheresy.com/2011/06/08/the-scaling-implications-of-sdn/" target="newwindow">The Scaling Implications of SDN</a>
+  <LI><a href="#ManagementPlane" target="newwindow">Remembering The Management Plane</a>
+  <LI><a href="#RiseSoftSwitching" target="newwindow">Rise Of Soft Switching</a>
+  <LI>NetworkHeresy
+<P>
+<a href="http://networkheresy.com/category/sdn/" 
+   target="newwindow">SDN</a>&nbsp;&nbsp;
+<a href="http://networkheresy.com/category/network-virtualization/" 
+   target="newwindow">Network Virtualization</a>&nbsp;&nbsp;
+<a href="http://networkheresy.com/category/open-vswitch/" 
+   target="newwindow">Open vSwitch</a>&nbsp;&nbsp;
+<a href="http://networkheresy.com/category/openflow/" 
+   target="newwindow">OpenFlow</a>&nbsp;&nbsp;
+  <LI><a href="#OpenVSwitchInstall" target="newwindow">Open vSwitch on 
+      Debian</a>&nbsp;&nbsp;
+      <a href="#OpenVSwitchConfig" target="newwindow">Open vSwitch 
+      Configuration</a>&nbsp;&nbsp;<br>
+      <a href="#InstUsageOpenvSwitch" target="newwindow">Installation and Usage of 
+      Open vSwitch</a>&nbsp;&nbsp;
+      <a href="#OpenvSwitchTunnel" target="newwindow">Open vSwitch Tunnel 
+      Configuration</a>&nbsp;&nbsp;
+  <LI><a href="" target="newwindow"></a>
+  <LI><a href="" target="newwindow"></a>
+</OL>
+               
+<a name="TruthSDN"></a><h3>The Truth about Software-defined Networking
+<a href="http://www.wwpi.com/index.php?option=com_content&amp;view=article&
+amp;id=15359:the-truth-about-software-defined-networking&
+amp;catid=319:ctr-exclusives&amp;Itemid=2701738" class="contentpagetitle">(Source 
+Origin)</a></h3>
+<P>Wednesday, 21 November 2012 16:07<br>
+<b>by Kelly Herrell</b>
+<p>Like next season's baseball team, software-defined networking (SDN) is one of 
+those topics that everyone is rooting for, but too few have a clear idea of what it 
+will achieve or what its ultimate standing will be. What is certain is that IT 
+departments should get into the game sooner rather than later in order to ensure 
+their network architectures support the agility their businesses are increasingly 
+demanding. </p>
+<p>Appreciating the purpose and potential of SDN requires an understanding of what it 
+entails, the scope of the market, and the direction in which it is heading in the 
+months ahead. A number of myths - or, more precisely, misconceptions - have grown up 
+around SDN, and those must be reinterpreted as well. </p>
+<h4>What Is SDN?</h4>
+<P> SDN might be considered the offspring of virtualization and the private cloud. 
+Evolving technologies are in the process of converting the cloud into a utility, with 
+internal IT departments as service providers responding to customers who can request 
+compute, storage and networking resources for instant availability. Fast, responsive 
+and comprehensive, virtual machines (VMs) in a cloud environment are ready to deliver 
+the next generation of technology services - but the network that distributes them is 
+still living in the first decade of this century. Networks remain focused on racks 
+and blades and boxes and wires - fixed devices with a finite, predetermined number
+of physical ports. </p>
+<h5>Separation of Control and Data Planes</h5>
+<p>SDN augments that all-hardware environment with highly complementary software, 
+radically transforming the network's overall agility. A crucial evolution of the 
+network made possible by SDN is the separation of the control plane, which draws the 
+network map, from the data plane, which determines where packets should be delivered. 
+Physical networks are built on switches and routers that combine these two planes in 
+one device, but SDN separates them to provide an immense increase in flexibility. </p>
+<p> The difference may be similar to the transition from film to videotape in the 
+broadcast industry. With film, the image and the soundtrack were carried on a single 
+strip of celluloid - they could not be separated, so editing and special effects often 
+were limited and difficult. Video offered the key benefit of allowing editors to move 
+the audio independently of the video, so soundtracks could easily be covered by any 
+available video, new scenes and sounds could be introduced independently, and 
+flexibility became limitless. </p>
+<p>SDN generates flexibility by separating data and control planes. It relies on a 
+logically centralized control plane that is realized using a network operating system 
+that constructs and presents a clear map of the entire network to the services or 
+control applications implemented on top of it. Another way to look at it is that the 
+network control (the decision-making) is decoupled from the network topology (its 
+structure). </p>
+<p>From a flexibility standpoint, SDN distributes the function of switches, routers 
+and firewalls to be replicated and positioned wherever they are needed. This provides 
+a massive gain in network flexibility since adding new networking "nodes" is as easy 
+as firing up a new data plane on existing server hardware. It also presents the 
+opportunity to distribute the workload, reducing the bottlenecks found in all-physical 
+networks. </p>
+<p>Centralized control makes the whole network run more efficiently, but its more 
+significant value is that the controller becomes a point of programmable control for 
+orchestrating layers to quickly make changes in the network, allowing creation of the 
+IT-as-a-utility model. </p>
+<p>With SDN, a researcher or network administrator can introduce a new capability by 
+writing a simple software program that manipulates the logical map of a slice of the 
+network. The rest is taken care of by the controller, which then manages the interface 
+to the data planes. </p>
+<p>SDN not only makes networking more agile, but it also slashes the costs involved 
+in acquiring big, expensive boxes by using an enterprise's current private cloud 
+infrastructure. Additionally, SDN scales rapidly with limited investment. </p>
+<h4>What Isn't SDN? </h4>
+<P> Some who are interested in SDN have a few misperceptions about it that should be 
+realigned. The top five myths I frequently encounter are these:</p>
+<ol>
+  <li><strong><em>SDN = Switching. </em></strong>SDN's objective is "networking",
+which runs up and down the OSI stack. Switching solves one type of networking
+issue; routing, another; security and load-balancing, yet more. Envisioning a
+SDN architecture that stops at Layer 2 is like putting low-profile sport tires
+on a bulldozer. <br>
+  </li>
+  <li><em><strong>It's
+all about the controller. </strong></em>A controller without a forwarding
+plane is like a pitcher without a catcher. Somewhere, something has to receive
+the distributed instructions. Furthermore, the forwarding plane must be
+architecturally linked to the remote controller - they need to speak to each
+other. <br>
+  </li>
+  <li><em><strong>Top-of-rack
+forwarding is good enough. </strong></em>SDN is driven by compute virtualization. More 
+than half of the x86 installed base is virtualized. With potentially dozens of VMs per
+server, the forwarding challenge goes past top-of-rack; it must penetrate all
+the way to the server.<br>
+  </li>
+  <li><strong><em>Virtual
+switches are the new forwarding plane. </em></strong>Virtual switches work at Layer 2. 
+They do not segment or secure traffic; that happens at Layer 3 and above.<br>
+  </li>
+  <li><em><strong>SDN = OpenFlow. </strong></em> SDN is an architectural concept and 
+construct. OpenFlow is potentially an enabling collection of protocols. 
+  </li>
+</ol>
+<h4>Where Does SDN Stand Now? </h4>
+<P> Like the Internet before it, SDN is rumbling with acquisitions as major players 
+align their capabilities with the emerging market. The IDC research firm 
+<a href="http://www.idc.com/getdoc.jsp?containerId=234269" title="" 
+target="_blank">predicts that SDN will be a $2 billion market by 2016</a>. That may 
+help explain why VMware recently bought the virtual networking firm Nicira for $1.2 
+billion, following Oracle's agreement to acquire Xsigo Systems. These acquisitions 
+have placed a punctuation mark on the phenomenal surge powering interest in SDN. 
+Virtualization and the cloud have fundamentally altered compute and storage 
+architectures, and networking absolutely must adapt. </p>
+<p>Already, the implementation of discrete networking components such as virtual 
+switches, virtual routers, virtual firewalls and VPNs has skyrocketed. SDN is not as 
+far along in the adoption cycle yet, but the clamor surrounding SDN is sure to propel 
+it upward as well. Interestingly, the movements toward virtual components and SDN are 
+complementary ones. The first SDN controllers that have come to market typically 
+control virtual switches; controllers to manage virtual routers and firewalls are a 
+natural extension to enable connectivity and secure domain isolation among the new 
+virtualized Layer2 segments. </p>
+<h4>Where Is SDN Headed in 2013? </h4>
+<P> Some SDN deployments and proof-of-concept tests are in place today, with vendors 
+and users collaborating to boost SDN to maturity. At Vyatta we have advised, however, 
+that fundamental networking technologies are still needed in an SDN world; in fact, 
+they will become more important in the years ahead. When VLANs are used to create 
+separate pools of computing power, routers and firewalls are employed to furnish 
+connections among them and connections to the corporate network. Often cables extend 
+to a large, expensive centralized set of routing and security gear, forming an 
+expensive resource that cannot be scaled under software or API control. That setup 
+does not fit the vision of the private cloud. </p>
+<p> Instead, networking should be deployed in a way that is scalable, programmable 
+and close to the applications to avoid creating extra network traffic. Routing must 
+become another VM-based resource, which can be orchestrated and deployed like any 
+other datacenter resource, capitalizing on the economies of the x86 infrastructure. 
+</p>
+<p>If you are still operating under the assumption that SDN is a fad, then it's time 
+for you to connect with the real future of virtual technology. SDN is the next step 
+in networking evolution, and it is the next technology for which our customers are 
+seeking assistance. If you have not yet evaluated SDN for your network, then it's time 
+to get off the bench and prepare for the technology that is on deck. </p>
+<p><em>Kelly Herrell is the CEO of <a href="http://www.vyatta.com/"  
+target="_blank">Vyatta</a>.</em></p></div>
+<a name="SDNHistory"></a><h3>History of Software-Defined Networking 
+<a href="http://www2.technologyreview.com/article/412194/tr10-software-defined-networking/"
+target="newwindow">(Source Origin)</a>
+</h3>
+	
+	
+<p class="intro">Nick McKeown believes that remotely controlling network hardware with software can bring the Internet up to speed.</p>
+	
+		
+<p class="author">
+By <a href="http://www2.technologyreview.com/contributor/kate-greene/">
+Kate Greene</a><br>
+March/April 2009
+</p>
+<div class="mainBody">
+<div class="mainpic mainpicWider" style="width: 220px;">
+<img src="http://www.technologyreview.com/sites/default/files/legacy/0309-network_x220.jpg" alt="" class="photo" height="261" width="220">
+		
+<p class="caption">
+<span class="credit">Superbrothers</span>
+</p>
+</div>
+	<p>For years, computer scientists have dreamed up ways to improve 
+networks' speed, reliability, energy efficiency, and security. But their
+ schemes have generally remained lab projects, because it's been 
+impossible to test them on a large enough scale to see if they'd work: 
+the routers and switches at the core of the Internet are locked down, 
+their software the intellectual property of companies such as Cisco and 
+Hewlett-Packard.</p>
+<p>Frustrated by this inability to fiddle with Internet routing in the 
+real world, Stanford computer scientist Nick McKeown and colleagues 
+developed a standard called OpenFlow that essentially opens up the 
+Internet to researchers, allowing them to define data flows using 
+software -- a sort of "software-defined networking." Installing a small 
+piece of OpenFlow firmware (software embedded in hardware) gives 
+engineers access to flow tables, rules that tell switches and routers 
+how to direct network traffic. Yet it protects the proprietary routing 
+instructions that differentiate one company's hardware from another. </p>
+<p>With OpenFlow installed on routers and switches, researchers can use 
+software on their computers to tap into flow tables and essentially 
+control a network's layout and traffic flow with the click of a mouse. 
+This software-based access allows computer scientists to inexpensively 
+and easily test new switching and routing protocols. "Today, security, 
+routing, and energy management are dictated by the box, and it's very 
+hard to change," says McKeown. "That's why the infrastructure hasn't 
+changed for 40 years." </p>
+</div>
+<p>Normally, when a data packet arrives at a switch, firmware checks 
+the packet's destination and forwards it according to predefined rules 
+over which network operators have no control. All packets going to the 
+same place are routed along the same path and treated the same way.</p>
+<p>On a network running OpenFlow, computer scientists can add to, 
+subtract from, and otherwise meddle with these rules. This means that 
+researchers could, say, give video priority over e-mail, reducing the 
+annoying stops and starts that sometimes plague streaming video. They 
+could set up rules for traffic coming from or going to a certain 
+destination, allowing them to quarantine traffic from a computer 
+suspected of harboring viruses. </p>
+	
+	
+<p>And OpenFlow can be used to improve cellular networks as well. 
+Mobile-service providers have begun to expand their networks using 
+commodity hardware built for the Internet. But such hardware is horrible
+ at maintaining connections when a user is moving: just think about the 
+less-than-seamless way that a laptop's data connection is transferred 
+from one wireless base station to another. OpenFlow, says McKeown, 
+offers service providers a way to try out new solutions to the mobility 
+problem.</p>
+<p>McKeown's group receives funding and equipment from networking 
+companies such as Cisco, Juniper, HP, and NEC, as well as cellular 
+providers including T-Mobile, Ericsson, and NTT DoCoMo. Ideas tested on 
+switches running - OpenFlow could be incorporated into the firmware of 
+new routers, or they could be added to old ones through firmware 
+updates. McKeown expects that within the year, one or more of these 
+companies will ship products with OpenFlow built in.</p>
+<h4>SDN References</h4>
+<OL>
+  <LI><a href="http://en.wikipedia.org/wiki/Software-defined_networking" 
+       target="newwindow">Software-defined Networking Wiki</a>
+  <LI><a href="#SDNHistory">OpenFlow and SDN History</a>&nbsp;&nbsp;
+      <a href="./OpenFlow_Tutorial.html#OpenFlowTuto" target="newwindow">OpenFlow 
+      Tutorial</a> 
+      <P> OpenFlow Tutorial is too old (Debian Lenny, four years ago!).  It seems 
+          OpenvSwitch is a Linux Project supporting 
+<a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;;a=tree;hb=HEAD" 
+target="newwindow">OpenFlow-1.1+, (1.2, 1.3)</a>.
+  <LI><a href="http://networkstatic.net/openflow-openvswitch-and-kvm-sdn-lab-installation-app/" 
+       target="newwindow">OpenFlow, OpenvSwitch and KVM SDN Lab</a>
+      <UL>
+         <LI><a href="http://networkstatic.net/openflow-openvswitch-lab/" 
+              target="newwindow">Getting Started OpenFlow OpenvSwitch Tutorial Lab - 
+              Setup</a>
+         <LI><a href="http://networkstatic.net/openflow-starter-tutorial-lab-1/" 
+              target="newwindow">Openflow Starter Tutorial Lab #1</a>
+         <LI><a href="http://networkstatic.net/openflow-tutorial-lab-2/" 
+              target="newwindow">Openflow Tutorial Lab #2</a>
+         <LI><a href="http://networkstatic.net/openflow-tutorial-lab-3/" 
+              target="newwindow">Openflow Tutorial Lab #3</a>
+      </UL>
+  <LI><a href="./NetworkVirtualization.html" 
+       target="newwindow">Network Virtualization</a>
+  <LI><a href="" 
+       target="newwindow"></a>
+  <LI><a href="" 
+       target="newwindow"></a>
+</OL>
+<a name="OFShapeNetwork"></a><h3>OpenFlow takes networks in a different direction 
+<a href="http://www.theregister.co.uk/2012/07/09/networking_openflow/">(Source 
+Origin)</a></h3>
+<p class="standfirst">An easier route By Trevor Pott. Posted in 
+<a href="http://www.theregister.co.uk/hardware/network_futures/">Network Futures</a>, 
+<a href="http://www.theregister.co.uk/2012/07/09/" title="More stories published on 
+this date">9th July 2012 15:32&nbsp;GMT</a></p>
+<div id="body">
+<p>As network topologies and data access patterns have evolved, load 
+profiles can change so quickly that a completely new approach to 
+networking is required. That approach is OpenFlow.</p>
+<p>According to Renato Recio, IBM Fellow and system networking CTO, life
+ before the advent of x86 virtualisation was simple: client computers 
+did most of the heavy lifting.</p>
+<div id="article-mpu-container">
+<!-- xssi --><p>They crunched the data, dealt with files and mostly 
+moved stuff back to servers as a form of centralised storage. In a 
+campus environment, this north-south data flow could account for up to 
+95 per cent of the traffic. </p>
+</div>
+<p>In this scenario, multiple client computers needed to talk to a 
+single, central set of servers. These computers rarely flattened their 
+provided network connections and so you could oversubscribe the 
+connection between their access switch and the next level of switch.</p>
+<p>Continue this game until you have a small number of very fat pipes talking to your core switch and your big servers.</p>
+<h4>Talk show</h4>
+<p>Eventually, servers started doing most of the work by themselves. The
+ web server talked to the database server, which talked to the object 
+storage head node. The application server is talking to a separate 
+database server and everyone's talking to the authentication and logging
+ servers.</p>
+<p>Recio views it by the numbers. "I think it has always been east to west in data centres," he says.</p>
+<p>"Microsoft published a paper in 2010 that found 75 per cent of 
+traffic in a service provider data centre was east to west, 50 to 60 per
+ cent in an enterprise data centre. Most of this east-to-west traffic 
+takes place within a rack."</p>
+<blockquote><em>Those oversubscribed links start to look like a bad idea</em>
+</blockquote>
+<p>The traditional tree topology starts to show strain here. Servers 
+tend to be capable of doing a lot more heavy lifting behind a single 
+network link than your average client system ever did.</p>
+<p>Those oversubscribed links start to look like a bad idea. With 
+judicious planning, you could keep workloads within a single rack, and 
+non-blocking access switches save the day.</p>
+<p>Then along came virtualisation and suddenly we're back out into the 
+weeds. In a fully virtualised datacenter, any workload can be located on
+ any physical server inside any rack. Not only that, but these workloads
+ move. The tree-topology, oversubscription-based network model has 
+become a weakness.</p>
+<p>For truly dynamic data centres to work, static network design ends up
+ having to swing entirely the other way - adding massive amount of 
+additional capacity just in case your highest-load (but completely 
+interdependent) servers end up on opposite ends of the network diagram 
+from each other.</p>
+<p>Add in the modern push towards converged networking and the network simply had to evolve.</p>
+<p>One solution to this problem is OpenFlow.</p>
+<p>"Look at all the hypervisor platforms that are out there," says 
+Recio. "They all live in layer 2. Overlays are going to change that, but
+ now they all live in layer 2. That means you have to stretch the size 
+of layer 2 so that virtual machines live not just in a rack, but across 
+racks."</p>
+<h4>Clear the trees</h4>
+<p>This takes some doing. "To stretch that data centre across layer 2, 
+you really need multipathing. We have a lot of different ways to do 
+this. There's Trill, and a lot of people doing proprietary things. 
+OpenFlow is another, open, way," says Recio.</p>
+<p>"You can run algorithms to create multiple paths, including disjoint 
+paths, to create a topology from it. You are not bogged down by spanning
+ the tree.</p>
+<p>"One of the values of using OpenFlow is that we've seen with some of 
+our partners that you can get much faster convergence times. [Because 
+the OpenFlow controller has these paths already computed and 
+discovered], it can very quickly choose an alternative path."</p>
+<p>In an OpenFlow environment, switch configuration is managed centrally
+ rather than in a device-centric manner. Network services can be run 
+like apps on top of the network. Instead of having to work with a series
+ of device-specific commands, properties and abilities, OpenFlow takes a
+ fabric-wide, rule-based approach.</p>
+<p>An OpenFlow rule starts by matching fields on a frame (switch port, 
+VLAN, MAC source, MAC destination, IP source, IP destination, IP 
+protocol, TCP source port and TCP destination port).</p>
+<p>An action is then performed - forward to switch port(s), encapsulate 
+and forward to controller (OpenFlow server), drop, process normally, 
+modify fields. There are also optional vendor-specific field actions 
+possible (say for load-balancing).</p>
+<p>OpenFlow devices capture relevant statistics, and all of this can be 
+done today on a single-chip solution capable of processing 1.28Tbps.</p>
+<p>OpenFlow aims to solve several problems. "What gives it the ability 
+to control the network much better than you could with just management 
+plane tools is that you're actually programming the dataplane from the 
+controller," Recio explains</p>
+<p>"The controller is running all the pathing algorithms. It is loading 
+this into the switches, the forwarding tables and the rules that you 
+need to implement and forward data along a path.</p>
+<p>"The value of the programmability is that on that controller I can 
+run software that can do things, for example a pathing service, a 
+security appliance, a firewall or an intrusion prevention system. I can 
+send stuff to the controller so that it can do intrusion prevention for 
+me.</p>
+<p>"That programmability can leverage OpenFlow to program the data plane
+ flows. It's a powerful, disruptive option we did not have in the past. 
+When you see this address, here's the action you're going to take. It 
+changes. That's one example, but there are many others you can think of 
+based on actions you could take."</p>
+<h4>Command centre</h4>
+<p>To see how an OpenFlow switch might work in a real environment, we have to look at how these rules might be applied.</p>
+<p>A switch sees a frame from MAC address A destined for MAC address B. 
+The central configuration server is aware of which MAC addresses live on
+ which ports of which switches across the entire fabric. The server is 
+also aware of link states for every connection, as well as throughput 
+statistics per port.</p>
+<p>Since the central database is aware of all this, so too are the 
+individual switches. The best route between the source switch and the 
+destination switch is computed and the frame is forwarded.</p>
+<p>Should a link anywhere in the switching fabric become saturated or a 
+cable become unplugged, the central database is made aware of it. The 
+information is quickly disseminated throughout the fabric, and new paths
+ for packets can then be computed as required. This provides high 
+availability with fast convergence.</p>
+<p>Getting packets from A to B is only the beginning. We can do interesting layer-three stuff with OpenFlow.</p>
+<p>Is your http server at IP address A down? Have the switches 
+redirected the traffic to the server at B. Do you detect a frame with 
+unknown characteristics? Forward it to the central configuration server 
+to be characterised and examined.</p>
+<p>Layer two, layer three. If you want your switch to do it, ease of 
+configuration at data-centre scale (instead of merely device scale) is 
+OpenFlow's bailiwick.</p>
+<p>Truly dynamic programmable networks are here today, and vendors such as IBM are already shipping gear.</p>
+<a name="NetworkVirtualization"></a><h3>Network Virtualization 
+<a href="http://networkheresy.com/2012/05/31/network-virtualization/" 
+target="newwindow">(Source Origin)</a></h3>
+<b>Posted:</b> May 31, 2012 
+<b>Author:</b> <a href="http://networkheresy.com/author/networkheresy/" 
+title="Posts by networkheresy" rel="author">networkheresy</a> | 
+<b>Filed under:</b> <a href="http://networkheresy.com/category/network-virtualization/" 
+title="View all posts in network virtualization" rel="category tag">network 
+virtualization</a>, <a href="http://networkheresy.com/category/sdn/" title="View 
+all posts in SDN" rel="category tag">SDN</a> | <b>Tags:</b> 
+<a href="http://networkheresy.com/tag/network-virtualization-2/" rel="tag">Network 
+Virtualization</a> | 
+<p>[This post was written with Bruce Davie]</p>
+<p>Network virtualization has been around in some form or other for many years, but 
+it seems of late to be getting more attention than ever. This is especially true in 
+SDN circles, where we frequently hear of network virtualization as one of the 
+dominant use cases of SDN. Unfortunately, as with much of SDN, the discussion has 
+been muddled, and network virtualization is being both conflated with SDN and 
+described as a direct result of it. However, SDN is definitely not network 
+virtualization. And network virtualization does not require SDN.</p>
+<p>No doubt, part of the problem is that there is no broad consensus on what network 
+virtualization is. So this post is an attempt to construct a reasonable working 
+definition of network virtualization. In particular, we want to distinguish network 
+virtualization from some related technologies with which it is sometimes confused, 
+and explain how it relates to SDN.</p>
+<p>A good place to start is to take a step back and look at how virtualization has 
+been defined in computing.  Historically, virtualization of computational resources 
+such as CPU and memory has allowed programmers (and applications) to be freed from 
+the limitations of physical resources. Virtual memory, for example, allows an 
+application to operate under the illusion that it has dedicated access to a vast 
+amount of contiguous memory, even when the physical reality is that the memory is 
+limited, partitioned over multiple banks, and shared with other applications. From 
+the application's perspective, the abstraction of virtual memory is almost 
+indistinguishable from that provided by physical memory, supporting the same address 
+structure and memory operations.</p>
+<p>As another example, server virtualization presents the abstraction of a virtual 
+machine, preserving all the details of a physical machine: CPU cycles, instruction 
+set, I/O, etc.</p>
+<p>A key point here is that virtualization of computing hardware preserves the 
+abstractions that were presented by the resources being virtualized. Why is this 
+important? Because changing abstractions generally means changing the programs that 
+want to use the virtualized resources. Server virtualization was immediately useful 
+because existing operating systems could be run on top of the hypervisor without 
+modification. Memory virtualization was immediately useful because the programming 
+model did not have to change.</p>
+<p><strong>Virtualization and the Power of New Abstractions</strong></p>
+<p>Virtualization should not change the basic abstractions exposed to workloads, 
+however it nevertheless does introduce new abstractions. These new abstractions 
+represent the logical enclosure of the entity being virtualized (for example a 
+process, a logical volume, or a virtual machine). It is in these new abstractions 
+that the real power of virtualization can be found.</p>
+<p>So while the most immediate benefit of virtualization is the ability to multiplex 
+hardware between multiple workloads (generally for the efficiency, fault containment 
+or security), the longer term impact comes from the ability of the new abstractions 
+to change the operational paradigm.</p>
+<p>Server virtualization provides the most accessible example of this. The early 
+value proposition of hypervisor products was simply server consolidation. However, 
+the big disruption that followed server virtualization was not consolidation but the 
+fundamental change to the operational model created by the introduction of the VM as 
+a basic unit of operations.</p>
+<p>This is a crucial point. When virtualizing some set of hardware resources, a new 
+abstraction is introduced, and it will become a basic unit of operation. If that unit 
+is too fine grained (e.g. just exposing logical CPUs) the impact on the operational 
+model will be limited. Get it right, however, and the impact can be substantial.</p>
+<p>As it turns out, the virtual machine was the right level of abstraction to 
+dramatically impact data center operations. VMs embody a fairly complete target for 
+the things operational staff want to do with servers: provisioning new workloads, 
+moving workloads, snapshotting workloads, rolling workloads back in time, etc.</p>
+<p><strong>Quick Recap:</strong></p>
+<ul>
+  <li>virtualization exposes a logical view of some resource decoupled from the 
+      physical substrate without changing the basic abstractions.</li>
+  <li>virtualization also introduces new abstractions - the logical container of 
+      virtualized resources.</li>
+  <li>it is the manipulation of these new abstractions that has the potential to 
+      change the operational paradigm.</li>
+  <li>the suitability of the new abstraction for simplifying operations is 
+      important.</li>
+</ul>
+<p>Given this as background, let's turn to network virtualization.</p>
+<p><strong>Network Virtualization, Then and Now</strong></p>
+<p>As noted above, network virtualization is an extremely broad and overloaded term 
+that has been in use for decades. Overlays, MPLS, VPNs, VLANs, LISP, Virtual routers, 
+VRFs can all be thought of as network virtualization of some form. An earlier blog 
+post by Bruce Davie (<a href="#VPNNetVirt">here</a>) touched on the relationship 
+between these concepts and 
+network virtualization as we're defining it here. The key point of that post is that 
+when employing one of the aforementioned network virtualization primitives, we're 
+virtualizing some aspect of the network (a LAN segment, an L3 path, an L3 forwarding 
+table, etc.) but rarely a network in its entirety with all its properties.</p>
+<p>For example, if you use VLANs to virtualize an L2 segment, you don't get 
+virtualized counters that stay in sync when a VM moves, or a virtual ACL that keeps 
+working wherever the VM is located. For those sorts of capabilities, you need some 
+other mechanisms.</p>
+<p>To put it in the context of the previous discussion, traditional network 
+virtualization mechanisms don't provide the most suitable operational abstractions. 
+For example, provisioning new workloads or moving workloads still requires operational 
+overhead to update the network state, and this is generally a manual process.</p>
+<p>Modern approaches to network virtualization try and address this disconnect. Rather 
+than providing a bunch of virtualized components, network virtualization today tries 
+to provide a suitable basic unit of operations. Unsurprisingly, the abstraction 
+is of a "virtual network".</p>
+<p>To be complete, a virtual network should both support the basic abstractions 
+provided by physical networks today (L2, L3, tagging, counters, ACLs, etc.) as well 
+as introduce a logical abstraction that encompasses all of these to be used as the 
+basis for operation.</p>
+<p>And just like the compute analog, this logical abstraction should support all of 
+the operational niceties we've come to expect from virtualization: dynamic creation, 
+deletion, migration, configuration, snapshotting, and roll-back.</p>
+<p><strong>Cleaning up the Definition of Network Virtualization</strong></p>
+<p>Given the previous discussion, we would characterize network virtualization as 
+follows:</p>
+<ul>
+  <li>Introduces the concept of a virtual network that is decoupled from the physical 
+      network.</li>
+  <li>The virtual networks don't change any of the basic abstractions found in physical 
+      networks.</li>
+  <li>The virtual networks are exposed as a new logical abstraction that can form a 
+      basic unit of operation (creation, deletion, migration, dynamic service 
+      insertion, snapshotting, inspection, and so on).</li>
+</ul>
+<p><strong>Network Virtualization is not SDN</strong></p>
+<p>SDN is a mechanism, and network virtualization is a solution. It is quite possible 
+to have network virtualization solution that doesn't use SDN, and to use SDN to build 
+a network that has no virtualized properties.</p>
+<p>SDN provides network virtualization in about the same way Python does - it's a tool 
+(and not a mandatory one). That said, SDN does have something to offer as a mechanism 
+for network virtualization.</p>
+<p>A simple way to think about the problem of network virtualization is that the 
+solution must map multiple logical abstractions onto the physical network, and keep 
+those abstractions consistent as both the logical and physical worlds change. Since 
+these logical abstractions may reside anywhere in the network, this becomes a 
+fairly complicated state management problem that must be enforced network-wide.</p>
+<p>However, managing large amounts of states with reasonable consistency guarantees 
+is something that SDN is particularly good at. It is no coincidence that most of the 
+network virtualization solutions out there (from a variety of vendors using a variety 
+of approaches) have a logically centralized component of some form for state management.
+</p>
+<p><strong>Wrapping Up</strong></p>
+<p>The point of this post was simply to provide some scaffolding around the discussion 
+of network virtualization. To summarize quickly, modern concepts of network 
+virtualization both preserve traditional abstractions and provide a basic unit of 
+operations which is a (complete) virtual network. And that new abstraction should 
+support the same operational abstractions as its computational analog.</p>
+<p>While SDN provides a useful approach to building a network virtualization solution, 
+it isn't the only way. And lets not confuse tools with solutions.</p>
+<p>Over the next few years, we expect to see a variety of mechanisms for implementing 
+virtual networking take hold. Some hardware-based, some software-based, some using 
+tunnels, others using tags, some relying more on traditional distributed protocols, 
+others relying on SDN.</p>
+<p>In the end, the market will choose the winning mechanism(s). In the meantime, 
+let's make sure we clarify the dialog so that informed decisions are possible.</p>
+<a name="VPNNetVirt"></a><h3 class="title" id="page-title"> VPNs, meet Network 
+Virtualization 
+<a href="http://nicira.com/blog/vpns-meet-network-virtualization">(Source 
+Origin)</a></h3>
+                
+<P> When I first started to hear about Network Virtualization maybe half a dozen
+ years ago, I was a bit taken aback. After all, Virtual Private Networks
+ (VPNs) had been around for decades, and I had spent a good part of the 
+1990s and 2000s working on the protocols to allow service providers 
+(SPs) to build scalable VPNs. So I wondered how network virtualization 
+was different from a VPN, and why was there all the sudden interest?
+<P>Eventually I realized that the main reason for the rise of interest
+ in network virtualization was the success of server virtualization. 
+Once computational capacity in the data center could be virtualized, it 
+was probably inevitable that other aspects of the data center, such as 
+storage and networking, would also need to be virtualized. Server 
+virtualization conferred a slew of benefits - such as speed of 
+provisioning new machines, migration of workloads, hardware independence
+ - and the hope was that network virtualization could follow suit.
+<P>But didn't VPNs already virtualize the network? Well, only 
+partially. VPNs provide isolation among customers or user groups, which 
+is one aspect of network virtualization, but only a small subset of 
+network virtualization as we see it in a modern, multi-tenant data 
+center. Network virtualization goes beyond the simple isolation provided
+ by a VPN in a couple of important ways. First, just as server 
+virtualization presents a complete set of computing capabilities to the 
+guest operating system, network virtualization needs to present a 
+complete set of networking services to the applications using the 
+network. For example, a full-featured virtualized network should allow 
+you to configure access control lists, QoS policies, and a range of 
+other features in the virtual network, not just limit who is connected 
+to whom. Second, because server virtualization makes migration of 
+computational workloads a common operation, virtualized networks need to
+ be able to handle rapid and frequent mobility of endpoints. This means 
+not just dealing with the movement of addresses, but also ensuring that 
+the networking features provided by the virtualized network stay in sync
+ with the VMs as they move.
+<P>Existing VPN technologies (and the <a href="http://blog.ioshints.info/2011/09/vxlan-otv-and-lisp.html">plethora of tunneling techniques</a>
+ that have recently been proposed for network virtualization) really 
+only virtualize the forwarding table. By contrast, Nicira's Network 
+Virtualization Platform (NVP) was designed to support the full network 
+virtualization requirements of a multi-tenant data center. It takes a 
+different tack than traditional VPN technologies, using Software-Defined
+ Networking (SDN) techniques to manage the large amount of state that 
+results from virtualizing the full capabilities of the network and 
+keeping the network configuration correct as VMs migrate within and 
+between data centers.
+<P>This is not to say that VPNs are no longer needed - quite the 
+reverse. Recently, we've been focusing our attention on how existing VPN
+ services offered by carriers can leverage the capabilities of NVP and 
+vice versa. Two observations we've made are:
+<P>
+<UL>
+ <LI> While VPNs are not the same as network virtualization, the  architectural 
+      principles have a lot in common;
+ <LI> If you can connect a virtualized data center network to a wide area VPN service, 
+      you can provide an end-to-end service that leverages the strengths  of both.
+</UL>
+<P>In architectural terms, both VPNs and Network Virtualization rely 
+on encapsulation (tunneling) across the core network, and push the 
+intelligence and intensive processing to the edge. In the case of data 
+center networks, the edge is typically the vswitch in the hypervisor, 
+while the VPN edge is normally the PE (provider edge) router. 
+Encapsulations also vary among the environments (MPLS normally for VPNs,
+ something IP-based for the data center).  
+<P>Where we see real opportunity is in connecting the virtualized 
+networks of the data center to the VPN services of the WAN. Done right, 
+this will allow VPN customers to access virtualized networks in 
+SP-hosted, multi-tenant data centers seamlessly, just as if each VPN 
+customer had his own private data center. The VPN customers will be able
+ to bring up VMs, interconnect them in varied topologies, configure 
+networking features, migrate workloads, and see all of this as an 
+extension of his existing VPN. This is where we see the next great 
+opportunity for service providers: they will leverage their existing VPN
+ assets to offer fully virtualized networks as part of their cloud 
+services, thus  differentiating their offerings from those who can 
+offer only part of the solution. The marriage of network virtualization 
+in the data center with VPNs in the WAN is what will make this possible.
+<P>By Bruce Davie
+  
+<P>Submitted on April 27, 2012 - 17:52</span>		
+<a name="TunnelingNetVirt"></a><h3>Tunneling for Network Virtualization  
+<a href="http://networkheresy.com/2012/10/15/tunneling-for-network-virtualization/" 
+title="Permalink to Tunneling for Network Virtualization">(Source Origin)</a>
+</h3>
+<b>Posted:</b> October 15, 2012| <b>Author:</b> 
+<a href="http://networkheresy.com/author/drbruced/">drbruced</a> | <b>Filed under:</b> 
+<a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a> |
+<a href="http://networkheresy.com/2012/10/15/tunneling-for-network-virtualization/#comments"><strong>6</strong> 
+Comments </a>
+<p>[This post was written by Bruce Davie and Martin Casado.]</p>
+<p>With the growth of interest in network virtualization, there has been a tendency 
+to focus on the encapuslations that are required to tunnel packets across the physical 
+infrastructure, sometimes neglecting the fact that tunneling is just one (small) part 
+of an overall architecture for network virtualization. Since this post is going to do 
+just that - talk about tunnel encapsulations - we want to reiterate the point that a 
+complete network virtualization solution is about much more than a tunnel 
+encapsulation. It entails (at least) a control plane, a management plane, and a set of 
+new abstractions for networking, all of which aim to change the operational model of 
+networks from the traditional, physical model.  We've written about these aspects of 
+network virtualization before (e.g., <a href="#NetworkVirtualization">here</a>).</p>
+<p>In this post, however, we do want to talk about tunneling encapsulations, for 
+reasons that will probably be readily apparent. There is more than one viable 
+encapsulation in the marketplace now, and that will be the case for some time to 
+come. Does it make any difference which one is used? In our opinion, it does, but 
+it's not a simple beauty contest in which one encaps will be declared the winner. 
+We will explore some of the tradeoffs in this post.</p>
+<p>There are three main encapsulation formats that have been proposed for network 
+virtualization: 
+<a href="https://datatracker.ietf.org/doc/draft-mahalingam-dutt-dcops-vxlan/" 
+target="newwindow">VXLAN</a>, 
+<a href="https://datatracker.ietf.org/doc/draft-sridharan-virtualization-nvgre/" 
+target="newwindow">NVGRE</a>, and 
+<a href="https://datatracker.ietf.org/doc/draft-davie-stt/" 
+target="newwindow">STT</a>.  We'll focus on VXLAN and STT here. Not only are they 
+the two that VMware supports (now that Nicira is part of VMware) but they also 
+represent two quite distinct points in the design space, each of which has its 
+merits.</p>
+<p>One of the salient advantages of VXLAN is that it's gained traction with a solid 
+number of vendors in a relatively short period. There were demonstrations of several 
+vendors' implementations at the recent VMworld event. It fills an important market 
+need, by providing a straightforward way to encapsulate Layer 2 payloads such that 
+the logical semantics of a LAN can be provided among virtual machines without concern 
+for the limitations of physical layer 2 networks. For example, a VXLAN can provide 
+logical L2 semantics among machines spread across a large data center network, without 
+requiring the physical network to provide arbitrarily large L2 segments.</p>
+<p>At the risk of stating the obvious, the fact that VXLAN has been implemented by 
+multiple vendors makes it an ideal choice for multi-vendor deployments. But we should 
+be clear what "multi-vendor" means in this case. Network virtualization entails 
+tunneling packets <strong>through</strong> the data center routers and switches, and 
+those devices only forward based on the outer header of the tunnel - a plain old IP 
+(or MAC header). So the entities that need to terminate tunnels for network 
+virtualization are the ones that we are concerned about here.</p>
+<p>In many virtualized data center deployments, most of the traffic flows from VM to 
+VM ("east-west" traffic) in which case the tunnels are terminated in vswitches. It is 
+very rare for those vswitches to be from different vendors, so in this case, one might 
+not be so concerned about multi-vendor support for the tunnel encaps.  Other issues, 
+such as efficiency and ability to evolve quickly might be more important, as we'll 
+discuss below.</p>
+<p>Of course, there are plenty of cases where traffic doesn't just flow east-west. It 
+might need to go out of the data center to the Internet (or some other WAN), i.e. 
+"north-south". It might also need to be sent to some sort of appliance such as a load 
+balancer, firewall, intrusion detection system, etc. And there are also plenty of 
+cases where a tunnel <strong>does</strong> need to be terminated on a switch or router, 
+such as to connect non-virtualized workloads to the virtualized network. In all of 
+these cases, we're clearly likely to run into multi-vendor situations for tunnel 
+termination. Hence the need for a common, stable, and straightfoward approach to 
+tunneling among all those devices.</p>
+<p>Now, getting back to server-server traffic, why wouldn't you just use VXLAN? One 
+clear reason is efficiency, as we've discussed 
+<a href="http://networkheresy.com/2012/06/08/the-overhead-of-software-tunneling/">here</a>. 
+Since tunneling between hypervisors is required for network virtualization, it's 
+essential that tunneling not impose too high an overhead in terms of CPU load and 
+network throughput. STT was designed with those goals in mind and performs very well 
+on those dimensions using today's commodity NICs. Given the general lack of 
+multi-vendor issues when tunneling between hypervisors, STT's significant performance 
+advantage makes it a better fit in this scenario.</p>
+<p>The performance advantage of STT may be viewed as somewhat temporary - it's a 
+result of STT's ability to leverage TCP segmentation offload (TSO) in today's NICs. 
+Given the rise in importance of tunneling, and the momentum behind VXLAN, it 
+reasonable to expect that a new generation of NICs will emerge that allow other 
+tunnel encapsulations to be used without disabling TSO. When that happens, performance 
+differences between STT and VXLAN should (mostly) disappear, given appropriate 
+software to leverage the new NICs.</p>
+<p>Another factor that comes into play when tunneling traffic from server to server 
+is that we may want to change the semantics of the encapsualution from time to time 
+as new features and capabilities make their way into the network virtualization 
+platform. Indeed, one of overall advantages of network virtualization is the ease 
+with which the capabilities of the network can be upgraded over time, since they are 
+all implemented in software that is completely independent of the underlying hardware. 
+To make the most of this potential for new feature deployment, it's helpful to have a 
+tunnel encaps with fields that can be modified as required by new capabilities. An 
+encaps that typically operates between the vswitches of a single vendor (like STT) 
+can meet this goal, while an encaps designed to facilitate multi-vendor scenarios 
+(like VXLAN) needs to have the meaning of every header field pretty well nailed 
+down.</p>
+<p>So, where does that leave us? In essence, with two good solutions for tunneling, 
+each of which meets a subset of the total needs of the market, but which can be used 
+side-by-side with no ill effect. Consequently, we believe that VXLAN will continue 
+to be a good solution for the multi-vendor environments that often occur in data 
+center deployments, while STT will, for at least a couple of years, be the best 
+approach for hypervisor-to-hypervisor tunnels. A complete network virtualization 
+solution will need to use both encapsulations. There's nothing wrong with that - 
+building tunnels of the correct encapsulation type can be handled by the controller, 
+without the need for user involvement. And, of course, we need to remember that a 
+complete solution is about much more than just the bits on the wire.</p>
+<div id="jp-post-flair" class="sharedaddy sd-like-enabled"></div>		<hr>
+</div>
+		
+<a name="ManagementPlane"></a><h3>Remembering The Management Plane</a>
+<a href="http://networkheresy.com/2012/09/15/remembering-the-management-plane/">(Source 
+Origin)</h3>
+<b>Posted:</b> 09/15/2012 | <b>Author:</b> 
+<a href="http://networkheresy.com/author/drbruced/">drbruced</a> | <b>Filed under:</b> 
+<a href="http://networkheresy.com/category/uncategorized/"">Uncategorized</a> | 
+<b>Tags:</b> <a href="http://networkheresy.com/tag/ovsdb/">OVSDB</a> | 
+<a href="http://networkheresy.com/2012/09/15/remembering-the-management-plane/#comments"
+><strong>6</strong> Comments </a></span></small>
+<p>[This post was written with input from Martin Casado, Ben Pfaff, Justin Pettit and 
+Ben Basler.]</p>
+<p>The <a href="http://openvswitch.org/">Open vSwitch</a> (OVS) project is obviously 
+dear to our hearts at Nicira (and now VMware). OVS is a fairly standard open source 
+project, with many dozens of people from companies around the world contributing 
+patches and reviewing them.  However, there is more to openness than just open source 
+software; open protocols (with freely accessible specs) are also important. Of course, 
+Open vSwitch is well known as an implementation of the OpenFlow protocol, for which 
+the specs are freely available. But there is another protocol, arguably just as 
+important as OpenFlow, which is used to manage Open vSwitch instances. That protocol 
+is known as the Open vSwitch Data Base management protocol or OVSDB protocol. While 
+the specification of that protocol can be found within the Open vSwitch sources, it's 
+a bit of an effort to figure out exactly how it works.  With that in mind, as well as 
+a desire to be as open as possible, we decided to publish a spec for the OVSDB protocol 
+in a more familiar and accessible format - an Internet draft.</p>
+<p>To be clear, anyone can publish an Internet draft, and that does not make something 
+into a standard. There's a possibility that this Internet draft may be suitable for 
+publication as an informational RFC. That wouldn't make it a standard either, but it 
+would at least provide an archival publication mechanism for a protocol that is quite 
+widely used.  Whether that happens or not depends on the "Independent Stream Editor", 
+part of the rather complex organization that handles RFC publication. (See 
+<a href="http://www.rfc-editor.org/RFCeditor.html">RFCeditor.html</a>.)</p>
+<p>So, what is this OVSDB protocol? Obviously, you could just go and read our 
+<a href="https://datatracker.ietf.org/doc/draft-pfaff-ovsdb-proto/">new Internet 
+draft</a> <a href="http://tools.ietf.org/html/draft-pfaff-ovsdb-proto-00 
+target="newwindow">(html format)</a>, but here is the quick summary. While OpenFlow 
+establishes flow state in 
+a switch, there's a lot more to Open vSwitch - indeed there is more to networking - 
+than just setting up flow (or forwarding) table entries. In Open vSwitch, you can 
+create many virtual switch instances, attach interfaces to those switches, set QOS 
+policies on interfaces, and so on.  None of these configuration tasks can be done 
+with OpenFlow, so you need a management/configuration protocol to do them.</p>
+<p>The OVSDB protocol has been part of the Open vSwitch implementation for many years. 
+It is essentially a general purpose protocol for interacting with a database, and in 
+Open vSwitch the database in question is a set of tables representing switch 
+configuration data. (Some readers may be familiar with 
+<a href="https://www.opennetworking.org/images/stories/downloads/of-config/of-config-1.1.pdf" target="newwindow">of-config</a> - the OpenFlow config 
+protocol - a more recent effort; we believe that protocol could actually be implemented 
+on top of OVSDB.)  See <a href="#OF-Primer">OpenFlow Config 1.1 Primer</a>,too</p>
+<p>To step back for a moment, networking folks often think of any network device as 
+having a control plane and a data plane. Sadly, the management plane has been all too 
+often neglected. OVSDB is a protocol that was created to address that important but 
+neglected aspect of networking. We think that making networks dramatically easier to 
+manage is in fact one of the major benefits of network virtualization. That's a topic 
+we've discussed <a href="#NetworkVirtualization">elsewhere</a>; for now, I'll just 
+urge readers of this blog to go take a look at our current approach to managing and 
+configuring Open vSwitch instances.</p>
+<div id="jp-post-flair" class="sharedaddy sd-like-enabled"></div>		<hr>
+</div>
+		
+<a name="OF-Primer"></a><h3>OpenFlow Config 1.1 Primer for SDN  
+<a href="http://www.enterprisenetworkingplanet.com/datacenter/openflow-config-1.1-primer-for-sdn.html" 
+target="newwindow">(Source Origin)</a></h3>
+        <h4>OpenFlow Config 1.1 was upgraded to include new ways to build, maintain and protect SDN environments.</h4>
+        <div id="articleInfo" class="left">
+            By Arthur Cole | Dec 10, 2012                    </div>
+ <p>All network switches, whether physical or virtual, need a way
+ to update configuration, management and other setting from time to 
+time. In a standard network architectures, this is usually done manually
+ as new core, edge, access and other devices are brought on-line.</p>
+    </div>
+        <div class="articleContent">
+            <p></p>
+<p>In a Software Defined Architecture (SDN), network pathways are 
+provisioned, mapped and routed in a highly dynamic atmosphere. It's not 
+unreasonable to imagine network configuration modules embedded in the 
+application, allowing it to build and change network environments 
+according to its needs. Naturally, this will require a fair amount of 
+automation, built largely on a sophisticated networking protocol. In the
+ OpenFlow (OF) platform, that protocol is OF-Config 1.1, which was 
+recently upgraded to include new ways to build, maintain and protect SDN
+ environments.</p>
+<p></p>
+<p>OF-Config 1.1 is basically the means to enable remote configuration 
+of datapaths on an OpenFlow switch. This is where much of the network 
+abstraction takes place in the OpenFlow format, allowing for logical 
+network resources to rest on top of physical infrastructure so they can 
+be configured and reconfigured on a dynamic basis.</p>
+<p></p>
+<p>Through OF-Config, network datapaths are viewed as OpenFlow Logical 
+Switches, which then communicate with the OF controller through the 
+broader OF protocol. Multiple datapaths can then be configured as an 
+OpenFlow Capable Switch, which functions like a physical Ethernet switch
+ but with the ability to partition ports, queues and other resources 
+among its hosted logical switches. OF-Config offers a high degree of 
+flexibility in the partitioning process and assumes that all resources 
+will be partitioned in some way, essentially giving logical switches 
+full control over the resources that are available.</p>
+<p></p>
+<p>OF-Config also utilizes a mechanism called an OpenFlow Configuration 
+Point to send messages to OpenFlow Capable Switches. Configuration 
+points can originate in a variety of ways, such as a software system on 
+the OpenFlow Controller or from an existing network management platform.
+ As such, OF-Config does not define the configuration point, but merely 
+uses them to maintain network communications.</p>
+<p></p>
+<p>OF-Config 1.1 provides a number of enhanced capabilities compared to previous versions. These include:</p>
+<p></p>
+<ul>
+<li>configuration of various tunneling options used primarily to create 
+overlay networks to encapsulate various Ethernet layers within one 
+another. To date, the options include IP-in-GRE, NV-GRE and VxLAN</li>
+<li>capability discovery on the OpenFlow Logical Switch to determine 
+what ports and related resources are OpenFlow-ready and what their 
+capabilities are. Config can also remotely change some port aspects, 
+such as up/down settings</li>
+<li type="_moz">configuration of security certificates for protected 
+communication between logical switches and controllers. Both the switch 
+certificate and the controller certificate are created in OF-Config</li>
+</ul>
+<p>The Open Networking Foundation is quick to point out the OF-Config is
+ designed to be a foundational protocol on which any number of automated
+ and advanced configuration processes can be built. At the moment, 
+Config does not encompass functions like switch or topology discovery, 
+capability configuration, event triggering or logical switch 
+instantiation. However, it is possible that these and other tools can be
+ added to future versions.</p>
+<p></p>
+<p>Config 1.1 received final approval from the ONF earlier this year. As
+ of yet there are no vendor implementations in the market. The protocol 
+saw a public demonstration at the organization's recent Plugfest at 
+Indiana University's Center for Network Translational Research and 
+Education, although it underwent only limited testing.</p>
+<p></p>
+<p>Since much of OpenFlow's functionality centers around automating the 
+network configuration process, OF-Config 1.1 can be considered the true 
+heart of the protocol. As the vendor community increases production of 
+OF-compatible systems, the possibility of highly dynamic, abstract 
+network architectures residing on commodity hardware will move from the 
+"distinct possibility" phase to a working reality.</p>
+<p>Details on OF-Config 1.1 are available 
+<a href="https://www.opennetworking.org/images/stories/downloads/of-config/of-config-1.1.pdf">here</a>.</p>    
+<a name="TunnelingOverhead"></a><h3>The Overhead of Software Tunneling  
+<a href="http://networkheresy.com/2012/06/08/the-overhead-of-software-tunneling/" title="Permalink to The Overhead of Software Tunneling">(Source Origin)</a></h3>
+<b>Posted:</b> June 8, 2012 | <b>Author:</b> 
+<a href="http://networkheresy.com/author/networkheresy/">networkheresy</a> | <b>Filed 
+under:</b> <a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a>, <a href="http://networkheresy.com/category/open-vswitch/">Open 
+vSwitch</a> | 
+<a href="http://networkheresy.com/2012/06/08/the-overhead-of-software-tunneling/#comments"><strong>14</strong> Comments </a>
+<p>[This post was written with Jesse Gross, Ben Basler, Bruce Davie, and Andrew 
+    Lambeth]</p>
+<p>Tunneling has earned a bad name over the years in networking circles.</p>
+<p>Much of the problem is historical. When a new tunneling mode is introduced in a 
+hardware device, it is often implemented in the slow path. And once it is pushed down 
+to the fastpath, implementations are often encumbered by key or table limits, or 
+sometimes throughput is halved due to additional lookups.</p>
+<p>However, none of these problems are intrinsic to tunneling. At its most basic, a 
+tunnel is a handful of additional bits that need to be slapped onto outgoing packets. 
+Rarely, outside of encryption, is there significant per-packet computation required by 
+a tunnel. The transmission delay of the tunnel header is insignificant, and the impact 
+on throughput is - or should be - similarly minor.</p>
+<p>In fact, our experience implementing multiple tunneling protocols within <a 
+href="http://networkheresy.com/vswitch.org">Open vSwitch</a> is that it is possible to 
+do tunneling in software with performance and overhead comparable to non encapsulated 
+traffic, and to support hundreds of thousands of tunnel end points.</p>
+<p>Given the growing importance of tunneling in virtual networking (as evidenced by 
+the emergence of protocols such as 
+<a href="http://tools.ietf.org/html/draft-davie-stt-01">STT</a>, 
+<a href="http://tools.ietf.org/html/draft-sridharan-virtualization-nvgre-00">NVGRE</a>, 
+and <a href="http://tools.ietf.org/html/draft-mahalingam-dutt-dcops-vxlan-01">VXLAN</a>, 
+it's worth exploring its performance implications.</p>
+<p>And that is the goal of this post: to start the discussion on the performance of 
+tunneling in software from the network edge.</p>
+<p><strong>Background</strong></p>
+<p>An emerging method of network virtualization is to use tunneling from the edges to 
+decoupled the virtual network address space from the physical address space. Often the 
+tunneling is done in software in the hypervisor. Tunneling from within the server has 
+a number of advantages: software tunneling can easily support hundreds of thousands of 
+tunnels, it is not sensitive to key sizes, it can support complex lookup functions and 
+header manipulations, it simplifies the server/switch interface and reduces demands on 
+the in-network switching ASICs, and it naturally offers software flexibility and a 
+rapid development cycle.</p>
+<p>An idealized forwarding path is shown in the figure below. We assume that the 
+tunnels are terminated within the hypervisor. The hypervisor is responsible for 
+mapping packets from VIFs to tunnels, and from tunnels to VIFs. The hypervisor is 
+also responsible for the forwarding decision on the outer header (mapping the 
+encapsulated packet to the next physical hop).</p>
+<p><img src="http://networkheresy.files.wordpress.com/2012/06/vtunnel2.jpg" alt="" 
+height="216" width="300"></p>
+<p><strong>Some Performance Numbers for Software Tunneling</strong></p>
+<p>The following tests show throughput and cpu overhead for tunneling within Open 
+vSwitch. Traffic was generated with netperf attempting to emulate a high-bandwidth 
+TCP flow. The MTU for the VM and the physical NICs are 1500bytes and the packet 
+payload size is 32k. The test shows results using no tunneling (OVS bridge), 
+GRE, and STT.</p>
+<p>The results show aggregate bidirectional throughput, meaning that 20Gbps is a 10G 
+NIC sending and receiving at line rate. All tests where done using Ubuntu 12.04 and 
+KVM on an Intel Xeon 2.40GHz servers interconnected with a Dell 10G switch. We use 
+standard 10G Broadcom NICs. CPU numbers reflect the percentage of a single core used 
+for each of the processes tracked.</p>
+<p>The following results show the performance of a single flow between two VMs on 
+different hypervisors. We include the Linux bridge to show that performance is 
+comparable. Note that the CPU only includes the CPU dedicated to switching in the 
+hypervisor and not the overhead in the guest needed to push/consume traffic.</p>
+<table border="0">
+<tbody>
+<tr>
+<td></td>
+<td>Throughput</td>
+<td>Recv side cpu</td>
+<td>Send side cpu</td>
+</tr>
+<tr>
+<td>Linux Bridge:</td>
+<td>9.3 Gbps</td>
+<td>85%</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>OVS Bridge:</td>
+<td>9.4 Gbps</td>
+<td>82%</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>OVS-STT:</td>
+<td>9.5 Gbps</td>
+<td>70%</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>OVS-GRE:</td>
+<td>2.3 Gbps</td>
+<td>75%</td>
+<td>97%</td>
+</tr>
+</tbody>
+</table>
+<p>This next table shows the aggregate throughput of two hypervisors with 4 VMs each. 
+Since each side is doing both send and receive, we don't differentiate between the 
+two.</p>
+<table border="0">
+<tbody>
+<tr>
+<td></td>
+<td>Throughput</td>
+<td>CPU</td>
+</tr>
+<tr>
+<td>OVS Bridge:</td>
+<td>18.4 Gbps</td>
+<td>150%</td>
+</tr>
+<tr>
+<td>OVS-STT:</td>
+<td>18.5 Gbps</td>
+<td>120%</td>
+</tr>
+<tr>
+<td>OVS-GRE:</td>
+<td>2.3 Gbps</td>
+<td>150%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Interpreting the Results</strong></p>
+<p>Clearly these results (aside from GRE, discussed below) indicate that the overhead 
+of software for tunneling is negligible. It's easy enough to see why that is so. 
+Tunneling requires copying the tunnel bits onto the header, an extra lookup (at least 
+on receive), and the transmission delay of those extra bits when placing the packet on 
+the wire. When compared to all of the other work that needs to be done during the 
+domain crossing between the guest and the hypervisor, the overhead really is 
+negligible.</p>
+<p>In fact, with the right tunneling protocol, the performance is roughly equivalent 
+to non-tunneling, and CPU overhead can even be lower.</p>
+<blockquote><p>STT's lower CPU usage than non-tunneled traffic is not a statistical 
+anomaly but is actually a property of the protocol. The primary reason is that STT 
+allows for better coalescing on the received side in the common case (since we know 
+how many packets are outstanding). However, the point of this post is not to argue 
+that STT is better than other tunneling protocols, just that if implemented correctly, 
+tunneling can have comparable performance to non-tunneled traffic. We'll address 
+performance specific aspects of STT relative to other protocols in a future post.
+</p></blockquote>
+<p>The reason that GRE numbers are so low is that with the GRE outer header it is not 
+possible to take advantage of offload features on most existing NICs 
+(<a href="http://networkheresy.com/2012/03/04/network-virtualization-encapsulation-and-stateless-tcp-transport-stt/">we 
+have discussed this problem in more detail before</a>). However, this is a shortcoming 
+of the NIC hardware in the near term. Next generation NICs will support better tunnel 
+offloads, and in a couple of years, we'll start to see them show up in LOM.</p>
+<p>In the meantime, STT should work on any standard NIC with TSO today.</p>
+<p><strong>The Point</strong></p>
+<p>The point of this post is that at the edge, in software, tunneling overhead is 
+comparable to raw forwarding, and under some conditions it is even beneficial. For 
+virtualized workloads, the overhead of software forwarding is in the noise when 
+compared to all of the other machinations performed by the hypervisor.</p>
+<p>Technologies like passthrough are unlikely to have a significant impact on 
+throughput, but they will save CPU cycles on the server. However, that savings comes 
+at a fairly steep cost 
+<a href="http://networkheresy.com/2011/06/14/the-rise-of-soft-switching-part-i-introduction-and-background/">as 
+we have explained before</a>, and doesn't play out in most deployment environments.</p>
+<div id="jp-post-flair" class="sharedaddy sd-like-enabled"></div>		<hr>
+</div>
+		
+<a name="OpenvSwitchOnDebian"></a><h5>2012 Jun 29 - Fri</h5>
+<p>
+<a name="OpenVSwitchInstall"></a>
+<h3>Installing Open vSwitch on Debian Sid/Wheezy
+<a href="http://www.oneunified.net/blog/2012/07/">(Source Origin)</a></h3>
+<a href="http://cloudguys.net/2012/07/open-vswitch-configuration-on-debian-sidwheezy-one-unified-net/#.UN0D0cd-UnV">Open vSwitch Configuration on Debian Sid/Wheezy 
+--- One Unified Net</a>
+</p>
+<p><a href="http://www.oneunified.net/blog?redirectURL=http://openvswitch.org/" onmouseover="window.status='to openvswitch.org/'; return true;" onmouseout="window.status=''; return true;" target="_blank">Open vSwitch</a> appears to be the up and coming mechanism 
+for connecting virtual guests to the physical network through bridges, vlans, and network cards.
+</p>
+<p>Through my previous postings, I described the processes I went through to get basic networking running with 
+my virtual guests in a QEMU/KVM environment on Debian Sid/Wheezy.  After getting basic, simple bridged connectivity
+working with bridge-utils, I realized I wanted to make things a bit more complicated.   I want to be able to make
+use of 802.1q VLAN trunking ports, and to bridge to individual VLANs from various virtualized guests.
+</p>
+<p>I believe it would have been relatively straightforward to add the Debian VLAN module in, and start bridging that way.
+But after a bit more research, it looks like Open vSwitch handles that, plus has a number of other capabilities. 
+Namely, it can deal with sFlow and Netflow exporting.  It has other monitoring features as well.  On top of that,
+it Open vSwitches on different machines can be linked together via tunnels.  I understand it also integrates into 
+OpenStack.
+</p>
+<p>Therefore, I decided to take the big leap and start into Open vSwitch.  With the basic knowledge gained from this tool,
+I can start to integrate additional infrastructure into the solution.
+</p>
+<p>The first step is to install Open vSwitch.  It isn't as simple as expected.
+</p>
+<p>I first shut down and removed existing bridge configurations from the /etc/network/interfaces file.  Then removed 
+bridge-utils:
+</p><pre><blockquote>
+apt-get remove bridge-utils
+</blockquote></pre>
+<p>Open vSwitch requires a kernel module to be built and installed.  It doesn't come pre-built.  And I see the reason.  The 
+kernel in Sid/Wheezy is in a state of flux.  I started with  3.2.0-1-amd64, but the current is  3.2.0-2-amd64.  When 
+building the kernel module, linux-headers are needed.  I had an error like:
+</p><pre><blockquote>
+FATAL: Module openvswitch_mod not found.
+ * Inserting openvswitch module
+</blockquote></pre>
+<p>So the following was needed to sync headers and kernel:
+</p><pre><blockquote>
+apt-get install linux-headers
+apt-get install linux-image-3.2.0-2-amd64
+</blockquote></pre>
+<p>With the kernel and headers consistent, the Open vSwitch kernel module is downloaded and built:
+</p><pre><blockquote>
+apt-get install openvswitch-datapath-source
+module-assistant auto-install openvswitch-datapath
+</blockquote></pre>
+<p>The main Open vSwitch modules can then be installed:
+</p><pre><blockquote>
+apt-get install openvswitch-common
+apt-get install openvswitch-switch
+</blockquote></pre>
+<p>Output similar to the following should be obtained:
+</p><pre><blockquote>
+[ ok ] ovs-brcompatd is not running.
+[ ok ] ovs-vswitchd is not running.
+[ ok ] ovsdb-server is not running.
+[ ok ] Inserting openvswitch module.
+[warn] /etc/openvswitch/conf.db does not exist ... (warning).
+[ ok ] Creating empty database /etc/openvswitch/conf.db.
+[ ok ] Starting ovsdb-server.
+[ ok ] Configuring Open vSwitch system IDs.
+[ ok ] Starting ovs-vswitchd.
+[ ok ] Enabling gre with iptables.
+</blockquote></pre>
+<p>I can now start to experiment with Open vSwitch.
+</p>
+<hr>
+<h5>2012 Jul 02 - Mon</h5>
+<p>
+<a name="OpenVSwitchConfig"></a>
+<h3>Open vSwitch Configuration on Debian Sid/Wheezy</h3>
+<br>
+</p>
+<p>In my previous article, I went through the steps of installing 
+<a href="http://www.oneunified.net/blog?redirectURL=http://openvswitch.org" onmouseover="window.status='to openvswitch.org'; return true;" onmouseout="window.status=''; return true;" target="_blank">Open vSwitch</a> for use within a Qemu/KVM solution
+in substitute of the usual Linux bridge utility.
+</p>
+<p>OVS works differently from normal Linux networking in at least a couple of different ways.  The first way is that a
+single regular bridge in Linux is designed to handle a single VLAN, ie, one bridge per VLAN.  
+This is one reason why I decided to forgo using the standard Linux bridge utilities.  With OVS, an OVS bridge takes the 
+VLAN trunking in stride, and can bridge out trunk ports or regular access ports.  A trunk port uses the command of
+'ovs-vsctl add-port br1 tap0', whereas an access port connected to VLAN 101 would use 'ovs-vsctl add-port br1 tap0 tag=101'.  
+Both commands attach the tap0 interface to the bridge br1, the first as a trunk, the second as an access port.
+</p>
+<p>The second difference relates to something which I'll loosely define as non-persisted network configuration versus 
+persisted network configuration.  Using regular Linux bridging tools, the individual commands for bridging are 
+incorporated into the /etc/network/interfaces stanzas.  These stanzas are run on power up and power down, and manually when
+changing network interface state at the command line.  The state of the network is not remembered from 
+session to session (ie, through reboots).
+</p>
+<p>With OVS, things work a bit differently.  Commands, as entered at the command line, not only update the 
+appropriate network state, but the requested network configuration is recorded into a database maintained by OVS.  
+Thus, when rebooting the physical machine, what existed prior to reboot, will be automatically recreated after reboot.  
+The punch line is that OVS configuration commands should not be entered into the /etc/network/interfaaces file, 
+as the commands will be redundant, and may even cause problems on reboot if entered there.
+</p>
+<p>For attaching bridge port 1 to eth1, the following commands are used:
+</p><pre><blockquote>
+ovs-vsctl add-br br1
+ovs-vsctl add-port br1 eth1
+</blockquote></pre>
+<p>Then the stanzas for /etc/network/interfaces are:
+</p><pre><blockquote>
+allow-hotplug eth1
+iface eth1 inet manual
+      pre-up ifconfig $IFACE up
+      post-down ifconfig $IFACE down
+auto br1
+iface br1 inet manual
+  pre-up ifconfig $IFACE up
+  post-down ifconfig $IFACE down
+</blockquote></pre>auto eth1
+<p>Using the above, I see eth1 come up automatically, but br1 still needs a 'ifconfig br1 up'.  Perhaps it is an affect of 
+when the OVS network services are started in relationship to when the /etc/network/interfaces file is evaluated.
+</p>
+<p><a href="http://www.oneunified.net/blog?redirectURL=http://openvswitch.org/support/config-cookbooks/vlan-configuration-cookbook/" onmouseover="window.status='to openvswitch.org/support/config-cookbooks/vlan-configuration-cookbook/'; return true;" onmouseout="window.status=''; return true;" target="_blank">Open vSwitch VLANs</a>
+has a good reference for configuring access ports.
+</p>
+<p><a href="http://www.oneunified.net/blog?redirectURL=http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;f=INSTALL.KVM;hb=HEAD" onmouseover="window.status='to openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;f=INSTALL.KVM;hb=HEAD'; return true;" onmouseout="window.status=''; return true;" target="_blank">How to Use Open vSwitch with KVM</a>
+deals with the special up/down files needed for Qemu/KVM.
+</p>
+<p>In a nutshell, two files are required.  The first, /etc/network/ovs-ifup which adds a tap interface to br1:
+</p><pre><blockquote>
+#!/bin/sh
+switch='br1'
+ovs-vsctl add-port ${switch} $1
+/sbin/ifconfig $1 0.0.0.0 up
+</blockquote></pre>
+<p>The second, /etc/network/ovs-ifdown removes the tap interface:
+</p><pre><blockquote>
+#!/bin/sh
+switch='br1'
+/sbin/ifconfig $1 0.0.0.0 down
+ovs-vsctl del-port ${switch} $1
+</blockquote></pre>
+<p>Be aware that the above represents two scenario:  the physical source port is an access port or a trunk port.  If the 
+physical port is an access port, then the access port traffic will be delivered to the guest, as expected.  On the other hand,
+if the physical is a trunk port, then all VLAN traffic on the physical port will be replicated to the guest machine's 
+network port, and the guest machine will need to know how to work with 802.1q tagged frames.
+</p>
+<p>To deliver access ports to the guest from a trunked physical port, the following example represents delivering 
+VLAN as an access port to a guest machine.  /etc/network/ovs-ifup:
+</p><pre><blockquote>
+#!/bin/sh
+switch='br1'
+/sbin/ifconfig $1 0.0.0.0 up
+ovs-vsctl add-port ${switch} $1 tag=101
+</blockquote></pre>
+<p>For /etc/network/ovs-ifdown:
+</p><pre><blockquote>
+#!/bin/sh
+switch='br1'
+/sbin/ifconfig $1 0.0.0.0 down
+ovs-vsctl del-port ${switch} $1 
+</blockquote></pre>
+<p>Then the -net parameter like the following can be used when starting Qemu/KVM:
+</p><pre><blockquote>
+-net tap0,script=/etc/network/ovs-ifup,downscript=/etc/network/ovs-ifdown
+</blockquote></pre>
+<p>A few other useful status commands:
+</p><pre><blockquote>
+ovs-dpctl show br1
+ovs-ofctl show br1
+</blockquote></pre>
+<hr>
+<p>
+<a name="BridgeTap"></a>
+<span class="storytitle">QEMU/KVM Bridge/Tap Network Configuration</span>
+<br>
+</p>
+<p>QEMU has a number of different ways of connecting the network to a virtualized guest, or vice-versa,
+connecting a virtualized guest to the network.  The mechanism providing the most flexibility 
+involves using a bridge mechanism plus a tap mechanism.
+</p>
+<p>I'll resort to a cattle culling metaphor to explain the basic concept.  Each cow represents a packet.  The cows 
+from the field are directed from the fields into a holding pen, which is loosely represented 
+by the bridge concept.  From the holding pen, individual cows are selected and 
+directed to their destination, which is loosely represented by the tap.
+</p>
+<p>From an implementation point of view, for the purposes of this discussion, will bond together an external physical 
+interface (such as eth1) with a series of internal interfaces connecting to the virtualized guests (tap0, tap1, ...).
+The tap interfaces connect the virtualized guest to the bridge and the bridge works to get those packets 
+out onto the physical interface, and for externally arriving packets, works to get the packets to the 
+appropriate tap interface.
+</p>
+<p>On a Linux Debian Wheezy system, things are straight forward to configure.  The system, for the purposes 
+of this example, has two external interfaces: eth0 and eth1.  I have eth0 configured with private ip addresses 
+behind a firewall and is dedicated for physical host management.  The other interface, eth1, is connected to the
+public interface side of the network.  The physical machine has no addresses on this side to help reduce the 
+risk of compromise of the physical host.  For different environments, an ip address could be assigned to the bridge 
+interface, which would result in the physical machine being reachable on the public side of things.
+</p>
+<p>Even more sophistication can be obtained with VLANs on the external interface.  This topic is best left for another 
+blog entry, and will be covered with a discussion of Open vSwitch.
+</p>
+<p>Before looking at the actual implementation commands, I need to mention two more caveats.  The first is that 
+the following example turns off spanning tree related commands.  The configuration is basically a stub off a physical
+network.  If multiple physical interfaces will belong to the same bridge group, then spanning tree will need to 
+be enabled.  That would be a discussion for one or more separate blog entries.
+</p>
+<p>The second caveat is that the example is based upon QEMU being used with root level privileges.  Many other blog 
+entries use this type of networking in non-root scenarios, and are thus a bit more complicated due to the fact that 
+sudo is required for bringing up tap connections.
+</p>
+<p>To ensure bridge utilities can be used, the result of the following should be CONFIG_TUN=m or CONFIG_TUN=y:
+</p><pre><blockquote>
+grep CONFIG_TUN= /boot/config-`uname -r`
+</blockquote></pre>
+<p>Ensure the bridge utilities are installed.  The assumption is that qemu/kvm are already installed and operational.
+</p><pre><blockquote>
+apt-get install bridge-utils
+</blockquote></pre>
+<p>Here is an extract from the /etc/network/interfaces file:
+</p><pre><blockquote>
+auto eth1
+allow-hotplug eth1
+iface eth1 inet manual
+      pre-up ifconfig $IFACE up
+      post-down ifconfig $IFACE down
+auto bvi1
+iface bvi1 inet manual
+  pre-up brctl addbr bvi1
+  pre-up brctl addif bvi1 eth1
+  pre-up brctl stp bvi1 off
+  pre-up brctl setfd bvi1 1
+  pre-up ifconfig $IFACE up
+  post-down ifconfig $IFACE down
+  post-down brctl delif bvi1 eth1
+  post-down brctl delbr bvi1
+</blockquote></pre>
+<p>The eth1 interface is automatically started.  For this example, I 
+have used Cisco terminology for the bridge 
+interface:  bvi. BVI is an acronym for Bridged Virtual Interface.  For 
+this example, I have numbered the bvi interface as bvi1 to 
+match that it is attached to eth1.
+</p>
+<p>Under 'iface bvi1 inet manual' stanza, there are a series of pre-up commands.  These are commands which are operable 
+at the command line as well.  The command brctl is used to create the bvi1 interface, add eth1 to the bridge group,
+turn spanning tree protocol off, and then set a forwarding delay.  The interface is then brought up.
+</p>
+<p>When shutting down the interface, eth1 is removed from the bridge group, and then bvi1 is deleted.
+</p>
+<p>Two more files need to be created with execute privileges.  The first is /etc/qemu-ifup.  This is a file 
+which qemu executes in order to connect the virtualized guest network interface to the bridge:
+</p><pre><blockquote>
+/sbin/ifconfig $1 0.0.0.0 promisc up
+/sbin/brctl addif bvi1 $1
+</blockquote></pre>
+<p>The other is /etc/qemu-ifdown which qemu uses when the virtualized guest exits:
+</p><pre><blockquote>
+/sbin/brctl delif bvi1 $1
+</blockquote></pre>
+<p>I add the following parameters to the qemu startup command:
+</p><pre><blockquote>
+-net nic,vlan=0,model=virtio -net tap,vlan=0,ifname=tap0
+</blockquote></pre>
+<p>'-net nic,vlan=0,model=virtio' sets the type of network card to emulate.  'qemu -net nic,model=?' can be used to obtain 
+a list of available devices.  'virtio' is a driver used to optimze the speed of communications between the guest and the host.  
+'tap,vlan=0,ifname=tap0' creates the tap0 interface, and it is with this parameter, that the /etc/qemu-if? commands 
+are used for joining the tap interface to the bridge.
+</p>
+<p>Ip addresses can then be assigned statically or via dhcp within the guest, and all network operations operate 
+as though the guest is directly connected to the network.
+</p>
+<p>A few web sites I encountered with additional background material:
+</p><ul>
+  <li><a href="http://www.oneunified.net/blog?redirectURL=http://backreference.org/2010/03/26/tuntap-interface-tutorial/" onmouseover="window.status='to backreference.org/2010/03/26/tuntap-interface-tutorial/'; return true;" onmouseout="window.status=''; return true;" target="_blank">Tun/Tap interface tutorial</a>:  Creating tunnel/tap interfaces, mostly from a programming perspective.
+  </li><li><a href="http://www.oneunified.net/blog?redirectURL=http://www.linuxfoundation.org/collaborate/workgroups/networking/bridge" onmouseover="window.status='to www.linuxfoundation.org/collaborate/workgroups/networking/bridge'; return true;" onmouseout="window.status=''; return true;" target="_blank">Bridge Interface</a>:  Tutorial on bridging from The Linux Foundation.  Has some background material on Spanning Tree as it relates to the bridge.
+  </li><li><a href="http://www.oneunified.net/blog?redirectURL=http://compsoc.dur.ac.uk/%7Edjw/qemu.html" onmouseover="window.status='to compsoc.dur.ac.uk/~djw/qemu.html'; return true;" onmouseout="window.status=''; return true;" target="_blank">QEMU Tun/Tap</a>:  Configurations differ, but some information for using sudo with non-root startup of qemu.
+  </li><li><a href="http://www.oneunified.net/blog?redirectURL=http://blog.alantan.com/2007/01/qemu-tap-bridge-network-configuration.html" onmouseover="window.status='to blog.alantan.com/2007/01/qemu-tap-bridge-network-configuration.html'; return true;" onmouseout="window.status=''; return true;" target="_blank">:  Alan Tan - QEMU TAP bridge network configuration</a> Another good tutorial on bridging for the Tun/Tap interface.
+  </li>
+<li><a href="http://lxr.linux.no/linux/Documentation/networking/tuntap.txt" 
+target="_blank">Linux tuntap.txt</a>
+</ul>
+<a name="InstUsageOpenvSwitch"></a><h3>Installation and Usage of Open vSwitch 
+<a href="http://www.orbit-lab.org/wiki/Documentation/OpenFlow/vSwitchImage">(Source 
+Origin)</a></h3>
+<p>
+This page describes how to install and use OpenVSwitch (OVS). OVS is a software switch 
+implementation designed to run on Linux. More information about the software can be 
+found <a href="http://openvswitch.org/">here</a> and 
+<a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;
+f=WHY-OVS;hb=HEAD">here</a>. 
+</p>
+<h4>Contents</h4>
+<OL>
+  <LI><a href="#install">Installation</a> <br>
+  <LI><a href="#run">Running OVS</a> <br>
+</OL>
+<a name="install"></a><h3>I Installation</h3>
+<p>
+OVS can be installed either from source or from binaries. Section 1.2 covers how to 
+build from source, and section 1.3 covers install from binaries.   
+</p>
+<h4>1.1 Prerequisites</h4>
+<p>
+The node used here is a NetFPGA cube, the standard node for !SandBox9. The node was 
+imaged with ubuntu.ndz, based on Ubuntu 10.10 (Maverick). The steps have been tested 
+successfully with up to Ubuntu 12.04. 
+</p>
+<h4>1.2 Method 1: from source</h4>
+<p>
+The steps followed in this section are based on the contents of INSTALL.Linux, 
+included with the OVS tarball and also found 
+<a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;
+f=INSTALL.Linux;hb=fbca1e20e84bc34537f0a3db073195f6783fb373;
+f=INSTALL.Linux;hb=HEAD">INSTALL.Linux</a> (or 
+<a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;
+a=tree;">INSTALL.Debian</a>) (also attached at the end of this page for your 
+convenience). It should be found under the OVS root directory.     
+</p>
+<h4>1.2.1 Getting the source and dependencies</h4>
+<ol>
+  <li>If your Ubuntu install is still fresh, run 'apt-get update'. If this fails, 
+      repeat after replacing all instances of 'apt:9999' with 'us.archive.ubuntu.com' 
+      in /etc/apt/sources.list . </li>
+  <li>Install dependencies:
+<pre>
+ $ apt-get install pkg-config autoconf automake linux-libc-dev libtool
+</pre>
+  <li>Fetch the OVS tarball and untar. the latest source can be found at 
+<a href="http://openvswitch.org/download/">http://openvswitch.org/download/</a> . 
+<pre>cd ~/
+ $ wget http://openvswitch.org/releases/openvswitch-1.6.1.tar.gz
+ $ tar -xf openvswitch-1.1.1.tar.gz
+</pre>
+  <li>Build. On Debian (and its variants), Open vSwitch must be built as a kernel 
+      module. If everything is sound, installing OVS should be little more than 
+      following the steps in INSTALL.Linux.
+<pre>
+ $ cd ~/openvswitch-1.1.1
+ $ ./boot.sh
+ $ ./configure --with-l26=/lib/modules/`uname -r`/build
+ $ make
+ $ make install
+</pre>
+  <li>instantiate the kernel module:
+<pre>
+ $ insmod datapath/linux-2.6/openvswitch_mod.ko
+</pre>
+</ol>
+<h5>1.2.2 Some Sanity Checks.</h5>
+<p>If things don't go well, here are some things worth checking: </p>
+<ul>
+  <li>Check /usr/src/linux-headers-`uname -r`/.config for the following kernel configs:
+    <ul><li>CONFIG_BRIDGE as module (=m)
+        <li>NET_CLS_ACT, NET_CLS_U32, NET_SCH_INGRESS as modules or built-in (=m or 
+            =y, respectively) if policing
+        <li>CONFIG_TUN if you need tunneling Fix them as necessary. 
+    </ul>
+<P> On Debian/Wheezy, everything is dandy!
+<PRE>
+$ grep CONFIG_TUN= /boot/config-`uname -r`
+$ cat /boot/config* | grep CONFIG_BRIDGE=
+$ cat /boot/config* | grep NET_CLS_ACT
+$ cat /boot/config* | grep NET_CLS_U32
+$ cat /boot/config* | grep NET_SCH_INGRESS
+</PRE>
+</ul>
+<ul>
+  <li>The bridge module should not be loaded (e.g. should not show up when you do 
+      <tt>lsmod | grep bridge</tt>); remove it if it is loaded. If it seems to be 
+      loaded at boot time, there may be an entry for it somewhere in /etc/modules.
+</ul>
+<ul>
+  <li>/lib/modules/$(uname -r)/build should be a link to the Linux kernel header 
+      directory:
+<pre>root@node1-1:~# ls -ald /lib/modules/$(uname -r)/build
+lrwxrwxrwx 1 root root 40 2011-07-26 13:41 /lib/modules/2.6.35-30-generic/build -&gt; /usr/src/linux-headers-2.6.35-30-generic
+</pre>
+</ul>
+<p>
+This directory should contain (mostly) unbroken links. If not, repeat step 3 of the 
+prerequisites with another kernel version, e.g. by upgrading the kernel as follows:
+</p>
+<pre>
+ $ apt-get install linux-headers-2.6.35-30-generic linux-image-2.6.35-30-generic
+ $ reboot
+ $ apt-get install linux-source-2.6.35
+</pre>
+<blockquote>
+<p>
+When linux-image is installed, grub is updated so that the newest kernel is loaded 
+automatically upon next reboot. Re-installing linux-source after reboot should 
+install the proper version for the new kernel.
+</p>
+</blockquote>
+<ul>
+  <li>Modules may not be loaded properly; look for the OVS module with <tt>lsmod</tt>:
+<pre>
+root@node1-1:~/openvswitch-1.1.1# lsmod | grep open
+openvswitch_mod        68183  1 
+</pre>
+</ul>
+<ul>
+  <li>In general, <tt>dmesg</tt> can be used to check for various anomalies when 
+      things e.g. insmod fail silently.  
+</ul>
+<h4>1.3 Method 2: from binaries</h4>
+<p> Binaries are easier to set up, but lag in OVS version and support a narrower range 
+of architectures and kernel versions. </p>
+<ol>
+  <li>Install the openvswitch packages. Do not use the Ubuntu repositories since the 
+      install the incorrect versions of the package; Download the packages that match 
+      your kernel version from 
+<a href="http://openvswitch.org/releases/binaries/1.2.2.10448/">here</a>  
+(natty_amd64, definitely too old!) <br>
+For an x86_64 system, the following are needed (The package 
+<strong>openvswitch-brcompat_1.2.2.10448_amd64.deb</strong> should be added if bridge 
+compatibility is needed):
+<pre>
+openvswitch-datapath-module-2.6.38-8-server_1.2.2.10448_amd64.deb
+openvswitch-common_1.2.2.10448_amd64.deb
+openvswitch-switch_1.2.2.10448_amd64.deb
+</pre>
+Install them in that order with "dpkg -i". It will recommend a restart.
+<P> <b>Note</b> (12/28/2012): For Debian/Wheezy, useing <b>$ sudo synaptic</b>, 
+searching for <b>openvswitch</b>, <code>openvswitch-datapath-dkms</code> is the 
+<code>openvswitch-datapath-module</code>.
+  <li>The module should be loaded automatically upon installation and system reboot. 
+      You should be able to query the module: 
+<pre>root@external3:~# ovs-vsctl show
+d03e1847-34f4-4129-8821-63fff3403553
+ovs_version: "1.2.2.10448"
+</pre>
+lsmod should also show the running openvswitch_mod. 
+</ol>
+<h4>1.4 Section I References</h4>
+<p>The following links were referenced but aren't relevant overall; this is just for 
+citation.
+</p>
+<ul>
+  <li><a href="http://www.cyberciti.biz/tips/build-linux-kernel-module-against-installed-kernel-source-tree.html">http://www.cyberciti.biz/tips/build-linux-kernel-module-against-installed-kernel-source-tree.html</a>
+  <li><a href="http://forums.gentoo.org/viewtopic-t-118180-highlight-bridgeutils.html?sid=4d602c9e364130609caff99aa2a40c69">http://forums.gentoo.org/viewtopic-t-118180-highlight-bridgeutils.html?sid=4d602c9e364130609caff99aa2a40c69</a>
+  <li><a href="https://help.ubuntu.com/community/Kernel/Compile">https://help.ubuntu.com/community/Kernel/Compile</a>
+  <li><a href="http://ubuntuguide.net/ubuntu-11-04-upgrade-linux-kernel-to-2-6-39-0">http://ubuntuguide.net/ubuntu-11-04-upgrade-linux-kernel-to-2-6-39-0</a>
+</ul><hr>
+<a name="run"></a><h3>II Running OVS.</h3>
+<p>
+OVS has three main components that must be initialized:
+</p>
+<ul>
+  <li>openvswitch_mod.ko, the OVS kernel module 
+  <li>ovsdb, the database containing configurations
+  <li>ovs-vswitchd, the OVS switch daemon
+</ul>
+<p>
+The daemon configures itself using the data provided by the database; 
+<tt>ovs-vsctl</tt> is used to modify the contents of the database in order to 
+configure the OVS switch at runtime.
+</p>
+<h4>2.1 Initialization</h4>
+<ol>
+  <li>Load openVswitch kernel module
+<pre>
+ $ cd datapath/linux/
+ $ insmod openvswitch_mod.ko
+</pre>
+Note, OVS and Linux bridging may not be used at the same time. This step will fail 
+if the bridge module (bridge.ko) is loaded. You may need to reboot the node in order 
+to unload bridge.ko.<br>   
+If this is the first time OVS is being run, make am openvswitch directory in 
+/usr/local/etc/ and run <tt>ovsdb-tool</tt> to create the database file:
+<pre>
+ $ mkdir -p /usr/local/etc/openvswitch
+ $ ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+</pre>
+  <li>Start ovs-db:
+<pre>
+ $ ovsdb/ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+        --remote=db:Open_vSwitch,manager_options \
+        --pidfile --detach
+</pre>
+  <li>Initialize the database:
+<pre>
+ $ utilities/ovs-vsctl --no-wait init
+</pre>
+the <tt>--no-wait</tt> allows the database to be initialized before ovs-vswitchd is 
+invoked.
+  <li>Start ovs-vswitchd:
+<pre>
+ $ vswitchd/ovs-vswitchd unix:/usr/local/var/run/openvswitch/db.sock --pidfile --detach
+</pre>
+The 'unix:...db.sock' specifies that the process attach to the socket opened by 
+<tt>ovsdb</tt>.  
+</ol>
+<h4>2.2 Configuring OVS</h4>
+<p>Once OVS is running, virtual switches may be created and configured. In general, a 
+virtual switch is comprised of a bridge interface (usually named br<em>x</em>), and 
+one or more interfaces associated with it. A single vswitchd can control multiple 
+virtual switches with arbitrary number of ports each.     
+</p>
+<h5>2.2.1 Creating virtual switches</h5>
+<p>
+The following steps create a bridge interface (br0) and associate an interface to it:
+</p>
+<pre>
+ $ ovs-vsctl add-br br0
+ $ ovs-vsctl add-port br0 eth0
+</pre>
+<p>The same steps can be used to add VLAN interfaces:</p>
+<pre>
+ $ ovs-vsctl add-port br0 eth0.222
+</pre>
+<p>
+In this case, the ports added to the bridge interface are trunked by default. Using 
+the option tag=VLAN ID makes the interfaces behave as access ports for the VLAN ID 
+specified:
+</p>
+<pre> ovs-vsctl add-port br0 eth0.111 tag=111
+ $ ovs-vsctl add-port br0 eth0.222 tag=222
+</pre>
+<h5>2.2.2 Network configuration</h5>
+<p>
+For an OVS switch to behave as a plain vanilla switch, both bridge interface and 
+associated network interfaces must be up and configured with IP layer information. 
+The bridge interface can be configured with tools such as <tt>ifconfig</tt> (or 
+even DHCP) like any other *nic interface. Its configurations may even be stored 
+in /etc/network/interfaces for persistence:
+</p>
+<pre>
+#static bridge interface configs
+auto br0
+iface br0 inet static
+        address 192.168.1.10
+        netmask 255.255.255.0
+        network 192.168.1.0
+        broadcast 192.168.1.255
+        gateway 192.168.1.1
+#bridges can use dynamic configuration as well
+auto br1
+iface br1 inet dhcp
+</pre>
+<h4>2.3 OVS with KVM</h4>
+<p>
+OVS can be used with KVM. The instructions for setting this up can be found 
+<a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;f=INSTALL.KVM;hb=HEAD">here</a>, 
+or in the root directory of the source as INSTALL.KVM. A use case is documented in 
+this separate <a href="http://orbit-lab.org/wiki/Internal/VMHostSetup">wiki entry</a>.   
+</p>
+<h4>2.4 OVS with OpenFlow</h4>
+<p>
+OVS switches may be run as OpenFlow switches. The following steps describe how to 
+run OVS in OpenFlow mode.</p>
+<ol>
+  <li>If it has not been done already, fire up an OpenFlow controller. The procedures 
+      for this step differ according to the controller in use, and are discussed in 
+      the pages for each respective controller. <br>
+</ol>
+<p>A sanity check for this step is to test your virtual switch with the OVS built-in 
+controller, <tt>ovs-controller</tt>, which may be initialized on the same node 
+running OVS:
+</p>
+<pre>
+ovs-controller -v ptcp:6633
+</pre>
+<p>When ovs-controller is used, the controller IP is, unsurprisingly, 127.0.0.1. </p>
+<ol start="2">
+  <li>Point ovs-vswitchd to the OpenFlow controller. 
+<pre>
+ $ ovs-vsctl set-controller br0 tcp:172.16.0.14:6633
+</pre>
+</ol>
+<p>
+In this example, the OVS process is pointed to a BSN controller (kvm-big) on 
+172.16.0.14, listening on port 6633. With a properly initialized and configured 
+database, <tt>ovs-vswitchd</tt> will spit out a bunch of messages as it attempts 
+to connect to the controller. Its output should look something similar to this:
+</p>
+<pre>
+root@node1-4:/opt/openvswitch-1.2.2# vswitchd/ovs-vswitchd unix:/usr/local/var/run/openvswitch/db.sock --pidfile --detach
+Nov 07 17:37:02|00001|reconnect|INFO|unix:/usr/local/var/run/openvswitch/db.sock: connecting...
+Nov 07 17:37:02|00002|reconnect|INFO|unix:/usr/local/var/run/openvswitch/db.sock: connected
+Nov 07 17:37:02|00003|bridge|INFO|created port br0 on bridge br0
+Nov 07 17:37:02|00004|bridge|INFO|created port eth0.101 on bridge br0
+Nov 07 17:37:02|00005|bridge|INFO|created port eth0.102 on bridge br0
+Nov 07 17:37:02|00006|ofproto|INFO|using datapath ID 0000002320b91d13
+Nov 07 17:37:02|00007|ofproto|INFO|datapath ID changed to 000002972599b1ca
+Nov 07 17:37:02|00008|rconn|INFO|br0&lt;-&gt;tcp:172.16.0.14:6633: connecting...
+</pre>
+<p>
+The OpenvSwitch OpenFlow switch should be functional as soon as it finds and connects 
+to the controller. As you can see above, a DPID is chosen at random; if a random DPID 
+does not suit your needs, a DPID may be specified manually using ovs-vsctl:
+</p>
+<pre>
+ $ ovs-vsctl set bridge &lt;mybr&gt; other-config:datapath-id=&lt;datapathid&gt;
+</pre>
+<p>
+Where &lt;datapathid&gt; is a 16-digit hex value. For our network node, this becomes: 
+</p>
+<pre>
+ $ ovs-vsctl set bridge br0 other-config:datapath-id=0000009900113300
+</pre>
+<p>
+Once running, all typical things applicable to an OpenFlow switch applies to the 
+running OVS switch. 
+</p>
+<a name="OpenvSwitchTunnel"></a><h3>Open vSwitch GRE Tunnel Configuration 
+<a href="http://networkstatic.net/open-vswitch-gre-tunnel-configuration/">(Source 
+Origin)</a></h3>
+					
+<p>I updated this September 20, 2012. Also adding this PDF from a 
+instruction I did over the summer at an Internet2 conference. Download 
+the lab pdf here: <a href="http://networkstatic.net/wp-content/uploads/2012/04/openvswitch.openflow.gre_.tutorial1.pdf">openvswitch.openflow.gre.tutorial</a>. 
+Another lab building from source with video and pretty vetted is: 
+<a href="http://networkstatic.net/configuring-vxlan-and-gre-tunnels-on-openvswitch/">here</a></p>
+<p>We continue to destroy our nice clean data centers to facilitate poor application 
+architectures that do not scale in a layer 3 fashion. We continue to come up with new 
+technologies using old architectures to turn our networks into flat data centers under 
+the guise of "cloud mobility". Ok sorry, I got that out of my system.</p>
+<p>Open vSwitch is a virtual switch or virtual Ethernet bridge (VEB) becoming quite 
+popular and being backed by many vendors as the alternative to the virtual switches 
+in some of the productized hypervisors like Hyper-V, VMware etc.</p>
+<p>The OVS developers is still ironing out the control portion of OVS, with that will 
+come the scale of L3 addressing and multipathing to each Tunnel End Point (TEP). The 
+current code supports the GRE key lookup and forwarding while NVGRE and VXlan have at 
+least taken a stab at the control plane, unfortunately through multicast for broadcast 
+flooding L Next-gen ASICs will and Ethernet controllers will open the door to more 
+plates of spaghetti.</p>
+<p style="text-align: center;">
+<img src="http://184.173.232.53/~bbsali0/wp-content/uploads/2012/04/l2ol3-generic-packet.jpg" alt="" width="527" height="169"></a></p>
+<p><strong>Figure 1. </strong> Generic look at where the headers are being modified.</p>
+<p>I am still on the fence on where a TEP should reside, on a physical top of rack end 
+of row network device or reside in the hypervisor. The networking guy in me would 
+prefer that to be an S-tag in a pseudowire, but I can't help but lean towards anything 
+in software, moving forward to provide programmatic scale. We are on the path of the 
+programmatic abstraction to being migrated into our network operating systems, but 
+that is a big ship that will presumably take a while to steer.</p>
+<p>Enough gibber on to an L2GRE configuration on an Open vSwitch. I did this because I 
+was surprised to not see a GRE cookbook on the Open vSwitch cookbook page. 
+<a href="http://openvswitch.org/support/config-cookbooks/">http://openvswitch.org/support/config-cookbooks/</a></p>
+<p>BTW why the kitchen cooking trend these days? What happened to the good old how-to? 
+Not cloudy enough, that needed abstraction also. Do we change RTFM to RTFC? I blame the 
+Opscode Chef Openstack installer.</p>
+<ul>
+  <li>First install Open vSwitch on a couple of nodes. Here is a how-to</li>
+  <li>Install from packages <a href="http://networkstatic.net/2012/05/openvswitch-configure-from-packages-and-attaching-to-a-floodlight-openflow-controller/" target="_blank">http://networkstatic.net/2012/05/openvswitch-configure-from-packages-and-attaching-to-a-floodlight-openflow-controller/</a></li>
+  <li>Compile from source <a href="http://networkstatic.wordpress.com/2012/04/16/installing-and-configuring-openvswitch-on-ubuntu-12-04-precise-pangolin/">http://networkstatic.wordpress.com/2012/04/16/installing-and-configuring-openvswitch-on-ubuntu-12-04-precise-pangolin/</a></li>
+  <li>I am using KVM for the example to spin up a tap interface for the VM to use for the TEPs. Here is a how-to for that. <a href="http://networkstatic.wordpress.com/2012/02/03/installing-openvswitch-on-ubuntu-11-10-with-kvm/">http://networkstatic.wordpress.com/2012/02/03/installing-openvswitch-on-ubuntu-11-10-with-kvm/</a></li>
+</ul>
+<p><img src="http://networkstatic.net/wp-content/uploads/2012/04/gre.openvswitch.jpg" 
+alt="gre openvswitch" width="583" height="245"></a></p>
+<p><strong>Figure 2. </strong>Here is the topology of the configuration.</p>
+<p><strong>Open vSwitch 1 configuration</strong></p>
+<PRE>
+sudo ifconfig eth1 0
+sudo ovs-vsctl add-br br1
+sudo ovs-vsctl add-br br2
+sudo ovs-vsctl add-port br1 eth0
+sudo ifconfig br1 192.168.1.155 netmask 255.255.255.0
+sudo ifconfig br2 10.1.1.1 netmask 255.255.255.0
+sudo ovs-vsctl add-port br2 gre0 -- set interface gre0 type=gre options:remote_ip=192.168.1.152
+</PRE>
+<p><strong>Open vSwitch 2 configuration</strong></p>
+<p>Hypervisor 2 Configuration:</p>
+<PRE>
+sudo ifconfig eth1 0
+sudo ovs-vsctl add-br br1
+sudo ovs-vsctl add-br br2
+sudo ovs-vsctl add-port br1 eth0
+sudo ifconfig br1 192.168.1.152 netmask 255.255.255.0
+sudo ifconfig br2 10.1.1.2 netmask 255.255.255.0
+sudo ovs-vsctl add-port br2 gre0 -- set interface gre0 type=gre options:remote_ip=192.168.1.155
+</PRE>
+<h4>Add KVM tap VIF script.</h4>
+<p>/etc/ovs-ifup and /etc/ovs-ifdown</p>
+<p>#Paste in the following with br1 = equalling the bridge you made in 
+ovs-vsctl. Since we want the VM on the bridge that will get tunneled we 
+are not using br0.<br>
+Create this script for provisioning.</p>
+<PRE>
+nano /etc/ovs-ifup
+#+++++++++++++++++++++++++++++++
+#!/bin/sh
+switch='br2'
+/sbin/ifconfig $1 0.0.0.0 up
+ovs-vsctl add-port ${switch} $1
+#+++++++++++++++++++++++++++++++
+chmod +x /etc/ovs-ifup
+</PRE>
+<p>Then one for ifdown to de-provision.</p>
+<PRE>
+nano /etc/ovs-ifdown
+#+++++++++++++++++++++++++++++++
+#!/bin/sh
+switch='br2'
+/sbin/ifconfig $1 0.0.0.0 down
+ovs-vsctl del-port ${switch} $1
+#+++++++++++++++++++++++++++++++
+chmod +x /etc/ovs-ifdown
+</PRE>
+<ul>
+  <li>Now spin up your VM. I use the following to boot Ubuntu off CD. The 
+      VM instance will tap br1 (bridge1) on the 10.1.1.0/24 network.</li>
+<PRE>
+kvm -m 512 -net nic,macaddr=12:34:52:CC:CC:10 \
+   -net tap,script=/etc/ovs-ifup,downscript=/etc/ovs-ifdown \
+   -cdrom /home/brent/images/ubuntu-11.10-desktop-i386.iso &
+</PRE>
+</ul>
+<h4>Attach OpenvSwitch to a Floodlight openFlow Controller</h4>
+<p>Hypervisor 1</p>
+<PRE>
+#Install the Floodlight Openflow Controller
+git clone git://github.com/floodlight/floodlight.git
+cd floodlight
+ant
+java -jar target/floodlight.jar
+#Add OVS bridges
+sudo ovs-vsctl set-controller br1 tcp:192.168.1.155:6633
+sudo ovs-vsctl set-controller br2 tcp:192.168.1.155:6633
+</PRE>
+<p>Hypervisor 2</p>
+<PRE>
+#Install the Floodlight Openflow Controller
+git clone git://github.com/floodlight/floodlight.git
+cd floodlight
+ant
+java -jar target/floodlight.jar
+#Add OVS bridges
+sudo ovs-vsctl set-controller br1 tcp:192.168.1.152:6633
+sudo ovs-vsctl set-controller br2 tcp:192.168.1.152:6633
+</PRE>
+<p>Some commands to view the configuration and ports:</p>
+<PRE>
+ubuntu-12:brent# ovs-appctl fdb/show bra (generate traffic ie ping as table age out after 300 seconds)
+ port  VLAN  MAC                Age
+    9     0  12:74:52:cc:cc:10    0 (VM 1)
+   12     0  12:34:52:cc:cc:10    0 (VM 2)
+</PRE>
+<ul>
+  <li>More on how to get KVM integrated here: <a href="http://networkstatic.wordpress.com/2012/02/03/installing-openvswitch-on-ubuntu-11-10-with-kvm/">http://networkstatic.wordpress.com/2012/02/03/installing-openvswitch-on-ubuntu-11-10-with-kvm/</a></li>
+  <li>We now should be able to ping from VM1 -&gt; VM2 and see the mac address table flood and learn one another's ARP entries.</li>
+</ul>
+<div>
+<p style="text-align: center;">
+<img src="http://184.173.232.53/~bbsali0/wp-content/uploads/2012/04/1-bridge.jpg" 
+alt="openvswitch vlan" width="308" height="294"></a></p>
+<p><strong>Figure 2. </strong>Now we have flattened out these two 
+endpoints whether in the same data center or across the city/state that 
+can be used for a live workload migration (e.g. vMotion).</p>
+</div>
+<div>
+<p style="text-align: center;">
+<img src="http://184.173.232.53/~bbsali0/wp-content/uploads/2012/04/gre-cloud.jpg" 
+alt="openvswitch gre tunnels" width="448" height="332"></a></p>
+<p><strong>Figure 3. </strong>There is some scale to where this can go, 
+for either provisioning elastic compute nodes or migrating, live 
+migrations or just fixing broken applications. MAGIC! lol</p>
+</div>
+					
+<a name="RiseSoftSwitching"></a><h3>The Rise of Soft Switching</a></h3>
+<OL>
+  <LI><a href="#Introduction">Introduction and Background</a>&nbsp; <a href="http://networkheresy.com/2011/06/14/the-rise-of-soft-switching-part-i-introduction-and-background/"
+      target="newwindow">(Source Origin)</a>
+  <LI><a href="#Awesome">Soft Switching is Awesome</a>&nbsp; <a href="http://networkheresy.com/2011/06/25/the-rise-of-soft-switching-part-ii-soft-switching-is-awesome-tm/"
+      target="newwindow">(Source Origin)</a>
+  <LI><a href="#Perspective">A Perspective on Hardware Offload</a>&nbsp; <a href="http://networkheresy.com/2011/07/10/the-rise-of-soft-switching-part-3-a-perspective-on-hardware-offload/"
+      target="newwindow">(Source Origin)</a>
+  <LI><a href="#CommentsHardware"> Comments on the Hardware Supply Chain</a>&nbsp; <a href="http://networkheresy.com/2011/09/29/the-rise-of-soft-switching-part-iv-comments-on-the-hardware-supply-chain/"
+      target="newwindow">(Source Origin)</a>
+  <LI><a href="#Responses">Responses and clarifications</a>&nbsp; <a href="http://networkheresy.com/2011/07/10/the-rise-of-soft-switching-part-2-5-responses-and-clarifications/"
+      target="newwindow">(Source Origin)</a>
+</OL>
+<a name="Introduction"></a><h4>Introduction and Background</h4>
+<small><b>Posted:</b> June 14, 2011 | <b>Author:</b> 
+<a href="http://networkheresy.com/author/networkheresy/">networkheresy</a> | 
+<b>Filed under:</b> 
+<a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a>, <a href="http://networkheresy.com/category/open-vswitch/">Open 
+vSwitch</a> | <a href="http://networkheresy.com/2011/06/14/the-rise-of-soft-switching-part-i-introduction-and-background/#comments"><strong>8</strong> Comments</a></small>
+<P> <a href="http://networkheresy.files.wordpress.com/2011/06/screen-shot-2011-06-13-at-10-43-16-pm.png"><img src="http://networkheresy.files.wordpress.com/2011/06/screen-shot-2011-06-13-at-10-43-16-pm.png?w=1040" alt=""></a>
+<blockquote><p><em>[This series is written by Jesse Gross, Andrew Lambeth, Ben Pfaff, 
+and Martin Casado. Ben is an early and continuing contributor to the design and 
+implementation of OpenFlow. He's also a primary developer of Open vSwitch. Jesse is 
+also a lead developer of Open vSwitch and is responsible for the kernel work and 
+datapath. Andrew has been virtualizing networking for long enough to have coined the 
+term "vswitch", and led the vDS distributed switching project at VMware.  All authors 
+currently work at Nicira.]</em></p></blockquote>
+<p>How many times have you been involved in the following conversation?</p>
+<p>NIC vendor: "<em>You should handle VM networking at the NIC. It has direct access 
+to server memory and can use a real switching chip with a TCAM to do fast lookups. 
+Much faster than an x86. Clearly the NIC is the correct place to do inter-VM 
+networking.</em>"</p>
+<p>Switch vendor: "<em>Nonsense! You should handle VM networking at the switch. Just 
+slap a tag on it, shunt it out, and let the real men (and women) do the switching and 
+routing. Not only do we have bigger TCAMs, it's what we do for a living. You trust 
+the rest of your network to Crisco, so trust your inter-VM traffic too. The switch is 
+the correct place to do inter-VM networking.</em>"</p>
+<p>Hypervisor vendor: "Y<em>ou guys are both wrong, networking should be done in 
+software in the hypervisor. Software is flexible, efficient and the hypervisor 
+already has rich knowledge of VM properties such as addressing and motion events. The 
+hypervisor is the correct place to do inter-VM networking.</em>"</p>
+<p>I doubt anyone familiar with these arguments is fooled into thinking they are 
+anything other than what they are, poorly cloaked marketing pitches charading as a 
+technical discussion. This topic in particular is a focus of a lot of marketing noise. 
+Why? Probably because of its strategic importance. The access layer to the network 
+hasn't opened for over a decade and with virtualization, there is the opportunity to 
+shift control of the network from the core into the edge. This has to be making the 
+traditional hardware vendors pretty nervous.</p>
+<p>Fortunately, while the market blather decries this as a nuanced issue, we believe 
+the technical discussion is actually fairly straightforward.</p>
+<p>And that is the goal of this series of posts, to explore the technical implications 
+of doing virtual edge networking in software vs. various configurations of hardware 
+(Passthrough, tagging, switching in the NIC, etc.) The current plan is to split the 
+posts into three parts. First, we'll provide an overview of the proposed solution 
+space. In the next post, we'll focus on soft switching in particular, and finally 
+we'll describe how we would like to see the hardware ecosystem evolve to better 
+support networking at the virtual edge.</p>
+<p>Not to spoil the journey, but <strong>the high-order take-away of this series</strong>
+ is that for almost any deployment environment, soft switching is the right approach. 
+And by "right" we mean flexible, powerful, economic, and fast. Really fast. Modern 
+vswitches (that don't suck) can handle 1G at less than 20% of a core, and 10G at about 
+a core.  We're going to discuss this at length in the next post.</p>
+<p>Before we get started, it's probably worth talking to the bias of the authors. We're 
+all software guys, so we have a natural preference for soft solutions. That said, we're 
+also all involved in Open vSwitch which is built to support both hardware (NIC and first 
+hop switch) and software forwarding models. In fact, some of the more important 
+deployments we're involved in use Open vSwitch to drive switching hardware directly.</p>
+<p>Alright, on to the focus of this post,<strong> background.</strong></p>
+<p>At it's most basic, networking at the virtual edge simply refers to how forwarding 
+and policy decisions are applied to VM traffic. Since VMs may be co-resident on a 
+server, this means either doing the networking in software, or sending it to hardware 
+to make the decision (or a hybrid of the two) and then back.</p>
+<p>We'll cover some of the more commonly discussed proposals for doing this here:</p>
+<p><strong>Tagging + Hairpinning: </strong>Tagging with hairpinning is a method for 
+getting inter-VM traffic off of a server so that the first hop forwarding decisions 
+can be enforced by the access hardware switch. Predictably, this approach is strongly 
+used/backed by HP ProCurve and Cisco.</p>
+<a href="http://networkheresy.files.wordpress.com/2011/06/vepa.png">
+<img src="http://networkheresy.files.wordpress.com/2011/06/vepa.png?w=590"></a>
+<p>The idea is simple. When a VM sends a packet, it gets a tag unique to the sending 
+VM, and then the packet is sent to the first hop switch. The switch does 
+forwarding/policy lookup on the packet, and if the next hop is another VM resident 
+on the same server, the packet is sent back to the server (hairpinned) to be 
+delivered to the VM. The tagging can be done by the vswitch in the hypervisor, 
+or by the NIC when using passthrough (discussed below).</p>
+<p>The rational for this approach is that special purpose switching hardware can 
+perform packet classification (forwarding and policy decisions) faster than software. 
+In the next post, we'll discuss whether this is an appreciable win over software 
+classification at the edge (hint, not really).</p>
+<p>The very obvious downsides to hairpinning are twofold. First, the bisectional 
+bandwidth for inter-VM communication is limited by the first hop link. And it 
+consumes bandwidth which could otherwise be used exclusively for communication 
+between VMs and the outside world.</p>
+<p>Perhaps not so obvious is that paying DMA and transmission costs for inter-VM 
+communication increases latency. Also, by shunting the switching decision off to 
+a remote device, you're throwing away a goldmine of rich contextual information 
+about the state of the VM's doing the sending and receiving, as well as (potentially) 
+the applications within those VMs.</p>
+<p>Regarding the tags themselves, with VNTag, Cisco proposes a new field in the 
+Ethernet header (thereby changing the Ethernet framing format, and thereby requiring 
+new hardware, ... ). And HP, a primary driver behind VEPA, decided to use the VLAN 
+tag (and or source MAC) which any modern switching chipset can handle. In either 
+case, a tag is just bits, so whether it is a new tag (requiring a new ASIC), or the 
+use of an existing tag (VLAN and MPLS are commonly suggested candidates), the function 
+is the same.</p>
+<p><strong>Blind Trust MAC Authentication: </strong>Another approach for networking 
+at the virtual edge is to rely on MAC addresses to identify VMs. It appears that 
+some of the products that do this are repurposed NAC solutions being pushed into the 
+virtualization market. Yuck.</p>
+<p>In any case, assuming there is no point of presence on the hypervisor, there are 
+a ton of problems with this approach. They rarely provide any means to manage policy 
+of inter-VM traffic, they can be easily fooled through source spoofing, and often 
+they rely on hypervisor specific implementation tricks to determine move events (like 
+looking for VMWare RARPs). Double yuck. This is the last we'll mention of this 
+approach as it really isn't a valid solution to the problem.</p>
+<p><strong>Switching in the NIC:</strong> Another common proposal is to do all 
+inter-VM networking in the NIC. The rational is twofold, if passthrough is being 
+used (discussed further below) the hypervisor is bypassed, so something needs to 
+do the classification. And secondly, packet classification is faster in hardware 
+than software.</p>
+<p>However, switching within the NIC hasn't caught on (and we don't believe it will 
+to any significant degree). Using passthrough obviates many advantages of 
+virtualization (as we describe below), and DMA'ing to the NIC is not free. Further, 
+switching chipsets on NICs to date have not been nearly as powerful as those used in 
+standard switching gear. The only clear advantage to doing switching in the NIC is 
+the avoidance of hair-pinning (and perhaps shared memory with the CPU via QPI).</p>
+<p><strong>[note: the original version of this article conflated SR-IOV and 
+passthrough which is incorrect.  While it is often used in conjunction with 
+passthrough, SR-IOV itself is not a passthrough technology]</strong></p>
+<p><strong></strong><strong>Where does Passthrough fit in all of this?</strong>
+ Passthrough is a method of bypassing the hypervisor so that the packet is DMA'd 
+from the guest directly to the NIC for forwarding (and vice versa). This can be 
+used in conjunction with NIC-based switching as well as tagging and enforcement in 
+the access switch. Passthrough basicaly de-virtualizes the network by removing the 
+layer of software indirection provided by the hypervisor.</p>
+<p>While the argument for passthrough is one of saving CPU, doing so is a complete 
+anathema to many hypervisor developers (and their customers!) due to the loss of the 
+software interposition layer. With passthrough, you generally loose the following: 
+memory overcommit, page sharing, live migration, fault tolerance (live standby), live 
+snapshots, the ability to interpose on the IO with the flexibility of software on x86, 
+and device driver independence.</p>
+<p>Regarding this last issue (hardware decoupling), with passthrough, if you buy new 
+hardware, prepare to enjoy hours of upgrading/changing device drivers in hundreds of 
+VMs. Or keep your old HW and enjoy updating the drivers anyway because NICs have 
+hardware errata. Also enjoy lots of fun trying to restore from a disk snapshot or 
+deploy from a template that has the old/wrong device driver in it.</p>
+<p>To be fair, VMware and others have been investing large amounts of engineering 
+resources into address this by performing unnatural acts like injecting device 
+driver code into guests. But to date, the solutions appear to be intrusive and 
+proprietary workarounds limited to a small subset of the available hardware. More 
+general solutions, such as NPA, have no declared release vehicle, and from the Linux 
+kernel mailing list appear to have died (or perhaps put on hold).</p>
+<p>This all said, there actually are some reasonable (albeit fringe) use cases for 
+Passthrough, such as throughput sensitive network appliances or single packet latency 
+messaging applications. We'll talk to these more in a later post.</p>
+<p><strong>Soft Switching:</strong> Soft switching is where networking at the virtual 
+edge is done in software withing the hypervisor vswitch, and without offloading the 
+decision to special purpose forwarding hardware. This is far and away the most popular 
+approach in use today, and the singular focus of our next post in this series, so we'll 
+leave it at that for now.</p>
+<p><strong>Is that all?</strong></p>
+<p>No. This isn't an exhaustive overview of all available approaches (far from it). 
+Rather, it is an opinion-soaked survey of what has the most industry noise. In the 
+next post, we will do a deep dive into soft switching, focusing in particular on the 
+performance implications (latency, throughput, cpu overhead) in comparison to the 
+approaches mentioned above.</p>
+<p>Until then ...</p>
+<a name="Awesome"></a><h4>Soft Switching is Awesome </h4>
+<small class="post-meta"><b>Posted:</b> June 25, 2011 | <b>Author:</b> 
+<a href="http://networkheresy.com/author/networkheresy/">networkheresy</a> | 
+<b>Filed under:</b> 
+<a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a>, <a href="http://networkheresy.com/category/open-vswitch/">Open 
+vSwitch</a> | 
+<a href="http://networkheresy.com/2011/06/25/the-rise-of-soft-switching-part-ii-soft-switching-is-awesome-tm/#comments"><strong>10</strong> Comments  </a></small>
+<P><img class="alignright size-full wp-image-125" title="heaven" src="http://networkheresy.files.wordpress.com/2011/06/screen-shot-2011-06-25-at-8-25-57-am.png?w=590" alt="">
+<blockquote><p>[This
+ series is written by Jesse Gross, Andrew Lambeth, Ben Pfaff, and Martin  Casado. Ben 
+is an early and continuing contributor to the design and implementation of OpenFlow. 
+He's also a primary developer of Open vSwitch. Jesse is also a lead developer of Open 
+vSwitch and is responsible for the kernel work and datapath. Andrew has been 
+virtualizing networking for long enough to have coined the term "vswitch", and led 
+the vDS distributed switching project at VMware. All authors currently work at 
+Nicira.]</p></blockquote>
+<p>This is the second post in our series on soft switching. In the first part 
+(<a href="#Introduction">found here</a>), we lightly covered a subset of the technical 
+landscape around networking at the virtual edge. This included tagging and offloading 
+decisions to the access switch, switching inter-VM traffic in the NIC, as well as NIC 
+passthrough to the guest VM.</p>
+<p>A brief synopsis of the discussion is as follows. Both tagging and passthrough are 
+designed to save end-host CPU by punting the packet classification problem to 
+specialized forwarding hardware either on the NIC or first hop switch, and to avoid 
+the overhead of switching out of the guest to the hypervisor to access the hardware. 
+However, tagging adds inter-VM latency and reduces inter-VM bisectional bandwidth. 
+Passthrough also increases inter-VM latency, and effectively de-virtualizes the network 
+thereby greatly limiting the flexibility provided by the hypervisor. We also mentioned 
+that switching in widely available NICs today is impractical due to severe limitations 
+in the on-board switching chips.</p>
+<p>For the purposes of the following discussion, we are going to reduce the previous 
+discussion to the following: <em>The performance arguments in favor of an approach 
+like passthrough + tagging (with enforcement in the first hope switch) is that latency
+ is reduced to the wire (albeit marginally) and packet classification from a proper 
+switching chip will noticeably outperform x86.</em></p>
+<p>The goal of this post is to explain why soft switching kicks ass. Initially, we'll 
+debunk some of the FUD around performance issues with it, and then try and quantify 
+the resource/performance tradeoffs of soft switching vis a vis hardware-based 
+approaches. As we'll argue, the question is not "how fast" is soft switching (it 
+is almost certainly fast enough), but rather, "how much cpu am I willing to burn", 
+or perhaps "should I heat the room with teal or black colored boxes"?</p>
+<p>So with that ...</p>
+<p><strong>Why soft switching is awesome:</strong></p>
+<p>So, what is soft switching? Exactly what it sounds like. Instead of passing the 
+packet off to a special purpose hardware device, the packet transitions from the 
+Guest VM into the hypervisor which performs the forwarding decision in software (read, 
+x86). Note that while a soft switch can technically be used for tagging, for the 
+purposes of this discussion we'll assume that it's doing all of the  first-hop 
+switching.</p>
+<p>The benefits of this approach are obvious. You get the flexibility and upgrade 
+cycle of software, and compared to passthrough, you keep all of the benefits of 
+virtualization (memory overcommit, page sharing, etc.). Also, soft switching tends 
+to be much better integrated with the virtual environment. There is a tremendous 
+amount of context that can be gleaned by being co-resident with the VMs, such as which 
+MAC and IP addresses are assigned locally, VM resource use and demands, or which 
+multicast addresses are being listened to. This information can be used to pre-populate 
+tables, optimize QoS rules, prune multicast trees, etc.</p>
+<p>Another benefit is simple resource efficiency, you already bought the damn server, 
+so if you have excess compute capacity why buy specialized hardware for something you 
+can do on the end host?  Or put another way, after you provision some amount of 
+hardware resources to handle the switching work, any of those resources that are left 
+over are always available to do real work running an app instead of being wasted 
+(which is usually a lot since you have to provision for peaks).</p>
+<p>Of course, nothing comes for free. And there is a perennial skepticism around the 
+performance of software when compared to specialized hardware. So we'll take some 
+time to focus on that.</p>
+<p>First, <strong>what are the latency costs of soft switching?</strong></p>
+<p>With soft switching, VM to VM communication effectively reduces to a memcpy() (you 
+can also do page flipping which has the same order of overhead). This is as fast as 
+one can expect to achieve on a modern architecture. Copying data between VMs through 
+a shared L2 cache on a multicore CPU, or even if you are unlucky enough to have to go 
+to main memory, is certainly faster than doing a DMA over the PCI bus. So for VM to 
+VM communication, soft switching will have the lowest latency, presuming you can do 
+the lookup function sufficiently quickly (more on that below).</p>
+<p>Sending traffic from the guest to the wire is only marginally more expensive due 
+to the overhead of a domain transfer (e.g. flushing the TLB) and copying security 
+sensitive information (such as headers). In Xen (for example) guest transmit 
+(DomU-to-Dom0) operates by mapping pages that were allocated by the guest into the
+ hypervisor, which then get DMA'd with no copy required (with the exception of 
+headers, which are copied for security purposes so the guest can't change them after 
+the hypervisor has made a decision). In the other direction, the guest allocates pages 
+and puts them in its rx ring, similar to real hardware. These then get shared with 
+the hypervisor via remapping. When receiving a packet the hypervisor copies the data 
+into the guest buffers. (note: VMware does almost the same thing. However, there is 
+no remapping because the vswitch runs in the vmkernel and all physical pages are 
+already mapped and the vmkernel has access to the guest MMU mappings.)</p>
+<p>So, while there is comparatively more overhead than a pure hardware approach (due 
+to copying headers and the overhead of the domain transfer), it is in the order of 
+microseconds and dwarfed by other aspects of a virtualized system like memory 
+overcommit. Or more to the point, only in extreme latency sensitive environments 
+does this matter (the overhead is completely lost in the noise of other hypervisor 
+overhead), in which case the only deployment approach that makes sense is to 
+effectively pin compute to dedicated hardware greatly diminishing the utility of 
+using virtualization in the first place.</p>
+<p><strong>What about throughput?</strong></p>
+<p>Modern soft switches that don't suck are able to saturate a 10G link from a guest 
+to the wire with less than a core (assuming MTU size packets). They are also able to 
+saturate a 1G link with less than 20% of a core. In the case of Open vSwitch, these 
+numbers include full packet lookup over L2, L3 and L4 headers.</p>
+<p>While these are numbers commonly seen in practice, theoretically, throughput is 
+affected by the overhead of the forwarding decision - more complex lookups can take 
+more time thus reducing total throughput.</p>
+<p>The forwarding decision involves taking the header fields of each packet and 
+checking them against the forwarding rule set (L2, L3, ACLs, etc.) to determine how 
+to handle the packet. This general class of problem is termed "packet classification" 
+and is worth taking a closer look at.</p>
+<p><strong>Soft Packet Classification:</strong></p>
+<p>One of the primary arguments in favor of offloading virtual edge switching to 
+hardware is that a TCAM can do a lookup faster than x86. This is unequivocally true, 
+TCAMs have lots and lots of gates (and are commensurately costly and have high power 
+demands) so that they can do lookups of many rules in parallel. A general CPU cannot 
+match the lookup capacity of a TCAM in a degenerate case.</p>
+<p>However, software packet classification has come a long way. Under realistic 
+workloads and rule sets that are found in virtualized environments (e.g. mult-tenant 
+isolation with a sane security policy), soft switching can handle lookups at line 
+rates with the resource usage mentioned above (less than a core for 10G) and so does 
+not add appreciable overhead.</p>
+<p>How is this achieved? For Open vSwitch, which looks at many more headers than will 
+fit in a standard TCAM, the common case lookup reduces to the overhead of a hash (due 
+to extensive use of flow caching) and can achieve the same throughput as normal soft 
+forwarding. We have run Open vSwitch with hundreds of thousands of forwarding rules 
+and still achieved similar performance numbers to those described above.</p>
+<p>Flow setup, on the other hand, is marginally more expensive since it cannot 
+benefit from the caching. Performance of the packet classifier in Open vSwitch relies 
+on our observation that flow tables used in practice (in the environments we're 
+familiar with) tend to have only a handful of unique sets of wildcarded fields. 
+Each of these observed wildcard sets has its own hash table, hashed on the basis of 
+the fields that are not wildcarded. Therefore classifying a packet requires a O(1) 
+lookup in each hash table and selecting the highest-priority match. Lookup performance 
+is therefore linear in the number of unique wildcard sets in the flow table. Since 
+this tends to be small, classifier overhead tends to be negligible.</p>
+<p>We realize that this is all a bit hand-wavy and needs to be backed up with hard 
+performance results. Because soft classification is such an important (and somewhat 
+nuanced) issue, we will dedicate a future post to it.</p>
+<p><strong>"Yeah, this is all great. But when is soft switching not a good 
+fit?"</strong></p>
+<p>While we would contend that soft switching is good for most deployment 
+environments, there are instances in which passthrough or tagging is useful.</p>
+<p>In our experience, the mainstay argument for passthrough is reduced latency to 
+the wire. So while average latency is probably ok, specialized apps that have very 
+small request/response type workloads can be impacted by the latency of soft 
+switching.</p>
+<p>Another common use case for passthrough is a local appliance VM that acts as an 
+inline device between normal application VMs and the network. Such an appliance VM 
+has no need of most of the mobility or other hypervisor provided goodness that is 
+sacrificed with passthrough but it does have a need to process traffic with as 
+ little overhead as possible.</p>
+<p>Passthrough is also useful for providing the guest with access to hardware that 
+is not exposed by the emulated NIC (for example, some NICs have IPsec offload but 
+that is not generally exposed).</p>
+<p>Of course, if you do tagging to a physical switch you get access to the all of 
+the advanced features that have been developed over time, all exposed through a CLI 
+that people are familiar with (this is clearly less true with Cisco's Nexus 1k). In 
+general, this line of argument has more to do with the immaturity of software 
+switches than any real fundamental limitation. But it's a reasonable use case from 
+an operations perspective.</p>
+<p>The final, and probably most widely used (albeit least talked about) use case for 
+passthrough is drag racing. Hypervisor vendors need to make sure that they can all 
+post the absolute highest, break-neck performance numbers for cross-hypervisor 
+performance comparisons (yup, sleazy), regardless of how much fine print is required 
+to qualify them. Why else would any sane vendor of the most valuable piece of real 
+estate in the network (the last inch) cede it to a NIC vendor? And of course the NIC 
+vendors that are lucky enough to be blessed by a hypervisor into passthrough Valhalla 
+can drag race with each other with all their os-specific hacks again.</p>
+<p><strong>"What am I supposed to conclude from all of this?"</strong></p>
+<p>Hopefully we've made our opinion clear: <em>soft switching kicks mucho ass</em>. 
+There is good reason that it is far and away the dominant technology used for 
+switching at the virtual edge. To distill the argument even further, our calculus is 
+simple ...</p> 
+<blockquote><p>Software flexibility + 1 core x86 + 10G networking + cheap gear + other 
+cool shit <strong>&gt;</strong><strong><br> </strong>   saving a core of x86 + costly 
+specialized hardware + unlikely to be realized benefit of doing classification in the 
+access switch.</p></blockquote>
+<p>More seriously, while we make the case for soft switching, we still believe there 
+is ample room for hardware acceleration. However, rather than just shipping off 
+packets to a hardware device, we believe that stateless offload in the NIC is a better 
+approach. In the next post in this series, we will describe how we think the hardware 
+ecosystem should evolve to aid the virtual networking problem at the edge.</p>
+<a name="Perspective"></a><h4>A Perspective on Hardware Offload</h4>
+<small class="post-meta"><b>Posted:</b> July 10, 2011  | <b>Author:</b> 
+<a href="http://networkheresy.com/author/networkheresy/">networkheresy</a>  |  
+<b>Filed under:</b> 
+<a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a> | <a href="http://networkheresy.com/2011/07/10/the-rise-of-soft-switching-part-3-a-perspective-on-hardware-offload/#comments"><strong>3</strong> Comments</a> </small>
+<P><img src="http://networkheresy.files.wordpress.com/2011/07/delightc.jpg?w=271&h=300" 
+alt="" height="300" width="271">
+<blockquote><p>[This series is written by Jesse Gross, Andrew Lambeth, Ben Pfaff, and 
+Martin Casado. Ben is an early and continuing contributor to the design and 
+implementation of OpenFlow. He's also a primary developer of Open vSwitch. Jesse is 
+also a lead developer of Open vSwitch and is responsible for the kernel work and 
+datapath. Andrew has been virtualizing networking for long enough to have coined the 
+term "vswitch", and led the vDS distributed switching project at VMware. All 
+authors currently work at Nicira.]</p></blockquote>
+<p>This is our third (and final) post on soft switching. The previous 
+<a href="#Introduction">two</a> <a  href="#Awesome">posts</a> described various 
+hardware edge switching technologies (tagging + hairpinning, offloading to the NIC, 
+passthrough) as well as soft switching, and made the argument that in most cases, soft 
+switching is the way to go.</p>
+<p>We have received a bunch of e-mails (and a few comments) trying to make the case 
+for passthrough as implemented by certain vendors. While there are a few defendable 
+uses for it (which we try to outline in part 2), in the general case, we still 
+maintain that passthrough is a net loss.</p>
+<p>Of course, "net loss" is a fairly qualitative statement. So lets try this: if you 
+are one of the handful of folks that have a special use case like HPC and trading and 
+can live without many of the benefits of modern virtualized system, the passthrough 
+is fine. Our preference is clearly to use mass produced NICs from multiple vendors 
+(available in quantity today), and we prefer the benefits of software flexibility and 
+innovation speeds.</p>
+<p>However, while we've been arguing that doing full offload of switching into special 
+purpose ASICs is "no good", it's only a partial representation of our position. We do 
+feel that there is room for hardware acceleration in edge switching that also 
+preserves the benefits and flexibility of software.</p>
+<p>And that's the topic for this final post. We will be discussing our view of how 
+the hardware ecosystem should evolve to enable offload of virtual switching while 
+still maintain many of the benefits of software.</p>
+<p>The basic idea is to use NICs that contain targeted offloads that are performed 
+under the direction of software, not a wholesale abdication to hardware. As a 
+comparison point with another offload strategy, it should look more like TSO and 
+less like TOE.</p>
+<p>Regarding this final point (TSO vs. TOE), there may be a history lesson in the 
+adoption and use of those approaches to offload. If the analogy holds, one could 
+conclude that implementing stateful offloading and complex processing in I/O devices 
+is less viable for adoption than more targeted and stateless approaches.</p>
+<p>So with that, we'll start by discussing how a more limited offload might look 
+in NICs.</p>
+<p><strong>Offloading Receive</strong></p>
+<p>For soft switching, receive generally incurs the most overhead (due to a buffer 
+copy and the difficulty in optimizing polling), and so is a good initial candidate 
+for adding some specialized hardware muscle. Unfortunately however, receive is 
+complicated to offload because you have no knowledge and context for the packet until 
+you start to process it in the hypervisor, at which point it is too late.</p>
+<p><strong>Improved LRO Support:</strong> One place to start is simply by using 
+<a href="http://en.wikipedia.org/wiki/Large_receive_offload">LRO</a> in more places. 
+This doesn't require putting any policy into the NIC, so by having the hardware manage 
+coalescing, you can maintain complete control while reducing the number of packets 
+(which overhead is generally proportional to). LRO has some limitations on the 
+scenarios that you can use it in, which means that Linux based hypervisors never use 
+it, even on NICs that have support. It would be fairly easy for NIC vendors to 
+eliminate these issues.</p>
+<p><strong>Improved MultiQueue Support: </strong> The other direction that some NICs 
+have been moving in is adding the ability to classify on various headers and use the 
+result to direct packets to a particular queue. These rules can be managed by software 
+in the hypervisor.   Rules that can't be matched either because the table isn't 
+sufficiently large or because the hardware can't extract those fields can be sent to 
+a default queue to be handled by software.</p>
+<p>Unlike most physical switches, a server "management" CPU is powerful with a good 
+connection to the NIC so there isn't a huge performance hit by going to software. 
+Packets delivered to a particular queue can actually be allocated from guest memory 
+buffers and delivered on the CPU where the application in the VM consumes them, so 
+there are no issues with cache line bouncing. The hypervisor is still involved in 
+packet processing so the latency is not exactly as efficient as passthrough but you 
+don't tie the VM directly to the NIC. This means no need for hardware-specific 
+drivers in the guest, a smooth fallback from hardware to software, live migration, 
+etc.</p>
+<p>One concrete enhancement to multiqueu support that would be useful is just being 
+able to match on more fields. Right now MAC/vlan is pretty common, and Intel NICs 
+also provide matching on a 5 tuple. Obviously once tunnel offloads come into the 
+picture, you'll also want to match on both the inner and outer headers for steering. 
+Also, if you're going to directly put packet data in guest memory buffers then you 
+need to do security processing on the NIC and therefore want to match on headers that 
+are necessary for that (within reason, we wouldn't suggest doing stateful firewalling 
+on the NIC for example; that's where the software fallback is important).</p>
+<p><strong>Offloading Transmit</strong></p>
+<p>For offloading transmit, a major feature that can be provided by the NICs are 
+various forms of encapsulation which is used heavily in virtual networking solutions. 
+Today, NICs provide VLAN tagging assist. Having this extend to other forms of 
+tunneling (mpls, L2 in L3, etc.) would be an enormous win. However, to do so, 
+segmentation/fragmentation optimizations (like TSO) would still have to be supported 
+for the upper layer protocol.</p>
+<p>For multique, support for QoS could be useful for transmit. If you're trying to 
+implement any policy more complex than round robin in software, you quickly get 
+contention on the QoS data structures. Unfortunately, this gets pretty complicated 
+quickly because QoS itself is complicated and there are a lot of possible algorithms 
+so it's hard to get consistent results. We're not certain how practical a hardware 
+solution is due to the complexity, but the upside is potential quite large if QoS is 
+important.</p>
+<p>Another area which NICs may help on transmit offload is packet replication. This is 
+only important if two conditions are met: (a) the physical fabric does not support 
+replication (or the operator is to much of a wuss to turn in on) (b) the application 
+requires high performance broadcast/multicast to a reasonable fan-out.</p>
+<p><strong>What does this leave for physical switches?</strong></p>
+<p>For switches, this picture of the future - where most functionality is implemented 
+in software with some stateless offload in the NIC - would mean two things.</p>
+<p>First, if functionality is going to be pulled into the server, then the physical 
+networking problem reduces to building a good fabric (without trying to overload the 
+functionality to support virtualization primitives). Good fabrics generally mean no 
+oversubscription (e.g. lots of multipathing) and quick convergence on failure. In our 
+experience, standard L3 with ECMP can be used to build a fantastic fabric using 
+fat-tree or spine topologies.</p>
+<p>Regardless, whatever the approach (e.g. L3, TRILL, or something proprietary), the 
+goal is no longer overloading the physical network with the need to maintain switching 
+at the virtual layer, but rather providing a robust backplane for the vswitches 
+to use.</p>
+<p>Second, soft switching is only practical for for worklaods running on a hypervisor. 
+However, many virtual deployments require integration with legacy bare metal workloads 
+(like that old oracle server which you're unlikely to ever virtualize).</p>
+<p>In this case, it would be useful to have hardware switches that expose an interface 
+(like OpenFlow) which would allow them to interoperate with soft switches running on 
+lots and lots of hypervisors. It's likely that this can be achieved through fairly 
+basic support for encap/decap and perhaps some TCAM programmability  for QoS and 
+filtering.</p>
+<p><em><strong>Fait accompli?</strong></em></p>
+<p>Far from it. These musings are mostly a rough sketch built around an intuition of 
+how the ecosystem should evolve to support the flexibility of virtualization and 
+software and the switching speeds and cost/performance of specialized forwarding 
+hardware.</p>
+<p>The high-level points are that most virtual edge networking functions should be 
+implemented in software with targeted, and (probably) stateless hardware offload 
+that doesn't obviate software flexibility or control. The physical network should 
+focus on becoming an awesome, scalable fabric and providing some method of integrating 
+legacy applications.</p>
+<p>The exact convergence on feature set of each of these components is anyones guess, 
+and can only be bred out of solid engineering, deployment, and experience.</p>
+<a name="CommentsHardware"></a><h4>Comments on the Hardware Supply Chain</h4>
+<small class="post-meta"><b>Posted:</b> September 29, 2011 | <b>Author:</b> 
+<a href="http://networkheresy.com/author/networkheresy/">networkheresy</a> |  
+<b>Filed under:</b> 
+<a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a>, <a href="http://networkheresy.com/category/open-vswitch/">Open 
+vSwitch</a> | 
+<a href="http://networkheresy.com/2011/09/29/the-rise-of-soft-switching-part-iv-comments-on-the-hardware-supply-chain/#comments"><strong>1</strong> Comment  </a> </small>
+<blockquote><p>[This post is written by Alex Bachmutsky and Martin Casado. Alex is a 
+Distinguished Engineer at Ericsson in Silicon Valley, driving system architecture 
+aspects of the company's next generation platform. He is the author of the book 
+"Platform Design for Telecommunication Gateways," and co-authored "WiMAX Evolution: 
+Emerging Technologies and Applications".]</p></blockquote>
+<p>This is yet another (unplanned) addendum to the soft switching series.</p>
+<p>Our previous posts were arguing that for virtual edge switching, using the servers 
+compute was the best point in the design space given the current hardware landscape. 
+The basic argument was that it is possible to achieve 10G from the server in soft 
+switching by dedicating a single core (about $60 - $120 of silicon depending on how 
+you count). So, it is difficult to make the argument for passthrough plus specialized 
+hardware for two reasons. First, given currently available choices, price performance 
+will almost certainly be higher with x86. Second, you loose many of the benefits of 
+virtualization that are retained when using soft switching (which we've explained 
+<a href="#Introduction">here</a>).</p>
+<p>Alex submitted two very good (and very detailed) responses to our claims (you can 
+see the summary <a href="#Responses">here</a>). In them he argued that looking at the 
+basic components costs, a hardware offload solution should be both lower power, and 
+provide better cost performance than doing forwarding in x86. He also argued that 
+switching and NPU chipsets are flexible and support mature, high-level development 
+environments, which may make them suitable for the virtual networking problem.</p>
+<p>Alex is an expert in this area, he's incredibly experienced, and, at least 
+partially, he's right. Specialized hardware should be able to hit better 
+price/performance and lower power. And it is true that development environments have 
+come a long way.</p>
+<p><strong>So what's the explanation for the discrepancy in the view points?</strong></p>
+<p>That is what we've teamed up to discuss in this post. It turns out the differences 
+in view are twofold. The first difference comes from the perspective of a large 
+company (and commensurate purchasing power) versus that of a handful of customers. 
+While today, "intelligent NICs" are a least twice (generally more like 3-5x) as 
+expensive as a pure soft solution, this is a supply side issue and isn't justifiable 
+by the bill of materials (BoM). A company sufficiently large with sufficient investment 
+could overcome this obstacle.</p>
+<p>The second difference is distributing an appliance versus distributing software. 
+Distributing an appliance allows ultimate control over hardware configuration, 
+development environment, runtime environment etc. Distributing software, on the other 
+hand, often requires dealing with multiple hardware configurations, and complex 
+software interactions both with drivers and the operating system.</p>
+<p><strong>Lets start with a quick resync:</strong></p>
+<p>In our original post, we argued that for most workloads, the most flexible and cost 
+effective method for doing networking at the virtual edge is to do soft switching on 
+the server (which is what 99% of all virtual deployments have done over the last 
+decade).</p>
+<p>The other two options we considered are using a switching chip (either in the NIC 
+or the ToR switch) or an NPU (most likely on the NIC due to port density issues).</p>
+<p><strong>We'll discuss Switching Chips First:</strong></p>
+<p>In our experience, non-NPU chipsets in the NIC are not sufficiently flexible for 
+networking at the virtualized edge. The limitations are manyfold, size of lookup of 
+metadata between tables, number of stages in the lookup pipeline, and economically 
+viable table sizes (sometimes table can be increased, for instance, by external TCAM, 
+but it is an expensive option and hence ignored here for budget sensitive 
+implementations we are focusing on).  A good concrete example is table space for 
+tunnels.  Network virtualization solutions often use lots and lots of tunnels (N^2 
+in the number of servers is not unusual).  Soft switches have no problem supporting 
+tens of thousands of  tunnels without performance degradation.  This is one or two 
+orders of magnitude more than you'll find on existing non-NPU NIC chipsets.</p>
+<p>So this is simply a limitation in the supply chain, perhaps a future NIC will be 
+sufficiently flexible for the virtual networking problem, until then, we'll omit this 
+as an option.</p>
+<p><strong>ToR</strong>:</p>
+<p>We both agreed that standard silicon is getting very close to being useful for 
+edge virtual switching. The next generation of 10G switches appear to be particularly 
+compelling. So while still suffering the flexiliby limitations and the shortcomings 
+of hairpinning on inter-VM traffic (like reducing edge link bandwidth and ToR 
+switching capacity), and table space issues, they do appear to be a viable option for 
+some set of the switching decision going forward. This is due to improved support for 
+tagging and tunneling, increased sizes in ACL tables, and improved lookup generality 
+between tables.</p>
+<p>So we're hopeful that next generation ToR switches have an open interface like 
+OpenFlow so that the network virtualization layer can manage the forwarding state.</p>
+<p><strong>So what about NPUs?</strong></p>
+<p>To be clear, Open vSwitch has already been ported to multiple NPU-NIC platforms. 
+In the cases I am familiar with, inter-VM traffic through the CPU is far slower 
+(presumedly due to DMA overhead) than keeping it on the x86. However, off server 
+traffic requires less CPU.</p>
+<p>To explore this solution space in more detail, we'll subdivide the NPU space into 
+two groups: classical NPUs and multicore-based NPUs.</p>
+<p>Many NPUs in the former group have the required level of the processing 
+flexibility, some even have integrated general-purpose CPUs that can be used to 
+implement, for instance, OpenFlow-based control plane. However, their data plane 
+processing is usually based on proprietary microcode that may be a development 
+hurdle in terms of available expertise and toolchain.</p>
+<p>Any investment to develop on such an NPU is a sunk cost, both in training the 
+developers to the internal details of the hardware featureset and limitations, and 
+developing the code to work within the environment. It is very difficult (if not 
+impossible), for example, to port the microcode written for one such NPU to the NPU 
+of another vendor.</p>
+<p>So while this route is not only viable one but very likely beneficial for creating 
+a mass produced appliance, the investment for supporting "yet another NIC" in a 
+software distribution is likely unjustifiable. And without sufficient economies of 
+scale for the NPU (which can be ensured by a large vendor) the cost to the consumer 
+would likely stunt adoption.</p>
+<p>The latter group is based on general-purpose multicore CPUs, but it integrates 
+some NPU-like features, such as streaming I/O, HW packet pre-classification, HW 
+packet re-ordering and atomic flow handling, some level of traffic management, 
+special HW offload engines and more. Since they are based on general-purpose 
+processors, they could be programmed using similar languages and tools as other 
+soft switch solutions. These NPUs can be either used as a main processing engine, 
+or alternatively offload some tasks from the main CPU when integrated on intelligent 
+NIC cards.</p>
+<p>If the supply side can be ironed out, both in terms of purchase model and price, 
+this would seem to strike a reasonable balance between development overhead, 
+portability, and price/power/performance. Below, we'll discuss some of the other 
+challenges that need to be overcome on the supply side to be competitive with x86.</p>
+<p><strong>Price:</strong></p>
+<p>Let's start with the economics of switching at the edge. First, in our experience, 
+workloads in the cloud are either mostly idle, or handling lots of TCP traffic, 
+generally HTTP offsite (trading and HPC being the obvious exceptions). Thus 10G at 
+MTU size packets is not only sufficient, it is usually overkill. That said, it is 
+good to be prepared as data usage continues to grow.</p>
+<p>Soft switching can be co-resident with the management domain. This has been the 
+standard with Xen deployments in which the Linux bridge or Open vSwitch shares the 
+CPUs allocated to the management domain. For 1G, allocating a single core to both 
+is most likely sufficient. For 10G, allocating an extra core is necessary.</p>
+<p>So if we assume worst case (requiring a full core for networking), given a fairly 
+modern CPU, a core weighs in at $60-$100. Motherboard and packaging for that core is 
+probably another $50 (no need for additional memory or harddrive space for soft 
+switching).</p>
+<p>On the high end, if you could get specialized hardware for less than (say) $100 - 
+$150 over the price of a standard NIC per server, then there could be an argument for 
+using them. And since often NICs are bonded for resilience, it should probably be 
+half of that or at least include dual ports for the same price for fault resiliency.</p>
+<p>Unfortunately, to our knowledge, such a NIC doesn't exist at those price points. 
+If we're wrong please let us know (price, relative power and performance) and we'll 
+update this. To date, all NPU-based NICs we've looked are 2-5 times what they should 
+be to pencil out competitively.</p>
+<p>However, clearly it should be possible to make a NIC that is optimized for virtual 
+edge switching as the raw components (when purchased at scale) do not justify these 
+high price tags. We've found that usually NPU chip vendors do not manufacture their 
+own NIC cards (or do that only for evaluation purposes), and 3rd parties charge a 
+significant premium for their role in the supply chain. Therefore, we posit that this 
+is largely a supply chain issue and perhaps due to the immaturity of the market. 
+Regular NICs are a commodity, intelligent NICs are still a "luxury" without a 
+proportional relationship to their BOM differences.</p>
+<p>Of course, this argument is based on traditional cloud packet loads. If the 
+environment instead was hosting an application with small-sized and/or latency 
+sensitive traffic (e.g. voice), then system design criteria would be very different 
+and a specialized hardware solution becomes more compelling.</p>
+<p><strong>Drivers</strong>:</p>
+<p>Drivers are non-existant or poor for specialized NICs. If you look at the HCL 
+(hardware compatibility lists) for VMWare, Citrix, or even the common Linux 
+distributions, NPU-based NICs are rarely (if ever) supported. Generally software 
+solutions rely on the underlying operating system to provide the appropriate drivers. 
+Going with a nonstandard NIC requires getting the hypervisor vendors to support it, 
+which is unlikely. Even multicore NPUs are not supported well, because they are based 
+on non-x86 ISA (MIPS, ARM, PPC) with much more limited support. Practically, it 
+becomes chicken-and-egg problem: major hypervisor vendors don't spend enough efforts 
+to support lower volume multicore NPUs, and system developers don't select these NPUs 
+because of lack of drivers causing low volume. Any break out of that vicious circle 
+may change the equation.</p>
+<p><strong>Tool Chain:</strong></p>
+<p>While the development tool set for embedded processors has come a long way, it 
+still doesn't match that of standard x86/Linux environment. To be clear, this is 
+only a very minor hurdle to a large development shop with in house expertise in 
+embedded development.</p>
+<p>However, from the perspective of a smaller company, dealing with embedded 
+development often means finding and employing relatively specialized developers, 
+more expensive tools (often), and a more complex debug and testing environment. 
+My (Martin's) experience with side-by-side projects working both on specialized 
+hardware environments, and standard (non-embedded) x86 server's is that the former 
+is at least twice as slow.</p>
+<p><strong>Where does that leave us?</strong></p>
+<p>A quick summary of the discussion thus far is as follows.</p>
+<p>Considering only the cost and performance properties of specialized hardware, a 
+virtual switching solution using them should have better price performance, and 
+lower power than an equivalent x86 solution. However, few virtualized workloads 
+could actually take advantage of the additional hardware. And supply side issues 
+(no such component exists today at a competitive price point), and complications in 
+inserting specialized hardware into today's server ecosystem, remain enormous hurdles 
+to realizing this potential. Which is probably why 99% of all virtual deployments 
+over the last decade (and certainly all of the largest virtual operations in the 
+world) have relied on soft switching.</p>
+<p>Alex is right to remind us that it is not always a technology limitation, and that 
+there is a room for hardware to come in at the right price/performance if the supply 
+chain and development support matures. Which it very well may be. We hope that 
+intelligent NICs will become more affordable and their price will reflect the BOM. We 
+also hope that NPU vendors will sponsor in some ways the development of hypervisor 
+and middleware layers by major SW suppliers as opposed to some proprietary solutions 
+available on the market today.</p>
+<p>As I've mentioned previously, there are a number of production deployments which 
+use Open vSwitch directly on hardware. In an upcoming blog post, we'll dig into those 
+use cases a little further.</p>
+<a name="Responses"></a><h4>Responses and clarifications</h4>
+<small class="post-meta"><b>Posted:</b> July 10, 2011 | <b>Author:</b> 
+<a href="http://networkheresy.com/author/networkheresy/">networkheresy</a>  |  
+<b>Filed under:</b> 
+<a href="http://networkheresy.com/category/network-virtualization/">network 
+virtualization</a> | <a href="http://networkheresy.com/2011/07/10/the-rise-of-soft-switching-part-2-5-responses-and-clarifications/#comments"><strong>2</strong> Comments</a> 
+</small>
+<p><strong>[Note: This is an unplanned vignette for the soft switching series.</strong> 
+<strong>We've received a lot of e-mail in response to our previous two posts.</strong> 
+<strong>Alex submitted a great comment which outlines many of the popular 
+issues</strong> <strong>that have come up. So rather than having the response buried 
+in the</strong> <strong>comment forum, we're upgrading it to a full post.  So thanks 
+to Alex for</strong> <strong>kicking this off. </strong><strong>]</strong></p>
+<blockquote><p>Alex: I would say that you've made a lot of assumptions and 
+oversimplified the generic problem. You are right that for some applications a 
+softswitch could be a viable solution. However, there are a number of arguments 
+against it:</p></blockquote>
+<p>It's hard to write a somewhat concise blog post without some simplification. 
+Oversimplified? Perhaps, and if so lets take the time to flush out the details.  We 
+always welcome constructive discussion.  As a start, lets take a look at some of 
+your points.</p>
+<blockquote><p>Alex: 1. When you need IPsec/MACsec/TCP/UDP offload, you still need an 
+intelligent NIC. In many cases you need to load balance between multiple switching 
+instances, so with the intelligent NIC it makes sense to place that function there, 
+because it is coming "for free". The same is true also for a basic switching.
+</p></blockquote>
+<p>Noone is arguing against intelligent NICs. However, this has nothing to do with 
+soft switching. As mentioned in response to another comment, the vSwitch can (and 
+does) carry the context for various stateless offloads from the vNIC through to the 
+pNIC and in the vNIC&lt;-&gt;vNIC case can either avoid doing them (ie VLAN 
+tagging/stripping), or can do them in software optionally [checksum offload is one 
+that can be dropped technically, but makes tcpdump output look scary so is usually 
+done in software for "free" inline with the copy that happens anyway].</p>
+<p>Also, as we've discussed at some length, doing inter-VM switching in hardware is 
+far from "free". It incurs overhead and it obviates the flexibility of switching in 
+software.</p>
+<blockquote><p>Alex: 2. Switches today are not that dumb, they can handle very large 
+tables, they can process L2-L4 headers and beyond (usually first 128B-256B of the 
+packet are being parsed), some of them are even programmable to be able to add new 
+protocols.</p></blockquote>
+<p>This is definitely worth a taking a closer look at. We've spent years working with 
+high-end merchant silicon switching chips trying to emulate what others are able to 
+do with soft switching. Note that we have very good relationship with the silicon 
+vendors, so this isn't just blind fumbling.</p>
+<p>Lets looks at some recent hurdles we've run into in practice:</p>
+<p><strong>IP overwrite: </strong>Virtual networking environments sometime need 
+address isolation similar to NAT. Very few commercially available switching chipsets 
+support general IP overwrite. And even fewer (none?) support it at a useful position 
+in the lookup pipeline for virtual networking. Clearly this is trivially doable (and 
+often done) in software at the edge.</p>
+<p>Note that IP overwrite is not just an edge function within a virtualized context 
+since two co-located VMs in different logical contexts may wish to communicatin 
+thereby neededing overwrite.</p>
+<p><strong>Additional lookup for virtual context:</strong> Often to preserve logical 
+context, additional information needs to be stuffed into packets. To do so, you have 
+one of two choices: (a) overload and existing field (ugly because you can no longer 
+use that field within the logical context, and at some point you'll run out of fields 
+to overload) (b) create a new field. Lets look at (b):</p>
+<p>For the mass produced switching chips that we're familiar with, adding a new field 
+means changing the protocol parser means spinning a new chip means an 18 month wait 
+time.  Further, if you want this field to be part of a useful lookup (which often you 
+do) then you're probably limited to the number of bits you're going to get.  We've 
+quite litterally sat with ASIC designers arguing for 32 bits over 24 for such fields 
+when we routinly use 64 or 128 bits in software.</p>
+<p><strong>L2 in L3 tunneling:</strong> Until very recently, L2 in L3 was not 
+available in 10G and even now the support is extremely limited (although next 
+generation chips will improve the situation - though again, this required over a 
+year of bake time).</p>
+<p>For the L2 in L3 tunneling that is available, rarely can you use the key for lookup, 
+and in some implementations, decap only offers a small fraction of the full bisectional 
+bandwidth of the switching chip making it impractcal for heavy use.</p>
+<p>Again, this isn't a theoretical musing on edge cases. All of these issues we've 
+run into in practice. And there are many others we haven't mentioned (tunnel and 
+ECMP limits for example).</p>
+<p>So yes, switching silicon is flexible and getting better all the time. But there 
+are, and will continue to be, very real limitations when compared to switching in 
+software.  Switching silicon will never be replaced.  However, it's not clear that 
+it is the right place to perform <em>all</em> packet lookup and manipulation.</p>
+<p>A final point. You can certainly achieve all of these things if you cobble together 
+enough hardware. However, we would wager that is a very clear looser on price 
+performance, and you still don't overcome the flexibility and upgrade cycle problems.</p>
+<blockquote><p>Alex: 3. You can use NPUs for switching, which can provide the required 
+flexibility, performance and scalability.</p></blockquote>
+<p>NPUs don't have the price/performance (nor high fanout capacity) of a standard 
+switching chip (e.g. Broadcom). And they don't have the flexibiliy, economies of 
+scale, and tool chain support of x86.</p>
+<p>There is probably a good economic reason that many of the most popular edge 
+appliances today (wan opt, load balancing, etc.) are built on souped up x86 boxes, 
+and not esoteric NPU platforms.</p>
+<p>This would be an interesting point to follow up on. Our contention is that classic 
+table-based switching is the best way to build a physical fabric. The 
+price/performance for high-fan-out switching seems unbeatable. And that x86 is the 
+best way to handle intelligent packet manipulation at the edge.</p>
+<p>If you (Alex) are interested in working on a follow-on post. How about together 
+we pencil out the price/performance of a (say) Broadcom/Intel solution vs. Broadcom 
++ some NPU + Intel. I think it would be an interesting exercise.</p>
+<blockquote><p>Alex: 4. Even if softswitching can achieve the same performance level, 
+you pay much heavier price from the power consumption point of view. And we all know 
+well how important is the power today.</p></blockquote>
+<p>This is true of course in terms of byte/watt, but in terms of elasticity and 
+utilization x86 remains attractive, since for the 90% of the day that the network 
+is at 10% utilization all those x86 cores can do useful work.</p>
+<p>It's fair to point out that you may want to statically provision the core, meaning 
+it will also remain underutilized. Given this, then you're probably right that there 
+is power differential. It would be interesting to compare this with having an 
+additional NPU/TCAM/whatever. That's something we don't know the answer to off hand.  
+But would love to explore further.</p>
+<blockquote><p>Alex: 5. You've assumed in your calculations a large packet size, 
+which is not always the case. Instead of providing the bit rate as a performance 
+characteristic, much better metric is the packet rate. For instance, the 10Gbps 
+capable switch can usually handle 15Mpps. I do not think you can claim the same 
+for softswitch.</p></blockquote>
+<p>Also true, but we're talking about edge switching. If we enumerate the workloads 
+we're familiar with that do anywhere near line rate in the number of VMs that fit on 
+one host with small message sizes. Our experience is that they are either a) netperf 
+b) hpc c) trading apps.</p>
+<p>We can safely ignore a. b and c are legitimate exceptions, but have many other 
+issues with virtualization and also fewer requirements. Passthrough with on NIC 
+switching or hairpinning to the switch is probably a good choice for them. There's 
+a reason myrinet/quadrics/infiniband (a) existed and (b) are not heavily used outside 
+of HPC and other specialized environments.</p><blockquote>
+<p>Alex: 6. If your application requires also traffic management capabilities, the 
+softswitch overhead goes up very quickly with a number of queues, because dual token 
+or leaky bucket implementation is expensive in means of CPU cycles. Of course, you
+ can say that TM can be also offloaded to the NIC, but TM requires some level of 
+flow classification, and with flow classification already performed in the NIC it 
+makes sense to do the switching in the NIC as per the 1st argument.</p></blockquote>
+<p>Here we totally agree, and this is an awesome segue to our next post.</p>
+<blockquote><p>Alex: Just to clarify my comment: I am not saying that softswitch is 
+not a good solution, I am saying that you should check a particular application and 
+its further evolving requirements before deciding on the softswitch-based 
+implementation.</p></blockquote>
+<p>This is is true, but borders on tautological. Clearly you can contrive a situation 
+in which soft switching doesn't work. However, we're interested in refining the 
+discourse beyond the obvious.</p>
+<p>I think at least some of the authors are in a pretty good position to claim having 
+surveyed a large number of applications, deployments, and customer requirements for 
+vswitches (edge switching within virtualized environments). In our experience, there 
+are very few environments outside of HPC and trading in which soft switching isn't a 
+great fit.</p>
+<blockquote><p>Alex: And a final comment here is about the definition of a softswitch. 
+Remember that above-mentioned intelligent NIC could be based on the latest generation 
+of multi-core processors (Cavium, NetLogic, Tilera, etc.) with hybrid NPU-CPU 
+capabilities and a lot of offload, but the switching itself is still performed by 
+software either in Linux or bare metal environment. So from the system point of view 
+the switching is performed by the NIC, but it is still a softswitch...</p></blockquote>
+<p>No argument here 
+<img src="http://s0.wp.com/wp-includes/images/smilies/icon_smile.gif?m=1129645325g" 
+alt=":)" class="wp-smiley"> </p>
+<p><strong>[Thanks again to Alex for the comment, it does flush out more of the 
+discussion. Clearly the position is more nuanced than catagorical, and clearly the 
+discourse is ongoing. Perhaps you'd be interested in fleshing out some of the 
+price/performance/power arguments for a future post?]</strong></p>

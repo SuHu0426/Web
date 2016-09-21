@@ -1,0 +1,231 @@
+RBD
+=======
+$ sudo apt-get install ceph
+$ sudo emacs /etc/modules
+$ diff /etc/modules /etc/modules.orig
+8,9d7
+< btrfs
+< ceph
+$ sudo init 6
+$ cat /proc/filesystems | grep ceph
+nodev	ceph
+$ cat /proc/filesystems | grep btrfs
+	btrfs
+=======
+$ cd /etc/ceph/
+$ more ceph.conf
+[global]
+    auth supported = cephx
+    keyring = /etc/ceph/keyring.admin
+    log file = /var/log/ceph/$name.log
+    pid file = /var/run/ceph/$name.pid
+[mon]
+    ;; sudo mkdir /srv/ceph/mon /srv/ceph/osd
+    ;; sudo mkdir /srv/ceph/mon/mon.$id
+    mon data = /srv/ceph/mon/mon.$id
+    [mon.a]
+	host = GGsec-osd1
+        mon addr = 192.168.180.21:6789
+    [mon.b]
+	host = GGone-osd4
+       	mon addr = 192.168.180.24:6789
+[mds]
+    keyring = /etc/ceph/keyring.$name
+    [mds.a]
+	host = GGsec-osd1
+    [mds.b]
+	host = GGone-osd4
+[osd]
+    ;; sudo mkdir /srv/ceph/osd/osd.$host
+    ;; sudo mount -t btrfs /dev/sdb /srv/ceph/osd/osd.$host
+    osd data = /srv/ceph/osd/osd.$host
+    osd journal = /srv/ceph/osd/osd.$host/osd.$id.journal
+    osd journal size = 1000 ; journal size, in megabytes
+    filestore xattr use omap = true
+    keyring = /etc/ceph/keyring.$name
+    [osd.0]
+	host = GGsec-osd1
+    [osd.1]
+	host = GGsec-osd2
+    [osd.3]
+	host = GGone-osd4
+    [osd.4]
+	host = GGone-osd5
+$ sudo mkdir /srv/ceph/mon /srv/ceph/osd
+$ sudo mkdir /srv/ceph/mon/mon.a
+$ sudo mkdir /srv/ceph/osd/osd.GGsec-osd1
+$ more /etc/fstab
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+proc            /proc           proc    defaults        0       0
+# / was on /dev/sda2 during installation
+#UUID=055d3c20-ce24-45ec-8037-629812e18f04 /               ext4    errors=remount-ro 0       1
+/dev/vda2	/               ext4    errors=remount-ro 0       1
+# /boot was on /dev/sda1 during installation
+UUID=73b582f4-9d9a-424e-8989-ff8a7ba8bcb8 /boot           ext2    defaults        0       2
+/dev/scd0       /media/cdrom0   udf,iso9660 user,noauto     0       0
+/dev/vdb	/srv/ceph/osd/osd.GGsec-osd1	ext4	errors=remount-ro,data=writeback,noatime,nodiratime,user_xattr	0	1
+$ more /etc/hosts
+127.0.0.1       localhost.localdomain localhost
+127.0.1.1       GGsec-osd1
+
+# The following lines are desirable for IPv6 capable hosts
+# \(added automatically by netbase upgrade\)
+
+::1 ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+
+192.168.180.21	GGsec-osd1	osd1
+192.168.180.22  GGsec-osd2      osd2
+192.168.180.23	GGsec-osd3	osd3
+192.168.180.24	GGone-osd4	osd4
+192.168.180.25	GGone-osd5	osd5
+
+$ sudo /etc/init.d/ceph -a stop
+$ sudo mkfs.ext4 /dev/vdb
+$ sudo mount -a
+$ sudo mkcephfs -c /etc/ceph/ceph.conf -a -k /etc/ceph/keyring.admin
+$ su
+# ssh-keygen -d
+# ssh-copy-id 192.168.180.22
+# ssh-copy-id 192.168.180.24
+# ssh-copy-id 192.168.180.25
+# for host in osd2 osd4 osd5;  do  scp /etc/ceph/keyring.admin root@$host:/etc/ceph/keyring.admin; done
+# exit
+$ sudo ceph-authtool -l /etc/ceph/keyring.admin
+[client.admin]
+	key = AQCvFFNRAILcMhAA+0QU7a8apG/AhSsszaDhzA==
+$ echo "AQCvFFNRAILcMhAA+0QU7a8apG/AhSsszaDhzA==" >/tmp/secretfile 
+$ sudo modprobe rbd
+$ lsmod | grep rbd
+rbd                    22311  0 
+libceph                90118  2 ceph,rbd
+
+$ sudo rbd create lun0 --size 200000
+$ sudo rbd list
+lun0
+$ sudo rbd info lun0
+rbd image 'lun0':
+	size 195 GB in 50000 objects
+	order 22 (4096 KB objects)
+	block_name_prefix: rb.0.1
+	parent:  (pool -1)
+
+$ echo "192.168.180.21,192.168.180.24 name=admin,secret=`cat /tmp/secretfile` rbd lun0" | sudo tee /sys/bus/rbd/add
+192.168.180.21,192.168.180.24 name=admin,secret=AQCvFFNRAILcMhAA+0QU7a8apG/AhSsszaDhzA== rbd lun0
+$ ls -l /sys/devices/rbd/0
+total 0
+-r--r--r-- 1 root root 4096 Mar 28 01:10 client_id
+--w------- 1 root root 4096 Mar 28 01:10 create_snap
+-r--r--r-- 1 root root 4096 Mar 28 01:09 current_snap
+-r--r--r-- 1 root root 4096 Mar 28 01:10 major
+-r--r--r-- 1 root root 4096 Mar 28 01:09 name
+-r--r--r-- 1 root root 4096 Mar 28 01:09 pool
+drwxr-xr-x 2 root root    0 Mar 28 01:10 power
+--w------- 1 root root 4096 Mar 28 01:10 refresh
+-r--r--r-- 1 root root 4096 Mar 28 01:10 size
+lrwxrwxrwx 1 root root    0 Mar 28 01:09 subsystem -> ../../../bus/rbd
+-rw-r--r-- 1 root root 4096 Mar 28 01:09 uevent
+$ ls -l /dev/rbd0
+brw-rw---T 1 root disk 252, 0 Mar 28 01:09 /dev/rbd0
+$ cat /sys/devices/rbd/0/size
+209715200000
+$ cat /sys/devices/rbd/0/client_id
+client4112
+$ cat /sys/devices/rbd/0/name
+lun0
+
+iscsitarget
+$ sudo apt-get install iscsitarget iscsitarget-dkms
+$ diff /etc/default/iscsitarget /etc/default/iscsitarget.orig
+1c1
+< ISCSITARGET_ENABLE=true
+---
+> ISCSITARGET_ENABLE=false
+$ cd /etc/iet/
+$ sudo cp ietd.conf ietd.conf.orig
+$ sudo diff ietd.conf ietd.conf.orig
+113,117d112
+< Target iqn.2013-03.edu.snmlab:storage.lun0
+< 	# IncomingUser someuser secret
+< 	# OutgoingUser
+< 	Lun 1 Path=/dev/rbd0,Type=blockio
+< 	Alias LUN0
+$ sudo cp initiators.allow initiators.allow.orig
+$ diff initiators.allow initiators.allow.orig 
+24c24
+< ALL 192.168.179.0/24, 192.168.180.0/24
+---
+> ALL ALL
+$ sudo /etc/init.d/iscsitarget restart
+
+========================================================================
+Setting Up The Initiator (iSCSI-iNIT)
+$ sudo apt-get install open-iscsi multipath-tools
+$ cd /etc/iscsi
+$ sudo cp iscsid.conf iscsid.conf.orig
+$ diff iscsid.conf iscsid.conf.orig 
+40c40
+< node.startup = automatic
+---
+> node.startup = manual
+
+
+$ sudo cp initiatorname.iscsi initiatorname.iscsi.orig
+$ sudo /etc/init.d/open-iscsi restart
+[....] Unmounting iscsi-backed filesystems: Unmounting all devices marked _netde[.ok 
+[....] Disconnecting iSCSI targets:iscsiadm: No matching sessions found
+. ok 
+[ ok ] Stopping iSCSI initiator service:.
+[ ok ] Starting iSCSI initiator service: iscsid.
+[....] Setting up iSCSI targets:
+iscsiadm: No records found
+. ok 
+[ ok ] Mounting network filesystems:.
+$ sudo iscsiadm -m discovery -t st -p 192.168.180.21
+192.168.180.21:3260,1 iqn.2013-03.edu.snmlab:storage.lun0
+$ sudo iscsiadm -m node
+192.168.180.21:3260,1 iqn.2013-03.edu.snmlab:storage.lun0
+
+=========================================================================
+Client
+$ sudo apt-get install open-iscsi multipath-tools
+$ sudo /etc/init.d/open-iscsi restart
+[ ok ] Unmounting iscsi-backed filesystems: Unmounting all devices marked _netdev.
+[....] Disconnecting iSCSI targets:iscsiadm: No matching sessions found
+. ok 
+[ ok ] Stopping iSCSI initiator service:.
+[ ok ] Starting iSCSI initiator service: iscsid.
+[....] Setting up iSCSI targets:
+iscsiadm: No records found
+. ok 
+[ ok ] Mounting network filesystems:.
+$ sudo iscsiadm --mode discovery --type sendtargets --portal 192.168.180.21
+192.168.180.21:3260,1 iqn.2013-03.edu.snmlab:storage.lun0
+$ sudo iscsiadm -m node --targetname "iqn.2013-03.edu.snmlab:storage.lun0" --portal "192.168.180.21:3260" --login
+Logging in to [iface: default, target: iqn.2013-03.edu.snmlab:storage.lun0, portal: 192.168.180.21,3260] (multiple)
+Login to [iface: default, target: iqn.2013-03.edu.snmlab:storage.lun0, portal: 192.168.180.21,3260] successful.
+$ sudo iscsiadm -m node --targetname "iqn.2013-03.edu.snmlab:storage.lun0" --portal "192.168.180.21:3260" --logout
+Logging out of session [sid: 1, target: iqn.2013-03.edu.snmlab:storage.lun0, portal: 192.168.180.21,3260]
+Logout of [sid: 1, target: iqn.2013-03.edu.snmlab:storage.lun0, portal: 192.168.180.21,3260] successful.
+$ sudo iscsiadm -m node --targetname "iqn.2013-03.edu.snmlab:storage.lun0" --portal "192.168.180.21:3260" --login
+$ ls -l /dev/mapper
+total 0
+lrwxrwxrwx 1 root root       7 Mar 27 17:38 14945540000000000bedb9f327f01fab9d2a79d6db2fd16cf -> ../dm-0
+crw------T 1 root root 10, 236 Mar 27 17:38 control
+$ sudo mount /dev/dm-0 /mnt/tmp/
+mount: you must specify the filesystem type
+$ sudo mkfs.ext4 /dev/dm-0
+$ sudo mount /dev/dm-0 /mnt/tmp/
+$ df -h /mnt/tmp/
+Filesystem                                                     Size  Used Avail Use% Mounted on
+/dev/mapper/14945540000000000bedb9f327f01fab9d2a79d6db2fd16cf  193G  188M  183G   1% /mnt/tmp

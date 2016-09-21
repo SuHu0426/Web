@@ -1,0 +1,36 @@
+<html>
+  <head>
+<title>MacVTap</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link type="text/css" rel="stylesheet" href="/css/precode.css" />
+</head>
+<body>
+<h1><a href="http://virt.kernelnewbies.org/MacVTap" target="_blank">MacVTap</a></h1>
+<pre>sudo ip link add link brLAN name macvtap0 type macvtap
+sudo ip link set macvtap0 address 1a:46:0b:ca:bc:7b up
+ip link show macvtap0
+<code>55: macvtap0@brLAN: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UNKNOWN mode DEFAULT group default qlen 500
+    link/ether 1a:46:0b:ca:bc:7b brd ff:ff:ff:ff:ff:ff
+</code></pre>
+<pre>ls -l /dev/tap*
+<code>crw------- 1 root root 248, 1 Sep 24 18:00 /dev/tap55
+</code></pre>
+
+
+
+
+<h1>Reference</h1>
+<a href="http://backreference.org/2014/03/20/some-notes-on-macvlanmacvtap/" target="_blank">some-notes-on-macvlanmacvtap</a>
+<a href="http://seravo.fi/2012/virtualized-bridged-networking-with-macvtap" target="_blank">Virtualized bridged networking with MacVTap</a>
+<a href="https://blog.kghost.info/2013/03/27/linux-network-tun/" target="_blank">网络虚拟化技术（二）: TUN/TAP MACVLAN MACVTAP</a>
+
+<!-- 頁底 -->
+<div id="footer" style="width: 100%; clear: left;" align="center">
+  <hr>
+  <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+</body>
+</html>

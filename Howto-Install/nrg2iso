@@ -1,0 +1,1 @@
+dd if=NRG.nrg of=ISO.iso bs=512 skip=600 

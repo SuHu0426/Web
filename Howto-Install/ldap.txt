@@ -1,0 +1,9 @@
+$ sudo aptitude install php5-ldap slapd ldap-utils libpam-ldap libnss-ldap
+$ sudo dpkg-reconfigure slapd
+備份 LDAP 資料庫
+$ sudo slapcat > slapd.ldif
+創建 rootdn 密碼 with MD5
+$ sudo slappasswd -h {MD5}
+{MD5}/v9UQ2de9ese1wGaBS5sJg==
+
+

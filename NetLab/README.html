@@ -1,0 +1,202 @@
+After untar /backup/NetLab/NetLab-*.tgz, remember to 
+
+<PRE>
+  $ cd Nets 
+  $ ./MakeDevNodes.sh ../UmlRfs
+  $ ls -l  ../UmlRfs/dev 
+</PRE>
+
+<h4>Table of Contents</h4>
+
+<PRE>
+$ pwd
+/media/hsu/NetLab
+$ ls -l
+total 28
+-rwxr-xr-x  1 hsu hsu  506 Feb  6  2014 backup-2-NetLab
+drwxr-xr-x  4 hsu hsu 4096 Jan 30 21:56 GV
+drwxr-xr-x  8 hsu hsu 4096 Dec 13 20:38 Nets
+drwxr-xr-x  4 hsu hsu 4096 Jan 30 16:37 NetSims
+drwxr-xr-x  3 hsu hsu 4096 Aug 27 21:24 QuaggaRfs
+-rw-r--r--  1 hsu hsu  139 Nov 16 15:46 README.html
+drwxr-xr-x 15 hsu hsu 4096 Aug 27 21:24 UmlRfs
+</PRE>
+
+<P>The contents of its major directories:
+
+<OL>
+  <li> <h4>GV: Our dedicated Network Simulation Cluster (based on KVM)</h4>
+
+<P> It contains bin and IMGs two subdirectories.  Inside bin, a few start and stop 
+    VMs shell scripts.  <b>IMGs/Deb-Virtio.img</b>, <b>bin/start-gv-10-Virtio</b>
+    <b>bin/stop-gv-restore-lan-10</b> are our gv root filesystem and its start 
+    and stop shell scripts.
+
+<P> <b>Note:</b> 
+<UL>
+  <LI> Maybe we need to enlarge the size of IMGs/Deb-Virtio.img to 20G.
+  <LI> The <b>start-gv-10</b> shell script is modified as follow:
+
+<PRE>
+$ cat DIFF-start-gv-10
+$ diff /src3/KVM/bin/start-gv-10 start-gv-10-Virtio >/tmp/start-gv-10.diff
+11a12,29
+> lsmod | grep vhost_net >/dev/null
+> 
+> if [ $? != 0 ]
+>   then sudo modprobe vhost_net
+> fi
+> 
+> if [ ! -w /dev/vhost-net ]
+>   then echo "/dev/vhost-net no write permission, will grant it."
+>        sudo chmod 666 /dev/vhost-net
+> fi 
+> 
+> if [ ! -d /src3/tmp ]
+>   then sudo mkdir /src3/tmp 
+>        sudo chown `whoami`:`whoami` /src3/tmp 
+> else 
+>   sudo rm -rf /src3/tmp/*
+> fi
+> 
+21c39
+< vde_switch -tap tap10 -mod 644 -sock=/src3/KVM/network-3433 -mgmt /src3/KVM/network-3433/vde_switch.mgmt -daemon </dev/null >/dev/null
+---
+> vde_switch -mod 644 -sock=/src3/KVM/network-3433 -mgmt /src3/KVM/network-3433/vde_switch.mgmt -daemon </dev/null >/dev/null
+23c41,48
+< kvm -net vde,sock=/src3/KVM/network-3433 -net nic,vlan=0,macaddr=00:25:90:bb:cf:1f -m 512M -monitor unix:/src3/KVM/network-3433/MonSock,server,nowait -hda ../Resize/Deb-Virtio.img &
+---
+> # ",script=no": Don't execute /etc/kvm/kvm-ifup script, since we don't use bridge.
+> kvm -net vde,sock=/src3/KVM/network-3433 -net nic,model=virtio,netdev=tap10,vlan=0,macaddr=00:25:90:22:e6:03  \
+>    -netdev tap,id=tap10,ifname=tap10,script=no,vhost=on -m 512M -monitor unix:/src3/KVM/network-3433/MonSock,server,nowait -drive \
+>    file=../IMGs/Deb-Virtio.img,if=virtio \
+> -fsdev local,id=fsdev0,path=/usr/local,security_model=none,readonly -device \
+>    virtio-9p-pci,fsdev=fsdev0,mount_tag=UsrLocal \
+> -fsdev local,id=fsdev1,path=/src3/tmp,security_model=none -device \
+>    virtio-9p-pci,fsdev=fsdev1,mount_tag=TcpLog&
+</PRE>
+
+<P> The <code>stop-gv-restore-lan-10</code> is also slightly modified:
+
+<PRE>
+ $ diff stop-gv-restore-lan-10 stop-gv-restore-lan-10.orig
+44c44
+< sudo pkill -f "vde_switch -mod 644 -sock=/src3/KVM/network-3433 -mgmt /src3/KVM/network-3433/vde_switch.mgmt"
+---
+> sudo pkill -f "vde_switch -tap tap10 -mod 644 -sock=/src3/KVM/network-3433 -mgmt /src3/KVM/network-3433/vde_switch.mgmt"
+ # The substring " -tap tap10" is deleted. 
+</PRE>
+   <P> Summarizing what have been done as follows:
+
+      <UL>
+        <LI>Load kernel module <code>vhost_net.ko</code> if it has not been loaded yet.
+
+<PRE>
+ $ find /lib/modules -name "*vhost_net*"
+/lib/modules/3.16.0-4-amd64/kernel/drivers/vhost/vhost_net.ko
+</PRE>
+        <LI>Adjust rw permission for character device /dev/vhost-net (for ordinary 
+            users).
+
+<PRE>
+ $ ls -l /dev/vhost*
+crw------- 1 root root 10, 238 Feb  7 08:01 /dev/vhost-net
+</PRE>
+        <LI>Notes for the <b>kvm</b> command 
+
+          <OL>
+             <LI> Newer kvm syntaxes for using virtio kernel module, netdevice tap10, 
+                  and specifying root filesystem.
+
+<PRE>
+model=virtio,netdev=tap10,
+-netdev tap,id=tap10,ifname=tap10,script=no,vhost=on
+-drive file=../IMGs/Deb-Virtio.img,if=virtio 
+</PRE>
+             <LI> We use 9p remote filesystem protocol to export <code>/usr/local</code> 
+                  and <code>/src3/tmp</code> to gv. Filesystem <code>/usr/local</code> 
+                  contains all the locally maintained software, such as emacs, guile, 
+                  user-mode-linux, etc.  Our gv shares all these binaries with 
+                  our host.  Our network testing VMs running inside gv will output 
+                  tcp packets (dumped via <b>tcpdump</b>) to <code>/src3/tmp</code>.
+                  After we shutdown gv, the tcp packets information will still be 
+                  available in our physical host.
+<PRE>
+-fsdev local,id=fsdev0,path=/usr/local,security_model=none,readonly -device \
+>    virtio-9p-pci,fsdev=fsdev0,mount_tag=UsrLocal
+</PRE>
+             <LI> Inside gv, we mount UsrLocal and TcpLog via /etc/rc.local script.
+
+<PRE>
+hsu@gv:~$ more /etc/rc.local
+#!/bin/sh -e
+#
+# rc.local
+#
+     .
+     .
+     .
+
+ifconfig eth0 192.168.0.245
+route add default gw 192.168.0.33
+
+sudo mount -t 9p -o trans=virtio  UsrLocal /usr/local
+sudo mount -t 9p -o trans=virtio TcpLog /src3/tmp 
+
+exit 0
+</PRE>
+          </OL>
+    </UL>
+</UL>
+
+  <li> Nets
+
+<P> UML based network simulation tool and examples (basically inspired from the 
+    <a href="https://www.os3.nl/" target="_blank">University of Amsterdam</a> master 
+    education in System and Network Engineering.)
+
+<P> References: <a href="Nets/ReferenceDocs">ReferenceDocs</a>&nbsp;&nbsp; 
+    <a href="./Nets">Nets Directory Contents</a>
+
+  <li> NetSims
+
+<P> The references and images for GNS3 based network simulation environment.  The 
+    network simulation cluster is implemented in <a href="./GV">GV</a> directory. 
+    Read <a href="./NetSims/README.html" target="newwindow">README.html</a> file 
+    for the howto of cluster creation.
+
+<P> References: <a href="./NetSims/README.html">NetSims</a>&nbsp;&nbsp; 
+    <a href="./NetSims">NetSims Directory Contents</a> 
+
+  <li> QuaggaRfs 
+
+<P> After <a href="Nets/NetworkAndRouting.html#CompilingQuaggaAndTcpdump">Quagga source 
+    compilation<a>, we install it in this directory.  Whenever creating our minimalistic 
+    UML root filesystem, (via <b>Nets/MakingMinimalUmlRfs.sh</b> shell script), this 
+    directory will be consulted to install Quagga daemons and their configuration files.
+
+  <LI> UmlRfs 
+
+<P> The minimalistic UML root filesystem (79M, 27M of it is occupied by UM lib/modules, 
+    45M of it is occupied by Quagga related binaries and their configuration files).  
+    The following block and character special files can not be copied.  We need to 
+    generate them via our shell script: <b>Nets/MakeDevNodes.sh</b>.  This UML root 
+    filesystem can be generated automatically by <b>Nets/MakingMinimalUmlRfs.sh</b> 
+    shell script.
+
+<PRE>
+$ ls -l UmlRfs/dev
+total 4
+crw-r--r-- 1 root root  5, 1 Nov 22 16:23 console
+crw-r--r-- 1 root root  1, 3 Nov 22 16:23 null
+crw-r--r-- 1 root root  4, 0 Nov 22 16:23 tty0
+crw-r--r-- 1 root root  4, 1 Nov 22 16:23 tty1
+crw-r--r-- 1 root root  4, 2 Nov 22 16:23 tty2
+crw-r--r-- 1 root root  4, 3 Nov 22 16:23 tty3
+crw-r--r-- 1 root root  4, 4 Nov 22 16:23 tty4
+brw-rw---- 1 root disk 98, 0 Nov 22 16:23 ubd0
+crw-r--r-- 1 root root  1, 9 Nov 22 16:23 urandom
+crw-r--r-- 1 root root  1, 5 Nov 22 16:23 zero
+</PRE>
+
+</OL>

@@ -1,0 +1,110 @@
+hsu@LXC:~$ sudo apt-cache search lxc
+libvirt-bin - the programs for the libvirt library
+libvirt-dev - development files for the libvirt library
+libvirt-doc - documentation for the libvirt library
+libvirt0-dbg - library for interfacing with different virtualization systems
+python-libvirt - libvirt Python bindings
+libclxclient-dev - Development file for libclxclient
+libclxclient3 - X Window System C++ access library
+libopencascade-ocaf-6.3.0 - OpenCASCADE CAE platform shared library
+lxc - Linux containers userspace tools
+
+hsu@LXC:~$ sudo apt-get install libvirt-bin libvirt-dev libvirt-doc libvirt0-dbg python-libvirt libclxclient-dev libclxclient3 libopencascade-ocaf-6.3.0 lxc
+
+[...]
+[...]
+Processing triggers for libc-bin ...
+ldconfig deferred processing now taking place
+Processing triggers for initramfs-tools ...
+update-initramfs: Generating /boot/initrd.img-2.6.31-11-generic
+
+hsu@LXC:~$ sudo shutdown -h now
+
+
+
+hsu@LXC:~$ sudo lxc-
+lxc-cgroup       lxc-execute      lxc-ps           lxc-unshare
+lxc-checkconfig  lxc-freeze       lxc-restart      lxc-version
+lxc-checkpoint   lxc-info         lxc-setcap       lxc-wait
+lxc-console      lxc-ls           lxc-start        
+lxc-create       lxc-monitor      lxc-stop         
+lxc-destroy      lxc-netstat      lxc-unfreeze     
+hsu@LXC:~$ sudo lxc-checkconfig 
+[sudo] password for hsu: 
+Kernel config /proc/config.gz not found, looking in other places...
+Found kernel config file /boot/config-2.6.31-11-generic
+--- Namespaces ---
+Namespaces: enabled
+Utsname namespace: enabled
+Ipc namespace: enabled
+Pid namespace: enabled
+User namespace: disabled
+Network namespace: enabled
+Multiple /dev/pts instances: enabled
+
+--- Control groups ---
+Cgroup: enabled
+Cgroup namespace: enabled
+Cgroup device: disabled
+Cgroup sched: enabled
+Cgroup cpu account: enabled
+Cgroup memory controller: enabled
+Cgroup cpuset: enabled
+
+--- Misc ---
+Veth pair device: enabled
+Macvlan: enabled
+File capabilities: enabled
+
+hsu@LXC:~$ mkdir lxc ; cd lxc
+hsu@LXC:~/lxc$ sudo debootstrap lenny rootfs http://ftp.tw.debian.org/debian/
+hsu@LXC:~/lxc$ mv rootfs lenny
+hsu@LXC:~/lxc$ nano lenny.conf
+============
+lxc.utsname = my_ssh_container
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = br0
+lxc.network.ipv4 = 140.120.8.224/24
+hsu@LXC:~/lxc$lxc.network.name = eth0
+lxc.mount = ./fstab
+lxc.rootfs = ./lenny
+============
+hsu@LXC:~/lxc$ touch fstab
+hsu@LXC:~/lxc$ sudo chroot lenny
+root@LXC:/# apt-get update
+root@LXC:/# apt-get install openssh-server
+root@LXC:/# cp /etc/inittab /etc/inittab.orig
+root@LXC:/# nano /etc/inittab 
+root@LXC:/# diff /etc/inittab /etc/inittab.orig
+55,59c55,59
+< #2:23:respawn:/sbin/getty 38400 tty2
+< #3:23:respawn:/sbin/getty 38400 tty3
+< #4:23:respawn:/sbin/getty 38400 tty4
+< #5:23:respawn:/sbin/getty 38400 tty5
+< #6:23:respawn:/sbin/getty 38400 tty6
+---
+> 2:23:respawn:/sbin/getty 38400 tty2
+> 3:23:respawn:/sbin/getty 38400 tty3
+> 4:23:respawn:/sbin/getty 38400 tty4
+> 5:23:respawn:/sbin/getty 38400 tty5
+> 6:23:respawn:/sbin/getty 38400 tty6
+
+root@LXC:/# passwd
+root@LXC:/# adduser hsu
+root@LXC:/# exit
+
+===Config brctl
+hsu@LXC:~/lxc$ sudo brctl addbr br0
+hsu@LXC:~/lxc$ sudo ifconfig br0 140.120.8.214 up
+hsu@LXC:~/lxc$ sudo brctl addif br0 eth0
+hsu@LXC:~/lxc$ sudo ifconfig eth0 0.0.0.0
+hsu@LXC:~/lxc$ sudo mount -t cgroup cgroup /cgroup
+
+
+hsu@LXC:~/lxc$ sudo lxc-create -n lenny -f lenny.conf
+hsu@LXC:~$ sudo lxc-ls
+
+In other xterm
+
+hsu@LXC:~$ ssh 140.120.8.224

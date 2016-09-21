@@ -1,0 +1,284 @@
+<a href="https://www.os3.nl/?do=search&id=harald_kleppe" target="_blank">INR Projects</a>
+
+<OL>
+  <LI><a href="https://www.os3.nl/2010-2011/students/harald_kleppe/inr/week4/rip" 
+      target="_blank">Router Information Protocol</a>
+  <LI><a href="https://www.os3.nl/2010-2011/students/harald_kleppe/inr/week4/stp" 
+      target="_blank">Spanning tree protocol</a>
+  <LI><a href="https://www.os3.nl/2010-2011/students/harald_kleppe/inr/week5/ospf" 
+      target="_blank">Open Shortest Path First</a>
+  <LI><a href="https://www.os3.nl/?do=search&id=bgp" 
+      target="_blank">bgp protocol</a>
+
+   <UL>
+      <li><a href="https://www.os3.nl/2011-2012/students/joris_soeurt/inr_wk6" 
+          target="_blank">BGP 1</a>
+      <li><a href="https://www.os3.nl/2011-2012/students/aleksandar_kasabov/inr/bgp" 
+          target="_blank">BGP 2</a>
+      <li><a href="https://www.os3.nl/2011-2012/students/sebastian_dabkiewicz/inr/bgp" 
+          target="_blank">BGP 3</a>
+      <li><a href="http://www.bgpexpert.com/" 
+          target="_blank">BGP Expert</a>&nbsp;&nbsp;
+          <a href="http://www.bgpexpert.com/what.php" 
+          target="_blank">What is BGP</a>&nbsp;&nbsp;
+          <a href="#Multihoming" 
+          target="_blank">Multihoming And Bgp</a>
+   </UL>
+  <LI><a href="https://www.google.com.tw/?gfe_rd=cr&gws_rd=ssl#q=bgp+labs" 
+      target="_blank">bgp labs</a>
+   <UL>
+      <li><a href="http://www.getnetworking.net/bgp/basic-bgp" 
+          target="_blank">Basic BGP</a>&nbsp;&nbsp;
+          <a href="http://www.getnetworking.net/" 
+          target="_blank">Home</a>
+      <li>GNS3 <a href="http://en.wikipedia.org/wiki/GNS3" target=_blank">Wiki</a>
+
+<P> GNS3 is an alternative or complementary software tool to using real computer labs 
+for computer network engineers, administrators and people studying for certifications 
+such as Cisco CCNA, CCNP and CCIE as well as Juniper JNCIA, JNCIS and JNCIE. It can 
+also be used to experiment features or to check configurations that need to be deployed 
+later on real devices. GNS3 also includes other features like connection of the virtual 
+network to real ones or packet captures using Wireshark. GNS3 provides a graphical user 
+interface to design and configure virtual networks, it runs on traditional PC hardware 
+and may be used on multiple operating systems, including Windows, Linux, and Mac OS X.
+
+<P> In order to provide complete and accurate simulations, GNS3 actually uses the 
+following emulators to run the very same operating systems as in real networks:
+
+<UL>
+  <LI> <a href="http://en.wikipedia.org/wiki/Dynamips" target=_blank">Dynamips</a>, the 
+       well known Cisco IOS emulator.
+  <LI> <a href="http://en.wikipedia.org/wiki/VirtualBox" target=_blank">VirtualBox</a>, 
+       runs desktop and server operating systems as well as Juniper JunOS.
+  <LI> <a href="http://en.wikipedia.org/wiki/QEMU" target=_blank">QEMU<a>, a generic 
+       open source machine emulator, it runs Cisco ASA, PIX and IPS.
+</UL>
+<P> GNS3 Related References
+         <UL>
+           <LI><a href="http://sourceforge.net/projects/gns-3/" 
+          target="_blank">Graphical Network Simulator (sourceforge)</a>&nbsp;&nbsp;
+          <a href="http://freeciscolab.com/2013/08/30/free-cisco-gns3-bgp-lab-1/" 
+          target="_blank">Free Cisco GNS3 BGP Lab 1</a>&nbsp;&nbsp;<br>
+          <a href="http://www.gns3-labs.com/tag/bgp/" 
+          target="_blank">gns3 bgp</a>&nbsp;&nbsp;
+          <a href="http://www.gns3-labs.com/tag/gns3-bgp-lab/" 
+          target="_blank">gns3 bgp lab</a>&nbsp;&nbsp;
+          <a href="https://community.gns3.com/docs/DOC-1752" 
+          target="_blank">GNS3 Quick Start Guide for Linux</a>&nbsp;&nbsp;
+         </UL>
+      <li><a href="" 
+          target="_blank"></a>&nbsp;&nbsp;
+      <li><a href="" 
+          target="_blank"></a>&nbsp;&nbsp;
+   </UL>
+</OL>
+
+
+<a name="Multihoming"></a><h3>A Look at Multihoming and BGP 
+<a href="http://archive.oreilly.com/pub/a/network/2002/08/12/multihoming.html">(Source 
+origin)</a></h3>
+by <a href="http://archive.oreilly.com/pub/au/970">Iljitsch van Beijnum</a>, author of 
+<a href="http://www.oreilly.com/catalog/bgp/">BGP</a><br>
+08/12/2002
+
+<p>Can you even imagine doing your job without being able to send and 
+receive email, or look up information on the Web? Being disconnected 
+from the Internet hurts, even if you don't immediately lose millions of 
+dollars in revenue, as would be the case with <a href="http://www.ebay.com/">eBay</a> 
+or <a href="http://www.amazon.com/">Amazon</a>.
+ But the fiber and copper wires that connect you just sit there in the 
+ground, waiting for a backhoe or a rodent to come along, or for the 
+moisture to finally seep through. Then there is all the equipment, which
+ also doesn't last forever, and which has software bugs and is prone to 
+configuration mistakes. A single typo can bring down a good-size part of
+ an Internet service provider network. Bankruptcy will do it, too. The 
+only way to protect yourself against all of these eventualities is to 
+have more than one connection to the Internet. This is called <i>multihoming</i>.</p>
+
+<h4>Multihoming Scenarios</h4>
+
+<p>Getting a second connection is just the first step. When the first 
+connection goes down, you will need to start using the second one. There
+ are three ways to accomplish this:</p>
+
+<ol>
+
+<li><p>Get two independent connections and configure your equipment with two IP 
+addresses. When the IP address associated with one connection doesn't work 
+anymore, the router or server has to switch over to the other. This approach 
+has several limitations. Obviously, all ongoing communication sessions are 
+disrupted by the change in IP address. Also, this functionality isn't always 
+available in routers, servers, or other equipment. Finally, most applications 
+(such as Web browsers) aren't designed to try multiple IP addresses just in 
+case one is down, so this approach is generally only workable if the 
+multihomed network only has clients and not servers.</p>
+<!-- sidebar begins -->
+<!-- don't move sidebars -->
+<!-- sidebar ends -->
+</li>
+
+<li><p>Get two connections to the same ISP. This ISP will then make sure you can 
+use the same IP addresses over both connections. How this is exactly 
+configured on your side depends on your ISP and on what your requirements 
+are. A setup where you use two routers, one for each connection, is of course 
+more complex, but this way, you can survive a router going down. In many 
+cases, the actual configuration will be very similar to the next option (BGP), 
+but because you don't need a "real" AS (Autonomous Systems) number or an 
+independent IP address 
+range, it is much easier and cheaper to get this off the ground, and your ISP 
+protects you against most configuration mistakes. Having two connections to 
+the same ISP has one major downside: you still have to depend on a single 
+ISP. Fortunately, ISP-wide network failures are very rare, but all ISPs have 
+points of presence or connections to certain external networks that go down from 
+time to time. And there is always the risk of your ISP going belly-up.</p></li>
+
+<li><p>Get two connections to two ISPs, but use the same IP address 
+range over both. 
+This way, you are not only safe from physical problems with telco 
+connections, but also from ISP-wide failures and nearly all types of 
+configuration problems that affect just a single ISP: if one fails, you 
+just use 
+the other. This is done on a per-destination basis: your router can 
+figure out 
+which destinations are reachable over which ISP, and route packets 
+accordingly. This works extremely well, but there is still a downside: 
+all major routers throughout the Internet must know over which ISPs your
+ IP 
+addresses are reachable at all times. This means you have to participate
+ in 
+inter-domain routing using the Border Gateway Protocol (BGP).</p></li>
+</ol>
+
+<h4>The AS Number, IP Addresses, and Configuring BGP</h4>
+
+<p>BGP is a routing protocol, just like RIP, EIGRP, OSPF, or IS-IS. But unlike these 
+interior routing (gateway) protocols (IGPs), BGP is an exterior gateway protocol 
+(EGP), designed to exchange routing information between different organizations 
+(or Autonomous Systems) in BGP-speak. Each AS needs its own AS number, 
+along with its own range of IP addresses. Both IP addresses and AS numbers are 
+available from the three Regional Internet Registries:</p>
+
+<ul>
+<li><p><a href="http://www.arin.net/">ARIN</a>: serving the Americas and part of 
+Africa.</p></li>
+
+<li><p><a href="http://www.ripe.net/">RIPE</a>: serving Europe, the Middle East, the 
+former Soviet Union, and the rest of Africa.</p></li>
+
+<li><p><a href="http://www.apnic.net/">APNIC</a>: serving the Asia-Pacific region.</p></li>
+</ul>
+
+<p>AS numbers aren't hard to get: if you multihome, you qualify. (There is 
+usually a fee.) IP addresses are a bigger problem: because so many networks 
+announce so many IP address ranges over BGP (often many more than necessary), 
+more and more ISPs filter out announcements for small address blocks. Then the 
+user of these addresses is unreachable for that ISP, defeating the purpose of 
+multihoming. The Internet Registries aren't helpful in this regard either, because
+they won't give you a large block of your own unless you can show you really need 
+that many addresses. This is a good thing because otherwise they'd have run out of 
+addresses years ago.</p>
+
+<p>So in most cases, multihomed organizations don't get their own block, but request a 
+range from one of their ISPs, and then proceed to announce this range over BGP as 
+if it were their own. This announcement will overlap with the one from the ISP the 
+addresses came from, but this isn't a problem: routers always look at the smallest 
+address block that matches a destination. This small block is still subject to being 
+filtered, but this isn't as big a problem as it is with an independent range; whenever 
+the multihomer's announcement is filtered out, the packets still flow towards the 
+ISP announcing the larger block. However, there are some caveats. Most 
+importantly: if you ever stop buying services from the ISP that gave you an address 
+block, you have to give back the addresses.</p>
+
+<p>Configuring BGP on one or more routers isn't hard, but you really 
+need 
+to know what you're doing to avoid mistakes that will come back to haunt
+ you 
+when something goes down. This is not the time you want to find out that
+ you didn't 
+know as much about inter-domain routing and BGP as you thought you did. 
+Training courses (at least the ones I've done) prepare you for this the 
+same way 
+being a passenger prepares you for driving a car: not to any noticeable 
+degree. This 
+is because those courses only focus on simply configuring a few BGP 
+sessions; 
+they don't tell you what will and what will not fly in the real world. 
+You need to read a book or a number of articles on configuring BGP in an
+ Internet 
+environment. Or you can hire someone with experience in this area to 
+handle the 
+entire project (this will cost a lot); to just implement the actual BGP 
+configuration 
+(this will cost a lot less); or something in between.</p>
+
+<p>Once you've decided you really want to do it, follow these steps to multihome to two different ISPs using BGP:</p>
+
+<ol>
+
+<li><p>Decide what kind of help you need: a consultant, help from your ISP, or a book, such as <a href="http://www.oreilly.com/catalog/bgp/">BGP</a>. </p></li>
+
+<li><p>Learn about IP address ranges, prefixes, and netmask notations, as well as address 
+allocation and assignment policies.</p></li>
+
+<li><p>Decide on the type of address space you're going to use.</p></li>
+
+<li><p>Select (a second) ISP and get your ISPs on board with your plans, 
+preferably in writing.</p></li>
+
+<li><p>Decide on the physical infrastructure: how many routers, what goes where, 
+whether the connections share a physical path, how much 
+bandwidth you need from each ISP.</p></li>
+
+<li><p>Request an AS number and IP address space, if necessary.</p></li>
+
+<li><p>Select one or more routers with enough CPU capacity and memory 
+(128MB or more, or you need a more complex and less optimal 
+configuration) to handle BGP, and make sure you have a software feature 
+set supporting BGP.</p></li>
+
+<li><p>Configure BGP and set filters to avoid improper route announcements (such 
+as routes from ISP A to ISP B, and vice versa).</p></li>
+
+<li><p>Register your routing policy in a Routing Registry.</p></li>
+
+<li><p>Use looking glasses to see if your announcements are visible elsewhere on the 
+Internet.</p></li>
+
+<li><p>Periodically test if everything is as it should be by temporarily disabling a 
+connection and checking if you can still reach all destinations, first for one 
+connection and then the other.</p></li>
+
+<li><p>If necessary, adjust BGP properties to balance incoming and outgoing traffic 
+to match the available bandwidth.</p></li>
+</ol>
+<p>I hope I've provided some insight into the complexity of multihoming 
+with BGP. It is not something to be taken lightly, but if you're 
+prepared to invest time and effort in BGP, you can avoid having to 
+depend on a single Internet service provider. </p>
+ 
+<hr noshade="noshade" size="1">
+
+<p>
+O'Reilly &amp; Associates will soon release (September 2002) 
+<a href="http://www.oreilly.com/catalog/bgp/">BGP</a>.
+</p>
+
+<ul>
+
+<li><p>
+You can look at the <a href="http://www.oreilly.com/catalog/bgp/desc.html">full description</a> of the book online. </p></li>
+
+<li><p>
+For more information, or to order the book, 
+<a href="http://www.oreilly.com/catalog/bgp/">click here</a>. </p></li>  
+</ul>
+
+<p><i><a href="http://archive.oreilly.com/pub/au/970">Iljitsch van Beijnum</a> 
+has been working with BGP in ISP and end-user networks since 1996. 
+
+</i></p>
+
+<hr noshade="noshade" size="1">
+
+<p>Return to the <a href="http://www.oreillynet.com/">O'Reilly Network</a>.</p>
+

@@ -1,0 +1,169 @@
+AoE 實做所需設備如下：
+
+    * 兩台 Linux PC，並使用 Ethernet 串接起來（兩台對接也可以）
+    * 如果有 GbE Switch 最好，若沒有也可以使用一般交換機
+
+Initiator 與 Target
+
+對於 SAN 架構來說：Initiator 是「使用磁碟」主機端、Target 是「提供磁碟」主機端
+
+Linux kernel 2.6.11 即內建 AoE 驅動程式 （Initiator 端）
+若想要測試比較舊版 kernel 當 Initiator 的話，請自行至「http://www.coraid.com/support/linux/」下載、編譯與測試。
+
+At ac10
+$ cd
+$ su
+# wget http://sourceforge.net/projects/aoetools/files/vblade/19/vblade-19.tgz/download
+   ##[source http://sourceforge.net/projects/aoetools/ ]
+# tar -zxvf vblade-19.tgz 
+# cd vblade-19
+# make
+# ./vblade 1 2 eth1 /dev/hsu/hsulv 
+pid 11401: e1.2, 20971520 sectors O_RDWR
+
+
+At ac14
+
+$ ls /dev/etherd
+ls: cannot access /dev/etherd: No such file or directory
+$ sudo modprobe aoe
+$ ls -l /dev/etherd
+total 0
+c-w--w---- 1 root disk 152, 3 2009-08-15 11:20 discover
+brw-rw---- 1 root disk 152, 288 2009-08-15 11:21 e1.2
+[...]
+$ sudo mkdir /mnt/tmp1
+$ sudo mount /dev/etherd/e1.2 /mnt/tmp1
+$ df
+[...]
+/dev/etherd/e1.2      10321208    154232   9642688   2% /mnt/tmp1
+
+no-sync
+note：請勿試圖以不同電腦來同時讀寫相同裝置，除非您使用 Cluster File System（例如 GFS）而非一般filesystem form （例如 Ext3 或 ReiserFS）。
+
+$ sudo umount /mnt/tmp1
+$ sudo rm -r /mnt/tmp1
+$ sudo modprobe aoe -r
+$ ls -l /dev/etherd
+ls: cannot access /dev/etherd: No such file or directory
+
+At ac10
+Ctrl + C
+# exit
+
+Use rfs to share
+$ cd /tmp
+$ dd if=/dev/zero of=test.rfs bs=1M count=10000
+$ su
+# losetup /dev/loop0 test.rfs
+# /home/hsu/vblade-19/vblade 3 4 eth1 /dev/loop0 &
+ pid 11940: e3.4, 20480000 sectors O_RDWR
+[1] 11940
+# ps -C vblade
+  PID TTY          TIME CMD
+11940 pts/1    00:00:00 vblade
+
+
+At ac14
+$ sudo modprobe aoe
+$ sudo mkdir /mnt/tmp1 
+$ sudo mount /dev/etherd/e3.4 /mnt/tmp1
+mount: you must specify the filesystem type
+$ sudo mkfs.ext3 /dev/etherd/e3.4 
+$ sudo mount /dev/etherd/e3.4 /mnt/tmp1
+$ ls /mnt/tmp1
+lost+found
+$ sudo umount /mnt/tmp1
+$ sudo rm -r /mnt/tmp1
+$ sudo modprobe aoe -r
+
+##Test disk speed
+$ sudo modprobe aoe
+$ sudo apt-get install hdparm
+$ sudo hdparm -t /dev/etherd/e3.4
+/dev/etherd/e3.4:
+ Timing buffered disk reads:  160 MB in  3.01 seconds =  53.15 MB/sec
+##host hard disk mean value= 71.81 MB/sec[test sda1-sdb15]
+
+##Assign ethernet
+$ ls -l /dev/etherd
+total 0
+c-w--w---- 1 root disk 152,   3 2009-08-15 11:44 discover
+brw-rw---- 1 root disk 152, 832 2009-08-15 11:44 e3.4
+cr--r----- 1 root disk 152,   2 2009-08-15 11:44 err
+c-w--w---- 1 root disk 152,   6 2009-08-15 11:44 flush
+c-w--w---- 1 root disk 152,   4 2009-08-15 11:44 interfaces
+c-w--w---- 1 root disk 152,   5 2009-08-15 11:44 revalidate
+
+$ sudo modprobe aoe -r
+$ sudo modprobe aoe aoe_iflist=eth0
+$ ls -l /dev/etherd
+total 0
+c-w--w---- 1 root disk 152, 3 2009-08-15 12:29 discover
+cr--r----- 1 root disk 152, 2 2009-08-15 12:29 err
+c-w--w---- 1 root disk 152, 6 2009-08-15 12:29 flush
+c-w--w---- 1 root disk 152, 4 2009-08-15 12:29 interfaces
+c-w--w---- 1 root disk 152, 5 2009-08-15 12:29 revalidate
+
+$ sudo modprobe aoe aoe_iflist=eth1
+$ ls -l /dev/etherd
+total 0
+c-w--w---- 1 root disk 152, 3 2009-08-15 12:29 discover
+cr--r----- 1 root disk 152, 2 2009-08-15 12:29 err
+c-w--w---- 1 root disk 152, 6 2009-08-15 12:29 flush
+c-w--w---- 1 root disk 152, 4 2009-08-15 12:29 interfaces
+c-w--w---- 1 root disk 152, 5 2009-08-15 12:29 revalidate
+
+$ sudo modprobe aoe -r
+$ sudo modprobe aoe aoe_iflist=eth1
+$ ls -l /dev/etherd
+total 0
+c-w--w---- 1 root disk 152,   3 2009-08-15 12:30 discover
+brw-rw---- 1 root disk 152, 832 2009-08-15 12:30 e3.4
+cr--r----- 1 root disk 152,   2 2009-08-15 12:30 err
+c-w--w---- 1 root disk 152,   6 2009-08-15 12:30 flush
+c-w--w---- 1 root disk 152,   4 2009-08-15 12:30 interfaces
+c-w--w---- 1 root disk 152,   5 2009-08-15 12:30 revalidate
+
+$ sudo modprobe aoe -r
+
+
+At ac10 
+# ps -C vblade
+  PID TTY          TIME CMD
+11940 pts/1    00:00:00 vblade
+
+# kill -9 11940
+# exit
+
+I completed vblade-19 yesterday,and it released vblade-20, today.= ="...
+So... vblade-20 is the newest .
+
+
+
+Install AoE monitor.
+At ac14
+$ wget http://sourceforge.net/projects/aoetools/files/aoetools/30/aoetools-30.tar.gz/download
+$ cd /src3/
+$ sudo mkdir AoEtool
+$ sudo chown hsu:hsu AoEtool
+$ cd AoEtool/
+$ wget http://sourceforge.net/projects/aoetools/files/aoetools/30/aoetools-30.tar.gz/download
+$ tar -zxvf aoetools-30.tar.gz 
+$ cd aoetools-30/
+$ make
+$ sudo modprobe aoe
+$ ./aoe-stat.in 
+At ac10
+$ su
+# /home/hsu/vblade-19/vblade 3 4 eth1 /dev/loop0
+At ac14
+$ sudo modprobe aoe -r
+$ sudo modprobe aoe
+$ ./aoe-stat.in 
+      e3.4        10.485GB   eth1 up
+$ sudo modprobe aoe -r
+At ac10
+Ctrl + C
+# exit
+

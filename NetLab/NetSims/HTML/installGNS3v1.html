@@ -1,0 +1,1289 @@
+<pre>
+#!/bin/bash 
+# GNS3 v1 installer (developer version) 
+# Usage: sudo installGNS3v1.sh 
+# Report problems to rednectar.chris@gmail.com 
+
+
+############################################################################### 
+#		History 
+############################################################################### 
+# v1.0 - First version based mainly on http://forum.gns3.net/post27906.html 
+# v1.1 - Developer version options, uses git instead of wget. 
+#		 wget options now get the latest RELEASE version 
+#        Fixed after alpha3 broke v1.0 by including --version option 
+# v1.2   Fixed dynamips install 
+#        Fixed python installer to ALWAYS include: build-essential; libelf-dev,    
+#        uuid-dev, libpcap-dev, python3-dev, and python3-pyqt4  
+#        installs vboxwrapper, virtualbox and qemu if not installed 
+# v1.3   2014-08-18 
+#        Added Daniel Lintott's gns3-converter to pip install 
+#	     See http://forum.gns3.net/post35824.html 
+# v1.4   2014-08-20 
+#        Now upgrades pip packages if already installed 
+#        Added --version and --Full options 
+# v1.5   2014-08-23 
+#        Avoid "Press &lt;Enter&gt; to continue if --full or --Full"   
+#		 Enhanced --version output 
+# v1.6   2014-09-27 
+#        Typo in usage expression (from ./installGNS3v1.sh --help) 
+#        Fix bug where directories didn't get created on first run 
+#        Fix bug where vboxwrapper didn't install 
+#        Fix bug where VPCS didn't get upgraded of version 0.5b0 was detected 
+#        Create launch icons for desktop 
+#        Improved error handling (much more to do) 
+# v1.7   2014-10-14 
+#        Change directory for Qemu from "Qemu" to "QEMU" to match GUI's default 
+# v1.8   2014-10-22 
+#        Fix problem where not all python dependencies were being installed 
+# v2.0   2014-10-23 
+#        Modify to suit v1.0 (no beta) 
+#        Bump to version 2.0 
+# v2.1   2014-11-11 
+#        Add python-setuptools to bundle of python stuff to install 
+#        (Hopefully) fixes errors involving "No module named setuptools" 
+#		 -v option also check vboxwrappper version 
+# v3.0   2014-11-12 
+#        Adapted for 64 bit install (Still experimental) 
+#        Moved image directory for ASA and Junos under the QEMU directory 
+# v3.1   2014-12-09 
+#        Cope with version longet thatn 2 digits like v1.2.1 
+
+############################################################################### 
+#		Initialise Variables 
+############################################################################### 
+<span class="nv">installerVersion <span class="o">= 3.1
+<span class="nv">installerDate <span class="o">= <span class="s2">"2014-12-09" 
+<span class="nv">installerFriendlyName <span class="o">= <span class="s2">"GNS3v1 Installer" 
+<span class="nv">gns3Version <span class="o">= <span class="s2">""  #To be sure  
+## Directory variables 
+<span class="nv">GNS3Path <span class="o">= <span class="s2">"${HOME}/GNS3" 
+<span class="nv">GNS3ImagesPath <span class="o">= <span class="s2">"${GNS3Path}/images" 
+<span class="nv">GNS3ProjectsPath <span class="o">= <span class="s2">"${GNS3Path}/projects" 
+<span class="nv">GNS3SourcePath <span class="o">= <span class="s2">"${GNS3Path}/source" 
+<span class="nv">tempDir <span class="o">= <span class="s2">"/tmp" 
+<span class="nv">gns3SharedResourcesPath <span class="o">= <span class="s2">"/usr/share/gns3" 
+<span class="nv">installerPath <span class="o">= <span class="k">${ <span class="nv">0 <span class="p">%/* <span class="k">}  #Extract Path from $0 paramter 
+<span class="nv">installerName <span class="o">= <span class="k">${ <span class="nv">0 <span class="p"># <span class="k">${ <span class="nv">installerPath <span class="k">}}  #Extract Name from $0 paramter 
+<span class="nv">usage <span class="o">= <span class="s2">"sudo $0 [ [-f|--full] | [-F|--Full] | [-v|--version] ]" 
+#usage='sudo $0 [[-f|-full] | [-F|--Full] | [-v|--version]' 
+<span class="nv">fullUsage <span class="o">= <span class="s2">"$usage\n\n 
+<span class="s2">--full | -f - full archive install\n 
+<span class="s2">--Full | -F  - full developer install\n 
+<span class="s2">--version | -v - print version of major components and exit" 
+
+<span class="nv">fullInstall <span class="o">= <span class="nb">false 
+<span class="nv">developerInstall <span class="o">= <span class="nb">false 
+## Counters and constants 
+<span class="nv">stageCount <span class="o">= 1
+<span class="nv">hostIs64Bit <span class="o">= <span class="k">$(($( getconf LONG_BIT<span class="k">) <span class="o">== <span class="m">64 <span class="k">)) 
+
+## Colour constants 
+<span class="nv">black <span class="o">= 0
+<span class="nv">red <span class="o">= 1
+<span class="nv">green <span class="o">= 2
+<span class="nv">yellow <span class="o">= 3
+<span class="nv">blue <span class="o">= 4
+<span class="nv">purple <span class="o">= 5
+<span class="nv">cyan <span class="o">= 6
+<span class="nv">white <span class="o">= 7
+<span class="nv">inverseOn <span class="o">= <span class="k">$( tput rev<span class="k">) 
+<span class="nv">boldOn <span class="o">= <span class="k">$( tput bold<span class="k">) 
+<span class="nv">normal <span class="o">= <span class="k">$( tput sgr0<span class="k">) 
+<span class="nv">ulOn <span class="o">= <span class="k">$( tput smul<span class="k">) 
+<span class="nv">ulOff <span class="o">= <span class="k">$( tput rmul<span class="k">) 
+<span class="nv">whiteOnBlueOn <span class="o">= <span class="k">$( tput setab <span class="nv">$blue ;tput setaf <span class="nv">$white <span class="k">) 
+<span class="nv">whiteOnRedOn <span class="o">= <span class="k">$( tput setab <span class="nv">$red ;tput setaf <span class="nv">$white <span class="k">) 
+<span class="nv">whiteOnGreenOn <span class="o">= <span class="k">$( tput setab <span class="nv">$green ;tput setaf <span class="nv">$white <span class="k">) 
+<span class="nv">brightWhiteOnBlueOn <span class="o">= <span class="k">$( tput setab <span class="nv">$blue ;tput setaf <span class="nv">$white ;tput bold<span class="k">) 
+<span class="nv">brightWhiteOnRedOn <span class="o">= <span class="k">$( tput setab <span class="nv">$red ;tput setaf <span class="nv">$white ;tput bold<span class="k">) 
+<span class="nv">brightWhiteOnGreenOn <span class="o">= <span class="k">$( tput setab <span class="nv">$green ;tput setaf <span class="nv">$white ;tput bold<span class="k">) 
+<span class="nv">redOn <span class="o">= <span class="k">$( tput setaf <span class="nv">$red ;tput bold<span class="k">) 
+<span class="nv">yellowOn <span class="o">= <span class="k">$( tput setaf <span class="nv">$yellow ;tput bold<span class="k">) 
+<span class="nv">greenOn <span class="o">= <span class="k">$( tput setaf <span class="nv">$green ;tput bold<span class="k">) 
+
+
+############################################################################### 
+#		Functions 
+############################################################################### 
+<span class="k">function  createDir<span class="o">() 
+#$1 Full path to directory to be created. parent directory must exist 
+#   or the program will exit 1 
+<span class="o">{  
+<span class="k">if   <span class="o">[  ! -d <span class="s2">"$1"  <span class="o">]  ; <span class="k">then  
+<span class="k">	 mkdir <span class="s2">"$1" 
+	#Let's check that that worked 
+	<span class="k">if  <span class="o">(( <span class="nv">$? <span class="o">== 1<span class="o">))  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to create $1" 
+		<span class="nb">echo  <span class="s2">"Make sure this direcrtory exists and try again" 
+		<span class="nb">exit  1
+	<span class="k">else  #It worked, so change the owner if running as sudo 
+		<span class="k">if  <span class="o">[  ! <span class="s2">"$SUDO_USER"  <span class="o">==  <span class="s2">""  <span class="o">]  ; <span class="k">then 
+<span class="k">			 chown <span class="nv">$SUDO_USER  <span class="s2">"$1" 
+		<span class="k">fi 
+<span class="k">	fi  
+<span class="k">fi 
+<span class="o">} 
+############################################################################### 
+<span class="k">function  installApp <span class="o">() 
+#$1 must be true or false to indicate "Interactive y/n" 
+#$2 Friendly app name eg SSH 
+#$3... list of apps that have to be got with apt-get install 
+<span class="o">{ 
+<span class="nb">local  <span class="nv">interactive <span class="o">= <span class="nv">$1 
+<span class="nb">local  <span class="nv">appName <span class="o">= <span class="nv">$2 
+<span class="nb">local  <span class="nv">count <span class="o">= <span class="nv">$# 
+<span class="nb">local  <span class="nv">returnValue <span class="o">= 0
+<span class="k">if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">	 <span class="nb">read  -p <span class="s2">"Install $appName? y/n[y]"  installAppResponse
+<span class="k">else 
+<span class="k">	 <span class="nv">installAppResponse <span class="o">= <span class="s2">"y" 
+<span class="k">fi 
+<span class="k">if  <span class="o">[  <span class="s2">"$installAppResponse"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[  <span class="s2">"$installAppResponse"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">then 
+<span class="k">	for  <span class="o">((  <span class="nv">i <span class="o">= 3; i&lt;<span class="o">= <span class="nv">$count ; i++ <span class="o">))  <span class="k">do 
+<span class="k">		 <span class="nv">doInstall <span class="o">= <span class="nb">true 
+<span class="nb">		 <span class="k">while  <span class="nv">$doInstall  ; <span class="k">do 
+<span class="k">			 sudo apt-get install <span class="nv">$3  -y
+			<span class="k">if  <span class="o">[  <span class="s2">"$?"  <span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">				 <span class="nv">doInstall <span class="o">= <span class="nb">false 
+<span class="nb">			 <span class="k">else 
+<span class="k">				 <span class="nb">echo  -e <span class="s2">"\n\nThere was a problem installing $3" 
+				<span class="nb">read  -p <span class="s2">"Try again y/n [y] "  installResponse
+				<span class="k">if  <span class="o">[[  <span class="s2">"$installResponse"  <span class="o">= ~ ^<span class="o">[ n|N<span class="o">]  <span class="o">]]  ; <span class="k">then 
+<span class="k">					 <span class="nv">doinstall <span class="o">= <span class="nb">false 
+<span class="nb">					 <span class="k">return  1
+				<span class="k">fi 
+<span class="k">			fi 
+<span class="k">		done 
+<span class="k">	done 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"$appName not installed" 
+<span class="k">fi 
+<span class="k">return  <span class="nv">$returnValue 
+<span class="o">} 
+
+############################################################################## 
+<span class="k">function  checkPkgInstalled <span class="o">() 
+#$1..n names of packages to be checked 
+#Returns 0 if ALL packages are installed 
+#        1 if ANY package ins NOT installed 
+<span class="o">{ 
+<span class="nb">local  <span class="nv">returnValue <span class="o">= 1
+<span class="nb">local  <span class="nv">i <span class="o">= <span class="nv">$# 
+
+<span class="k">while  <span class="o">[  <span class="nv">$i  -gt 0 <span class="o">]  <span class="o">&amp;&amp;  <span class="o">[  <span class="nv">$returnValue  <span class="o">=  1 <span class="o">]  ; <span class="k">do 
+<span class="k">	 <span class="nv">pkgInstalled <span class="o">= <span class="k">$( dpkg-query -W --showformat<span class="o">= <span class="s1">'${Status}\n'  <span class="nv">$1 |grep <span class="s2">"install ok installed" <span class="k">) 
+	<span class="k">if  <span class="o">[  <span class="s2">"$pkgInstalled"  !<span class="o">=  <span class="s2">"install ok installed"  <span class="o">]  ; <span class="k">then  
+<span class="k">		 <span class="nv">returnValue <span class="o">= 0
+	<span class="k">fi 
+<span class="k">	 <span class="nv">i <span class="o">= <span class="nv">$[$i -1<span class="o">] 
+	<span class="nb">shift 
+<span class="k">done 
+
+<span class="k">return  <span class="nv">$returnValue 
+<span class="o">} 
+
+############################################################################## 
+<span class="k">function  displayVersions <span class="o">() 
+<span class="o">{ 
+<span class="nb">echo  -e <span class="s2">"${brightWhiteOnGreenOn}Component\t\t\t${brightWhiteOnBlueOn} Version\t${normal}" 
+<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}$installerFriendlyName, $installerDate:\t${whiteOnBlueOn} ${installerVersion}\t\t${normal}" 
+<span class="k">if  <span class="o">( which dynamips &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">dynamipsVersion <span class="o">= <span class="k">$( dynamips 2&gt;&amp;1 | grep version | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/-.*$//' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}Dynamips:\t\t\t${whiteOnBlueOn} $dynamipsVersion\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}Dynamips:\t\t\tNot installed\t${normal}" 
+
+<span class="k">fi 
+
+<span class="k">if  <span class="o">( which gns3 &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}GNS3 GUI:\t\t\t${whiteOnBlueOn} $(gns3 --version)\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}GNS3 GUI:\t\t\tNot installed\t${normal}" 
+
+<span class="k">fi 
+<span class="k">if  <span class="o">( which gns3server &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}GNS3 Server:\t\t\t${whiteOnBlueOn} $(gns3server --version)\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}GNS3 Server:\t\t\tNot installed\t${normal}" 
+
+<span class="k">fi 
+
+<span class="k">if  <span class="o">( which gns3-converter &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">gns3ConverterVersion <span class="o">= <span class="k">$( gns3-converter --version 2&gt;&amp;1 | grep converter | sed <span class="s1">'s/^.*converter //'  | sed <span class="s1">'s/-.*$//' <span class="k">) 
+
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}GNS3 Topology Converter:\t${whiteOnBlueOn} ${gns3ConverterVersion}\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}GNS3 Topology Converter:\tNot installed\t${normal}" 
+
+<span class="k">fi 
+<span class="k">if  <span class="o">( which iouyap &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">iouyapVersion <span class="o">= <span class="k">$( iouyap -V 2&gt;&amp;1 | grep version | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/-.*$//' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}iouyap:\t\t\t\t${whiteOnBlueOn} $iouyapVersion\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}iouyap:\t\t\t\tNot installed\t${normal}" 
+<span class="k">fi 
+<span class="k">if  <span class="o">( which qemu-i386 &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">qemuVersion <span class="o">= <span class="k">$( qemu-i386 -version 2&gt;&amp;1 | egrep <span class="s1">'version '  | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/ .*$//' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}QEMU:\t\t\t\t${whiteOnBlueOn} $qemuVersion\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}QEMU:\t\t\t\tNot installed\t${normal}" 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">( which vboxwrapper &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">vboxwrapperVersion <span class="o">= <span class="k">$( vboxwrapper -v 2&gt;&amp;1 | grep version | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/).*$//' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}vboxwrapper:\t\t\t${whiteOnBlueOn} $vboxwrapperVersion\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}vboxwrapper:\t\t\tNot installed\t${normal}" 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">( which virtualbox &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">virtualboxVersion <span class="o">= <span class="k">$( virtualbox -help 2&gt;&amp;1 | egrep <span class="s1">'VirtualBox Manager'  | sed <span class="s1">'s/^.*Manager //'  | sed <span class="s1">'s/).*$//' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}virtualbox:\t\t\t${whiteOnBlueOn} $virtualboxVersion\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}vboxwrapper:\t\t\tNot installed\t${normal}" 
+<span class="k">fi 
+
+
+<span class="k">if  <span class="o">( which vpcs &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">vpcsVersion <span class="o">= <span class="k">$( vpcs -v 2&gt;&amp;1 | grep version | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/-.*$//'  | tr -d <span class="s1">'\r' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}Virtual PC Simulator:\t\t${whiteOnBlueOn} $vpcsVersion\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}Virtual PC Simulator:\t\tNot installed\t${normal}" 
+<span class="k">fi 
+<span class="k">if  <span class="o">( which wireshark &gt; /dev/null 2&gt;&amp;1<span class="o">)  ; <span class="k">then 
+<span class="k">	 <span class="nv">wiresharkVersion <span class="o">= <span class="k">$( wireshark -v 2&gt;&amp;1 | egrep <span class="s1">'wireshark '  | sed <span class="s1">'s/^.*wireshark //'  | sed <span class="s1">'s/ .*$//' <span class="k">) 
+	<span class="nb">echo  -e <span class="s2">"${whiteOnGreenOn}wireshark:\t\t\t${whiteOnBlueOn} $wiresharkVersion\t\t${normal}" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"${whiteOnRedOn}wireshark:\t\t\tNot installed\t${normal}" 
+<span class="k">fi 
+
+<span class="k">return 	
+<span class="o">} 
+############################################################################### 
+# 		Parse command line 
+############################################################################### 
+
+<span class="k">if  <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">"-f"  <span class="o">]  <span class="o">||  <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">"--full"  <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nv">fullInstall <span class="o">= <span class="nb">true  
+<span class="k">elif  <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">"-F"  <span class="o">]  <span class="o">||  <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">"--Full"  <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nv">fullInstall <span class="o">= <span class="nb">true 
+<span class="nb">	 <span class="nv">developerInstall <span class="o">= <span class="nb">true 
+<span class="k">elif  <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">"-v"  <span class="o">]  <span class="o">||  <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">"--version"  <span class="o">] ; <span class="k">then 
+<span class="k">	 displayVersions
+	<span class="nb">exit  0
+<span class="k">elif  ! <span class="o">[  <span class="s2">"$1"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">then 
+	#there are paramaters passed, need to be parsed 
+	<span class="nb">echo  -e <span class="s2">"Parameter :$1: not recognised" 
+	<span class="nb">echo  -e <span class="s2">"usage:" 
+	<span class="nb">echo  -e <span class="nv">$fullUsage 
+	<span class="nb">exit  1
+<span class="k">fi 	
+############################################################################### 
+# 		Usage Checks 
+############################################################################### 
+
+<span class="k">if  <span class="o">[  ! <span class="k">$( id -u<span class="k">)  -eq 0 <span class="o">]   ; <span class="k">then  
+<span class="k">         <span class="nb">echo  <span class="s2">"Must be run as sudo: eg:" 
+		<span class="nb">echo  -e <span class="nv">$usage 
+        <span class="nb">exit  1
+<span class="k">fi 
+<span class="k">if  <span class="o">[  <span class="s2">"$SUDO_USER"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">then 
+<span class="k">         <span class="nb">echo  <span class="s2">"Can't be run as user 'root'." 
+		<span class="nb">echo  <span class="s2">"Must be run as normal user running sudo: eg" 
+		<span class="nb">echo  -e <span class="nv">$usage 
+        <span class="nb">exit  1
+<span class="k">fi 
+############################################################################### 
+#		Main() 
+############################################################################### 
+
+
+clear
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"################# Chris' Crude GNS3v1 installer : version $installerVersion #################$normal 
+<span class="s2">This script attempts to setup the GNS3v1 on your existing Linux system. 
+<span class="s2">It is based on instructions at http://forum.gns3.net/post27906.html 
+<span class="s2">http://forum.gns3.net/topic8988.html and https://github.com/GNS3/gns3-server 
+<span class="s2">http://forum.gns3.net/post28922.html and http://forum.gns3.net/topic11444.html 
+<span class="s2">If you have problems, please refer to the forum posts.  Good Luck\n 
+<span class="s2">It will, depending on the type of install you choose: 
+<span class="s2">* Create my recommended directory structure for you 
+<span class="s2">* Install git (developer install) 
+<span class="s2">* Install subversion (developer install) 
+<span class="s2">* Install bison parser generator (developer install) 
+<span class="s2">* Install flex lexical analyzer (developer install) 
+<span class="s2">* Install all the python stuff you need 
+<span class="s2">* Install dynamips 
+<span class="s2">* Install pip 
+<span class="s2">* Install Dan Lintott's gns3-converter http://forum.gns3.net/post35824.html 
+<span class="s2">* Install vboxwrapper and VirtualBox 
+<span class="s2">* Install Qemu 
+<span class="s2">* Install iouyap -Ref: http://forum.gns3.net/topic8966.html 
+<span class="s2">* Fix link to libssl1.0.0 -Ref: http://forum.gns3.net/topic8988.html 
+<span class="s2">* Install SSH 
+<span class="s2">* Install Wireshark  
+<span class="s2">* Install VPCS 
+<span class="s2">* Install BBE 
+<span class="s2">* Install ROXTerm 
+<span class="s2">* Create a iourc file for you (you'll have to add your own licence) 
+<span class="s2">* Add an entry to your hosts file for xml.cisco.com 
+<span class="s2">* Install gns3-server 
+<span class="s2">* Install gns3-gui 
+<span class="s2">* Create desktop shortcuts for you 
+<span class="s2">\n${redOn}Red${yellowOn}Nectar${normal}\n"  | more
+<span class="k">if   ! <span class="k">${ <span class="nv">fullInstall <span class="k">}   ; <span class="k">then  
+<span class="k">	 <span class="nb">read  -p <span class="s2">"Press &lt;Enter&gt; to continue"  response
+<span class="k">fi 
+
+<span class="nb">echo  <span class="s2">" 
+<span class="s2">$brightWhiteOnGreenOn###############################################################################" <span class="nv">$normal 
+<span class="nv">response <span class="o">= <span class="s2">"" 
+<span class="nv">interactive <span class="o">= <span class="nb">false 
+<span class="k">if  ! <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	while  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">do 
+<span class="k">		 <span class="nb">echo  -e <span class="s2">"\nAn ${greenOn}archive install${normal} installs dynamips from the deb repository, and gns3  
+<span class="s2">components from the latest${brightWhiteOnGreenOn} release version ${normal}using wget (Safest option)\n 
+<span class="s2">A ${redOn}developer install${normal} pulls latest development sourcecode for dynamips, 
+<span class="s2">iouyap, vpcs, gns3-server and gns3-gui using git clone or git pull (or svn for 
+<span class="s2">vpcs). This is the${brightWhiteOnRedOn} bleeding edge ${normal}code.\n 
+<span class="s2">${redOn}F${normal}ull install options re-installs everything - no questions asked 
+<span class="s2">Note: Will not overwrite iourc if it exists 
+<span class="s2">Normally, supplemtary apps like pip and ssh are skipped if already installed. 
+<span class="s2">The full archive install can also be invoked using the -full command line  
+<span class="s2">option.\n 
+<span class="s2">Would you like: 
+<span class="s2">a. an interactive ${greenOn}a${normal}rchive (${brightWhiteOnGreenOn}release version${normal}) install? 
+<span class="s2">A. an ${greenOn}A${normal}rchive (${brightWhiteOnGreenOn}release version${normal}) install? - no questions asked. 
+<span class="s2">f. a ${greenOn}f${normal}ull archive install? - re-installs everything. No questions asked.\n 
+<span class="s2">d. an interactive ${redOn}d${normal}eveloper (${brightWhiteOnRedOn}bleeding edge${normal}) install? 
+<span class="s2">D. a ${redOn}D${normal}eveloper (${brightWhiteOnRedOn}bleeding edge${normal}) install? - no questions asked. 
+<span class="s2">F. a ${redOn}F${normal}ull developer install? - re-installs everything. No questions asked.\n 
+<span class="s2">q. quit. Get me out of here!\n"  | more
+
+		<span class="nb">read  -p <span class="s2">"a/A/d/D/f/F/q [a] "  response 
+		<span class="k">if  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; 
+			<span class="k">then  <span class="nv">response <span class="o">= <span class="s2">"a"  ; 
+		<span class="k">fi 
+<span class="k">		if  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"q"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nb">echo  <span class="s2">"OK - Come back when you are ready" 
+			<span class="nb">exit  1
+		<span class="k">elif  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"a"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nv">interactive <span class="o">= <span class="nb">true 
+<span class="nb">			 <span class="nv">fullInstall <span class="o">= <span class="nb">false 
+<span class="nb">		 <span class="k">elif  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"A"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nv">interactive <span class="o">= <span class="nb">false 
+<span class="nb">			 <span class="nv">fullInstall <span class="o">= <span class="nb">false 
+<span class="nb">		 <span class="k">elif  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"d"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nv">interactive <span class="o">= <span class="nb">true 
+<span class="nb">			 <span class="nv">developerInstall <span class="o">= <span class="nb">true 
+<span class="nb">			 <span class="nv">fullInstall <span class="o">= <span class="nb">false 
+<span class="nb">		 <span class="k">elif  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"D"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nv">interactive <span class="o">= <span class="nb">false 
+<span class="nb">			 <span class="nv">developerInstall <span class="o">= <span class="nb">true 
+<span class="nb">			 <span class="nv">fullInstall <span class="o">= <span class="nb">false 
+<span class="nb">		 <span class="k">elif  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"f"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nv">interactive <span class="o">= <span class="nb">false 
+<span class="nb">			 <span class="nv">fullInstall <span class="o">= <span class="nb">true 
+<span class="nb">		 <span class="k">elif  <span class="o">[  <span class="s2">"$response"  <span class="o">=  <span class="s2">"F"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nv">interactive <span class="o">= <span class="nb">false 
+<span class="nb">			 <span class="nv">developerInstall <span class="o">= <span class="nb">true 
+<span class="nb">			 <span class="nv">fullInstall <span class="o">= <span class="nb">true 
+<span class="nb">		 <span class="k">else 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Invalid response. Try again" 
+			<span class="nv">response <span class="o">= <span class="s2">"" 
+		<span class="k">fi 
+<span class="k">	done ;
+<span class="k">fi 
+
+
+<span class="k">if   <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  <span class="s2">"OK - you get to choose - default is always YES" 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"HOLD ON - Here we go on auto-pilot: YES to everything. 
+<span class="s2">		However, there may be places where you need to press ENTER or  
+<span class="s2">		follow other instructions.  Keep watching!" 
+	<span class="nv">response <span class="o">= <span class="s2">"y" 
+<span class="k">fi 
+
+############################################################################### 
+############################################################################### 
+#		Installers() 
+############################################################################### 
+############################################################################### 
+
+<span class="k">if  ! <span class="o">[  -d <span class="s2">"${GNS3Path}"  <span class="o">]  <span class="o">||   <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${GNS3ImagesPath}/IOU"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${GNS3ImagesPath}/IOS"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${GNS3ImagesPath}/QEMU"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${GNS3ImagesPath}/QEMU/ASA"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${GNS3ImagesPath}/QEMU/Junos"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${GNS3ProjectsPath}"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${gns3SharedResourcesPath}"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   ! <span class="o">[  -d <span class="s2">"${HOME}/VirtualBox VMs"  <span class="o">]  <span class="o">||  <span class="se">\ 
+   <span class="o">( ! <span class="o">[  -d <span class="s2">"${GNS3SourcePath}"  <span class="o">]  <span class="o">&amp;&amp;   <span class="nv">$developerInstall  <span class="o">) ; <span class="k">then 
+
+<span class="k">	 <span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion  
+<span class="s2">	     :- Building RedNectar's recommended directory structure will create 
+<span class="s2">	        the following: 
+<span class="s2">		 ${GNS3Path} 
+<span class="s2">		 ${GNS3ImagesPath} 
+<span class="s2">		 ${GNS3ImagesPath}/IOS 
+<span class="s2">		 ${GNS3ImagesPath}/IOU 
+<span class="s2">		 ${GNS3ImagesPath}/QEMU 
+<span class="s2">		 ${GNS3ImagesPath}/QEMU/ASA 
+<span class="s2">		 ${GNS3ImagesPath}/QEMU/Junos 
+<span class="s2">		 ${GNS3ProjectsPath} 
+<span class="s2">		 ${gns3SharedResourcesPath} 
+<span class="s2">		 ${HOME}/VirtualBox VMs" <span class="nv">$normal 
+	<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="nv">$brightWhiteOnGreenOn <span class="s2">"		 ${GNS3SourcePath}" <span class="nv">$normal 
+	<span class="k">fi 
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Build recommended directory structure? y/n[y]"  response
+	<span class="k">fi 
+
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 createDir <span class="s2">"${GNS3Path}" 
+		createDir <span class="s2">"${GNS3ImagesPath}" 
+		createDir <span class="s2">"${GNS3ImagesPath}/IOS" 
+		createDir <span class="s2">"${GNS3ImagesPath}/IOU" 
+		createDir <span class="s2">"${GNS3ImagesPath}/QEMU" 
+		createDir <span class="s2">"${GNS3ImagesPath}/QEMU/ASA" 
+		createDir <span class="s2">"${GNS3ImagesPath}/QEMU/Junos" 
+		createDir <span class="s2">"${GNS3ProjectsPath}" 
+		createDir <span class="s2">"${gns3SharedResourcesPath}" 
+		createDir <span class="s2">"${HOME}/VirtualBox VMs" 
+		<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">			 createDir <span class="s2">"${GNS3SourcePath}" 
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  -e <span class="s2">"Skipping directory creation:" 
+	<span class="k">fi 
+<span class="k">fi 
+
+#Github 
+############################################################################### 
+<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+
+<span class="k">	 <span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">	     :-Github version control for developer install. 
+<span class="s2">	     :[REQUIRED for developer install]" <span class="nv">$normal 
+	which git 2&gt;&amp;1
+	<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">		 installApp <span class="nv">$interactive  <span class="s2">"Github version control"  git 
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Unable to install github version control." 
+			<span class="nb">echo  <span class="s2">"github version control is required for developer install" 
+			<span class="nb">exit  1
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"git already installed: Skipping." 
+	<span class="k">fi 
+<span class="k">fi 
+
+#svn 
+############################################################################### 
+<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+
+<span class="k">	 <span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">	     :-svn version control for developer install. (required for vpcs)" <span class="nv">$normal 
+	which svn 2&gt;&amp;1
+	<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">		 installApp <span class="nv">$interactive  <span class="s2">"subversion version control (svn)"  subversion 
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Unable to install svn version control." 
+			<span class="nb">echo  <span class="s2">"svn version control is required for developer install" 
+			<span class="nb">exit  1
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"svn already installed: Skipping." 
+	<span class="k">fi 
+<span class="k">fi 
+
+#bison 
+############################################################################### 
+<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+
+<span class="k">	 <span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">	     :-bison for developer install. (required for iouyap)" <span class="nv">$normal 
+	which bison 2&gt;&amp;1
+	<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">		 installApp <span class="nv">$interactive  <span class="s2">"Bison parser generator"  bison 
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Unable to install Bison parser generator." 
+			<span class="nb">echo  <span class="s2">"Bison parser generator is required for developer install" 
+			<span class="nb">exit  1
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"bison already installed: Skipping." 
+	<span class="k">fi 
+<span class="k">fi 
+############################################################################### 
+<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+
+<span class="k">	 <span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">	     :-flex for developer install. (required for iouyap)" <span class="nv">$normal 
+	which flex 2&gt;&amp;1
+	<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">		 installApp <span class="nv">$interactive  <span class="s2">"Flex lexical analyzer"  flex 
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Unable to install Flex lexical analyzer." 
+			<span class="nb">echo  <span class="s2">"Flex lexical analyzer is required for developer install" 
+			<span class="nb">exit  1
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"flex already installed: Skipping." 
+	<span class="k">fi 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-python3-pyqt4 package will also pull in python3-sip package as a dep,  
+<span class="s2">       which is also needed for the GUI. 
+<span class="s2">      -[Required - allow about 20min]" <span class="nv">$normal 
+# which python3 2&gt;&amp;1 ;#does not work - just becaue python3 is installed doesn't 
+# mean the development bits are installed too  
+<span class="k">if  <span class="nv">$fullInstall  <span class="o">||  checkPkgInstalled build-essential libelf-dev uuid-dev libpcap-dev python3-dev python3-pyqt4 python3-setuptools python3-ws4py python3-netifaces python3-zmq python3-tornado python-setuptools; <span class="k">then 
+<span class="k">	 installApp <span class="nv">$interactive  <span class="s2">"python3-pyqt4 packages"  build-essential libelf-dev uuid-dev libpcap-dev python3-dev python3-pyqt4 python3-setuptools python3-ws4py python3-netifaces python3-zmq python3-tornado python-setuptools
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install all required python packages." 
+		<span class="nb">echo  <span class="s2">"Python packages are required for developer install" 
+		<span class="nb">exit  1
+	<span class="k">fi 
+
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"python3 already installed: Skipping." 
+<span class="k">fi 
+ ############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-latest Dynamips code from github OR from repository 
+<span class="s2">       (Note: developer install from github uses git - non developer uses wget) 
+<span class="s2">      -[Required]" <span class="nv">$normal 
+<span class="k">if  <span class="nv">$interactive  <span class="o">&amp;&amp;  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">	 <span class="nb">read  -p <span class="s2">"Download dynamips from [g]ithub or [r]epository or [n]one? g/r/n[g] "  dynamipsResponse
+<span class="k">elif  <span class="nv">$interactive  ; <span class="k">then  # &amp;&amp; therefore NOT $developer install 
+	<span class="nb">read  -p <span class="s2">"Download dynamips from [g]ithub or [r]epository or [n]one? g/r/n[r] "  dynamipsResponse
+<span class="k">else 
+<span class="k">	 <span class="nv">dynamipsResponse <span class="o">= <span class="s2">"" 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">[  <span class="s2">"$dynamipsResponse"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nv">dynamipsResponse <span class="o">= <span class="s2">"g" 
+	<span class="k">else 
+<span class="k">		 <span class="nv">dynamipsResponse <span class="o">= <span class="s2">"r" 
+	<span class="k">fi 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">[   <span class="s2">"$dynamipsResponse"  <span class="o">=  <span class="s2">"r"  <span class="o">]   ; <span class="k">then 
+<span class="k">	 installApp <span class="nb">false  <span class="s2">"dynamips"  dynamips
+<span class="k">elif  <span class="o">[   <span class="s2">"$dynamipsResponse"  <span class="o">=  <span class="s2">"g"  <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Updating dynamips code from github" 
+	<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+		<span class="k">if  <span class="o">[  -d dynamips <span class="o">]  ; <span class="k">then   # Assume it's been cloned if the directory exists  
+			<span class="nb">cd  dynamips
+			git pull origin master
+			<span class="nb">cd  build
+		<span class="k">else 
+<span class="k">			 sudo apt-get install cmake -y
+			git clone --branch<span class="o">= master git://github.com/GNS3/dynamips
+			<span class="nb">cd  dynamips
+			mkdir build
+			<span class="nb">cd  build
+			cmake ..
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">cd  ~/Downloads
+		wget -O dynamips-master.zip https://github.com/GNS3/dynamips/archive/master.zip
+		#Unzip into the location of your choice 
+		unzip -o dynamips-master.zip
+		<span class="nb">cd  dynamips-master
+	<span class="k">fi 
+<span class="k">	 make
+	sudo make install
+	#This should install dynamips into /usr/bin 
+<span class="k">else  #[  "$dynamipsResponse" = "n" ] 
+	<span class="nb">echo  <span class="s2">"dynamips code not updated" 
+<span class="k">fi 
+#Test it out to make sure it works: 
+<span class="nv">dynamipsVersion <span class="o">= <span class="k">$( dynamips 2&gt;&amp;1 | grep version | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/-.*$//' <span class="k">) 
+
+<span class="k">if  <span class="o">[  <span class="s2">"${dynamipsVersion}"  <span class="o">==  <span class="s2">""  <span class="o">]  ;  <span class="k">then 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"dynamips failed to install - aborting" 
+	<span class="nb">exit  1
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"Dynamips version ${dynamipsVersion} is installed" 
+<span class="k">fi 
+
+
+#Then we'll need to make sure that we have pip and setuptools installed for Python 3.x -- easiest way to do this is the following: 
+
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-pip and setuptools.  
+<span class="s2">       pip is used to get some pre-req python modules for GNS3... 
+<span class="s2">      -[Required - allow 20 mins]" <span class="nv">$normal 
+which pip 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Download and install pip and setuptools y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Downloading and installing pip and setuptools" 
+		<span class="nb">cd  ~/Downloads
+		wget -O get-pip.py https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+		sudo python3 get-pip.py
+
+		#Now let's use pip to get some pre-req python modules for GNS3... 
+		pip3 install pyzmq
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">]  ; <span class="k">then  
+<span class="k">			 pip3 install pyzmq --upgrade
+		<span class="k">fi 
+
+<span class="k">		 pip3 install tornado
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">]  ; <span class="k">then  
+<span class="k">			 pip3 install tornado --upgrade
+		<span class="k">fi 
+
+<span class="k">		 pip3 install netifaces
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">]  ; <span class="k">then  
+<span class="k">			 pip3 install netifaces --upgrade
+		<span class="k">fi 
+		
+
+		# These will all download and compile code, and then install the resulting modules.  
+		# The pyzmq one in particular will compile a lot of things, and warn early on that  
+		# it can't find an existing libzmq installation -- that's OK, it will build it's  
+		# own one during the compilation. Just let it run after the warning. 
+
+	<span class="k">fi 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"pip already installed: Skipping." 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-gns3-converter  
+<span class="s2">      -[Optional - only required if needing to upgrade GNS3 v0.8.x topologies]" <span class="nv">$normal 
+
+which gns3-converter 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Download and install gns3-converter? y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Downloading and installing gns3-converter" 
+		pip install gns3-converter
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">]  ; <span class="k">then  
+<span class="k">			 pip3 install gns3-converter --upgrade
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"gns3-converter not installed" 
+	<span class="k">fi 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"vboxwrapper already installed. Skipping." 
+<span class="k">fi 
+
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-vboxwrapper  
+<span class="s2">      -[Required to run VirtualBox images]" <span class="nv">$normal 
+
+which vboxwrapper 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Download and install vboxwrapper? y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Downloading and installing python2.7 tools required for vboxwrapper" 
+		sudo apt-get install python2.7-dev
+		wget https://bootstrap.pypa.io/ez_setup.py -O - | python2.7
+
+		<span class="nb">echo  <span class="s2">"Downloading vboxwrapper" 
+		<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">			 <span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+			<span class="k">if  <span class="o">[  -d vboxwrapper <span class="o">]  ; <span class="k">then   # Assume it's been cloned if the directory exists  
+				<span class="nb">cd  vboxwrapper
+				<span class="nb">echo  <span class="s2">"Pulling master" 
+				git pull origin master
+				<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">					 <span class="nb">echo  <span class="s2">"Unable to download vboxwrapper source. Aborting" 
+					<span class="nb">exit  1
+				<span class="k">fi 
+<span class="k">			else 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Cloning to ${GNS3SourcePath}" 
+				git clone --branch<span class="o">= master git://github.com/GNS3/vboxwrapper
+				<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">					 <span class="nb">echo  <span class="s2">"Unable to download vboxwrapper source. Aborting" 
+					<span class="nb">exit  1
+				<span class="k">fi 
+<span class="k">				 <span class="nb">cd  vboxwrapper
+			<span class="k">fi 
+<span class="k">			 python2.7 setup.py install
+		<span class="k">else 
+<span class="k">			 <span class="nb">cd  ~/Downloads
+			wget -O vboxwrapper.zip https://github.com/GNS3/vboxwrapper/archive/master.zip
+			unzip -o vboxwrapper.zip
+			<span class="nb">cd  vboxwrapper-master
+			python2.7 setup.py install
+		<span class="k">fi 
+<span class="k">		 
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"vboxwrapper not installed" 
+
+<span class="s">&lt;&lt;DeleteMe 
+<span class="s">		cd ${gns3SharedResourcesPath} 
+<span class="s">		git clone --branch=master git://github.com/GNS3/vboxwrapper 
+<span class="s">		echo "Installing python setuptools" 
+<span class="s">		wget https://bootstrap.pypa.io/ez_setup.py -O - | python 
+<span class="s">		echo "Installing vboxwrapper" 
+<span class="s">		cd vboxwrapper 
+<span class="s">		python2.7 setup.py install 
+<span class="s">DeleteMe 
+	<span class="k">fi 
+
+
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"vboxwrapper already installed. Skipping." 
+<span class="k">fi 
+
+#Also, don't forget iouyap. From the Debian Jessie guide: 
+#4 - Install iouyap 
+ ############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-iouyap - This binary is in charge of all the networking side of IOU  
+<span class="s2">       ref:  http://forum.gns3.net/topic8966.html 
+<span class="s2">      -[Required to run IOU images]" <span class="nv">$normal 
+which iouyap 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Download and install iouyap? y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Downloading iouyap" 
+		<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">			 <span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+			<span class="k">if  <span class="o">[  -d iniparser <span class="o">]  ; <span class="k">then   # Assume it's been cloned if the directory exists  
+				<span class="nb">cd  iniparser
+				<span class="nb">echo  <span class="s2">"Pulling iniparser master" 
+				git pull origin master
+				<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">					 <span class="nb">echo  <span class="s2">"Unable to download iniparser source. Aborting" 
+					<span class="nb">exit  1
+				<span class="k">fi 
+
+<span class="k">			else 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Cloning to ${GNS3SourcePath}" 
+				git clone --branch<span class="o">= master http://github.com/ndevilla/iniparser.git
+				<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">					 <span class="nb">echo  <span class="s2">"Unable to download iniparser source. Aborting" 
+					<span class="nb">exit  1
+				<span class="k">fi 
+<span class="k">				 <span class="nb">cd  iniparser
+			<span class="k">fi 
+
+<span class="k">			 make
+			cp libiniparser.* /usr/lib/
+			cp src/iniparser.h /usr/local/include
+			cp src/dictionary.h /usr/local/include
+
+
+			<span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+			<span class="k">if  <span class="o">[  -d iouyap <span class="o">]  ; <span class="k">then   # Assume it's been cloned if the directory exists  
+				<span class="nb">cd  iouyap
+				<span class="nb">echo  <span class="s2">"Pulling iouyap master" 
+				git pull origin master
+				<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">					 <span class="nb">echo  <span class="s2">"Unable to download iouyap source. Aborting" 
+					<span class="nb">exit  1
+				<span class="k">fi 
+
+<span class="k">			else 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Cloning iouyap to ${GNS3SourcePath}" 
+				git clone --branch<span class="o">= master git://github.com/GNS3/iouyap
+				<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">					 <span class="nb">echo  <span class="s2">"Unable to download iouyap source. Aborting" 
+					<span class="nb">exit  1
+				<span class="k">fi 
+<span class="k">				 <span class="nb">cd  iouyap
+			<span class="k">fi 
+
+<span class="k">			 make
+			make install
+			cp iouyap /usr/local/bin/iouyap
+
+<span class="s">&lt;&lt;DeleteMe 
+<span class="s">			#http://forum.gns3.net/topic11444.html 
+<span class="s">			wget -O iniparser-3.1.tar.gz http://ndevilla.free.fr/iniparser/iniparser-3.1.tar.gz 
+<span class="s">			tar -xvzf iniparser-3.1.tar.gz 
+<span class="s">			cd iniparser 
+<span class="s">			make 
+<span class="s">			cp libiniparser.* /usr/lib/ 
+<span class="s">			cp src/iniparser.h /usr/local/include 
+<span class="s">			cp src/dictionary.h /usr/local/include 
+<span class="s">			cd .. 
+<span class="s">			make 
+<span class="s">			make install 
+<span class="s">			cp iouyap /usr/local/bin/iouyap 
+<span class="s">DeleteMe 
+		<span class="k">else 
+<span class="k">			 <span class="nb">cd  ~/Downloads
+			wget -O iouyap.tar.gz http://sourceforge.net/projects/gns-3/files/Tools/iouyap.tar.gz/download
+			tar zxvf iouyap.tar.gz
+			cp iouyap /usr/local/bin/iouyap
+		<span class="k">fi 
+<span class="k">		 setcap cap_net_raw,cap_net_admin+eip /usr/local/bin/iouyap
+	<span class="k">else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"iouyap not installed" 
+	<span class="k">fi 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"iouyap already installed. Skipping." 
+<span class="k">fi 
+############################################################################### 
+<span class="k">if  ! <span class="o">[  -f /usr/lib/libcrypto.so.4 <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">	     :-libssl1.0.0 -  Fix the missing library for IOU (libssl1.0.0) 
+<span class="s2">	       ref:  http://forum.gns3.net/topic8988.html 
+<span class="s2">	      -[Required to run IOU images]" <span class="nv">$normal 
+	<span class="k">if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Fix link to libssl1.0.0? y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		if  hostIs64Bit ; <span class="k">then 
+<span class="k">			 apt-get install libssl1.0.0:i386
+			<span class="k">if  ! <span class="o">[  -f /lib/i386-linux-gnu/libcrypto.so.1.0.0 <span class="o">]  ; <span class="k">then 
+<span class="k">				 <span class="nb">echo  <span class="s2">"libcrypto.so.1.0.0 is not installed. Aborting" 
+				<span class="nb">echo  <span class="s2">"Try issuing the command" 
+				<span class="nb">echo  <span class="s2">"sudo apt-get install --reinstall libssl1.0.0:i386" 
+				<span class="nb">exit  1
+			<span class="k">fi 
+<span class="k">		fi 
+<span class="k">		 ln -s /lib/i386-linux-gnu/libcrypto.so.1.0.0 /usr/lib/libcrypto.so.4
+	<span class="k">fi 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-SSH Server [Optional] 
+<span class="s2">      - useful if you wish to access your VM securely" <span class="nv">$normal 
+which sshd 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	 installApp <span class="nv">$interactive  <span class="s2">"SSH Server"  openssh-server 
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install SSH server." 
+		<span class="nb">echo  <span class="s2">"You can run this script again later to try again" 
+		<span class="nb">read  -p <span class="s2">"Press &lt;Enter&gt; to continue"  pressEnter
+	<span class="k">fi 
+
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"SSH Server already installed. Skipping." 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-VirtualBox [Highly Recommended] 
+<span class="s2">      - essential for VirtualBox integration" <span class="nv">$normal 
+which virtualbox 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	 installApp <span class="nv">$interactive  <span class="s2">"VirtualBox"  virtualbox-qt xdotool
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install VirtualBox." 
+		<span class="nb">echo  <span class="s2">"You can run this script again later to try again" 
+		<span class="nb">read  -p <span class="s2">"Press &lt;Enter&gt; to continue"  pressEnter
+	<span class="k">fi 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"VirtualBox already installed. Skipping." 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-Qemu [Highly Recommended] 
+<span class="s2">      - essential for Qemu integration" <span class="nv">$normal 
+which qemu-i386 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	 installApp <span class="nv">$interactive  <span class="s2">"Qemu"  qemu
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install qemu." 
+		<span class="nb">echo  <span class="s2">"You can run this script again later to try again" 
+		<span class="nb">read  -p <span class="s2">"Press &lt;Enter&gt; to continue"  pressEnter
+	<span class="k">fi 
+
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Qemu already installed. Skipping." 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-Wireshark [HIGHLY RECOMMENDED - allow 5 mins] 
+<span class="s2">      - Needed to be able to use the Packet Capture feature in GNS3" <span class="nv">$normal 
+which wireshark 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Install Wireshark? y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 sudo apt-get install wireshark -y
+		#and so I could run it as a normal user and see interfaces: 
+		sudo chgrp adm /usr/bin/dumpcap
+		sudo chmod 750 /usr/bin/dumpcap
+		sudo setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap
+
+		#[Thanks to http://securityblog.gr/1195/run-wireshark-as-a-user-rather-than-root-ubuntu/] 
+	<span class="k">else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Wireshark not installed" 
+	<span class="k">fi 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Wireshark already installed. Skipping." 
+<span class="k">fi 
+ ############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">      :-VPCS [REQUIRED]" <span class="nv">$normal 
+<span class="k">if  <span class="nv">$interactive  <span class="o">&amp;&amp;  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">	 <span class="nb">read  -p <span class="s2">"Download vpcs from [s]ourceforge or [r]epository or [n]one? s/r/n[s] "  vpcsResponse
+<span class="k">elif  <span class="nv">$interactive  ; <span class="k">then  # &amp;&amp; therefore NOT $developer install 
+	<span class="nb">read  -p <span class="s2">"Download vpcs from [s]ourceforge or [r]epository or [n]one? s/r/n[r] "  vpcsResponse
+<span class="k">else 
+<span class="k">	 <span class="nv">vpcsResponse <span class="o">= <span class="s2">"" 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">[  <span class="s2">"$vpcsResponse"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">	if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nv">vpcsResponse <span class="o">= <span class="s2">"s" 
+	<span class="k">else 
+<span class="k">		 <span class="nv">vpcsResponse <span class="o">= <span class="s2">"r" 
+	<span class="k">fi 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">[   <span class="s2">"$vpcsResponse"  <span class="o">=  <span class="s2">"r"  <span class="o">]   ; <span class="k">then 
+<span class="k">	 installApp <span class="nb">false  <span class="s2">"vpcs"  vpcs
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install VPCS." 
+		<span class="nb">echo  <span class="s2">"VPCS is a required option" 
+		<span class="nb">exit  1
+	<span class="k">fi 
+
+	#Check that the repository version is not 0.5b0, if so pretend they said "s" not "r" 
+	vpcs -v | grep <span class="s2">"0.5b0" 
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Ancient version (v0.5b0) of vpcs detected. This will not do!" 
+		<span class="nb">echo  <span class="s2">"VPCS will be downloaded from sourceforge" 
+		<span class="nv">vpcsResponse <span class="o">= <span class="s2">"s" 
+	<span class="k">fi 
+<span class="k">fi 
+
+<span class="k">if  <span class="o">[   <span class="s2">"$vpcsResponse"  <span class="o">=  <span class="s2">"s"  <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Updating vpcs code from sourceforge" 
+
+	<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+		svn checkout svn://svn.code.sf.net/p/vpcs/code/trunk vpcs-code 
+		<span class="nb">cd  vpcs-code/src 
+	 	./mk.sh
+	<span class="k">else 
+<span class="k">		 <span class="nb">cd  ~/Downloads
+		wget -O vpcs http://sourceforge.net/projects/vpcs/files/0.5/beta/vpcs_0.5b2_Linux32/download
+		chmod +x vpcs
+	<span class="k">fi 
+	#Need to move it to where it should be - if already installed overwrite 
+	#if not, assume /usr/bin 
+	<span class="nv">vpcsTargetPath <span class="o">= <span class="k">$( which vpcs<span class="k">) 
+
+	<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then  
+<span class="k">		 <span class="nv">vpcsTargetPath <span class="o">= <span class="s2">"/usr/bin/vpcs"  
+	<span class="k">fi 
+
+<span class="k">	 mv -f vpcs <span class="k">${ <span class="nv">vpcsTargetPath <span class="k">} 
+	#This should install vpcs into /usr/bin 
+<span class="k">elif  <span class="o">[  <span class="s2">"$vpcsResponse"  <span class="o">=  <span class="s2">"n"  <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  <span class="s2">"vpcs code not updated" 
+<span class="k">fi 
+#Test it out to make sure it works: 
+<span class="nv">vpcsVersion <span class="o">= <span class="k">$( vpcs -v 2&gt;&amp;1 | grep version | sed <span class="s1">'s/^.*version //'  | sed <span class="s1">'s/-.*$//' <span class="k">) 
+
+<span class="k">if  <span class="o">[  <span class="s2">"${vpcsVersion}"  <span class="o">==  <span class="s2">""  <span class="o">]  ;  <span class="k">then 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"vpcs failed to install - aborting" 
+	<span class="nb">exit  1
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  -e <span class="s2">"\nvpcs version: 
+<span class="s2">	${vpcsVersion} 
+<span class="s2">	is installed" 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-BBE - a hex editor utility you may find useful 
+<span class="s2">      [Recommended]" <span class="nv">$normal 
+which bbe 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	 installApp <span class="nv">$interactive  <span class="s2">"BBE Hex editor"   bbe
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install BBE Hex Editor." 
+		<span class="nb">echo  <span class="s2">"You can run this script again later to try again" 
+		<span class="nb">read  -p <span class="s2">"Press &lt;Enter&gt; to continue"  pressEnter
+	<span class="k">fi 
+
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"BBE already installed. Skipping." 
+<span class="k">fi 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-ROXTerm - a lightlweight terminal application that supports tabs 
+<span class="s2">      [Recommended]" <span class="nv">$normal 
+which roxterm 2&gt;&amp;1
+<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  <span class="o">||  <span class="nv">$fullInstall  ; <span class="k">then 
+<span class="k">	 installApp <span class="nv">$interactive  <span class="s2">"ROXTerm"   roxterm
+	<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"1"  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Unable to install ROXTerm." 
+		<span class="nb">echo  <span class="s2">"You can run this script again later to try again" 
+		<span class="nb">read  -p <span class="s2">"Press &lt;Enter&gt; to continue"  pressEnter
+	<span class="k">fi 
+
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"ROXTERM already installed. Skipping." 
+<span class="k">fi 
+
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :- IOURC file creation (you'll have to add your own licence) 
+<span class="s2">        hosts file check" <span class="nv">$normal 
+<span class="k">if  <span class="o">[  -f <span class="s2">"${GNS3ImagesPath}/IOU/iourc"  <span class="o">]  <span class="o">&amp;&amp;  <span class="o">[  <span class="k">$( cat /etc/hosts | grep -c xml.cisco.com<span class="k">)  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then  
+<span class="k">		 <span class="nb">echo  <span class="s2">"IOURC file exists, hosts file OK - skipping" 
+	<span class="k">else 
+
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Create IOURC file &amp; check hosts file y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">cd  <span class="s2">"${GNS3ImagesPath}/IOU" 
+		<span class="nb">echo  <span class="s2">"Creating IOURC file" 
+		## Create blank iourc licence file 
+		<span class="nb">echo  -e <span class="s2">"[license]"  &gt; <span class="k">${ <span class="nv">GNS3ImagesPath <span class="k">} /IOU/iourc
+		<span class="nb">echo  -e <span class="s2">"$(hostname) = 00000000000000000;"  &gt;&gt; <span class="k">${ <span class="nv">GNS3ImagesPath <span class="k">} /IOU/iourc
+
+		<span class="nb">echo  -e <span class="s2">"Creating file iourc in ${GNS3ImagesPath}/IOU" 
+		<span class="nb">echo  -e <span class="s2">"After this install is finished you will need to edit" 
+		<span class="nb">echo  -e <span class="s2">"${GNS3ImagesPath}/IOU/iourc and change the 16 hex characters" 
+		<span class="nb">echo  -e <span class="s2">"00000000000000000 to your legitimate licence number.  Reading GNS3 forum posts" 
+		<span class="nb">echo  -e <span class="s2">"http://forum.gns3.net/post28850.html#p28850 may assist you" 
+		<span class="nb">echo  -e <span class="s2">"\nIn your GNS3 configuration specify " 
+		<span class="nb">echo  -e <span class="s2">"${GNS3ImagesPath}/IOU/iourc in your GNS3 settings" 
+		chown <span class="k">${ <span class="nv">SUDO_USER <span class="k">} :<span class="k">${ <span class="nv">SUDO_USER <span class="k">}  <span class="k">${ <span class="nv">GNS3ImagesPath <span class="k">} /IOU/iourc
+	
+		## Check hosts file 
+		<span class="k">if  <span class="o">[  <span class="k">$( cat /etc/hosts | grep -c xml.cisco.com<span class="k">)  <span class="o">==  <span class="s2">"0"  <span class="o">]  ; <span class="k">then  
+<span class="k">			 sudo <span class="nb">echo  <span class="s2">"127.0.0.1 xml.cisco.com"  &gt;&gt; /etc/hosts
+			<span class="nb">echo  <span class="s2">"hosts file updated with 127.0.0.1 xml.cisco.com" 
+		<span class="k">fi 
+
+
+<span class="k">	else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"IOURC file not created; hosts file not updated" 
+	<span class="k">fi 
+
+<span class="s">&lt;&lt;ALTERNATIVE_SOLUTION 
+<span class="s">    # An alternative solution to using a valid licence key is to modify your  
+<span class="s">    # iou binary images so they don't look for a key - but that may be breaking 
+<span class="s">    # the licence agreement (the one that says you are only going to use iou while 
+<span class="s">    # you are a Cisco employee/partner) 
+<span class="s">	# See more at: http://ahsantasneem.blogspot.com.au/2012/10/cisco-l3-l2-iou-on-fedora-linux-hacked.html 
+
+<span class="s">	cd "${GNS3ImagesPath}/IOU"  
+<span class="s">	for F in i86bi-linux-l3* ; do  
+<span class="s">		echo "Inspecting $F" 
+<span class="s">		bbe -b "/\xfc\xff\x83\xc4\x0c\x85\xc0\x75\x14\x8b/:10" -e "r 7 \x90\x90" -o $F.x $F 
+<span class="s">		mv $F.x $F 
+<span class="s">	done 
+<span class="s">		for F in i86bi-linux-l2* ; do  
+<span class="s">		echo "Inspecting $F" 
+<span class="s">		bbe -b "/\xa1\xff\x83\xc4\x0c\x85\xc0\x75\x17\x8b/:10" -e "r 7 \x74" -o $F.x $F 
+<span class="s">		mv $F.x $F 
+<span class="s">	done 
+<span class="s">	chmod +x ./i86bi-linux* 
+<span class="s">	chown $SUDO_USER:$SUDO_USER i86bi-linux* 
+<span class="s">ALTERNATIVE_SOLUTION 
+
+<span class="k">fi 
+
+#OK, now onto the new GNS3 server... Grab the server code from Github, https://github.com/GNS3/gns3-server/archive/master.zip 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-latest GNS3 server code from github  
+<span class="s2">      -[Required]" <span class="nv">$normal 
+<span class="k">if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">	 <span class="nb">read  -p <span class="s2">"Download and complile latest GNS3 server code from github? y/n[y]"  response
+<span class="k">fi 
+<span class="k">if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Downloading latest GNS3 server code from github" 
+	<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+		<span class="k">if  <span class="o">[  -d gns3-server <span class="o">]  ; <span class="k">then   # Assume it's been cloned if the directory exists  
+			<span class="nb">cd  gns3-server
+			git pull origin master
+			<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Unable to download gns3-server source. Aborting" 
+				<span class="nb">exit  1
+			<span class="k">fi 
+
+<span class="k">		else 
+<span class="k">			 git clone --branch<span class="o">= master git://github.com/GNS3/gns3-server
+			<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Unable to download gns3-server source. Aborting" 
+				<span class="nb">exit  1
+			<span class="k">fi 
+<span class="k">			 <span class="nb">cd  gns3-server
+		<span class="k">fi 
+<span class="k">	else 
+		## Huge kludge to "guess" the latest alpha/beta version - assume that the first time the  
+		## word "beta" or alpha" is used on http://github.com/GNS3/gns3-gui/release it will 
+		## be followed by the latest release number!! 
+		## Updated 2014-10-23 - now looks for "v1.x" and extracts the "x" to get the version number 
+		## Still a huge kludge!!!! :) 
+		<span class="nv">gns3Version <span class="o">= <span class="k">$( wget -O- http://github.com/GNS3/gns3-gui/releases 2&lt;&amp;1 | grep -m 1 v1<span class="se">\.  | sed <span class="s1">'s/\(^.*\)\(v1\.\)/\2/'  | sed <span class="s1">'s/\(v1\.[0-9]*\).*/\1/'  | cut -b 4-<span class="k">) 
+		<span class="nv">gns3Version <span class="o">= <span class="k">$( wget -O- http://github.com/GNS3/gns3-gui/releases 2&lt;&amp;1 | egrep -m 1 v<span class="o">[ 1-9<span class="o">] <span class="se">\.  | sed <span class="s1">'s/\(^.*\)\(v[1-9]\.\)/\2/'  | sed <span class="s1">'s#\(v[1-9]\.[0-9\.]*\).*#\1#'  | cut -b 2-<span class="k">) 
+		<span class="nv">gns3ServerSource <span class="o">= <span class="s2">"http://github.com/GNS3/gns3-server/archive/v${gns3Version}.tar.gz" 
+		<span class="nb">cd  ~/Downloads
+		wget -O gns3-server-<span class="k">${ <span class="nv">gns3Version <span class="k">} .tar.gz <span class="nv">$gns3ServerSource 
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 tar xvf gns3-server-<span class="k">${ <span class="nv">gns3Version <span class="k">} .tar.gz
+			<span class="nb">cd  gns3-server-<span class="k">${ <span class="nv">gns3Version <span class="k">} 
+		<span class="k">else 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Unable to download gns3-server source. Aborting" 
+			<span class="nb">exit  1
+		<span class="k">fi 
+		
+#		wget -O gns3-server-master.zip https://github.com/GNS3/gns3-server/archive/master.zip 
+#		unzip -o gns3-server-master.zip 
+#		cd gns3-server-master 
+	<span class="k">fi 
+<span class="k">	 sudo python3 setup.py install
+	# Test it out to make sure it works: 
+	<span class="nb">echo  <span class="s2">"Testing gns3server" 
+	<span class="nv">gns3serverVersion <span class="o">= <span class="k">$( gns3server --version<span class="k">) 
+	<span class="k">if  <span class="o">[  <span class="s2">"${gns3serverVersion}"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  -e <span class="s2">"gns3server failed to install - aborting" 
+		<span class="nb">exit  1
+	<span class="k">else 
+<span class="k">		 <span class="nb">echo  -e <span class="s2">"gns3server version ${gns3serverVersion} is installed" 
+	<span class="k">fi 
+<span class="k">fi 
+#download and install the GUI -- 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-latest GNS3 GUI code from github  
+<span class="s2">      -[Required]" <span class="nv">$normal 
+<span class="k">if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">	 <span class="nb">read  -p <span class="s2">"Download and complile latest GNS3 GUI code from github? y/n[y]"  response
+<span class="k">fi 
+<span class="k">if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Downloading latest GNS3 GUI code from github" 
+	<span class="k">if  <span class="nv">$developerInstall  ; <span class="k">then 
+<span class="k">		 <span class="nb">cd  <span class="k">${ <span class="nv">GNS3SourcePath <span class="k">} 
+		<span class="k">if  <span class="o">[  -d gns3-gui <span class="o">]  ; <span class="k">then   # Assume it's been cloned if the directory exists  
+			<span class="nb">cd  gns3-gui
+			git pull origin master
+			<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Unable to download gns3-gui source. Aborting" 
+				<span class="nb">exit  1
+			<span class="k">fi 
+<span class="k">		else 
+<span class="k">			 git clone --branch<span class="o">= master git://github.com/GNS3/gns3-gui
+			<span class="k">if  <span class="o">[  <span class="nv">$?  !<span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">				 <span class="nb">echo  <span class="s2">"Unable to download gns3-gui source. Aborting" 
+				<span class="nb">exit  1
+			<span class="k">fi 
+<span class="k">			 <span class="nb">cd  gns3-gui
+		<span class="k">fi 
+<span class="k">	else 
+<span class="k">		 <span class="nb">cd  ~/Downloads
+		<span class="k">if  <span class="o">[  <span class="s2">"$gns3Version"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">then  ## then they didn't download the server - unlikely, but possible, so have to do the kldge again (see above) 
+			<span class="nv">gns3Version <span class="o">= <span class="k">$( wget -O- http://github.com/GNS3/gns3-gui/releases 2&lt;&amp;1 | grep -m 1 v1<span class="se">\.  | sed <span class="s1">'s/\(^.*\)\(v1\.\)/\2/'  | sed <span class="s1">'s/\(v1\.[0-9]*\).*/\1/'  | cut -b 4-<span class="k">) 
+            <span class="nv">gns3Version <span class="o">= <span class="k">$( wget -O- http://github.com/GNS3/gns3-gui/releases 2&lt;&amp;1 | egrep -m 1 v<span class="o">[ 1-9<span class="o">] <span class="se">\.  | sed <span class="s1">'s/\(^.*\)\(v[1-9]\.\)/\2/'  | sed <span class="s1">'s#\(v[1-9]\.[0-9\.]*\).*#\1#'  | cut -b 2-<span class="k">) 
+		<span class="k">fi 
+
+<span class="k">		 <span class="nv">gns3GuiSource <span class="o">= <span class="s2">"http://github.com/GNS3/gns3-gui/archive/v${gns3Version}.tar.gz" 
+		wget -O gns3-gui-<span class="k">${ <span class="nv">gns3Version <span class="k">} .tar.gz <span class="nv">$gns3GuiSource 
+		<span class="k">if  <span class="o">[  <span class="nv">$?  <span class="o">=  <span class="s2">"0"  <span class="o">]  ; <span class="k">then 
+<span class="k">			 tar xvf gns3-gui-<span class="k">${ <span class="nv">gns3Version <span class="k">} .tar.gz
+			<span class="nb">cd  gns3-gui-<span class="k">${ <span class="nv">gns3Version <span class="k">} 
+		<span class="k">else 
+<span class="k">			 <span class="nb">echo  <span class="s2">"Unable to download gns3-gui source. Aborting" 
+			<span class="nb">exit  1
+		<span class="k">fi 
+
+#		wget -O gns3-gui-master.zip https://github.com/GNS3/gns3-gui/archive/master.zip 
+#		unzip -o gns3-gui-master.zip 
+#		cd gns3-gui-master 
+	<span class="k">fi 
+<span class="k">	 sudo python3 setup.py install
+	#	copy icons so we can do desktop shortcuts 
+	cp -r <span class="s2">"resources/images/"  <span class="s2">"${gns3SharedResourcesPath}/" 
+	# Test it out to make sure it works: 
+	# Unfortunately, the following line will launch gns3 - no way to get any 
+	# options to the gui  
+	<span class="nv">gns3guiVersion <span class="o">= <span class="k">$( gns3 --version<span class="k">) 
+	<span class="k">if  <span class="o">[  <span class="s2">"${gns3guiVersion}"  <span class="o">=  <span class="s2">""  <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  -e <span class="s2">"gns3 GUI failed to install - aborting" 
+		<span class="nb">exit  1
+	<span class="k">else 
+<span class="k">		 <span class="nb">echo  -e <span class="s2">"gns3 GUI version ${gns3guiVersion} is installed" 
+	<span class="k">fi 
+<span class="k">fi 
+
+#Create desktop icons 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-Create launchers for desktop  
+<span class="s2">      -[Optional]" <span class="nv">$normal 
+
+<span class="k">if   ! <span class="o">[  -f <span class="s2">"~/Desktop/gns3.desktop"  <span class="o">]  <span class="o">||  <span class="se">\ 
+	! <span class="o">[  -f <span class="s2">"~/Desktop/sudo gns3.desktop"  <span class="o">]  <span class="o">||  <span class="se">\ 
+	<span class="nv">$fullInstall  ; <span class="k">then 
+
+<span class="k">	if  <span class="nv">$interactive  ; <span class="k">then 
+<span class="k">		 <span class="nb">read  -p <span class="s2">"Create desktop launchers for GNS3v1? y/n[y]"  response
+	<span class="k">fi 
+<span class="k">	if  <span class="o">[   <span class="s2">"$response"  <span class="o">=  <span class="s2">"y"  <span class="o">]  <span class="o">||  <span class="o">[ 	 <span class="s2">"$response"  <span class="o">=  <span class="s2">""   <span class="o">]  ; <span class="k">then 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Creating desktop launchers" 
+		<span class="nb">echo  -e <span class="s2">"[Desktop Entry] 
+<span class="s2">Version=1.0 
+<span class="s2">Type=Application 
+<span class="s2">Terminal=false 
+<span class="s2">Exec=gns3 %f 
+<span class="s2">Name=GNS3 
+<span class="s2">Comment=GNS3 Graphical Network Simulator 
+<span class="s2">Icon=${gns3SharedResourcesPath}/images/gns3.ico 
+<span class="s2">Categories=Education; 
+<span class="s2">MimeType=application/x-gns3; 
+<span class="s2">Keywords=simulator;network;netsim;"  &gt; ~/Desktop/gns3.desktop
+
+		<span class="nb">echo  -e <span class="s2">"[Desktop Entry] 
+<span class="s2">Version=1.0 
+<span class="s2">Type=Application 
+<span class="s2">Terminal=false 
+<span class="s2">Exec=gksudo gns3 %f 
+<span class="s2">Name=sudo GNS3 
+<span class="s2">Comment=GNS3 Graphical Network Simulator 
+<span class="s2">Icon=${gns3SharedResourcesPath}/images/gns3.ico 
+<span class="s2">Categories=Education; 
+<span class="s2">MimeType=application/x-gns3; 
+<span class="s2">Keywords=simulator;network;netsim;"  &gt; ~/Desktop/sudo<span class="se">\  gns3.desktop
+
+	chmod +x ~/Desktop/gns3.desktop
+	chmod +x ~/Desktop/sudo<span class="se">\  gns3.desktop
+	
+	<span class="k">else 
+<span class="k">		 <span class="nb">echo  <span class="s2">"Skipping desktop launcher creation." 
+	<span class="k">fi 
+<span class="k">	 <span class="nb">echo  <span class="s2">"You may need to press F5 at the Desktop to refresh the icons for your launchers." 
+<span class="k">else 
+<span class="k">	 <span class="nb">echo  <span class="s2">"Desktop launchers exist. Skipping" 
+<span class="k">fi 
+
+
+
+#Wrap up 
+############################################################################### 
+<span class="nb">echo  -e <span class="nv">$brightWhiteOnGreenOn <span class="s2">"Stage $((stageCount++)) on $(date) --${installerName} $installerVersion 
+<span class="s2">     :-Installation complete " <span class="nv">$normal 
+#Make sure permissions are good 
+<span class="nb">cd  ~
+chown -R  <span class="k">${ <span class="nv">SUDO_USER <span class="k">} :<span class="k">${ <span class="nv">SUDO_USER <span class="k">}  *
+displayVersions
+
+#End of File 
+</pre>
+</body></html>

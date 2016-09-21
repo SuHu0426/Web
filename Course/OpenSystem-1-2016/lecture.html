@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Install Debian Operating System</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+    <style>
+table {
+    border-spacing: 0px;
+    border: 2px solid;
+    line-height: 150%;
+}
+
+td {
+    border: 1px solid;
+}
+
+th {
+    border: 1px solid;
+    font-size: 17px;
+    font-weight: bold;
+    font-family: Consolas,monospace;
+}
+    </style>
+  </head>
+  <body>
+    <h1>OpenSystem Lab1: Install Debian Operating System</h1>
+    <table>
+        <caption>硬碟分割表</caption>
+        <tr><th>分割區編號<th>類型<th>大小<th>可開機<th>格式化<th>檔案系統<th>掛載位置</tr>
+        <tr><td>#1<td>primary<td align="right">512 MB<td align="center">B<td align="center">F<td align="center">ext2<td>/boot</tr>
+        <tr><td>#2<td>primary<td align="right">5 GB<td><td align="center">F<td align="center">ext4<td>/</tr>
+        <tr><td>#3<td>primary<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/usr</tr>
+        <tr><td>#5<td>logical<td align="right">10 GB<td><td align="center">F<td align="center">ext4<td>/var</tr>
+        <tr><td>#6<td>logical<td align="right">10 GB<td><td align="center">F<td align="center">ext4<td>/usr/local</tr>
+        <tr><td>#7<td>logical<td align="right">10 GB<td><td align="center">F<td align="center">ext4<td>/tmp</tr>
+        <tr><td>#8<td>logical<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/home</tr>
+        <tr><td>#9<td>logical<td align="right">16 GB<td><td align="center">F<td align="center">swap<td>swap</tr>
+        <tr><td>#10<td>logical<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/src1</tr>
+        <tr><td>#11<td>logical<td align="right">20 GB<td><td align="center">F<td align="center">ext4<td>/src2</tr>
+        <tr><td>#12<td>logical<td align="right">120 GB<td><td align="center">F<td align="center">ext4<td>/src3</tr>
+        <tr><td>#13<td>logical<td align="right">120 GB<td><td align="center">F<td align="center">ext4<td>/src4</tr>
+        <tr><td>#14<td>logical<td align="right">40 GB<td><td align="center">F<td align="center">ext4<td>/backup</tr>
+        <tr><td>#15<td>logical<td align="right">125 GB<td><td align="center">F<td align="center">ext4<td>/video</tr>
+    </table>
+    <br>
+    <hr size="2">
+    <br>
+    <div style="float: left;">
+      <p>姓名: ___________, 學號: _______________</p>
+      <p>機器編號: ___________</p>
+    </div><br><br><br><br><br>
+    <div style="float: left;">
+      <p>Root 密碼: ___________</p>
+      <p>使用者全名: Cloud</p>
+      <p>使用者帳號: cloud</p>
+      <p>使用者密碼: ___________</p>
+    </div>
+    <div style="float: left; padding-left: 20px">
+      <p>Hostname (機器名稱): CSE-_______</p>
+      <p>IP address: 192.168.102.___</p>
+      <p>netmask: 255.255.255.0</p>
+      <p>gateway: 192.168.102.254</p>
+    </div>
+    <p></p>
+    <p></p>
+    <p></p>
+  </body>
+</html>

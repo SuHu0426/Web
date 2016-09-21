@@ -1,0 +1,64 @@
+$ sudo chown hsu:hsu /src4
+$ cd /src4
+$ wget http://mln.sourceforge.net/files/mln-latest.tar.gz
+$ tar xzf mln-latest.tar.gz; cd mln-latest
+$ ./mln setup
+$ sudo chown root:root /src4
+$ sudo rm /src4/mln-latest.tar.gz
+$ diff mln mln.orig
+
+3929,3930c3929,3930
+<     # New kernel does not like it, disable! (Felix Hsu, 08/07/2008)
+<     # $command .= " LD_ASSUME_KERNEL=2.4.1 ";
+---
+>
+>     $command .= " LD_ASSUME_KERNEL=2.4.1 ";
+4473,4474c4473,4474
+<           # New kernel does not like it, disable! (Felix Hsu, 08/07/2008)
+<         # $command .= " LD_ASSUME_KERNEL=2.4.1 ";
+---
+>
+>         $command .= " LD_ASSUME_KERNEL=2.4.1 ";
+15730c15730
+< }
+---
+> }
+
+$ cd /src4/mln-latest
+$ sudo cp mln /usr/local/bin
+$ find . -print | cpio -pldm ../mln
+$ cd ..
+$ sudo rm -rf mln-latest
+$ cd mln
+
+At ac15
+
+$ sudo mkdir /etc/mln
+$ sudo nano /etc/mln/mln.conf
+service_host ac15
+daemon_status_query ac14 production
+
+At ac14 
+$ sudo mkdir /etc/mln
+$ sudo nano /etc/mln/mln.conf
+# MLN Configuration File
+# we accept connections from the following server:
+daemon_allow 140.120.8.115
+# This server is known in the projects as:
+service_host ac14
+max_memory 1500
+
+$ sudo mln daemon -D /var/run/mln.pid
+$ cat /var/run/mln.pid
+
+At ac15
+
+$ mln daemon_status
+Server #proj #vms Mem.Used Mem.Ava Groups
+----------------------------------------------
+ac14     0    0        0       0  production
+----------------------------------------------
+Total:  n/a  n/a      n/a     n/a
+Redundancy factor: 1 / 0
+Illegal division by zero at /usr/local/bin/mln line 15956.
+

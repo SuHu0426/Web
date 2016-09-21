@@ -1,0 +1,313 @@
+<html>
+<head>
+<title>Install OpenNEbula on Debian</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="Author" contect="coolyo" />
+<link type="text/css" rel="stylesheet" href="../style.css" />
+</head>
+<body>
+<h1><a href="http://opennebula.org/" target="_blank">OpenNEbula(ONE)</a></h1>
+<h2>ONE 介紹：</h2>
+<p><b>ONE</b> 是一個完全開放原始碼的工具包，用來動態佈署虛擬機器在一群實體資源上，目標是將一群實體叢集轉換成彈性的虛擬基礎設備，且可動態調適工作量的改變。</p>
+<p><b>ONE</b> 可以建構任何類型的 IaaS 雲，包括: 私有雲、公開雲和混和雲。本文使用版本為 2.0，可支援除本文介紹的 KVM 外還有 Xen、VMWare 也可透過 ONE 來控制 Amazon EC2 上的機器。</p>
+
+<h2>實驗環境</h2>
+
+理學大樓 821 機房
+<table border=2>
+  <tr><td>&nbsp;     <th>CSIE-Cloud01</tr>
+  <tr><th>CPU        <td align="right">4 AMD Opteron(tm) Processor 6128 processors<br> (16 cpu cores)</tr>
+  <tr><th>Memory     <td align="right">8G</tr>
+  <tr><th>Disk space <td align="right">500G*2</tr>
+
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+<table border=2>
+  <tr><td>&nbsp;     <th>CSIE-Cloud02</tr>
+  <tr><th>CPU        <td align="right">4 AMD Opteron(tm) Processor 6128 processors<br> (16 cpu cores)</tr>
+  <tr><th>Memory     <td align="right">8G</tr>
+
+  <tr><th>Disk space <td align="right">500G*2</tr>
+  <tr><th>O.S.       <td align="right">Debian squeeze</tr>
+</table>
+
+<h2>安裝實做</h2>
+<h3>一、Install ONE</h3>
+<UL>
+<LI>安裝 ONE 環境所需的工具
+<P>server 端</P>
+<pre>
+$ sudo emacs /etc/apt/sources.list
+<code>deb http://backports.debian.org/debian-backports squeeze-backports main
+</code>$ sudo apt-get update
+$ sudo apt-get install opennebula-common opennebula
+</pre>
+<P>node 端</P>
+<pre>
+$ sudo emacs /etc/apt/sources.list
+<code>deb http://backports.debian.org/debian-backports squeeze-backports main
+</code>$ sudo apt-get update
+$ sudo apt-get install opennebula-common opennebula-node
+</pre>
+<P>中科班練習用(在VM上)</P>
+<pre>
+$ tar zxvf onedeb.tgz
+$ cd one1deb
+$ sudo dpkg -i `ls *.deb`
+$ cd ../one2deb 
+$ sudo dpkg -i `ls *.deb`
+</pre>
+<br />
+<LI>設定 .one_auth 檔案。
+<pre>
+$ cd /var/lib/one
+$ sudo emacs .one_auth
+<code>oneadmin:oneadmin
+</code></pre>
+<br />
+<LI>修改 one 設定檔，使用 NFS Transfer Manager Driver Configuration。
+<pre>
+$ sudo cp /etc/one/oned.conf /etc/one/oned.conf.orig
+$ sudo emacs /etc/one/oned.conf
+<code>#----------------------------------------------------------------------
+# SSH Transfer Manager Driver Configuration
+#----------------------------------------------------------------------
+#TM_MAD = [
+# name = "tm_ssh",
+# executable = "one_tm",
+# arguments = "tm_ssh/tm_ssh.conf" ]
+#----------------------------------------------------------------------
+</code>
+<code>#----------------------------------------------------------------------
+# NFS Transfer Manager Driver Configuration
+#----------------------------------------------------------------------
+TM_MAD = [
+    name       = "tm_nfs",
+    executable = "one_tm",
+    arguments  = "tm_nfs/tm_nfs.conf" ]
+#----------------------------------------------------------------------
+</code></pre>
+<LI>確定 vmm_ssh_kvm.conf 設定檔案之作業系統架構符合電腦設定。
+<pre>
+$ sudo cp /etc/one/vmm_ssh/vmm_ssh_kvm.conf /etc/one/vmm_ssh/vmm_ssh_kvm.conf.orig
+$ sudo emacs /etc/one/vmm_ssh/vmm_ssh_kvm.conf
+<code>OS       = [ boot = "hd", arch = "x86_64" ]
+FEATURES = [ PAE = "no", ACPI = "yes" ]
+</code></pre>
+</UL>
+<h3>二、Network Configuration</h3>
+<UL>
+<LI>利用 virt-manager設定網路。
+<pre>
+$ sudo apt-get install virt-manager
+$ cd ; sudo cp .Xauthority /root
+$ sudo virt-manager
+</pre>
+<OL><LI>在 localhost 上點滑鼠右鍵，點 Details 。
+<div>
+ <img src="../img/ONEnetwork1.png">
+</div><br>
+<LI>在 Virtual Networks 欄，增加新的虛擬網路。
+<div>
+ <img src="../img/ONEnetwork2.png">
+</div><br>
+<LI>下一步。
+<div>
+ <img src="../img/ONEnetwork3.png">
+</div><br>
+<LI>設定虛擬網路名稱 opennebula。
+<div>
+ <img src="../img/ONEnetwork4.png">
+</div><br>
+<LI>設定 private address ranges。
+<div>
+ <img src="../img/ONEnetwork5.png">
+</div><br>
+<LI>設定 DHCP ranges。
+<div>
+ <img src="../img/ONEnetwork6.png">
+</div><br>
+<LI>設定連接的 physical network。
+<div>
+ <img src="../img/ONEnetwork7.png">
+</div><br>
+<LI>完成設定。
+<div>
+ <img src="../img/ONEnetwork8.png">
+</div><br>
+<LI>確定設定，查看 Device。
+<div>
+ <img src="../img/ONEnetwork9.png">
+</div><br>
+</OL>
+<br />
+</UL>
+<h3>三、使用 ONE</h3>
+<UL>
+<LI>設定 node 名稱
+<pre>
+$ sudo emacs /etc/hosts
+<code>192.168.122.100 vm-test01 vm01
+</code></pre>
+<LI>增加 oneadmin 進 libvirt group
+<pre>
+$ sudo usermod -a -G libvirt oneadmin
+$ more /etc/group
+<code>libvirt:x:124:oneadmin
+</code></pre>
+<LI>設定連線金鑰
+<pre>
+$ sudo -iu oneadmin
+$ cd /var/lib/one/.ssh/
+$ more id_rsa.pub >> authorized_keys ; cd
+$ ssh &lt;host_name&gt;
+</pre>
+<LI>啟動 ONE 服務
+<pre>
+$ export ONE_AUTH=/var/lib/one/.one_auth
+$ one start
+</pre>
+<br />
+<LI>增加 node
+<pre>
+$ onehost create &lt;host_name&gt; im_kvm vmm_kvm tm_nfs
+$ onehost list
+<code>ID    NAME CLUSTER RVM TCPU FCPU ACPU  TMEM  FMEM STAT
+ 3 cloud01 default   0 1600 1592 1600  5.9G  3.6G   on
+</code></pre>
+<p>註 : 若是狀態顯示為錯誤，請查詢 /var/log/one/oned.log 檔案。</p>
+<p>若出現的字串為 :  error: unable to connect to '/var/run/libvirt/libvirt-sock', libvirtd may need to be started: Permission denied</p>
+<p>請執行<b>三、使用 ONE </b>的<b>增加 oneadmin 進 libvirt group</b> 指令</p>
+<br />
+<LI>編輯啟動虛擬機器檔案(.one)
+<pre>
+$ cd /var/lib/one/onefile ; ls -l 
+$ emacs DebSqz1.one
+<code>NAME   = DebSqz
+CPU    = 1
+MEMORY = 1024
+
+DISK   = [
+  source   = "/src4/one/DebSqz-Mini.img",
+  target   = "hda",
+  readonly = "no" ]
+
+DISK = [ type = swap,
+         size = 1024 ]
+
+NIC    = [ BRIDGE = "virbr0" ]
+
+GRAPHICS = [
+  type   = "vnc",
+  listen = "0.0.0.0",
+  port   = "5901" ]
+</code></pre>
+<br />
+註: 以下指令只能在實體機器上測試，若使用上課提供的虛擬機器皆無法使用，請在cloud01或cloud02使用，並且記得切換使用者oneadmin。
+<pre>
+$ sudo -iu oneadmin
+</pre>
+<br />
+<LI>開啟虛擬機器
+<pre>
+$ onevm create DebSqz1.one
+$ onevm deploy DebSqz1 &lt;cloud_name&gt;
+$ onevm list
+<code>ID     USER   NAME STAT CPU    MEM    HOSTNAME        TIME
+ 0 oneadmin DebSqz runn   1   1024     cloud01 00 06:10:22
+</code></pre>
+<br />
+<LI>連線虛擬機器及關閉虛擬機器
+<p>開啟一個新的 terminal 使用以下指令</p>
+<pre>
+$ exit
+## 使用 vncviewer 會彈出一個視窗，5901 為檔案 DebSqz1.one 所設定的 port。
+$ vncviewer &lt;cloud_IP&gt;:5901
+##接著回到原來的 pietty。
+$ sudo -iu oneadmin
+$ onevm shutdown &lt;vm_ID&gt;
+</pre>
+<p>註: cloud_IP 為 cloud01 或 cloud02的IP，請確定 shutdown 有正確關掉虛擬機器。</p>
+<br />
+<LI>作業:
+<p>請製作一個可以開啟虛擬機器的 .one 檔案，檔名為 DebSqzctspXX.one (XX為登入帳號的數字)。</p>
+<p>記得設定 NAME=檔名(沒有.one) 及 port=(5911+XX) </p>
+<p>檔案統一儲存在 /var/lib/one/onefile</p>
+</UL>
+<h3>四、進階使用</h3>
+<UL>
+<LI>node 增加及管理
+<p>註:增加 node 前請先安裝好一台 node (有安裝 opennebula-common 及 opennebula-node)。
+<pre>
+$ sudo emacs /etc/hosts
+<code>140.120.13.2   CSIE-Cloud01    cloud01
+140.120.13.4   CSIE-Cloud02    cloud02
+</code>###以上指令請在cloud使用者做，再用oneadmin使用者做以下指令
+$ sudo -iu oneadmin
+$ onehost create ac101 im_kvm vmm_kvm tm_nfs
+$ onehost list
+<code>ID    NAME CLUSTER RVM TCPU FCPU ACPU  TMEM  FMEM STAT
+ 3 cloud01 default   0 1600 1592 1600  5.9G  3.6G   on
+ 4 cloud02 default   0 1600 1592 1600  5.9G  3.6G   on
+</code>
+$ onehost show cloud01
+<code>HOST 3 INFORMATION
+ID                    : 3
+NAME                  : cloud01
+CLUSTER               : default
+STATE                 : MONITORED
+IM_MAD                : im_kvm
+VM_MAD                : vmm_kvm
+TM_MAD                : tm_nfs
+
+HOST SHARES
+MAX MEM               : 6206044
+USED MEM (REAL)       : 3263712
+USED MEM (ALLOCATED)  : 0
+MAX CPU               : 1600
+USED CPU (REAL)       : 3
+USED CPU (ALLOCATED)  : 0
+RUNNING VMS           : 0
+
+MONITORING INFORMATION
+ARCH=x86_64
+CPUSPEED=877613
+FREECPU=1596.8
+FREEMEMORY=3725796
+HOSTNAME=CSIE-Cloud01
+HYPERVISOR=kvm
+MODELNAME=AMD Opteron(tm) Processor 6128
+NETRX=4011667903
+NETTX=1432056683
+TOTALCPU=1600
+TOTALMEMORY=6206044
+USEDCPU=3.20000000000005
+USEDMEMORY=3263712
+
+</code>
+$ onehost delete cloud02
+$ onehost list
+<code>ID    NAME CLUSTER RVM TCPU FCPU ACPU  TMEM  FMEM STAT
+ 3 cloud01 default   0 1600 1592 1600  5.9G  3.6G   on
+</code></pre>
+<LI>VM 佈署及刪除
+<pre>
+$ onevm create DebSqz.one
+$ onevm deploy DebSqz cloud01
+$ onevm list
+<code>ID     USER   NAME STAT CPU    MEM    HOSTNAME        TIME
+ 0 oneadmin DebSqz runn   1   1024     cloud01 00 06:10:22
+</code>
+$ onevm shutdown 0
+##若無法正常shutdown 可使用: $ onevm delete 0
+$ onevm list
+<code>ID     USER   NAME STAT CPU    MEM    HOSTNAME        TIME
+</code></pre>
+</UL>
+<h3>五、References</h3>
+<UL>
+<LI><a href="http://trac.nchc.org.tw/grid/wiki/OpenNEbula" target="_blank">OpenNEbula – Grid Architecture</a>
+<LI><a href="http://trac.nchc.org.tw/grid/wiki/KVM-OpenNebula" target="_blank">KVM+OpenNEbula – Grid Architecture</a>
+</UL>
+</body>
+</html>

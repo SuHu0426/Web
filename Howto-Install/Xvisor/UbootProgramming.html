@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+<html>
+  <head><title>U-Boot programming: A tutorial | xillybus.com</title>
+  </head>
+  <body>
+
+  <div class="content">
+    <p><a href="http://xillybus.com/doc/xilinx-pcie-principle-of-operation" target="_blank"><img alt="FPGA/CPU data transfer comic strip" src="http://xillybus.com/media/comic-300px.jpg" style="width: 400px; height: 3480px;"></a></p>
+<p><i><a href="http://xillybus.com/doc/xilinx-pcie-principle-of-operation" target="_blank">Xillybus' IP core</a>
+ offers a simple &amp; intuitive solution for host/FPGA interface over 
+PCIe and AXI buses. Xilinx, Altera, Windows or Linux, they are all 
+supported. <a href="http://xillybus.com/doc/xilinx-pcie-principle-of-operation" 
+target="_blank">Click here</a> for more information.</p>
+<p></p>
+  </div>
+
+<a name="U-BootProgramming"></a><h3 class="with-tabs">U-Boot programming: A
+  tutorial  
+<a href="http://xillybus.com/tutorials/uboot-hacking-howto-1">(Source Origin)</a></h3>        </div>                        		
+ <div id="content" class="main-content with-sidebar">
+                      <div class="region region-content">
+    <div id="block-system-main" class="block block-system odd">
+
+  <div class="content">
+    <div id="node-136" class="node clearfix">
+
+
+
+  
+  <div class="content">
+  <div class="field field-name-body field-type-text-with-summary field-label-hidden"><div class="field-items"><div class="field-item even" property="content:encoded"><h4>Introduction</h4><p>It's
+ often desirable to make slight changes to U-Boot in order to adapt it 
+to custom hardware. For example, supporting board-specific features or 
+adding a few routines that give the end-user signs that the device has 
+indeed powered on, and that something is happening while the boot 
+process takes place.</p><p>The short tutorial focuses on U-Boot for ARM,
+ but the techniques used on other architectures are similar and often 
+exactly the same. It's assumed that the reader is familiar with U-Boot 
+usage at the command level as well as compilation and deployment.</p><p>It's most recommended to read the README file in the project's root directory first. It covers the following topics:</p><ul><li>The source file tree structure</li><li>The meaning of the CONFIG defines</li><li>Instructions for building U-Boot.</li><li>How to port U-Boot to new platforms</li><li>A brief description of the Hush shell</li><li>How to build the Linux image (mkimage)</li><li>A list of common environment variables</li><li>The "Hello world" example and how to use it</li></ul><p>boards.cfg contains a list of supported boards. It's worth to take a look at it as well.</p><p>This tutorial was written with respect to&nbsp; U-Boot version v2013.07, but the principles apply for a wide range of versions.</p><h4>Sensible Hacking</h4><p>The
+ immediate instinct when encountering a large chunk of software sources 
+is to look for the first place to inject a small hack, and hardcode the 
+necessary functionality. Not only will this probably lead to daunting 
+re-hacking and recompilations in the future, but it's unnecessary: 
+U-Boot is actually laid out to make it easy to add custom functionality.</p><p>One can divide possible modifications into three sorts:</p><ul><li>Modifications in U-Boot's initialization process, so that a custom board's specific hardware is set up early enough</li><li>Adding support to specific hardware, by virtue of adding or modifying low-level drivers</li><li>Expanding the command interface to support a needed functionality, possibly as a front-end for new hardware</li></ul><p>It
+ may be tempting to add a few lines of hack code in the board's 
+initialization routine to perform a specific operation. This will most 
+likely work, but as just mentioned, hardcoding has its disadvantages. 
+Writing a small custom driver and command support is by far more elegant
+ and reusable, if the hardware's setup can be deferred to the command 
+execution stage.</p><p>This tutorial is divided into three parts: A 
+general view on U-Boot (this part), a hands-on explanation on how to add
+ functionality (part II) and some background on U-Boot's bring-up 
+process, for those who need to initialize something very early (part 
+III).</p><h4>Software organization</h4><p>Linux kernel hackers will feel
+ relatively comfortable with U-Boot, as much of the coding style and 
+organization is inspired by the Linux kernel. The structure is however 
+simpler at the cost of less flexibility. There's no intermediate layer 
+between the drivers and the user front-end.</p><p>For example, to get 
+the value of a GPIO pin, just call gpio_get_value(gpio) with the GPIO's 
+pin number from anywhere in the code. There is no place for more than 
+one GPIO driver to be compiled into the system: Only one source file, 
+which defines this function, may be enabled for compilation, or the 
+linking will fail. And of course, if gpio_get_value() is used somewhere,
+ this one source file must be compiled.</p><p>So a "hardware driver" in 
+U-Boot is just a piece of code that implements a set of functions that 
+are linked into the global name space. It kinda makes sense for a 
+utility that needs to be compact: There's no point compiling in anything
+ that isn't used, and most of the time there's a fixed set of hardware 
+involved, with one instance of each kind, at most.</p><p>One driver may,
+ of course, depend on the other. For example, the SOFT_I2C driver 
+depends on two GPIO pins that are connected to an I2C device. These pins
+ are accessed using the GPIO's API functions. Any other piece of 
+software can access the GPIO API as well (hopefully not the same pins).</p><h4>Behind the scenes of make XXX_config</h4><p>Anyone who has built U-Boot has typed something like</p>
+<pre>$ make zynq_zed_config</pre>
+<p>before compiling the project. Many have also spotted that there's a 
+/include/configs/ directory, in which corresponding files are found, for
+ example zynq_zed.h, which reads something like this (GPLv2 header at 
+the top not shown here):</p>
+<pre>#ifndef __CONFIG_ZYNQ_ZED_H
+#define __CONFIG_ZYNQ_ZED_H
+
+#define PHYS_SDRAM_1_SIZE (512 * 1024 * 1024)
+
+#define CONFIG_ZYNQ_SERIAL_UART1
+#define CONFIG_ZYNQ_GEM0
+#define CONFIG_ZYNQ_GEM_PHY_ADDR0	0
+
+#define CONFIG_SYS_NO_FLASH
+
+#define CONFIG_ZYNQ_SDHCI0
+#define CONFIG_ZYNQ_QSPI
+#define CONFIG_ZYNQ_BOOT_FREEBSD
+
+#include &lt;configs/zynq_common.h&gt;
+
+#endif /* __CONFIG_ZYNQ_ZED_H */</pre>
+<p>This is in fact just the tip of the iceberg. Among others, this "make
+ zynq_zed_config" command generates include/config.h. as follows:</p>
+<pre>/* Automatically generated - do not edit */
+#define CONFIG_SYS_ARCH&nbsp; "arm"
+#define CONFIG_SYS_CPU&nbsp;&nbsp; "armv7"
+#define CONFIG_SYS_BOARD "zynq"
+#define CONFIG_SYS_VENDOR "xilinx"
+#define CONFIG_SYS_SOC&nbsp;&nbsp;&nbsp; "zynq"
+#define CONFIG_BOARDDIR board/xilinx/zynq
+#include &lt;config_cmd_defaults.h&gt;
+
+#include &lt;config_defaults.h&gt;
+#include &lt;configs/<span style="color:#ff0000;"><strong>zynq_zed.h</strong></span>&gt;
+#include &lt;asm/config.h&gt;
+#include &lt;config_fallbacks.h&gt;
+#include &lt;config_uncmd_spl.h&gt;</pre>
+<p>The included config files contains other #define (and possibly 
+#undef) statements, most of which for variables with a CONFIG_* prefix.</p><p>At
+ this point, it's quite clear that there's a somewhat tangled set of 
+header files that define CONFIG_* compilation variables (and others). 
+These affect the way the code is compiled in two ways:</p><ol><li>All 
+CONFIG_* variables that are defined turn into Makefile variables in 
+include/autoconf.mk, where each variable that is just defined (as 
+opposed to assigned a value) gets the value "y". This is used in the 
+Makefiles in each source directory to pick which files are compiled and 
+linked into the main executable.</li><li>These compilation variables are used in the compiled C sources directly, and may contain target-specific attributes.</li></ol><p>Unlike
+ the Linux kernel, there is no KConfig utility, so these definitions are
+ made in board-specific h-files. To add a new "make config" target, 
+create a new config file in include/configs/ (or better, copy a similar 
+configuration file), and add a line in boards.cfg.</p><h4>The three functions of code in U-Boot</h4><p>One can divide the code into three types (parallel to the sorts of modifications, mentioned above):</p><ul><li>Pure initialization code: This code always runs during U-Boot's own bring-up. More about the stages of this in part III.</li><li>"Drivers":
+ Code that implements a set of functions, which gives access to a 
+certain piece of hardware. Much of this is found in drivers/, fs/ and 
+others</li><li>Commands: Adding commands to the U-Boot shell, and 
+implementing their functionality, typically based upon calls to driver 
+API. These appear as common/cmd_*.c</li></ul><p>All three code types are
+ strongly influenced by the CONFIG defines. For example, a CONFIG that 
+enables the compilation of a certain driver may also cause a snippet of 
+initialization code to opt in with #ifdef.</p><p>The typical way to add a
+ completely new functionality to U-Boot is writing driver code, writing 
+the command front-end for it, and enable them both with CONFIG flags. In
+ some cases, a segment is added in the initialization sequence, in order
+ to prepare the hardware before any command is issued.</p>
+  </div>
+
+  </div>
+
+  </div>
+</div>
+<div id="block-views-09a189d79beb5233ee77c39ab7e02ad9" class="block block-views even">
+      </ul></div>    </div>
+  
+  
+  
+<div id="block-block-3" class="block block-block even">
+
+
+</div>
+  </div>
+        </div>
+            
+      
+          </div>
+
+<a name="PartII"></a><h4>Example: Adding GPIO support</h4>
+
+<p>U-Boot supports GPIO on several platforms, but is often not enabled. We'll 
+briefly walk through the process of enabling this functionality, 
+possibly for a new platform.</p><p>Looking in the common/ directory, 
+it's quite easy to spot the cmd_gpio.c file. It contains code handling 
+the "gpio" command in U-Boot's shell.</p><p>Its last few lines say:</p>
+<pre>U_BOOT_CMD(gpio, 3, 0, do_gpio,
+  "input/set/clear/toggle gpio pins",
+  "&lt;input|set|clear|toggle&gt; &lt;pin&gt;\n"
+  "    - input/set/clear/toggle the specified pin");</pre>
+<p>This declares do_gpio() as the function to handle for the "gpio" command. It also says that up to <strong>two</strong>
+ arguments are allowed (the number 3 includes the command itself), and 
+that autorepeat is not allowed. There are also the short and long help 
+strings. The U_BOOT_CMD macro is explained in doc/README.commands.</p><p>The
+ do_gpio() function is in essence an argc/argv function, with some extra
+ parameters that are not used in most implementations. So it's down to 
+parsing the arguments and call lower-level functions, usually from some 
+driver API.</p><p>It's quite pointless to go through cmd_gpio.c in 
+detail -- the principle of how the commands are interpreted and executed 
+is easily understood by reading it and other cmd_*.c files. In most 
+cases, it's simpler than one would expect.</p><p>As for the interaction with the build system, it's quite simple as well: Somewhere in common/Makefile, there's a line saying</p>
+<pre>COBJS-$(CONFIG_CMD_GPIO) += cmd_gpio.o</pre>
+<p>Without getting into the tangled parts of the build system, this line
+ means that if CONFIG_CMD_GPIO is defined in the Config chain, 
+cmd_gpio.c will be compiled into cmd_gpio.o, and linked into the global 
+project. The U_BOOT_CMD() macro makes sure that the command is enlisted 
+in the U-Boot shell interpreter.</p><p>But we're not done yet. For example, in cmd_gpio.c, there a place saying</p>
+<pre>if (sub_cmd == GPIO_INPUT) {
+    gpio_direction_input(gpio);
+    value = gpio_get_value(gpio);
+}</pre>
+<p>The functions gpio_direction_input() and gpio_get_value() are not 
+defined in cmd_gpio.c itself. Rather, it's expected that they'll be 
+defined by some other file (a "driver") which is compiled and linked 
+into the global executable.</p><p>As one would expect, there are many 
+candidate C files in drivers/gpio/, each named after the platform it's 
+intended for. They all implement more or less the same set of functions,
+ and in a pretty similar way. The low-level implementation varies, of 
+course.</p><p>Only one of these can be compiled, of course. Which one depends which CONFIG is defined (if at all).</p><p>The Makefile in drivers/gpio/ is similar, with lines saying</p>
+<pre><span style="color: rgb(136, 136, 136);">[ ... ]</span>
+COBJS-$(CONFIG_BCM2835_GPIO)	+= bcm2835_gpio.o
+COBJS-$(CONFIG_S3C2440_GPIO)	+= s3c2440_gpio.o
+COBJS-$(CONFIG_XILINX_GPIO)	+= xilinx_gpio.o
+COBJS-$(CONFIG_ADI_GPIO2)	+= adi_gpio2.o
+
+<span style="color: rgb(136, 136, 136);">[ ... ]</span></pre>
+<p>So all in all, to use Xilinx' GPIO, the two following lines should appear in the board's configuration file:</p>
+<pre>#define CONFIG_CMD_GPIO
+#define CONFIG_XILINX_GPIO</pre>
+<p>Note that sometimes additional configuration variables are necessary.
+ Which ones and what they mean is often easiest to deduce by reading the
+ driver's source code.</p><p>To add a driver for a yet unsupported piece
+ of hardware, it's recommended to look at the existing drivers, and see 
+if there's one that works almost as required. Sometimes it's possible to
+ tweak it with #ifdef's to make it support the desired hardware.</p><p>If
+ this is not the case, the recommended practice is to make copy of the 
+driver that seems to be closest to the desired functionality, and make 
+changes as necessary. In order to include the new driver in the build 
+system, add a COBJ-$() += ... line in the Makefile of the same directory, 
+and a corresponding (new) CONFIG flag to enable it.</p>
+
+<h4>Available API</h4><p>Every
+ function within U-Boot can be accessed by any code, but some functions 
+are more used than others. Looking at other drivers and cmd_*.c files 
+usually gives an idea on how to write new code. Much of the classic C 
+API is supported, even things one wouldn't expect in a small boot 
+loader.</p><p>There are a few functions in the API that are worth to mention:</p><ul><li>Registers are accessed with writel() and readl() etc. like in Linux, as defined in arch/arm/include/asm/io.h</li><li>The
+ environment can be accessed with functions such as setenv(), 
+setenv_ulong(), setenv_hex(), getenv(), getenv_ulong() and getenv_hex().
+ These, and other functions are defined in common/cmd_nvedit.c</li><li>printf() and vprintf() are available, as well as getc(), putc() and puts().</li><li>There's gunzip() and zunzip() for uncompressing data.</li><li>The lib/ directory contains several library functions for handling strings, CRC, hash tables, sorting, encryption and others.</li><li>It's worth looking in include/common.h for some basic API functions.</li></ul><hr>
+
+<a name="PartIII"></a><h3 class="with-tabs">U-Boot programming: A tutorial -- Part III</h3>        </div>                        		
+ <div id="content" class="main-content with-sidebar">
+                      <div class="region region-content">
+    <div id="block-system-main" class="block block-system odd">
+
+  <div class="content">
+    <div id="node-138" class="node clearfix">
+
+
+
+  
+  <div class="content">
+  <div class="field field-name-body field-type-text-with-summary field-label-hidden"><div class="field-items"><div class="field-item even" property="content:encoded">
+
+
+<h4>U-Boot's bring-up</h4>
+
+<p>Even though unnecessary in most cases, it's sometimes desired to modify 
+U-Boot's own bring-up process, in particular for initializing custom 
+hardware during early stages. This section explains the basics of this 
+part of U-Boot.</p><p>U-Boot is one of the first things to run on the 
+processor, and may be responsible for the most basic hardware 
+initialization. On some platforms the processor's RAM isn't configured 
+when U-Boot starts running, so the underlying assumption is that U-Boot 
+may run directly from ROM (typically flash memory).</p><p>The bring-up 
+process' key event is hence when U-Boot copies itself from where it runs
+ in the beginning into RAM, from which it runs the more sophisticated 
+tasks (handling boot commands in particular). This self-copy is referred
+ to as "relocation".</p><p>Almost needless to say, the processor runs in
+ "real mode": The MMU, if there is one, is off. There is no memory 
+translation nor protection. U-Boot plays a few dirty tricks based on 
+this.</p><p>In gross terms, the U-Boot loader runs through the following phases:</p><ul><li>Pre-relocation initialization (possibly directly from flash or other kind of ROM)</li><li>Relocation: Copy the code to RAM.</li><li>Post-relocation initialization (from proper RAM).</li><li>Execution of commands: Through autoboot or console shell</li><li>Passing control to the Linux kernel (or other target application)</li></ul><p>Note
+ that in several scenarios, U-Boot starts from proper RAM to begin with,
+ and consequently there is no actual relocation taking place. The 
+division into pre-relocation and post-relocation becomes somewhat 
+artificial in these scenarios, yet this is the terminology.</p>
+
+<h4>A more detailed look</h4>
+
+<p>The sequence for the ARM architecture can be deduced from 
+arch/arm/lib/crt0.S, which is the absolutely first thing that runs. This
+ piece of assembly code calls functions as follows (along with some very
+ low-level initializations):</p><ul><li>board_init_f() (defined in e.g. 
+arch/arm/lib/board.c): Calls the functions listed in the init_sequence_f
+ function pointer array (using initcall_run_list() ), which is enlisted 
+in this file with a lot of ifdefs. This function then runs various 
+ifdef-dependent init snippets.</li><li>relocate_code()</li><li>coloured_LED_init()
+ and red_led_on() are directly called by crt0.S. Defining these 
+functions allow hooking visible indications of early boot progress.</li><li>board_init_r()
+ (also possibly defined in arch/arm/lib/board.c): Runs the 
+initialization as a "normal" program running from RAM. This function 
+never returns. Rather,</li><li>board_init_r()&nbsp; loops on main_loop()
+ (defined in common/main.c) forever. This is essentially the autoboot or
+ execution of commands from input by the command parser (most likely 
+hush).</li><li>At some stage, a command in main_loop() gives the control to the Linux kernel (or whatever was loaded instead).</li></ul><p>For
+ those who wish to add some code during these init stages: 
+CONFIG_BOARD_EARLY_INIT_F, CONFIG_BOARD_EARLY_INIT_R, 
+CONFIG_BOARD_LATE_INIT and CONFIG_BOARD_POSTCLK_INIT can be defined to 
+request a call to board_early_init_f(), board_early_init_r(), 
+board_late_init() and board_postclk_init() in the respective stages. 
+These can be used as simple hooks for whatever platform-specific 
+functionality is needed.</p>
+
+<h4>SPL boot</h4>
+
+<p>The SPL (Secondary 
+Program Loader) boot feature is irrelevant in most scenarios, but offers
+ a solution As U-Boot itself is too large for the platform's boot 
+sequence. For example, the ARM processor's hardware boot loader in 
+Altera's SoC FPGAs can only handle a 60 kB image. A typical U-Boot ELF 
+easily reaches 300 kB (after stripping).</p><p>The point with an SPL is 
+to create a very small preloader, which loads the "full" U-Boot image. 
+It's built from U-Boot's sources, but with a minimal set of code. So 
+when U-Boot is built for a platform that requires SPL, it's typically 
+done twice: Once for generating the SPL, and a second time for the full 
+U-Boot.</p><p>The SPL build is done with the CONFIG_SPL_BUILD is 
+defined. Only the pre-location phase runs on SPL builds. All it does is 
+the minimal set of initializations, then loads the full U-Boot image, 
+and passes control to it.</p></div></div></div>  
+        
+<h4>Further reading</h4>
+<a href="http://xillybus.com/tutorials/u-boot-image-altera-soc">Preparing a Uboot image for Altera's Cyclone V SoC FPGA</a>
+
+</body></html>

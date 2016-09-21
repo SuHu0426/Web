@@ -1,0 +1,198 @@
+<h4>9 Block Device Partitioning</h4>
+<p>In the output of <code>$ fdisk -l</code> command, you should now find a new hard 
+drive (/dev/sdb in this example); that's our iSCSI storage device:</p>
+<PRE>hsu@iSCSI-iNIT:~ sudo  fdisk -l
+Disk /dev/sda: 32.2 GB, 32212254720 bytes
+255 heads, 63 sectors/track, 3916 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00029d5c
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1        3793    30461952   83  Linux
+/dev/sda2            3793        3917      992257    5  Extended
+/dev/sda5            3793        3917      992256   82  Linux swap / Solaris
+<br>
+Disk /dev/sdb: 21.5 GB, 21474836480 bytes
+64 heads, 32 sectors/track, 20480 cylinders
+Units = cylinders of 2048 * 512 = 1048576 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+Disk /dev/sdb doesn't contain a valid partition table<br>
+hsu@iSCSI-iNIT:~ 
+</PRE>
+<p>To use that device, we must partition and format it via <b>fdisk /dev/sdb</b> and 
+ <b>mkfs</b> commands:
+<PRE>hsu@iSCSI-iNIT:~ sudo  fdisk /dev/sdb 
+  
+Device contains neither a valid DOS partition table, nor Sun, SGI or OSF disklabel 
+  Building a new DOS disklabel with disk identifier 0x882944df. 
+  Changes will remain in memory only, until you decide to write them. 
+  After that, of course, the previous content won't be recoverable. 
+   
+   
+  The number of cylinders for this disk is set to 20480. 
+  There is nothing wrong with that, but this is larger than 1024, 
+  and could in certain setups cause problems with: 
+  1) software that runs at boot time (e.g., old versions of LILO) 
+  2) booting and partitioning software from other OSs 
+   (e.g., DOS FDISK, OS/2 FDISK) 
+Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite) 
+ 
+Command (m for help): <span class="highlight">&lt;-- m 
+Command action 
+   a   toggle a bootable flag 
+   b   edit bsd disklabel 
+   c   toggle the dos compatibility flag 
+   d   delete a partition 
+   l   list known partition types 
+   m   print this menu 
+   n   add a new partition 
+   o   create a new empty DOS partition table 
+   p   print the partition table 
+   q   quit without saving changes 
+   s   create a new empty Sun disklabel 
+   t   change a partition's system id 
+   u   change display/entry units 
+   v   verify the partition table 
+   w   write table to disk and exit 
+   x   extra functionality (experts only) 
+ 
+Command (m for help): <span class="highlight">&lt;-- n 
+Command action 
+   e   extended 
+   p   primary partition (1-4) 
+<span class="highlight">&lt;-- p 
+Partition number (1-4): <span class="highlight">&lt;-- 1 
+First cylinder (1-20480, default 1): <span class="highlight">&lt;-- ENTER  
+Using default value 1 
+Last cylinder or +size or +sizeM or +sizeK (1-20480, default 20480): <span class="highlight">&lt;-- ENTER</span>  
+Using default value 20480 
+ 
+Command (m for help): <span class="highlight">&lt;-- t</span> 
+Selected partition 1 
+Hex code (type L to list codes): <span class="highlight">&lt;-- L</span> 
+ 
+ 0  Empty           1e  Hidden W95 FAT1 80  Old Minix       be  Solaris boot 
+ 1  FAT12           24  NEC DOS         81  Minix / old Lin bf  Solaris 
+ 2  XENIX root      39  Plan 9          82  Linux swap / So c1  DRDOS/sec (FAT- 
+ 3  XENIX usr       3c  PartitionMagic  83  Linux           c4  DRDOS/sec (FAT- 
+ 4  FAT16 &lt;32M      40  Venix 80286     84  OS/2 hidden C:  c6  DRDOS/sec (FAT- 
+ 5  Extended        41  PPC PReP Boot   85  Linux extended  c7  Syrinx 
+ 6  FAT16           42  SFS             86  NTFS volume set da  Non-FS data 
+ 7  HPFS/NTFS       4d  QNX4.x          87  NTFS volume set db  CP/M / CTOS / . 
+ 8  AIX             4e  QNX4.x 2nd part 88  Linux plaintext de  Dell Utility 
+ 9  AIX bootable    4f  QNX4.x 3rd part 8e  Linux LVM       df  BootIt 
+ a  OS/2 Boot Manag 50  OnTrack DM      93  Amoeba          e1  DOS access 
+ b  W95 FAT32       51  OnTrack DM6 Aux 94  Amoeba BBT      e3  DOS R/O 
+ c  W95 FAT32 (LBA) 52  CP/M            9f  BSD/OS          e4  SpeedStor 
+ e  W95 FAT16 (LBA) 53  OnTrack DM6 Aux a0  IBM Thinkpad hi eb  BeOS fs 
+ f  W95 Ext'd (LBA) 54  OnTrackDM6      a5  FreeBSD         ee  EFI GPT 
+10  OPUS            55  EZ-Drive        a6  OpenBSD         ef  EFI (FAT-12/16/ 
+11  Hidden FAT12    56  Golden Bow      a7  NeXTSTEP        f0  Linux/PA-RISC b 
+12  Compaq diagnost 5c  Priam Edisk     a8  Darwin UFS      f1  SpeedStor 
+14  Hidden FAT16 &lt;3 61  SpeedStor       a9  NetBSD          f4  SpeedStor 
+16  Hidden FAT16    63  GNU HURD or Sys ab  Darwin boot     f2  DOS secondary 
+17  Hidden HPFS/NTF 64  Novell Netware  b7  BSDI fs         fd  Linux raid auto 
+18  AST SmartSleep  65  Novell Netware  b8  BSDI swap       fe  LANstep 
+1b  Hidden W95 FAT3 70  DiskSecure Mult bb  Boot Wizard hid ff  BBT 
+1c  Hidden W95 FAT3 75  PC/IX 
+Hex code (type L to list codes): <span class="highlight">&lt;-- 83</span> 
+ 
+Command (m for help): <span class="highlight">&lt;-- w</span> 
+The partition table has been altered! 
+ 
+Calling ioctl() to re-read partition table. 
+Syncing disks. 
+hsu@iSCSI-iNIT:~ 
+</PRE>
+<p>Afterwards, the output of <code>fdisk -l</code> command should look as follows:</p>
+<PRE>
+hsu@iSCSI-iNIT:~ sudo  fdisk -l 
+ 
+Disk /dev/sda: 32.2 GB, 32212254720 bytes 
+255 heads, 63 sectors/track, 3916 cylinders 
+Units = cylinders of 16065 * 512 = 8225280 bytes 
+Sector size (logical/physical): 512 bytes / 512 bytes 
+I/O size (minimum/optimal): 512 bytes / 512 bytes 
+Disk identifier: 0x00029d5c 
+ 
+   Device Boot      Start         End      Blocks   Id  System 
+/dev/sda1   *           1        3793    30461952   83  Linux 
+/dev/sda2            3793        3917      992257    5  Extended 
+/dev/sda5            3793        3917      992256   82  Linux swap / Solaris 
+ 
+Disk /dev/sdb: 21.5 GB, 21474836480 bytes 
+64 heads, 32 sectors/track, 20480 cylinders 
+Units = cylinders of 2048 * 512 = 1048576 bytes 
+Sector size (logical/physical): 512 bytes / 512 bytes 
+I/O size (minimum/optimal): 512 bytes / 512 bytes 
+Disk identifier: 0x45bc2c81 
+ 
+   Device Boot      Start         End      Blocks   Id  System 
+/dev/sdb1               1       20480    20971504   83  Linux 
+hsu@iSCSI-iNIT:~ 
+</PRE>
+<p>Now we create a filesystem on /dev/sdb1 and mount it for test purposes</p>
+<PRE>
+ $ mkfs.ext4 /dev/sdb1
+ $ mount /dev/sdb1 /mnt
+</PRE>
+<p>You should now see the new device in the outputs of <b>mount</b> command (without 
+argument).  After finishing use it, remember to umount it as usual.</p>
+<PRE>
+hsu@iSCSI-iNIT:~ sudo  mount 
+  /dev/sda1 on / type ext3 (rw,errors=remount-ro) 
+  tmpfs on /lib/init/rw type tmpfs (rw,nosuid,mode=0755) 
+  proc on /proc type proc (rw,noexec,nosuid,nodev) 
+  sysfs on /sys type sysfs (rw,noexec,nosuid,nodev) 
+  udev on /dev type tmpfs (rw,mode=0755) 
+  tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev) 
+  devpts on /dev/pts type devpts (rw,noexec,nosuid,gid=5,mode=620) 
+  /dev/sdb1 on /mnt type ext4 (rw) 
+hsu@iSCSI-iNIT:~ sudo  df -h 
+Filesystem            Size  Used Avail Use% Mounted on 
+/dev/sda1              29G  807M   27G   3% / 
+tmpfs                 249M     0  249M   0% /lib/init/rw 
+udev                  244M  108K  244M   1% /dev 
+tmpfs                 249M     0  249M   0% /dev/shm 
+/dev/sdb1              20G  172M   19G   1% /mnt 
+hsu@iSCSI-iNIT:~ 
+hsu@iSCSI-iNIT:~ sudo  umount /mnt
+</PRE>
+<p>To have the device mounted automatically at boot time, e.g. in the directory 
+/storage, we create that directory and add the following line to /etc/fstab</p>
+<PRE>
+ $ mkdir /storage
+ $ vi /etc/fstab
+</PRE>
+<table class="" align="center" bgcolor="#CCCCCC" border="1" bordercolor="#000000" cellpadding="2" cellspacing="0" width="90%">
+  <tbody><tr>
+    <td class="">
+      <pre>[...]
+/dev/sdb1       /storage        ext4    defaults,auto,_netdev 0 0</pre>
+    </td>
+  </tr>
+</tbody></table>
+<p>For test purposes, you can now reboot the system.  After the successful reboot, the 
+device should be mounted.</p>
+<PRE>
+hsu@iSCSI-iNIT:~ sudo  mount 
+  /dev/sda1 on / type ext3 (rw,errors=remount-ro) 
+  tmpfs on /lib/init/rw type tmpfs (rw,nosuid,mode=0755) 
+  proc on /proc type proc (rw,noexec,nosuid,nodev) 
+  sysfs on /sys type sysfs (rw,noexec,nosuid,nodev) 
+  udev on /dev type tmpfs (rw,mode=0755) 
+  tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev) 
+  devpts on /dev/pts type devpts (rw,noexec,nosuid,gid=5,mode=620) 
+  /dev/sdb1 on /storage type ext4 (rw,_netdev) 
+hsu@iSCSI-iNIT:~ sudo  df -h 
+Filesystem            Size  Used Avail Use% Mounted on 
+/dev/sda1              29G  807M   27G   3% / 
+tmpfs                 249M     0  249M   0% /lib/init/rw 
+udev                  244M  108K  244M   1% /dev 
+tmpfs                 249M     0  249M   0% /dev/shm 
+/dev/sdb1              20G  172M   19G   1% /storage 
+hsu@iSCSI-iNIT:~ 
+</PRE>

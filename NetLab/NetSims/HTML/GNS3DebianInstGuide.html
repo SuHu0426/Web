@@ -1,0 +1,464 @@
+<!DOCTYPE html><html>
+ <head><title>Debian Installation Guide for GNS3</title></head>
+<body>
+
+<h3>Welcome to the Debian Installation Guide for GNS3! 
+<a href="https://community.gns3.com/servlet/JiveServlet/download/38-17327/Alternative%20Installation%20Guide%20for%20GNS3%20on%20Linux_rev1.pdf">(PDF Source Origin)</a></h3>
+<b>By the GNS3 Assist Team</b><br/>
+
+<P>This document is broken down into these sections:
+
+<UL>
+  <LI><a href="#2"><b>Section 1: Install your Debian distro of choice:</b></a>
+
+  <LI><a href="#3"><b>Section 2: Using Chris Welsh's script to install all the dependency
+ software for you.</b></a>
+</UL> 
+
+
+<a name="2"></a><h3>Section 1: Choosing your Debian of Choice.</h3>
+
+<P> With Debian, there are so many flavors and choices to make. Naturally it's difficult 
+to make recommendations. Yet at the same time, for people who are not familiar with the wild wild world of Linux, I am going to step in and make recommendations based on certain assumptions:<br/>
+
+<P> You have used Windows Operating systems and are familiar with some of its commands 
+and graphical interfaces. You want a simplified way to install GNS3 and use a graphical 
+interface to locate and install files. You want a consistent methodology to install GNS3 
+in multiple Debian Operating Systems in the hopes of distributing this valuable tool 
+without having to deal with Operating System and license issues.
+
+<P> Okay, so I will recommend a <b>32 bit Debian Distro</b>. In this tutorial, I tried 
+the Debian Jesse beta version 2, and an Ubuntu 14.04 LTS. The main difference in these 
+two was how to resolve the Dynamips install. In the Jesse version, I had to manually 
+locate Dynamips and install it by reading the README file. With Ubuntu, the Dynamips 
+and all other missing dependencies was found in the Synaptic Package Manager.  Both 
+systems have a very good Synaptic Package Manager which will essentially become a 
+Windows user's : "right hand man". Essentially, if the script fails, or you need a 
+package, you will most likely find it this way. The synaptic package manager does not 
+require any programming knowledge which will speed up the acceptance of Debian use 
+with GNS3 among Windows users. 
+
+<P> This section will cover the following:
+ 
+<OL>
+  <LI> Where to download Debian Jesse beta 2.
+ 
+  <LI> How to Install your Debian Jesse.<br/>
+</OL>
+
+<h4>Where to download:</h4>
+
+<P> The most direct way, is to go here:  
+<a href="http://cdimage.debian.org/cdimage/jessie_di_beta_2/amd64/iso-cd/"><b>Debian 
+Jesse beta 2</b></a> or 
+<a href="http://cdimage.debian.org/cdimage/jessie_di_beta_2/i386/iso-cd/"><b>Debian 
+Jesse beta 2 (i386)</b></a> and download the file: 
+debian-jessie-DI-b2-amd64-lxde-CD-1 from it.
+
+<P> I am a Windows user, and just like in an AA meeting, I am not ashamed to say so. 
+I've been a recovering Windows user for the past 17 years. And I'll admit I fall off 
+the figurative 'band wagon' from time to time. I prefer the distro with a KDE graphical 
+user interface because it resembles a Windows environment. Others may prefer MAC 
+looking desktops, while still others prefer older Windows type GUIs. NOTE: It has been 
+reported that GNOME will not work with this installation process.
+
+<P> I downloaded the Jesse x86 beta 2 version for this example. Create a virtualbox 
+image by mounting the downloaded Jesse version and go through the setup. It is 
+recommended to create the disk using a 32 bit architecture. I found the 64 bit to be 
+a little too buggy to support at this time.
+
+<P> Personally, I love graphical interfaces, so in Virtualbox, once I mounted the ISO, 
+I chose the drive letter so that the virtual machine will boot off that .ISO image. 
+In windows 8, you can just right click the ISO and select 'Mount'. It then gets a drive 
+letter and you can then assign that drive letter in your virtual machine. 
+
+<P> I chose to Install and go through the prompts. I will only show you screens of 
+interest during this install. Accept the defaults if you are not familiar with this 
+distribution. 
+
+<P> The Debian distribution I chose was a minimal install for the i386. After the 
+initial questions, you will be prompted with an option to install a number of other 
+features. Most general users who dabble in Linux prefer the 'windows-esque' look and 
+feel. If that is for you, there are a few flavors of the GUI desktop:<br/>
+
+<OL>
+  <LI> Chose KDE for the Windows that has a 'start' button in the lower left hand 
+       corner. 
+
+  <LI> Chose xfce for a lighter version pre-windows 7. (Like XP-ish)
+ 
+  <LI> Chose the LXDE if you want a very old version of Windows...like Win 98.
+</OL>
+
+<P> Of course those are approximate characterizations. But you get the idea. I 
+installed the graphical interface and the standard tools.</P>
+ 
+<a name=4></a><img src="../IMGs/GNS3-Linux_rev1-4_1.jpg"/>
+
+<P> Since I am testing other versions of this graphical interface as it works with 
+GNS3, I chose a bunch of those packages as well as the use of the web server. Do I 
+actually NEED a web-server? Not really, but I am free to install whatever I want! 
+As mentioned, the one desktop that doesn't seem to work well with the new GNS3 
+release is the GNOME interface. 
+
+<P> The reason I'm putting in about half a page to a page of detail about the Windows 
+type interfaces is because if you have issues with GNS3, you may be using GNOME and it 
+may be worth your time to install maybe a second graphical package just in case you 
+have issues with the other one. As far as I have tested, the KDE and the xfce graphical 
+interfaces work fine.</P>
+ 
+
+<a name=5></a><img src="../IMGs/GNS3-Linux_rev1-5_1.jpg"/>
+
+
+<P> I just posted this screen-shot to let you know it's going to take a while depending 
+on your download speed.  After the files are downloaded, you will be prompted to use 
+a KDE or a KDE light package. That's your GUI of choice. I chose the KDE package I 
+want. Your screen-shot may look a little different, but the steps are the same.
+
+<P> There is a question about GRUB. The installation screen will ask about where to 
+put the GRUB boot loader. My installation is inside a virtualbox machine, so I had to 
+select the virtualbox disk that was used for the installation. There is only one option 
+within the virtual machine but your disk should be listed. Highlight that and then hit 
+enter. This will put the GRUB into the main partition of the virtual machine.
+On reboot, you will see a screen to select your Operating System. </P>
+
+<P> At this point, you have successfully installed it. Since I am using a VM machine. I am NOT going to reboot. I am going to turn off the image and then deselect the cdrom so that the next time I turn on this device, it will not try to boot off the CD. All this manipulation is on the virtual machine settings in Virtualbox. <b>Knowing how to modify settings in Virtualbox is a required skill.</b></P>
+ 
+
+<P><a name=6></a><img src="../IMGs/GNS3-Linux_rev1-6_1.jpg"/></P>
+
+<P>The next screen-shot show I have successfully logged into the new Debian Jesse OS!
+
+<P><img src="../IMGs/GNS3-Linux_rev1-6_2.jpg"/></P>
+
+
+Here are some more notes about various versions of the Debian Jesse xfce:
+ 
+<P><B>Version amd64 will not work!!!</B> Gnome will not work well on the actual version 
+of VMWare (version 10.0.3 or earlier). 
+ 
+<P> If you install it natively on your host computer (not a VM), gnome or other window 
+manager will work fine. 
+ 
+<P> Debian Jessie beta 2 is the unstable version for now (November 1st, 2014). 
+<b>Note:</b> Debian Wheezy (Debian 7), the stable version, did not work for me.  
+ 
+<P> Loading all the dependencies in the new Jessie beta 2 OS.  But first, a heart to 
+heart discussion about software dependencies:
+ 
+<P> If you haven't caught all the inferences in other guides like : "The Official 
+Getting Started Guide" or just known as 'the GS', you will gather I am originally a 
+Windows network admin who was presented with experiencing a Linux installation for GNS3. 
+From that experience, here are all the ways to get software dependencies to work:
+
+<OL>
+  <LI> Locate all the individual software dependencies. Read the README files inside 
+       the zipped files and run the commands listed in the README file.
+
+  <LI> Use the synaptic package manager with the release of the Linux you downloaded. 
+
+  <LI> Try using the 'apt-get' command with the package you want to download from a 
+       terminal window.
+
+  <LI> Use a custom script that will load all the dependencies for you.
+</OL>
+
+For the Windows users out there, if you don't know, a software dependency is a package 
+that is required for the main software package to run. Since Linux users have long known 
+how to unzip, read files and experiment with the correct level of software dependencies, 
+their skill sets allows them to run through all possible aforementioned options. 
+ 
+<P> From my experience and knowing the level of polish that most Windows users expect, 
+like having an installer to load all the dependent software and perform the registry 
+values in Windows, attempting option 1 and 3, will be difficult. Option 2, using the 
+Synaptic Package Manager, does a wonderful job from a graphical standpoint of allowing 
+a user to search the various repositories of the distribution files to locate the 
+package by name. I found I could locate over 50 percent of the dependencies just using 
+the search feature in the Synaptic Package Manager. 
+ 
+<P> The dilemma here is the increased possibility of MISSING a vital dependency or 
+getting the wrong version such as using an older version of Python. That thereby 
+increases in unnecessary calls to help-desk (me). 
+ 
+<P> From a total support perspective, only option 4 is viable since a standard script 
+will allow a standardized approach to which type of dependencies should be installed.
+ 
+<P> Having said all that, I would never wish to encroach on one's freedom to install 
+dependencies. That is a main strength of Linux. However, from a support position, I do 
+recommend to standardize your experience installing GNS3 on Linux. I found using the 
+script was enjoyable and I was relieved to only see a couple of issues, which reduces 
+the level of human error in the process. The remainder of this document mitigates the 
+hurdles to running the script. The only other options are steep learning curves for 
+people who opt not to learn Linux, but want the benefits of having Linux. Read on. :)
+ 
+
+In the following :"XFCE" screen-shot below, you can use the Synaptic Package Manager 
+in :"system" and then click on :"Synaptic Package Manager". 
+
+<P> Section 1: Install the dependencies and the gns3-master-gui packages.<br/>
+<a name=8></a><img src="../IMGs/GNS3-Linux_rev1-8_1.jpg"/></p>
+
+
+<P> This Linux Guide  will only go through Option 4, running the custom installation script written by Chris Welsh. The other options are still viable, but as mentioned, requires the following skill-sets:<br/>
+ 
+<OL>
+  <LI> The ability to run commands from terminal using various packages (bison, 
+       bash etc.)
+ 
+  <LI> The ability to unzip files.
+
+  <LI> The ability to read README files for direction on installing packages.
+
+  <LI> Keeping track of all software dependencies.
+</OL>
+ 
+
+<P> If you can do all that, you can skip the next section which will go in detail the 
+script and proceed  to configuring the GNS3 software.</P>
+ 
+<a name="3"></a><h3>Section 2: Using Chris Welsh's Script:</h3>
+
+<h4>A commentary on Chris' script. </h4>
+ 
+<P> As mentioned previously, IT Operations doesn't just concern themselves with 
+maintaining processes, but more importantly, the highest possible level of consistency. 
+It's in the pursuit of PERFECT consistency that gives the illusion of stability. You 
+can quote me on that!  Like the splitting of the Red Sea, it's not so much Moses 
+ability to part it, but it's the ability to have faith that when the time comes, it 
+WILL be parted. By whom, is beyond the scope of this document. Just so long as it 
+works and works consistently is the key to being part of a superior IT Operations Team. 
+ 
+<P> With Chris' script, users of Linux can now rely upon a consistent installation of 
+packages with methods to ensure all dependencies are installed RELIABLY.
+ 
+<P> Normally, outlining with screen-shots and then putting a troubleshooting guide at 
+the end will suffice. But during the installation of the dependent files, it is 
+necessary to explain what you will see during these package installs.
+
+<UL>
+  <LI> <b>Condition 1: There is a lock on a file that prevents the rest of the 
+          install.</b>
+
+     <P> Solution: Reboot your machine (or virtual machine). Go back into the 
+         interactive mode of the script and resume where it last failed. Reason: the 
+         previous installation has a file still open and the next dependent piece of 
+         software  tried to modify an open file. Shutting down and rebooting unlocks 
+         and clears the temporary memory of that file. The script will continue. Make 
+         note of where it failed.
+
+  <LI> <b>Condition 2: the package was not located.</b>
+
+     <P> Solution: At the time of this guide, the Dynamips software...(a key piece of 
+         software) was not located in the script. It is recommended to MANUALLY locate 
+         this file and separately install this. Then go back to the script, chose the 
+         interactive mode, and select 'n' at the part where the script asks to install 
+         Dynamips. Since it's already installed, you can proceed to the next package. 
+         For Ubuntu, Dynamips is available in the Synaptic Package Manager.<br/>
+</UL>
+
+ 
+<P> Those are the two conditions encountered with the script. This is acceptable 
+considering the option of manually installing ALL packages. I found it only took me 
+40 minutes to install all dependencies including the Wireshark, IOU and other 
+extenuating packages that are a part of the new GNS3 1.1 release. 
+
+ 
+<P> A special thank you to Chris Welsh for his intimate knowledge of the History of GNS3 
+as well as his ability to write a very useful script. I personally thank him for his 
+efforts!</p>
+ 
+<P> Onto using his script. Note: I used two different virtual machines. I used the 
+Debian Jesse beta 2 as well as the garden variety Ubuntu 14.04 LTS. Screens may differ, 
+but the script runs the same.
+ 
+
+
+<h4>Prerequisites:</h4>
+ 
+<P> For this to work, and work consistently, I am recommending the Linux distribution 
+with the 32 bit architecture. My HOST machine is running i386, so naturally, I chose 
+in my Virtualbox, a similar architecture. Familiarity with Virtualbox is a required 
+skill. Also, for the advanced Virtualbox users, bump up your display memory. I found 
+the virtualbox works wonders with more ram for the display of your virtual machine 
+display. Now if there is only a way for a Distro to tap into that memory to run 
+programs faster ;) That's a veiled request to the Linux gods.
+ 
+<P> Your installation of Ubuntu or Debian Jesse or some other 32 Bit Distro should be 
+installed with the basic package of the ISO you used to install. ALL dependencies will 
+now be selected based on Chris' script. Once you have those prerequisites done, you 
+are ready to start the script.
+ 
+<P> Note: the following screen-shots are taken while running the script on Ubuntu 14.04 
+LTS. Other screen-shots are from the Jesse installation. It's not intended to confuse, 
+but rather to verify the script works across multiples of the Debian architecture.
+
+<h4>Sub -section 2.1: Get on with the script!!!</h4>
+
+<P> The script is downloaded here: <a href="./installGNS3v1.html" 
+     target="_blank"><b>installGNS3v1.html</b></a>
+
+<P>Chris did an excellent job explaining you need to have elevated privileges to run 
+this script. Keep that in mind when you click on the link to download the compressed 
+file, or for every instance you have to rerun the script from the terminal window.
+ 
+
+<P><a name=11></a><img src="../IMGs/GNS3-Linux_rev1-11_1.jpg"/></P>
+
+<h4>Subsection 2:2 Unzip the downloaded package.</h4>
+
+<P>The next screen-shots show how to extract the script after you clicked on the 
+hyper-link.</p>
+ 
+<P><a name=12></a><img src="../IMGs/GNS3-Linux_rev1-12_1.jpg"/></P>
+
+ 
+<P><b>Click OK</b></P>
+ 
+<P><a name=13></a><img src="../IMGs/GNS3-Linux_rev1-13_1.jpg"/></P>
+
+
+<P> Archive Manager opens the zipped file. Look for an 'Extract' button. Different 
+Distros will have that button on the lower right, upper left. In this case, it's more 
+on the top and center of the Archive Manager.<br/>
+ 
+<P><a name=14></a><img src="../IMGs/GNS3-Linux_rev1-14_1.jpg"/></P>
+
+
+<P> Again, you need to extract the file, but at least you can select WHERE you want to 
+put it. Based on Chris' comments in the blog, he assumes you will be placing this in 
+your 'HOME' folder. For me, that's the folder that says :"MATT". Yours might say : 
+"Ubuntu" or whatever you named your profile at the time you installed your Distro. 
+I'm just going to hit 'Extract'.</p>
+
+<P> After it extracts, there will be a small dialogue box with an option to 'show the 
+files'. I chose that to show you where the files are located.
+ 
+<P><a name=15></a><img src="../IMGs/GNS3-Linux_rev1-15_1.jpg"/></P>
+
+<P> As you can see, the 'installGNS3v1.sh' file is in my :"HOME" folder. Okay, now it's 
+time to open the TERMINAL.</p>
+
+<P> Different Distros have ways of opening Terminal. This release has the terminal in 
+the task bar on the left. Other versions will allow you to search for it. Search for 
+terminal and then click on the icon. You need to get to a terminal screen.</P>
+ 
+<P><a name=16></a><img src="../IMGs/GNS3-Linux_rev1-16_1.jpg"/></P>
+
+<P> From this point, you need to run this with root privileges. The SUDO command allows 
+you to run this with 'administrator' level privileges. In Chris' blog, he mentions the 
+command: sudo ./installGNS3v1.sh 
+ 
+<hr/>
+<a name=17></a><img src="../IMGs/GNS3-Linux_rev1-17_1.jpg"/><br/>
+
+Since you evoked the SUDO, it's going to ask you for a password. You need to know that password before proceeding. Once you have the given the correct password, it will now run the script.<br/>
+For posterity, take a look at this beast of a script:<br/>
+ 
+<hr/>
+<a name=18></a><img src="../IMGs/GNS3-Linux_rev1-18_1.jpg"/><br/>
+
+Chris' crude GNS3v1 installer : version 2.1, may be crude by a programmer's perspective, but from an IT Operations perspective, it's awesome! Remember? Perfect Consistency is for the Illusion of Stability. Look closely at ALL the dependency files you need to get to have GNS3 1.1 to work in Linux. Honestly, it's a beautiful thing and will save you gobs of time. But hit enter until you get to the end of the listing of all dependencies. Use this as your figurative ROAD MAP. All these have been installed in a virgin Jesse beta 2 and it worked great. I will now attempt to use this on a dirty Ubuntu. By the word 'dirty' I mean, I have already installed various portions of the dependency files and I don't know what state my Ubuntu is. In contrast, by Jesse Beta 2 had NO dependency packages, therefore it was a 'virgin' image.<br/>
+Onto the next screen-shot:<br/>
+ 
+<hr/>
+<a name=19></a><img src="../IMGs/GNS3-Linux_rev1-19_1.jpg"/><br/>
+
+So here is the rest of the packages it will install. Whenever you run into a problem...either the script could not find the package in a repository (like the experience I had with Dynamips), you can go back into the script, hit 'n' for all the dependencies it already installed and then hit 'y' for the remaining dependencies. If you don't do that, the script will detect a dependency is already installed and skip to the next section of installs.<br/>
+The rest of the screen-shots show how to recover from Dynamips, since at the time of this tutorial, I had to MANUALLY install Dynamips. A windows guy with very little experience with Linux will NOT know how to do this. 
+Manually installing a dependency really relies on what tools was used to create the program. ALWAYS ALWAYS ALWAYS read the README file. The commands to use at the terminal will be pretty straightforward. Mind your privileges in terminal, and know where you are in your directory to resolve common failures to running commands.<br/>
+As stated before, here is the start of the actual script:<br/>
+ 
+<hr/>
+<a name=20></a><img src="../IMGs/GNS3-Linux_rev1-20_1.jpg"/><br/>
+<img src="../IMGs/GNS3-Linux_rev1-20_2.jpg"/><br/>
+
+In Chris' blog, he talks about using the capital :"A" for a full install, no questions. I however recommend the lower case 'a', since it has not been fully worked out yet with Dynamips package. Step through this process to ensure you have all dependencies. Hit enter to get to the bottom of all the options available. A developer can choose the other options and play with the actual script. For those who are not interested in that, just press 'a' and hit enter.<br/>
+During this tutorial, my dirty-Ubuntu came across an issue with one of the dependencies.<br/>
+ 
+<hr/>
+<a name=21></a><img src="../IMGs/GNS3-Linux_rev1-21_1.jpg"/><br/>
+
+I'll hit 'y' a couple of times to confirm an issue. Fortunately for me, I happen to know I can get this dependency in the Synaptic Package Manager. So here is an option:<br/>
+ 
+Exit out of the program and search for the dependency OR<br/>
+ 
+Don't exit out of the script, go and install the dependency in question via the Synaptic Package 
+Manager and then come back to this script and hit 'n'.<br/>
+I chose to go to the Synaptic Package Manager:<br/>
+For this Ubuntu, it is called the :"Ubuntu Software Center". Go there, and install the Synaptic Package Manager. THEN search for the dependency you want to install.<br/>
+So now what? Let's Google it!<br/>
+Ah ha! Here are some packages that HAVE the dependency:<br/>
+See  Jessie? It has it. Ubuntu has it too, but in Saucy and Trusty versions. My dirty Ubuntu is neither of them.<br/>
+So I decided to install a virgin Ubuntu 14.04 LTS.<br/>
+I repeated the steps and discovered on this virgin version of Ubuntu,  Dynamips failed to install as well.<br/>
+This time, I installed the Synaptic Package Manager in the new Ubuntu virtual machine. 
+In this repository, there is a version of Dynamips...Install that.<br/>
+ 
+<hr/>
+<a name=22></a><img src="../IMGs/GNS3-Linux_rev1-22_1.jpg"/><br/>
+
+Go back into the script, and choose interactive again. But THIS time press 'n' for each installed package INCLUDING Dynamips.<br/>
+Note that python was skipped because it was already installed.<br/>
+Also, it detected the Dynamips that was installed from the Synaptic Package Manager.<br/>
+It now asks if I want to continue installing Setuptools. Since that hasn't been installed yet...press 'y' and hit enter.<br/>
+ 
+<hr/>
+<a name=23></a><img src="../IMGs/GNS3-Linux_rev1-23_1.jpg"/><br/>
+
+The script will continue asking you to install the other dependencies.<br/>
+During this install, I encountered a 'locked file'. 
+ 
+<hr/>
+<a name=24></a><img src="../IMGs/GNS3-Linux_rev1-24_1.jpg"/><br/>
+
+You can try pressing 'y', but it won't work. There is a file already opened. I recommend shutting down your vm machine or PC and go through the script again.<br/>
+I rebooted the virtual machine. And started up the script.<br/>
+ 
+<hr/>
+<a name=25></a><img src="../IMGs/GNS3-Linux_rev1-25_1.jpg"/><br/>
+
+The script already detected all the other dependencies have been installed. We are right back where we left off in the process. Click 'y' to continue.<br/>
+Programs were installing fine until I ran into an issue with installing VPCS...<br/>
+ 
+<hr/>
+<a name=26></a><img src="../IMGs/GNS3-Linux_rev1-26_1.jpg"/><br/>
+
+So based on the previous discussion about how to find dependencies, I recommend first searching via the Synaptic Package Manager before running the 'apt-get' commands in a terminal session or searching for the files on the Internet.<br/>
+ 
+<hr/>
+<a name=27></a><img src="../IMGs/GNS3-Linux_rev1-27_1.jpg"/><br/>
+
+I found the VPCS in the Synaptic Package Manager. And I marked it for installation. 
+I will now hit 'Apply'.<br/>
+ 
+<hr/>
+<a name=28></a><img src="../IMGs/GNS3-Linux_rev1-28_1.jpg"/><br/>
+
+I typed 'ls' in a new terminal session and I entered the command :" sudo ./installGNS3v1.sh" to start up the script again. This is the fourth time running this script.<br/>
+ 
+<hr/>
+<a name=29></a><img src="../IMGs/GNS3-Linux_rev1-29_1.jpg"/><br/>
+
+At this point, we already installed the VPCS from the Synaptic Package Manager. So we will chose 'n'. 
+Ran into another issue with installing another dependency BBE because of a locked file. I rebooted and started up the script again. 
+After all the dependencies are installed, you will then finally come to a point where the script will install GNS3.<br/>
+If you have made it through all the hurdles based on the two conditions discussed, you should see this screen at the end of the script:<br/>
+ 
+<hr/>
+<a name=30></a><img src="../IMGs/GNS3-Linux_rev1-30_1.jpg"/><br/>
+
+Now is the test of the GNS3 software... you should be able to run at the command line: :"GNS3". 
+I notice sometimes the icons fail to install and I haven't quite figured that out yet.<br/>
+ 
+<hr/>
+<a name=31></a><img src="../IMGs/GNS3-Linux_rev1-31_1.jpg"/><br/>
+
+Here is the truly great thing about this. The screen-shots taken are from a newly installed virtual machine. If I had a place in the GNS3 Assist, I can just have you download this copy and just run it in your version of Virtualbox and you won't even have to do all the steps I mentioned in Linux. For most Linux users, this approach is much easier than manually installing ALL the dependencies that Chris lovingly put together in this script.<br/>
+As I said before, the choice is yours. 
+Just remember:<br/>
+The pursuit of PERFECT Consistency is for the Illusion of Stability. -Matt Raio 
+ 
+<hr/>
+</body>
+</html>

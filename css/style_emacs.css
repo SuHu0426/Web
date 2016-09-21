@@ -1,0 +1,52 @@
+pre {
+	margin: 0; 
+	line-height: 125%;
+}
+
+.cmd {
+	font-family: Consolas,monospace;
+	background: #f8f8f8 url(/css/Code_BG.gif) left top repeat-y;
+	overflow:auto;
+	width:auto;
+	color:black;
+	background:white;
+	border:solid gray;
+	border-width:.1em .1em .1em .8em;
+	padding:.2em .6em;
+}
+
+.out {
+	background: #f8f8f8;
+	overflow:auto;
+	width:auto;
+	color:black;
+	background:white;
+	border:solid gray;
+	border-width:.1em .1em .1em .8em;
+	padding:.2em .6em;
+}
+
+.console {
+	background: #111111;
+	overflow:auto;
+	width:auto;
+	color:white;
+	background:black;
+	border:solid gray;
+	border-width:.1em .1em .1em .8em;
+	padding:.2em .6em;
+	margin-top:5px;
+}
+
+li {
+	margin-top: 5px;
+}
+
+p {
+	margin-bottom: 0px;
+}
+
+.code { counter-reset: listing; }
+code { counter-increment: listing; }
+.code i:before { content: counter(listing) ". "; color: gray; }
+.code i { float: left; clear: both; min-width: 2.5em; }

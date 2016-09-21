@@ -1,0 +1,248 @@
+<html>
+ <head><title>Cluster of Network Simulator</title>
+ </head>
+ <body>
+ <h3>Cluster of Network Simulator (on Debian GNU/Linux)</h3>
+
+<h4>GV for Building a Network Lab Cluster</h4>
+
+<P><b>Note: (02/02/2015)</b> We have built a KVM-based virual machine called <b>gv</b>. 
+   In this VM, we enabled all the virtual IO business and used the Plan 9 9p remote 
+   filesystem protocol to export physical host's filesystems, (especially, /usr/local), 
+   to gv so that this gv can share the software packages, (including user-mode-linux), 
+   we have maintained locally.  (Probably, we need to enlarge its size to 20 or 30 GB!) 
+   This VM has been maintained for several years.  It is very stable.  We will use it  
+   to create our network lab cluster.  For the creation of gv, see 
+   <a href="http://amdm/LectureNotes/Diaries/VirTech-2015.html#VirtIo" 
+   target="_blank">virtio and vhost</a>
+<P> Inside gv, <code>$ sudo synaptic</code>, install <b>qemu-kvm</b> package and 
+    <code>$ sudo adduser hsu kvm</code>.  You may need to logout and login again 
+    so that you are allowed to execute <b>kvm</b> command as an ordinary user.
+    Notice that the performance is rather sluggish.
+
+
+<h4> GNS3 </h4>
+
+<p> GNS3 is a graphical network simulator that allows you to design complex network 
+topologies. You may run simulations or configure devices ranging from simple 
+workstations to powerful Cisco routers. It is based on Dynamips, Pemu/Qemu and 
+Dynagen.</p>
+
+<h4>Creation of Network Lab</h4>
+
+<OL>
+  <LI><a href="HTML/Open-SourceNetworkSimulators.html" target="newwindow">Open Source 
+      Network Simulators</a>.
+
+<P> In this article, the following Open-Source Network Simulator packages are listed.  
+
+<TABLE>
+<TR><TD><a href="./HTML/Open-SourceNetworkSimulators.html#Cloonix"
+         target="newwindow">Cloonix</a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#CORE"
+         target="newwindow">CORE</a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#GNS3"
+         target="newwindow">GNS3</a>&nbsp;&nbsp;&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#IMUNES"
+         target="newwindow">IMUNES</a>&nbsp;&nbsp;
+<TR><TD><a href="./HTML/Open-SourceNetworkSimulators.html#Marionnet"
+         target="newwindow">Marionnet</a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#Mininet"
+         target="newwindow">Mininet</a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#Netkit"
+         target="newwindow">Netkit</a>&nbsp;&nbsp;&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#Psimulator2"
+         target="newwindow">Psimulator2</a>&nbsp;&nbsp;
+<TR><TD><a href="./HTML/Open-SourceNetworkSimulators.html#Virtualsquare"
+         target="newwindow">Virtualsquare</a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#VNXAndVNUML"
+         target="newwindow">VNXAndVNUML</a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#"></a>&nbsp;&nbsp;
+    <TD><a href="./HTML/Open-SourceNetworkSimulators.html#"></a>&nbsp;&nbsp;
+</TABLE>
+
+  <LI><a href="HTML/EnableNestedKVM.html" target="newwindow">Enable Nested KVM</a>.
+
+<P> We would like to isolate our network simulation environment completely in a virtual 
+    cluster.  In side this virtual cluster, we need at least a EBGP (External BGP) 
+    router so that we get an Autonomous System. <a target="newwindow"
+    href="HTML/NetworkSimulation.html#BasicBGP">Basic BGP</a>
+
+<PRE>
+ $ cat /sys/module/kvm_amd/parameters/nested 
+ # It seems in Debian, nested KVM is enabled by default, at least for amd64.  Am I right?
+ # SubNetT is a kvm-based VM which is deployed for conducting subnet testing in it.
+ # hsu@SubNetT:~$ grep -E "(vmx|svm)" /proc/cpuinfo
+ $ lsmod | grep kvm 
+</PRE>
+
+  <LI>Install and testing GNS3 (01/31/2015)</LI>
+
+
+<UL>
+  <LI> In Debian, dynamips and gns3 are readily available for installation. 
+  <LI> It seems dynamips is a non-free package.  Amdm does not mirror it.
+  <LI> dynamips Dependency: libc6, libelf1, libpcap0.8, libuuid1.  In gv, we need to 
+  <LI> install libpcap0.8. Then, download dynamips from <a href="http://opensource.nchc.org.tw/debian/pool/non-free/d/dynamips/" target="_blank">nchc</a> directly.
+
+<PRE>
+ # Inside gv: 
+ $ sudo apt-get install libpcap0.8 
+ # Download dynamips_0.2.14-1_amd64.deb from nchc and scp it to gv:/tmp 
+ $ sudo dpkg -i /tmp/dynamips_0.2.14-1_amd64.deb
+ $ which dynamips
+/usr/bin/dynamips
+</PRE>
+  <LI> gns3 (pool/contrib/g/gns3) can be installed directly from amdm.
+  <LI> Gns3 Dependency: dynamips, python, python-qt4, ucf, xdotool, xterm
+<PRE>
+ # Inside gv: 
+ $ sudo apt-get install gns3; 
+ # During installation, choose to allow non-super user to run "wireshark" 
+ $ sudo aptitude clean; deborphan
+ $ df
+/dev/vda2       11871048  2109888   9140624  19% /
+ $ gns3 --help
+Usage: gns3 [--debug] [--configdir <config_dir>] <net_file>
+
+Options:
+  --version        show program's version number and exit
+  -h, --help       show this help message and exit
+  -d, --debug      display debug messages
+  -c, --configdir  directory where gns3.ini is located
+ $ cd  /src3/NetLab/NetSims
+ $ gns3 -c `pwd`/GNS3
+On Unix you can choose the config directory by setting the XDG_CONFIG_HOME environment variable
+ $ find / -name gns3.ini 2>/dev/null
+/etc/gns3/gns3.ini
+/usr/share/gns3/gns3.ini
+ $ diff /etc/gns3/gns3.ini /usr/share/gns3/gns3.ini
+ $ more /etc/gns3/gns3.ini
+[GNS3]
+ios_directory=$HOME/GNS3/Images/
+project_directory=$HOME/GNS3/Projects/
+ $ cd; mkdir GNS3; mkdir GNS3/Images; mkdir GNS3/Projects 
+</PRE>
+</UL>
+
+  <LI>Cisco Router IOSes Download and GNS3 Testing</LI>
+
+<OL>
+  <LI><a href="http://commonerrors.blogspot.tw/2014/04/cisco-3725-ios-image-free-download-for.html" target=newwindow">cisco 3725 ios</a>
+  <LI><a href="http://commonerrors.blogspot.tw/2013/10/download-cisco-7200-series-router-ios.html" target=newwindow">cisco 7200 ios</a>
+  <LI><a href="http://commonerrors.blogspot.tw/search/label/GNS3%20IOS" target=newwindow">GNS3 IOS</a>,&nbsp;&nbsp; (cisco 1700, not 2600)
+  <LI><a href="https://www.google.com.tw/?gfe_rd=cr&gws_rd=ssl#q=cisco+linux+ios+image+free+download+for+gns3" target=newwindow">Cisco Linux Ios Iimage Download</a>
+  <LI><a href="HTML/NetworkSimulation.html#CiscoIosesDownload" target=newwindow">Cisco 
+IOSes Download</a>
+
+     <P> Only C7200 provides 15.0 IOS
+     <UL>
+       <LI><a href="https://www.mediafire.com/folder/wrmv7njkyd15t/c7200" 
+           target="_blank">C7200 All Released Versions</a>
+     </UL>
+  <LI><a href="" target=newwindow"></a>
+</OL>
+
+<P><b>gns3 testing</b>
+
+<PRE>
+ $ gns3&
+</PRE>
+
+<P> The first time running GNS3, the Setup Wizard pops up automatically.  But, I am 
+    afraid that it is not very helpful unless you know by heart what you must do.  
+    After starting gns3, you will be offered a window with a menubar similar to 
+    firefox.
+
+<OL>
+  <LI> The "Preferences" item in the <b>Edit</b> menu shows you the basic (default) 
+       setup.
+  <LI> Then click Dynamips in the left-hand pane, new window pops up.  Click Apply 
+       followed by the Test button.  If everything is right you should see a green 
+       message indicating that Dynamips has successfully started.
+  <LI> On the physical host, Download c7200 (Advance enterprise) IOU 
+
+<PRE>
+ $ mkdir /tmp/C7200 
+ $ cp $HOME/Downloads/C7200/c7200-adventerprisek9_sna-mz.150-1.M.rar /tmp/C7200 
+ $ cd /tmp/C7200 
+ $ unrar c7200-adventerprisek9_sna-mz.150-1.M.rar
+unrar 0.0.1  Copyright (C) 2004  Ben Asselstine, Jeroen Dekkers
+
+
+Extracting from /tmp/C7200/c7200-adventerprisek9_sna-mz.150-1.M.rar
+
+Extracting  c7200-adventerprisek9_sna-mz.150-1.M.image                OK        
+All OK
+ $ scp c7200-adventerprisek9_sna-mz.150-1.M.image gv:$HOME/GNS3/Images 
+</PRE>
+
+<a name="IOSImagesAndHypervisors"></a>
+  <LI> Choose the "IOS images and hypervisors" item from <b>Edit</b> menu. 
+
+    <P> The IOS images and hypervisors window pops up.  From the window, use the 
+        ellipses button next to the Image file box to locate an IOS image. 
+        Use the Test button to start a cisco 7200 router.  
+
+    <P> It seems there is no command for shutting down the router, (since 
+        its image is resided in flash and when it started, this image is loaded 
+        to memory?)
+</OL>
+
+</OL>
+
+<h4>GNS3 Vm images Download:</h4>
+
+<a href="http://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/" 
+target="_blank">GNS3 Qemu Appliances (from sourceforge)</a>
+<OL>
+  <li>linux-microcore-3.4.1.img
+  <li>linux-core-4.7.7.img
+  <li>linux-core-4.7.7-openvswitch-1.11.0_guagga-0.99.22.4.img
+  <li>The above three kvm templates have been downloaded and ready to be tested.
+
+<PRE>
+$ ls -l NetSims/*img
+-rw-r--r-- 1 hsu hsu 36896768 Dec 27 10:26 NetSims/linux-core-4.7.7.img
+-rw-r--r-- 1 hsu hsu 80478208 Dec 27 10:29 NetSims/linux-core-4.7.7-openvswitch-1.11.0_guagga-0.99.22.4.img
+-rw-r--r-- 1 hsu hsu 24969216 Dec 18 16:36 NetSims/linux-microcore-3.4.1.img
+</PRE>
+</OL>
+
+<P> We may start these VMs via kvm.  Shut them down via <b>exitcheck.sh</b> command.
+
+<PRE>
+ # Inside the gv virtual machine.
+ $ cd /src3/NetLab/NetSims
+ $ kvm -hda linux-microcore-3.4.1.img
+ $ kvm -hda linux-core-4.7.7.img 
+ $ kvm -hda linux-core-4.7.7-openvswitch-1.11.0_guagga-0.99.22.4.img
+</PRE>
+
+<h4>GNS3 Network Simulation Tutorial</h4>
+
+<OL>
+  <LI><a href="HTML/NetworkSimulation.html" target="newwindow">Network Simulation</a>.
+
+    <UL>
+      <LI><a href="HTML/NetworkSimulation.html#GNSOnQemu">Install and Configure GNS3 With Qemu</a>
+      <LI><a href="HTML/NetworkSimulation.html#Gns3QemuGuide">The Definitive QEmu guide</a>
+      <LI><a href="HTML/NetworkSimulation.html#SetUpGNS3">Set Up GNS3 with Open-Source Routers</a>
+      <LI><a href="HTML/NetworkSimulation.html#OpenSourceRouter">Open Source Routers in GNS3</a>
+      <LI><a href="HTML/NetworkSimulation.html#PersistentTinyCore">Persistent configuration in TinyCore</a>
+      <LI><a href="HTML/NetworkSimulation.html#InstallGNS3">Install GNS3</a>
+      <LI><a href="HTML/NetworkSimulation.html#CiscoIosOnGNS3">Cisco Ios On GNS3</a>
+      <LI><a href="HTML/NetworkSimulation.html#BasicBGP">Basic BGP</a>
+      <LI><a href="HTML/NetworkSimulation.html#GNS3WithMoreThan8Nics">More Than 8 NICs 
+          Support</a>
+      <LI><a href="HTML/NetworkSimulation.html#"></a>
+      <LI><a href="HTML/NetworkSimulation.html#References">References</a>
+    </UL>
+
+  <LI><a href="HTML/GNS3DebianInstGuide.html" target="newwindow">GNS3 Debian 
+      Installation Guide</a>.
+</OL>
+
+<a href="https://community.gns3.com/docs/DOC-1752"><h4>Reference: Quick Start Guide 
+for Linux Users<a></h4>
+</bode></html>

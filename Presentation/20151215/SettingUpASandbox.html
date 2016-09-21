@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html dir="ltr" class="client-js" lang="en">
+  <head><title>SettingUpASandbox - Xvisor-x86 Wiki</title>
+  </head>
+  <body>
+<h3>SettingUpASandbox
+<a href="http://www.xvisor-x86.org/wiki/SettingUpASandbox">(Source Origin)</a></h3>
+
+<h4><a href="#crossgcc-compilation">Libreboot crossgcc compilation history</a></h4>
+
+<P> <b>Note: (01/28/2016)</b> It seems crossgcc is rather difficult to compile.  
+  The possible solution is to create a native VM and do the compilation in the VM.
+  To build an i386 VM via KVM, you may download i386 iso via <a target="_b" 
+href="http://cdimage.debian.org/debian-cd/8.3.0/i386/iso-cd/">i386 iso</a>.
+
+<h4><a href="file:///src3/Xvisor/SandBox/GetSource/LibrebootDownload.sh">Download Libreboot via this script.</a></h4>
+
+<div id="toc" class="toc"><div id="toctitle"><h3>Contents</h3><span class="toctoggle">&nbsp;[<a href="#" id="togglelink">hide</a>]&nbsp;</span></div>
+<ul>
+  <li><a href="#Required_Packages">1  Required Packages</a></li>
+  <li><a href="#Source_and_Build">2  Source and Build</a>
+  <ul>
+    <li><a href="#Xvisor-x86_64">2.1  Xvisor-x86_64</a>
+    <ul>
+      <li><a href="#Build_Xvisor">2.1.1  Build Xvisor</a></li>
+    </ul></li>
+    <li><a href="#Guest_binaries">2.2  Guest binaries</a> 
+
+      <P> <b>Note: (01/08/2016)</b> It is well known that coreboot is notoriously 
+        difficult to compile and install.  And the <b>LibreBoot</b> project is 
+        created to ease the compilation and installation of Coreboot.  Read 
+        through this and the next two sections.  We will skip coreboot and take 
+        the <b>libreboot</b> route. <a target="_b"
+        href="http://pelican.craoc.fr/coreboot.html">Coreboot Wiki</a>
+
+    <ul>
+      <li><a href="#Coreboot_and_FILO">2.2.1  Coreboot and FILO</a>
+      <ul>
+        <li><a href="#Build_FILO">2.2.1.1  Build FILO</a></li>
+        <li><a href="#Build_Coreboot">2.2.1.2  Build Coreboot</a></li>
+      </ul></li>
+      <li><a href="#Linux_Kernel">2.2.2  Linux Kernel</a></li>
+      <li><a href="#Buildroot">2.2.3  Buildroot</a></li>
+      <li><a href="https://www.coreboot.org/QEMU">2.2.4  Try out Coreboot using 
+          Qemu</a></li>
+      <ul>
+        <li><a href="../SandBox/LibreBoot/libreboot_docs/docs/git/index.html#config_qemu_i440fx_piix4">QEMU i440fx_piix4 Configuration (Libreboot)</a>
+        <li><a href="../SandBox/LibreBoot/libreboot_docs/docs/git/index.html#config_qemu_q35_ich9">QEMU q35_ich9 Configuration (Libreboot)</a>
+        <li><a href="https://www.coreboot.org/QEMU_Build_Tutorial">2.2.4.1 QEMU Build 
+          Tutorial (Coreboot)</a>
+        </li>
+        <li><a href="https://www.coreboot.org/FreeBSD">2.2.4.2 FreeBSD work out of 
+          the box with SeaBIOS. (Coreboot)</a></li>
+      </ul>
+    </ul></li>
+      <li><a href="#CorebootPayload" target="_b">2.3 Three Coreboot Payloads</a></li>
+      <li><a href="#Howto_Building_Coreboot" target="_b">2.4 Building Coreboot</a></li>
+        <ul>
+          <li><a href="#CorebootPayload">QEMU Build Tutorial</a>
+        </ul>
+      <li><a href="../SandBox/LibreBoot/libreboot_docs/docs/index.html" 
+          target="_b">2.5 Libreboot Project </a></li>
+      <ul>
+        <li><a href="" target="_b">Download Sources of LibreBoot</a>
+
+<PRE>
+ $ cd GetSource
+ $ LibrebootDownload.sh
+ # GetCrossGccArcFiles.sh and GetRomArcFiles.sh are called in LibrebootDownload.sh 
+ #  to find the archive files to be downloaded.
+</PRE>
+          <ul>
+             <li><a href="../SandBox/GetSource/GetCrossGccArcFiles.sh" 
+                 target="_b">CrossGcc Archive Files</a>
+             <li><a href="../SandBox/GetSource/GetRomArcFiles.sh" target="_b">Rom 
+                 Archive Files</a>
+             <li><a href="../SandBox/GetSource/LibrebootDownload.sh" 
+                 target="_b">Download  LibreBoot Files</a>
+          </ul></li>
+        <li><a href="../SandBox/LibreBoot/libreboot_docs/docs/git/index.html" target="_b">2.5.1  
+            Building libreboot from source</a></li>  
+          <ul>
+             <li><a href="../SandBox/libreboot_src/resources/scripts/helpers/build/module/coreboot" target="_b">coreboot shell script for building crossgcc-i386</a>
+             <li><a href="../SandBox/libreboot_src/resources/scripts/helpers/build/module" target="_b">And other scripts</a>
+             <li><a href="http://wiki.qemu.org/Features/Q35" target="_b">Qemu Q35 vs 
+                  i440fx</a>
+
+<P> This will allow for better support of PCI-E passthrough since ICH9 uses a PCI-E bus 
+whereas the I440FX only supports a PCI bus. </P>
+
+
+<P>The <b>config</b> file for Q35 is available at 
+<a href="libreboot_src/resources/libreboot/config/qemu_q35_ich9/config" 
+target="_b">config</a></P> 
+
+<PRE>
+# According to <a href="../SandBox/LibreBoot/libreboot_docs/docs/git/index.html" target="_b">Building libreboot from source</a>
+$ sudo ./build dependencies trisquel7 # Install a lot of new packages.
+$ ./build module all
+$ ./build roms withgrub
+$ ./build clean all
+</PRE>
+
+<P><b>Note:</b>
+
+  <OL>
+    <LI> Using EditConfigure.sh to get rid of string "-V -qversion", unknown options
+         for $CC.
+
+<P><b>Note: (01/23/2016)</b> These two options for checking <b>cc</b> and <b>c++</b> 
+    version are added by <b>autoconf</b>. The newer versions of <b>cc</b> and 
+    <b>c++</b> commands do not recognize these options anymore. (Newer versions of 
+    <b>autoconf</b> (2.69) still have this outstanding problem.) Correct by 
+<PRE>
+$ diff /usr/share/autoconf2.64/autoconf/fortran.m4 /usr/share/autoconf2.64/autoconf/fortran.m4.orig
+354c354
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+$ diff /usr/share/autoconf2.64/autoconf/c.m4 /usr/share/autoconf2.64/autoconf/c.m4.orig485c485
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+720c720
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+890c890
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+$ diff /usr/share/autoconf2.64/autoconf/autoconf.m4f /usr/share/autoconf2.64/autoconf/autoconf.m4f.orig
+2353c2353
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+6563c6563
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+8959c8959
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+9791c9791
+< for ac_option in --version -v; do
+---
+> for ac_option in --version -v -V -qversion; do
+</PRE>
+
+    <LI> Add -m32 option to $CC and $CXX commands
+      <PRE>
+$ diff crossgcc/gcc-4.9.2/gcc/configure crossgcc/gcc-4.9.2/gcc/configure~
+3035c3035
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+3520c3520
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+4279c4279
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+4285c4285
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+4536c4536
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+4855c4855
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+4986c4986
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+5314c5314
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+5445c5445
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+8589c8589
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+8718c8718
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+8725c8725
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+8768c8768
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+8779c8779
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+8898c8898
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+9639c9639
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+10341c10341
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+10732c10732
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+10789c10789
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+13772c13772
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+13796c13796
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+14856c14856
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+18256c18256
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+18267c18267
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+18394c18394
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+18404c18404
+< ac_compile='$CXX -c -m32 $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+21274c21274
+< ac_compile='$CC -c -m32 $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+---
+> ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+      </PRE>	
+  </OL>  
+	     <li><a href="file:///src3/Xvisor/SandBox/libreboot_src/build" 
+target="_b">Help Message from <b>libreboot_src/build</b> 
+script</a>
+<PRE>
+$ build --help
+./build mode option
+
+possible values for 'mode':
+clean
+config
+dependencies
+external
+module
+roms
+
+Example: ./build module all
+Example: ./build module flashrom
+Example: ./build roms withgrub
+Example: ./build release archives
+Example: ./build clean all
+Example (extra option) ./build module bucts static
+Refer to the libreboot documentation for more info
+
+</PRE>
+             <li><a href="" target="_b"></a>
+          </ul></li>
+        <li><a href="../SandBox/LibreBoot/libreboot_docs/docs/gnulinux/grub_boot_installer.html" 
+            target="_b">2.5.2  Boot a GNU/Linux installer on USB</a></li>
+      </ul>
+  </ul></li>
+  <li><a href="#Bootable_ISO">3  Bootable ISO</a></li>
+  <li><a href="#Hard_Disk_Image">4  Hard Disk Image</a></li>
+  <li><a href="#Running_the_setup">5  Running the setup</a></li>
+</ul>
+</div>
+
+<h3><span id="Required_Packages">Required Packages</span></h3>
+
+<p> Before we can build any of the sources, there are a list of programs and libraries 
+we would need to be installed on the build machine. Below is the list of the packages. 
+Based on the Linux distribution you are using, install them accordingly.
+</p>
+
+<pre>
+ gcc-multilib git-all cscope iasl cgdb xorriso libncurses5-dev m4 flex bison autoconf 
+expect qemu-system-x86 qemu-utils
+</pre>
+
+<h3><a href="http://wiki.qemu.org/Index.html" target="-b">Qemu</a></h3>
+
+<P> If we ever need qemu.</p>
+
+<h3><span id="Source_and_Build">Source and Build</span></h3>
+
+<p>First, you will need to make a sandbox where you can play with Xvisor. Create a 
+directory named <b>sandbox</b>. We will refer this path and directory as <b>SANDBOX</b>.
+</p>
+
+<h3><span id="Xvisor-x86_64">Xvisor-x86_64</span></h3>
+
+<p>Fetch the sources with:</p>
+
+<pre>
+  git clone <a rel="nofollow" class="external free" href="https://github.com/hschauhan/xvisor-x86_64.git">https://github.com/hschauhan/xvisor-x86_64.git</a>
+</pre>
+
+<p> By the above command, we have pulled Xvisor-x86 sources but the default branch 
+<b>master</b> has been pulled out. All the bleeding edge work is present in branch 
+<b>x86-next</b>. Let's pull that branch with command mentioned below:
+</p>
+
+<P><b>Note: (11/16/2015)</b> failed with the following message. Installed <b>git-all</b>,
+problem is persistent.
+
+<PRE>
+$ git checkout --track -b x86-next https://github.com/avpatel/xvisor-next 
+fatal: Not a git repository (or any parent up to mount point /src3)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+</PRE>
+
+<pre>
+  git checkout --track -b x86-next origin/x86-next
+</pre>
+
+<h4><span id="Build_Xvisor">Build Xvisor</span></h4>
+
+<p>In Xvisor source tree, do following:
+</p>
+
+<ol>
+  <li> make ARCH=x86 x86_64_generic-defconfig</li>
+  <li> make</li>
+</ol>
+
+<p>This will create a file vmm.bin in build directory.</p>
+
+<h3><span id="Guest_binaries">Guest binaries</span></h3>
+<h4><span id="Coreboot_and_FILO">Coreboot and FILO</span></h4>
+
+<p>Fetch the sources:
+</p>
+
+<pre>
+ git clone <a rel="nofollow" class="external free" href="http://review.coreboot.org/p/coreboot">http://review.coreboot.org/p/coreboot</a>
+ git submodule update --init --checkout
+ cd coreboot/payloads
+ git clone <a rel="nofollow" class="external free" href="http://review.coreboot.org/filo.git">http://review.coreboot.org/filo.git</a>
+</pre>
+
+<p> Before we can build <a href="http://blogs.coreboot.org/about/">coreboot</a>, it 
+requires its own toolchain to be compiled. To compile that do the following:</p>
+
+<pre>
+ make crossgcc
+</pre>
+
+<p> This is going to take a while. It will build cross toolchain for x86, ARM, MIPS etc 
+in addition to fetching sources of GCC, GDB, and other libraries.
+</p>
+
+<p><a href="http://www.coreboot.org/FILO">FILO</a> is a payload that coreboot will boot. 
+Coreboot doesn't provide direct functionality of booting an OS. That's the job of FILO.
+</p>
+
+<h4><span id="Build_FILO">Build FILO</span></h4>
+
+<p>Before we can build FILO, we will need a patch for FILO. This patch adds support of 
+Virtio layer and a Virtio block device. The patch can be downloaded from 
+<a href="http://review.coreboot.org/gitweb?
+p=filo.git;a=commitdiff_plain;h=111f0112e458ed53fb516a19d660e6eef573878c">here</a>. If 
+its unavailable, please drop a mail to <a rel="nofollow" class="external text" 
+href="mailto:hschauhan@nulltrace.org">Himanshu Chauhan</a>.
+</p>
+
+<p>You can apply the above patch with <i>git apply</i> command.</p>
+
+<p>Now to build FILO, goto FILO directory and do a menuconfig.</p>
+
+<pre>
+   make menuconfig
+</pre>
+
+<p> For this menuconfig, first the configuration of <i>libpayload</i> is generated. 
+A sample configuration can be found in Xvisor source tree at 
+tests/x86/bios/configs/filo.lib.config. After that configuration of FILO will be 
+generated. A sample configuration of FILO is present at 
+tests/x86/bios/configs/filo.config.
+</p>
+
+<p>After configurtion just do</p>
+
+<pre>
+   make
+</pre>
+
+<p> This will generate <b>filo.elf</b>. Copy this file in coreboot base directory, i.e. 
+SANDBOX/coreboot/
+</p>
+
+<h4><span id="Build_Coreboot">Build Coreboot</span></h4>
+
+<p>Coreboot is also build the same way. First you need to do menuconfig and then make. 
+The sample configuration file for coreboot can be found at 
+tests/x86/bios/configs/coreboot.config. This will generate <b>coreboot.rom</b>.</p>
+
+<p><b>NOTE</b>: The main thing to know here is that size of coreboot.rom is 512KB. 
+Otherwise it won't boot.</p>
+
+<h4><a href="http://www.coreboot.org/pipermail/coreboot/2008-May/034167.html" 
+target="_b">Coreboot: QEMU Build Tutorial</a> (05-2008)</h4>
+
+ <P> Download coreboot anchor is not valid anymore.  Try the new web page: 
+     <a href="https://www.coreboot.org/Download_coreboot">Download Coreboot</a>
+
+<h4><a name="Linux_Kernel"></a><a href="http://www.kernel.org/">Linux Kernel</a></h4>
+
+<p>You can download the stable release from <a href="http://www.kernel.org/">Linux 
+Kernel site</a> or you can choose to clone Linus' tree directly.</p>
+
+<h4><a name="Buildroot"></a><a href="http://buildroot.uclibc.org/">Buildroot</a>: Making 
+Embedded Linux Easy</h4>
+
+<P> Buildroot is a set of Makefiles and patches that makes it easy to generate a 
+complete embedded Linux system.  Buildroot can generate any or all of 
+a cross-compilation toolchain, a root filesystem, a kernel image and a bootloader 
+image.  Buildroot is useful mainly for people working with small or embedded systems, 
+using various CPU architectures (x86, ARM, MIPS, PowerPC, etc.) : it automates the 
+building process of your embedded system and eases the cross-compilation process.
+
+<p><a href="http://buildroot.uclibc.org/about.html">About Buildroot</a></p>
+
+<p>You can either download a stable from <a href="http://buildroot.uclibc.org/download.html">download</a> 
+location. Or at the same page you will find instructions to fetch source from their GIT 
+repository.</p>
+
+<h3><span id="Bootable_ISO">Bootable ISO</span></h3>
+
+<p> Create a directory named <i>xvisor-iso</i>. This will contain the binaries required 
+to boot Xvisor. Do the following to create the directory and required sub-directories 
+under it:</p>
+
+<pre>
+  mkdir -p xvisor-iso/boot/grub
+</pre>
+
+<p> Copy the Xvisor binary:</p>
+
+<pre>
+  cp SANDBOX/xvisor-x86_64/build/vmm.bin SANDBOX/xvisor-iso/boot/
+</pre>
+
+<p> Create a grub configuration file SANDBOX/xvisor-iso/boot/grub/grub.cfg. Copy and 
+paste the below text in this file:</p>
+
+<pre>
+   set timeout=15
+   set default=0
+   menuentry "Xvisor x86_64" {
+       multiboot /boot/vmm.bin earlyprint=vga
+       boot
+   }
+</pre>
+
+<p> Now create the ISO:</p>
+
+<pre>
+   grub-mkrescue -o bootable.iso xvisor-iso/
+</pre>
+
+<p> <i>bootable.iso</i> will be used to boot.</p>
+
+<h3><span id="Hard_Disk_Image">Hard Disk Image</span></h3>
+
+<p> Create a Qemu hard disk image, 32MB file should be enough. Also create one 
+partition inside this hard drive using fdisk.</p>
+
+<pre>
+   qemu-img create -f raw xvisor-hd.disk 32M
+   fdisk xvisor-hd.disk
+</pre>
+
+<p> You can use default options that fdisk gives you. After this setup a loopback device 
+for this hard disk image and create a filesystem on the partition you created.</p>
+
+<pre>
+   sudo losetup /dev/loop0 xvisor-hd.disk -o 1048576
+   sudo mkfs.vfat /dev/loop0
+   sudo losetup -d /dev/loop0
+</pre>
+
+<p> Before we mount this new hard disk image, its recommended to compile <i>lomount</i> 
+binary. lomount helps in easy mounting of disk images.</p>
+
+<pre>
+   gcc -o lomount xvisor-x86_64/tests/x86/lomount.c
+</pre>
+
+<p> Create a mount point for this hard disk image:</p>
+
+<pre>
+   mkdir xmount
+</pre>
+
+<p> Now mount the drive and copy the required files:</p>
+
+<pre>
+   sudo lomount -t vfat -diskimage xvisor-hd.disk -partition 1 ./xmount
+   sudo cp coreboot/build/coreboot.rom ./xmount/
+   sudo cp xvisor-x86_64/tests/x86/guest_init.cmd ./xmount/
+   sync
+   sudo umount ./xmount
+</pre>
+
+<p> The drive is now ready.</p>
+
+<h3><span id="Running_the_setup">Running the setup</span></h3>
+
+<p>The setup is now ready. It can be run using the following command:</p>
+
+<pre>
+ qemu-system-x86_64 -cpu qemu64,+svm,vendor=AuthenticAMD -cdrom 
+bootable.iso -hda xvisor-hd.disk -m 1024M -boot d -s -serial stdio
+</pre>
+
+<a name="CorebootPayload"></a>  <h3 id="firstHeading">QEMU Build Tutorial 
+<a href="http://www.coreboot.org/QEMU_Build_Tutorial">(Source Origin)</a></h3>
+					
+<div id="mw-content-text" dir="ltr" class="mw-content-ltr" lang="en"><div id="toc" class="toc"><div id="toctitle"><h3>Contents</h3><span class="toctoggle">&nbsp;[<a href="#" id="togglelink">hide</a>]&nbsp;</span></div>
+<ul>
+  <li><a href="#Introduction">1 Introduction</a></li>
+  <li><a href="#Requirements">2 Requirements</a></li>
+  <li><a href="#Building_or_finding_a_Linux_kernel">3 Building or finding a Linux kernel</a></li>
+  <li><a href="#Using_SeaBIOS">4 Using SeaBIOS</a></li>
+  <li><a href="#Building_a_FILO_payload">5 Building a FILO payload</a></li>
+  <li><a href="#Building_a_Linux_kernel_payload">6 Building a Linux kernel payload</a></li>
+  <li><a href="#Building_coreboot">7 Building coreboot</a></li>
+  <li><a href="#Building_Qemu">8 Building Qemu</a></li>
+  <li><a href="#Creating_a_hard_disk_image">9 Creating a hard disk image</a></li>
+  <li><a href="#Starting_coreboot_in_QEMU">10 Starting coreboot in QEMU</a></li>
+</ul>
+</div>
+
+<h4><span id="Introduction">Introduction</span></h4>
+
+<p>If you don't have a mainboard supported by coreboot don't worry: <a  
+href="http://qemu.org/">QEMU</a> can help you to emulate one. Using coreboot with 
+QEMU may serve the purpose to familiarize you as a developer with coreboot and may 
+be a reference system during development. 
+</p>
+
+<p> This nice tutorial was written by <a href="mailto:acassis@gmail.com">Alan Carvalho 
+de Assis</a>, with additions by <a href="mailto:eswierk@arastra.com">Ed Swierk</a> 
+(but please use the <a href="http://www.coreboot.org/Mailinglist">coreboot mailing 
+list</a> rather than emailing the authors directly).
+</p>
+
+<p>While there are many ways to use coreboot to load and run a Linux kernel, this 
+tutorial covers two of the most common:</p>
+
+<ul>
+  <li> coreboot with <a href="http://www.coreboot.org/SeaBIOS">SeaBIOS</a> as payload, 
+       which is the default configuration on coreboot for Intel compatible 
+       mainboards.</li>
+  <li> coreboot with <a href="http://www.coreboot.org/FILO" title="FILO">FILO</a>
+       as payload, using FILO to load a Linux kernel (and optional initramfs) 
+       from a hard disk image. This approach involves a bit more mechanism (it 
+       relies on FILO's built-in disk and filesystem drivers) but it produces a
+       tiny coreboot image.</li>
+  <li> coreboot with a Linux kernel (and optional initramfs) as payload. 
+       This cuts FILO out of the picture, but the main challenge with this 
+       approach is squeezing the resulting coreboot image into QEMU's BIOS ROM 
+       area (currently 2 MB, but easy to extend by patching QEMU).</li>
+</ul>
+
+<h4><span id="Requirements">Requirements</span></h4>
+
+<p>You need the following software packages:</p>
+
+<ul>
+    <li> <a href="http://www.coreboot.org/Download_coreboot">coreboot v4</a></li>
+    <li> <a href="http://qemu.org/">Qemu</a></li>
+    <li> <a href="http://www.coreboot.org/FILO">FILO (Abandoned?)</a> 0.6 or greater 
+         (if using FILO)</li>
+
+         <P> For amd64, <b>gcc-multilib</b> package is needed.
+</ul>
+
+<p> plus a Linux kernel and root filesystem and a working development environment 
+   (make, gcc, etc.).</p>
+
+<h4><span id="Building_or_finding_a_Linux_kernel">Building or finding a Linux 
+    kernel</span></h4>
+
+<p>If you are using FILO, you can simply grab a Linux kernel and initramfs from your 
+favorite distribution.</p>
+
+<p>For linux as payload, you will probably need to build a kernel and initramfs from 
+scratch, ensuring that the final coreboot image does not exceed QEMU's BIOS size limit 
+(2MB if qemu-bios-size patch applied, 256KB otherwise).  Building the kernel and 
+initramfs is beyond the scope of this tutorial; how you configure them depends on your 
+application.</p>
+
+<p>If you plan to use kexec to chain-boot another Linux kernel, tools from these 
+projects can help automate the process of generating a kernel and initramfs:</p>
+
+<ul>
+  <li> <a href="http://kboot.sourceforge.net/">kboot</a></li>
+  <li> <a href="http://wiki.laptop.org/go/Building_LinuxBIOS">OLPC buildrom</a></li>
+</ul>
+
+<h4><span id="Using_SeaBIOS">Using SeaBIOS</span></h4>
+
+<p> Since SeaBIOS is the default payload option, you don't need to change anything in 
+the payload section of the configuration menu, and don't need to download or prepare 
+any source code either - the build system takes care of that.</p>
+
+<h4><span id="Building_a_FILO_payload">Building a FILO payload</span></h4>
+
+<p>If you plan to build your Linux kernel and root filesystem directly into coreboot, 
+you can skip this section.</p>
+
+<p>Download <a href="http://www.coreboot.org/FILO" title="FILO">FILO</a>, and cd to 
+the filo directory</p>
+
+<p>First invocation of make creates the config file.</p>
+
+<pre>
+ $ make menuconfig
+</pre>
+
+
+<p>Run make again to create build/filo.elf, the ELF FILO image. </p>
+
+<pre>
+ $ make   
+</pre>
+
+
+<p>You will use this file (filo.elf) as the coreboot payload later on.</p>
+
+<h4><span id="Building_a_Linux_kernel_payload">Building a Linux kernel 
+payload</span></h4>
+
+<p>If you are using FILO, skip this section.</p>
+
+<p>Specify the Linux as payload type and the Linux kernel (bzImage file), initrd and 
+kernel command line that should be used in `make menuconfig`'s Payload section</p>
+
+<h4><span id="Building_coreboot">Building coreboot</span></h4>
+
+<p>See the <a href="#Howto_Building_Coreboot" title="Build HOWTO">Build 
+HOWTO</a> for information on how to build coreboot for this board.</p>
+
+<p>This creates the coreboot image (build/coreboot.rom).</p>
+
+<h4><span id="Building_Qemu">Building Qemu</span></h4>
+
+<p>Qemu used to require patches to work with coreboot, but any current 
+standard build (as packaged by distributions) should be good enough.</p>
+
+<h4><span id="Creating_a_hard_disk_image">Creating a hard disk image</span></h4>
+
+<p>If you are using FILO, you must create a hard disk image containing the Linux 
+kernel and optional initramfs that FILO loads.</p>
+
+<p>Whether or not you use FILO, you may also wish to populate the disk image with the 
+root filesystem of whatever Linux distribution you want to run.</p>
+
+<p>Create an empty disk image:</p>
+
+<pre>
+ $ qemu-img create -f raw disk.img 200M
+</pre>
+
+
+<p>Format it:</p>
+
+<pre>
+ $ mkfs.ext2 -F disk.img 
+</pre>
+
+
+<p>The remaining steps must be performed as root.  Create a temporary mountpoint and 
+mount the image:</p>
+
+<pre>
+ # mkdir /mnt/rootfs
+# mount -o loop disk.img /mnt/rootfs
+</pre>
+
+
+<p>Create a boot directory and copy your Linux kernel (vmlinuz) and initramfs (initrd) 
+to it:</p>
+
+<pre>
+ # mkdir /mnt/rootfs/boot
+# cp vmlinuz /mnt/rootfs/boot/vmlinuz
+# cp initrd /mnt/rootfs/boot/initrd
+</pre>
+
+
+<p>At this point, you can also copy a complete root filesystem to the disk image. </p>
+
+<pre>
+ # cp -R /* /mnt/rootfs 
+</pre>
+
+
+<p>Alternatively, with Debian you can use the debootstrap command to create a basic 
+root filesystem:</p>
+
+<pre>
+ # debootstrap --arch i386 sarge /mnt/rootfs <a class="external free" href="http://ftp.debian.org/debian/">http://ftp.debian.org/debian/</a> 
+</pre>
+
+
+<p>If you are using a debootstrap filesystem, open the file /mnt/rootfs/etc/inittab 
+and change runlevel to level 1:</p>
+
+<pre>
+ id:1:initdefault: 
+</pre>
+
+
+<p>cd out of /mnt/rootfs and umount it:</p>
+
+<pre>
+ # umount /mnt/rootfs
+</pre>
+
+
+<p>Exit from the root account:</p>
+
+<pre>
+ # exit
+</pre>
+
+
+<h4><span id="Starting_coreboot_in_QEMU">Starting coreboot in QEMU</span></h4>
+
+<p>Execute QEMU using the following parameters:</p>
+
+<pre>
+ $ qemu -bios path/to/coreboot.rom -hda disk.img -nographic
+</pre>
+
+
+<p>The -bios option tells QEMU to use path/to/coreboot.rom as its BIOS.  The -nographic 
+option suppresses the graphical VGA display and connects the virtual machine's serial 
+port to your console. If you want to keep VGA display, you can use "-serial stdio" 
+instead, which only redirects serial to the console.</p>
+
+<p>You should now see all sorts of interesting coreboot messages, followed by Linux 
+kernel boot messages or a FILO prompt.</p>
+
+<p>If you are using FILO, enter at the boot: prompt:</p>
+
+<pre>
+ kernel hda:/boot/vmlinuz root=/dev/hda
+ initrd hda:/boot/initrd
+ boot console=ttyS0
+</pre>
+
+
+<p>Example:</p>
+
+<p><a href="http://www.coreboot.org/File:Screenshot_linuxbios_boots_qemu.png"><img 
+alt="Screenshot linuxbios boots qemu.png" 
+src="http://www.coreboot.org/images/a/a9/Screenshot_linuxbios_boots_qemu.png" 
+height="425" width="646"></a></p>
+
+	<div id="footer" role="contentinfo">
+<ul id="footer-info">
+  <li> This page was last modified on 29 May 2015, at 17:17.</li>
+</ul>
+
+<ul id="footer-places">
+  <li><a href="http://www.coreboot.org/coreboot:Privacy_policy">Privacy policy</a></li>
+  <li><a href="http://www.coreboot.org/coreboot:About">About coreboot</a></li>
+  <li><a href="http://www.coreboot.org/coreboot:General_disclaimer">Disclaimers</a></li>
+</ul>
+
+
+<a name="Howto_Building_Coreboot"></a><h3>HOWTO Build Coreboot 
+<a href="http://www.coreboot.org/Build_HOWTO">(Source Origin)</a></h3>
+					
+<div><a href="http://www.coreboot.org/File:Coreboot_menuconfig.png" class="image"><img alt="" src="http://www.coreboot.org/images/c/ca/Coreboot_menuconfig.png" height="400" width="564"></a><br>
+<b>make menuconfig</b> in coreboot</div>
+
+<p>This page describes how you can build a coreboot image for your specific 
+mainboard.</p>
+
+<div id="toc" class="toc"><div id="toctitle">
+
+<h4>Contents</h4><span class="toctoggle">&nbsp;[<a href="#" id="togglelink">hide</a>]&nbsp;</span></div>
+
+<ul>
+  <li><a href="#Requirements">1  Requirements</a></li>
+  <li><a href="#Building_a_payload">2  Building a payload</a></li>
+  <li><a href="#Building_coreboot">3  Building coreboot</a>
+  <ul>
+    <li><a href="#Intel_boards">3.1  Intel boards</a></li>
+    <li><a href="#AMD_boards">3.2  AMD boards</a></li>
+    <li><a href="#Choose_the_payload">3.3  Choose the payload</a></li>
+    <li><a href="#VGA_support">3.4  VGA support</a></li>
+    <li><a href="#Compiling">3.5  Compiling</a></li>
+  </ul></li>
+  <li><a href="#Compiling_with_Clang.2FLLVM">4  Compiling with Clang/LLVM</a></li>
+  <li><a href="#Known_issues">5  Known issues</a></li>
+  <li><a href="#Development_version">6  Development version</a></li>
+  <li><a href="#Flashing_coreboot">7  Flashing coreboot</a></li>
+</ul>
+</div>
+
+<h3><span id="Requirements">Requirements</span></h3>
+
+<ul>
+  <li> gcc / g++ (gcc-multilib is ideal, makes building payloads a lot easier)</li>
+  <li> make</li>
+  <li> cmake (if using clang/llvm)</li>
+  <li> ncurses-dev (for <b>make menuconfig</b>)</li>
+</ul>
+
+<p>Optional:</p>
+
+<ul>
+  <li> doxygen (for generating/viewing documentation)</li>
+  <li> iasl (for targets with ACPI support)</li>
+  <li> gdb (for better debugging facilities on some targets)</li>
+  <li> flex and bison (for regenerating parsers)</li>
+</ul>
+
+<h3><span id="Building_a_payload">Building a payload</span></h3>
+
+<p>First you need to download the source code for the <a 
+href="http://www.coreboot.org/Payloads">payload</a> of your choice and build it.</p>
+
+<p>Instructions for building the various payloads are not covered on this page, please 
+see <a href="http://www.coreboot.org/Payloads" title="Payloads">Payloads</a> and the 
+wiki page for the respective payload for details.</p>
+
+<p>The result of this step should be an ELF file (e.g. filo.elf, or coreinfo.elf) which 
+you can use with coreboot (see below).</p>
+
+<p>Most beginners want to use the default <a href="http://www.coreboot.org/SeaBIOS" 
+title="SeaBIOS">SeaBIOS</a> payload. It runs Option ROMs, is able to discover boot 
+devices and provides a very simple boot menu.</p>
+
+<p>There's no need to build SeaBIOS by hand, it is done by coreboot.</p>
+
+<h3><span id="Building_coreboot">Building coreboot</span></h3>
+
+<p>First, get the latest coreboot version from <a href="http://www.coreboot.org/Git" 
+title="Git">our git repository</a>:</p>
+
+<pre>
+ $ <b>git clone http://review.coreboot.org/p/coreboot</b>
+ $ <b>cd coreboot</b>
+ $ <b>git submodule update --init --checkout</b>
+</pre>
+
+<p>The last step is important! It checks out a sub-repository in the 3rdparty 
+directory.</p>
+
+<p>In the coreboot directory you can configure the build-time options of coreboot:</p>
+
+<pre>
+ $ <b>make menuconfig</b>
+</pre>
+
+<p>OR</p>
+
+<pre>
+ $ <b>make nconfig</b> (easier to navigate, uses ncurses)
+</pre>
+
+<p>In that menu (which may look familiar, as other projects such as the Linux kernel 
+or busybox use the same system), select at least the following options:</p>
+
+<ul>
+  <li> Enter the <b>Mainboard</b> menu.
+  <ul>
+    <li> In <b>Mainboard vendor</b> select the vendor of your board.</li>
+    <li> In <b>Mainboard model</b> select your exact mainboard name.</li>
+    <li> In <b>ROM chip size</b> select the exact size of the flash ROM chip you want 
+         to flash the coreboot image on. (see output of <code>flashrom</code> 
+         command)</li>
+  </ul></li>
+</ul>
+
+<h4><span id="Intel_boards">Intel boards</span></h4>
+
+<p>For Intel boards you have to provide files coreboot can't generate by itself:</p>
+
+<ul>
+  <li> <a href="http://www.coreboot.org/index.php?title=Intel_Flash_Descriptor_region" 
+       class="new" title="Intel Flash Descriptor region">Intel Flash Descriptor 
+       region</a> (Page not found)</li>
+  <li> <a href="http://www.coreboot.org/index.php?title=Intel_Gigabit_Ethernet_firmware" 
+       class="new" title="Intel Gigabit Ethernet firmware">Intel Gigabit Ethernet 
+       firmware</a>  (Page not found)</li>
+  <li> <a href="http://www.coreboot.org/Intel_Management_Engine" title="Intel Management 
+       Engine">Intel Management Engine</a></li>
+</ul>
+
+<p>Please have a look at <a href="http://www.coreboot.org/Binary_situation" 
+title="Binary situation">Binary situation</a> for a full overview. The files have to 
+be extracted from your vendor bios.</p>
+
+<ul>
+  <li> Enter the <b>Chipset</b> menu
+  <ul>
+    <li> Do the following based on which blobs you have:</li>
+    <li> Untick <b>Build with a fake IFD</b> (descriptor.bin)</li>
+    <li> Tick <b>Add gigabit ethernet firmware</b> (gbe.bin)</li>
+    <li> Tick <b>Add Intel Management Engine firmware</b> (me.bin)</li>
+  </ul></li>
+</ul>
+
+<h4><span id="AMD_boards">AMD boards</span></h4>
+
+<p>For AMD boards you have to provide files coreboot can't generate by itself:</p>
+
+<ul>
+  <li> <a href="http://www.coreboot.org/index.php?title=NIC_firmware" class="new" title="NIC firmware">NIC firmware</a> (Page not found)</li>
+  <li> <a href="http://www.coreboot.org/AMD_IMC" title="AMD IMC">AMD IMC</a></li>
+  <li> <a href="http://www.coreboot.org/AMD_XHCI" title="AMD XHCI">AMD XHCI</a></li>
+</ul>
+
+<p>Please have a look at <a href="http://www.coreboot.org/Binary_situation" 
+title="Binary situation">Binary situation</a> for a full overview.  The files have to 
+be extracted from your vendor bios.</p>
+
+<h4><span id="Choose_the_payload">Choose the payload</span></h4>
+
+<p>Here's the full list of supported <a href="http://www.coreboot.org/Payloads" 
+title="Payloads">Payloads</a>.</p>
+
+<p>By default, the <a href="http://www.coreboot.org/SeaBIOS" 
+title="SeaBIOS">SeaBIOS</a> payload will be downloaded and built during the coreboot 
+build process.</p>
+
+<p>If you want to use another payload (ELF for example):</p>
+
+<ul>
+  <li> Enter the <b>Payload</b> menu.
+  <ul>
+    <li> Set the <b>Add a payload</b> option to <b>An ELF executable payload</b>.</li>
+    <li> Then, specify the file name and path to your payload file (which you built 
+         before).</li>
+  </ul></li>
+</ul>
+
+<h4><span id="VGA_support">VGA support</span></h4>
+
+<p>In order to see something on your screen the graphic card has to be initialized by 
+the <a href="http://www.coreboot.org/index.php?title=VGA_BIOS" class="new" 
+title="VGA BIOS">VGA BIOS</a> (Page not found) which is actually an 
+<a href="http://www.coreboot.org/index.php?title=Option_ROM" class="new" title="Option ROM">Option ROM</a> (Page not found).</p>
+
+<p><a href="http://www.coreboot.org/VGA_support" title="VGA support">VGA support</a> 
+is required for payloads such as GRUB or elf-memtest86+-5.01.</p>
+
+<p>It isn't required for operating systems such as GNU/Linux as it initializes the 
+graphic card by itself.</p>
+
+<p>On some platforms there's support for <a href="http://www.coreboot.org/index.php?title=Native_gfx_init" class="new" title="Native gfx init">native gfx init</a> (Page not found). A VGA BIOS isn't required.</p>
+
+<h4><span id="Compiling">Compiling</span></h4>
+
+<p><b>Note:</b> Compilation won't be easy.  Check the <a href="#GccNotes">32 bits Gcc 
+Compilation Notes</a>
+
+<p>You also need to build crossgcc (highly recommended because distributions patch gcc 
+in ways that introduce bugs when building coreboot):</p>
+
+<pre>
+ $ <b>make crossgcc</b>
+</pre>
+
+<p>Or alternatively to build with more than one thread, invoke the cross compiler 
+build script directly (in this example eight threads):</p>
+
+<pre>
+ $ <b>util/crossgcc/buildgcc -j 8</b>
+ # This script might fail.  Also, need to fetch GCC-5.3.0, not GCC-5.2.0
+</pre>
+
+<p>In case something fails, try to search for the relevant log (<code>find . -name 
+'*.log' | xargs grep Error</code>) and examine last few lines of it.</p>
+
+<p>That's the bare minimum. Feel free to adjust the other settings to your needs (see 
+<a href="http://www.coreboot.org/Coreboot_Options" title="Coreboot Options">Coreboot 
+Options</a> for the full list), then exit menuconfig and build the coreboot image:</p>
+
+<pre>
+ $ <b>make</b>
+</pre>
+
+<p>The file  <b>build/coreboot.rom</b> is your final coreboot image you can flash onto 
+a ROM chip or add payloads to with cbfstool.</p>
+
+<h3><span id="Compiling_with_Clang.2FLLVM">Compiling with 
+Clang/LLVM</span></h3>
+
+<p>We have been working on building coreboot with clang/llvm and it basically works.
+Remaining issues can be reported upstream and then block this meta bug here:</p>
+
+<p><a href="http://llvm.org/bugs/show_bug.cgi?id=21691">META Compiling the Coreboot 
+with clang</a></p>
+
+<p>The default and recommended flow is still to use crossgcc.</p>
+
+<h3><span id="Known_issues">Known issues</span></h3>
+
+<p>Make sure you really have all the requirements installed!</p>
+
+<p>With certain versions of the gcc/ld toolchain shipped in some Linux distributions, 
+it's possible that you'll see the following error when building coreboot:</p>
+
+<pre>
+ src/arch/x86/coreboot_ram.ld:129 cannot move location counter backwards
+</pre>
+
+<p>This is a known bug in those versions of the toolchain. Before sending a complaint 
+message to our mailing list, please try to switch to our reference cross-compilation 
+toolkit then recompile the sources. To switch to the cross-compiler just run</p>
+
+<pre>
+ $ <b>make crossgcc</b>
+</pre>
+
+<p>Then remove the <b>.xcompile</b> file and retry the compilation process:</p>
+
+<pre>
+ $ <b>rm .xcompile</b>
+ $ <b>make</b>
+</pre>
+
+<h3><span id="Development_version">Development version</span></h3>
+
+<p>If you want to contribute a patch or report an issue about coreboot, you will need 
+to set up your environment for full development.</p>
+
+<p>You <b>must</b> run <b>make crossgcc</b> and rebuild coreboot before reporting an 
+issue or contributing a patch.</p>
+
+<p>To get set up to submit a patch please run <b>make gitconfig</b>, then 
+<a href="http://www.coreboot.org/Git" title="Git">register with gerrit</a>.</p>
+
+<h3><span id="Flashing_coreboot">Flashing coreboot</span></h3>
+
+<p>You can <a href="http://www.coreboot.org/index.php?title=Flashing_coreboot" class="new" title="Flashing coreboot">flash</a> (Page not found) the coreboot image on a flash ROM chip using either an external EEPROM-programmer or a mainboard using the <a href="http://www.flashrom.org/">flashrom</a> user-space utility.</p>
+
+
+<ul id="footer-info">
+  <li> This page was last modified on 12 October 2015, at 07:57.</li>
+</ul>
+
+<a name="GccNotes"></a><h3>32 bits Gcc Compilation Notes</h3>
+
+<P> Get a new Xterm, cd /tmp, download the <a target="_b" 
+href="https://github.com/coreboot/coreboot/blob/master/util/crossgcc/buildgcc">buildgcc 
+file</a> via 
+"$ wget https://github.com/coreboot/coreboot/blob/master/util/crossgcc/buildgcc" command.
+Edit it to be a shell script.  We than change GCC_VERSION to 5.3.0.
+
+<P> <b>Note (01/09/2016):</b> Need to install <b>libisl-dev</b> (manipulating sets and 
+relations of integer points bounded by linear constraints) package.  More specifically,
+<code>isl/val.h</code> header file from it.
+
+<PRE>
+$ cd /src3/Xvisor/sandbox/coreboot/util/crossgcc 
+$ diff buildgcc /tmp/buildgcc
+38c38
+< GCC_VERSION=5.3.0
+---
+> GCC_VERSION=5.2.0
+</PRE>
+
+
+<a name="crossgcc-compilation">Libreboot crossgcc compilation history</a>
+<PRE>
+# 01/28/2016
+$ hsu@amd-6:/src3/Xvisor/SandBox/libreboot_src$  ./build clean all
+$ cd coreboot
+$ make menuconfig
+# From the generated .config file:
+# CONFIG_MAINBOARD_DIR="emulation/qemu-q35"
+# CONFIG_MAINBOARD_PART_NUMBER="QEMU x86 q35/ich9"
+# CONFIG_MAINBOARD_VENDOR="Emulation"
+$ cd /src3/Xvisor/SandBox/libreboot_src/coreboot
+$ cd util/crossgcc
+$ make build-x64-without-gdb
+You can now run your x86_64-elf cross toolchain from /src3/Xvisor/SandBox/libreboot_src/coreboot/util/crossgcc/xgcc.
+# 01/17/2016
+$ make crossgcc
+$ emacs util/crossgcc/build-i386-elf-gcc/crossgcc-build.log&
+# In build-i386-elf-gcc/gcc/config.log file, -m64 option needs to be replaced by -m32
+$ diff util/crossgcc/build-i386-elf-gcc/Makefile util/crossgcc/build-i386-elf-gcc/Makefile.orig
+ diff util/crossgcc/build-i386-elf-gcc/Makefile util/crossgcc/build-i386-elf-gcc/Makefile.orig
+321c321
+< CFLAGS_FOR_BUILD = -O2  -fomit-frame-pointer -m32 -mtune=amdfam10 -march=amdfam10
+---
+> CFLAGS_FOR_BUILD = -O2  -fomit-frame-pointer -m64 -mtune=amdfam10 -march=amdfam10
+386,387c386,387
+< CFLAGS = -O2  -fomit-frame-pointer -m32 -mtune=amdfam10 -march=amdfam10
+< LDFLAGS = -m  elf_i386 
+---
+> CFLAGS = -O2  -fomit-frame-pointer -m64 -mtune=amdfam10 -march=amdfam10
+> LDFLAGS = 
+$ cd util/crossgcc/build-i386-elf-gcc
+$ make 
+$ diff build-i386-elf-gcc/libiberty/Makefile build-i386-elf-gcc/libiberty/Makefile.orig
+58c58
+< CFLAGS = -O2  -fomit-frame-pointer -m32 -mtune=amdfam10 -march=amdfam10
+---
+> CFLAGS = -O2  -fomit-frame-pointer -m64 -mtune=amdfam10 -march=amdfam10
+$ diff build-i386-elf-gcc/lto-plugin/Makefile build-i386-elf-gcc/lto-plugin/Makefile.orig114c114
+< CFLAGS = -O2  -fomit-frame-pointer -m32 -mtune=amdfam10 -march=amdfam10
+---
+> CFLAGS = -O2  -fomit-frame-pointer -m64 -mtune=amdfam10 -march=amdfam10
+$ ld -m --verbose
+ld: unrecognised emulation mode: --verbose
+Supported emulations: elf_x86_64 elf32_x86_64 elf_i386 elf_iamcu i386linux elf_l1om elf_k1om i386pep i386pe
+$ file ../libiberty/safe-ctype.o
+../libiberty/safe-ctype.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
+</PRE>
+</body></html>

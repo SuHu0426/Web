@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Lab: OpenFlow Multiple Path</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  </head>
+<body>
+  <h1>Lab: OpenFlow Multiple Path at kvm in GNS3</h1>
+  <p>Enables per-flow load distribution
+    <ul>
+      <li>Increases the robustness
+      <li>Increases efficiency
+      <li>Simplifies management of layer 2 network resources
+    </ul>
+  <p>Various multipath techniques
+    <ul>
+      <li>Layer 3: ECMP – Equal Cost Multi-Path
+      <li>Layer 2: LAG – Ethernet Link Aggregation Groups
+      <li>Layer 1: VCAT – Virtual conCATenation
+    </ul>
+  <h2>Environment</h2>
+  <img src="img/OpenFlow-MultiplePath/OpenFlowMultiPath.png">
+  <h2>Group Table - Group Types</h2>
+  <ul>
+    <li><i>Required</i>: <b>all</b>
+      <p>Execute all buckets in the group. This group is used for multicast or broadcast
+forwarding. The packet is effectively cloned for each bucket; one packet is processed for each
+bucket of the group. If a bucket directs a packet explicitly out the ingress port, this packet clone
+is dropped. If the controller writer wants to forward out the ingress port, the group must include
+an extra bucket which includes an output action to the OFPP_IN_PORT reserved port.</p>
+    <li><i>Optional</i>: <b>select</b>
+      <p>Execute one bucket in the group. Packets are processed by a single bucket in
+the group, based on a switch-computed selection algorithm (e.g. hash on some user-configured
+tuple or simple round robin). All configuration and state for the selection algorithm is external
+to OpenFlow. The selection algorithm should implement equal load sharing and can optionally
+be based on bucket weights. When a port specified in a bucket in a select group goes down, the
+switch may restrict bucket selection to the remaining set (those with forwarding actions to live
+ports) instead of dropping packets destined to that port. This behavior may reduce the disruption
+of a downed link or switch.</p>
+    <li><i>Required</i>: <b>indirect</b>
+      <p>Execute the one defined bucket in this group. This group supports only
+a single bucket. Allows multiple flow entries or groups to point to a common group identifier,
+supporting faster, more efficient convergence (e.g. next hops for IP forwarding). This group type
+is effectively identical to an all group with one bucket.</p>
+    <li><i>Optional</i>: <b>fast failover</b>
+      <p>Execute the first live bucket. Each action bucket is associated with
+a specific port and/or group that controls its liveness. The buckets are evaluated in the order
+defined by the group, and the first bucket which is associated with a live port/group is selected.
+This group type enables the switch to change forwarding without requiring a round trip to the
+controller. If no buckets are live, packets are dropped. This group type must implement a liveness
+mechanism (see 6.6).</p>
+  </ul>
+  <h2>Steps</h2>
+  <p>On all switches. Wipe the <b>actions=NORMAL</b> flow.
+<pre class="mdol">
+<code>sudo ovs-ofctl del-flows brLAN</code>
+<code>sudo ovs-vsctl set bridge brLAN protocols=OpenFlow13</code>
+<code>sudo ovs-vsctl set Interface eth2 ofport_request=102</code>
+<code>sudo ovs-vsctl set Interface eth3 ofport_request=103</code>
+<code>sudo ovs-vsctl set Interface eth4 ofport_request=104</code>
+<code>sudo ovs-vsctl set Interface eth5 ofport_request=105</code>
+<code>sudo ovs-vsctl set Interface eth6 ofport_request=106</code>
+<code>sudo ovs-vsctl set Interface eth7 ofport_request=107</code>
+<code>sudo ovs-vsctl set Interface eth8 ofport_request=108</code>
+<code>sudo ovs-vsctl set Interface eth9 ofport_request=109</code>
+<code>sudo ovs-ofctl -O OpenFlow13 show brLAN</code>
+<code class="out">OFPT_FEATURES_REPLY (OF1.3) (xid=0x2): dpid:00000000abff3402
+n_tables:254, n_buffers:256
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS
+OFPST_PORT_DESC reply (OF1.3) (xid=0x3):
+ 102(eth2): addr:00:00:ab:ff:34:02
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 103(eth3): addr:00:00:ab:ff:34:03
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 104(eth4): addr:00:00:ab:ff:34:04
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 105(eth5): addr:00:00:ab:ff:34:05
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 106(eth6): addr:00:00:ab:ff:34:06
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 107(eth7): addr:00:00:ab:ff:34:07
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 108(eth8): addr:00:00:ab:ff:34:08
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ 109(eth9): addr:00:00:ab:ff:34:09
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ LOCAL(brLAN): addr:00:00:ab:ff:34:02
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+OFPT_GET_CONFIG_REPLY (OF1.3) (xid=0x5): frags=normal miss_send_len=0
+</code>
+</pre>
+
+<ul>
+  <li>Open vSwitch-1
+  <p>Create a Group table on Open vSwitch-1. Forward packets to port e3, e4, and e5 by <b>select</b> algorithm(round robin). Insert a flow from e2 forward to group 5566 and add another flows in order to recieve packets.
+<pre class="mdol">
+<code>sudo ovs-ofctl -O OpenFlow13 add-group brLAN group_id=5566,type=select,bucket=output:8,bucket=output:6,bucket=output:5</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN in_port=102,actions=group:5566</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.1,actions=output:102</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.1,actions=output:102</code>
+<code>sudo ovs-ofctl -O OpenFlow13 dump-flows brLAN</code>
+<code class="out">OFPST_FLOW reply (OF1.3) (xid=0x2):
+ cookie=0x0, duration=0.011s, table=0, n_packets=0, n_bytes=0, ip,nw_dst=192.168.0.1 actions=output:102
+ cookie=0x0, duration=0.005s, table=0, n_packets=0, n_bytes=0, arp,arp_tpa=192.168.0.1 actions=output:102
+ cookie=0x0, duration=0.017s, table=0, n_packets=0, n_bytes=0, in_port=102 actions=group:5566
+</code>
+</pre>
+  </p>
+
+  <li>Open vSwitch-2, 3, and 4
+    <p>Insert flows to forward packets form/to Open vSwitch-1. (eth2 <-> eth3)
+<pre class="mdol">
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN in_port=102,actions=output:103</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN in_port=103,actions=output:102</code>
+<code>sudo ovs-ofctl -O OpenFlow13 dump-flows brLAN</code>
+<code class="out">OFPST_FLOW reply (OF1.3) (xid=0x2):
+ cookie=0x0, duration=0.010s, table=0, n_packets=0, n_bytes=0, in_port=102 actions=output:103
+ cookie=0x0, duration=0.005s, table=0, n_packets=0, n_bytes=0, in_port=103 actions=output:102
+</code>
+</pre>
+    </p>
+
+  <li>Open vSwitch-5
+    <p>Forward packets by IP address.
+<pre class="mdol">
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.2,actions=output:105</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.2,actions=output:105</code>       
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.3,actions=output:106</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.3,actions=output:106</code>       
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.4,actions=output:107</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.4,actions=output:107</code>       
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.5,actions=output:108</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.5,actions=output:108</code>       
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.6,actions=output:109</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.6,actions=output:109</code>       
+<code>sudo ovs-ofctl -O OpenFlow13 dump-flows brLAN</code>
+<code class="out">OFPST_FLOW reply (OF1.3) (xid=0x2):
+ cookie=0x0, duration=0.026s, table=0, n_packets=0, n_bytes=0, arp,arp_tpa=192.168.0.4 actions=output:107
+ cookie=0x0, duration=0.015s, table=0, n_packets=0, n_bytes=0, arp,arp_tpa=192.168.0.5 actions=output:108
+ cookie=0x0, duration=0.021s, table=0, n_packets=0, n_bytes=0, ip,nw_dst=192.168.0.5 actions=output:108
+ cookie=0x0, duration=0.010s, table=0, n_packets=0, n_bytes=0, ip,nw_dst=192.168.0.6 actions=output:109
+ cookie=0x0, duration=0.052s, table=0, n_packets=0, n_bytes=0, ip,nw_dst=192.168.0.2 actions=output:105
+ cookie=0x0, duration=0.041s, table=0, n_packets=0, n_bytes=0, ip,nw_dst=192.168.0.3 actions=output:106
+ cookie=0x0, duration=0.005s, table=0, n_packets=0, n_bytes=0, arp,arp_tpa=192.168.0.6 actions=output:109
+ cookie=0x0, duration=0.047s, table=0, n_packets=0, n_bytes=0, arp,arp_tpa=192.168.0.2 actions=output:105
+ cookie=0x0, duration=0.036s, table=0, n_packets=0, n_bytes=0, arp,arp_tpa=192.168.0.3 actions=output:106
+ cookie=0x0, duration=0.031s, table=0, n_packets=0, n_bytes=0, ip,nw_dst=192.168.0.4 actions=output:107
+</code>
+</pre>
+    <p>Packect to Host-1
+<pre class="mdol">
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0800,ip_dst=192.168.0.1,actions=output:102</code>
+<code>sudo ovs-ofctl -O OpenFlow13 add-flow brLAN eth_type=0x0806,ip_dst=192.168.0.1,actions=output:102</code>    
+<code></code>
+</pre>
+    </p>
+
+</ul>
+
+
+
+
+
+
+<!--
+<pre class="mdol">
+<code></code>
+</pre>
+-->
+
+
+
+<!-- START References -->
+<h1>References</h1>
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/Graphical_Network_Simulator-3" target="_blank">Multipath routing with Group table at mininet</a>
+  <li><a href="http://suhu.dlinkddns.com/Presentation/20141118/openflow-spec-v1.4.0.pdf" target="_blank">OpenFlow Spec. v1.4.0</a>
+  <li><a href="http://indico.cern.ch/event/236955/contributions/503578/attachments/397635/553047/lhcone_V0.5.pdf" target="_blank">Openflow-based Multipath Switching in the Wild</a>
+  <li><a href="https://www.orau.gov/ngnspi2014/presentations/newman_h.pdf" target="_blank">OLIMPS: OPENFLOW LINK-LAYER MULTIPATH SWITCHING</a>
+  <li><a href="http://www.xorp.org/" target="_blank">XORP, extensible open source routing platform</a>
+</ul>
+<!-- END References -->
+
+<hr>
+<script type="text/javascript">
+<!-- Hide JavaScript...
+var LastUpdated = document.lastModified;
+document.writeln ("This page was last updated " + LastUpdated);
+// End Hiding -->
+</script>
+<address style="text-align: right;"><a href="mailto:cssu@cs.nchu.edu.tw">Chi-She
+ng Su</a></address>
+</body>
+</html>

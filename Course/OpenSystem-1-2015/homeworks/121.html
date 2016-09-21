@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Open System (I) Homework</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+</head>
+<body style="width: 600px;">
+<ol>
+<li><a href="http://www.cs.nchu.edu.tw/~snmlab/OpenSystem-1-2015/portforwarding.html" target="newwindows">學期作業</a>：</li>
+<p>
+搜尋 "snmlab" → 課程資訊 → OpenSystem-1 2015</li>
+<br>
+<li>Port (通訊埠)：</li>
+<p>
+每一種電腦通訊協定都有預設的通訊埠。
+HTTP port 通常使用 80，而 SSH port 通常使用 22。
+本次開放系統作業，資工系提供 100 台虛擬機器。
+如果全部使用實體 IP，除了安全性的問題、也相當的浪費資源。
+所以利用一組實體 IP (網址)，開放額外的通訊埠，轉址到內部的區域網路，解決實體 IP 不足的問題。
+<br>
+<li>連線方式：</li>
+<p>
+透過 <a href="http://mobaxterm.mobatek.net/" target="newwindows">MobaXterm</a> 或是 <a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html" target="newwindows">PuTTY</a> SSH 連線軟體.。
+使用 MobaXterm 以及 port 10022 為例： 輸入指令 ssh -X cloud@cloud.cs.nchu.edu.tw -p 10022。
+第一次連線時，會建立認證金鑰並詢問 yes or no，再輸入密碼即可成功登入。
+<p>
+傳輸檔案時，使用 <a href="http://winscp.net/eng/download.php" target="newwindows">WinSCP</a>。
+在 Host name 的地方輸入網址(IP)、填入自己的 port。
+並且在 User name 的地方輸入帳號 cloud，即可點選 login 成功登入。 
+<br>
+<li>網頁伺服器安裝：</li>
+<pre>
+$ sudo aptitude update
+$ sudo aptitude install apache2
+$ ls -l /var/www/html
+$ sudo cp 作業檔案位置 /var/www/html/index.html
+$ ls -l /var/www/html (查看檔案大小、日期)
+</pre>
+<br>
+<li>網頁撰寫技巧：</li>
+<p>
+<ul>
+<li>使用專業的編輯器，例如： <a href="https://notepad-plus-plus.org/" target="newwindows">Notepad++</a>
+<li>參考 <a href="http://www.w3schools.com/html/default.asp" target="newwindows">W3schools</a></li>
+<li>中文出現亂碼，在 head 標籤內加上 meta 標籤，可轉換為 utf-8 編碼。
+<pre>
+&ltmeta http-equiv="content-type" content="text/html; charset=utf-8"&gt
+</pre>
+</li>
+</ol>
+</body>
+</html>

@@ -1,0 +1,14 @@
+$ sudo apt-get install socat
+$ sudo kvm /src3/KVM/img/DebSqz-mini.img -monitor unix:/src3/KVM/img/MONITOR,server,nowait&
+$ echo "quit" |sudo socat - UNIX-CONNECT:/src3/KVM/img/MONITOR 
+
+"help"
+"system_powerdown"
+"quit"
+"sendkey ctrl-alt-delete"
+"system_reset"
+
+
+Redirect port(RDP)
+	   tcp:host::vmport
+kvm -redir tcp:3389::3389

@@ -1,0 +1,26 @@
+$ sudo apt-get install tomcat6 vnc4server openssl 
+# downloads guacamole form http://guacamole.sourceforge.net/
+$ tar xvzf guacamole-0.2.6.tar.gz
+$ cd guacamole-0.2.6/
+$ nano guacamole-users.xml
+$ more guacamole-users.xml
+<?xml version='1.0' encoding='utf-8'?>
+
+<tomcat-users>
+  <role rolename="guacamole"/>
+  <user username="guest" password="abcd1234" roles="guacamole"/>
+</tomcat-users>
+$ nano guacamole.xml
+$ more guacamole.xml
+    <Parameter name="host" value="localhost"/>
+    <Parameter name="port" value="5901"/>
+
+    <Parameter name="password" value="vncpasswd"/>
+    
+$ sudo cp guacamole-users.xml /etc/tomcat6/.
+$ sudo mkdir /var/lib/guacamole
+$ sudo cp guacamole.war /var/lib/guacamole/.
+$ sudo cp guacamole.xml /etc/tomcat6/Catalina/localhost/.
+$ vncpasswd # set vnc passwd like guacamole.xml
+$ sudo /etc/init.d/tomcat6 restart
+$ sudo vncserver :1

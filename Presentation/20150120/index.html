@@ -1,0 +1,470 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Virtual networking: TUN/TAP, MacVLAN, and MacVTap</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2014.css" />
+</head>
+<body>
+  <h1>Virtual networking: TUN/TAP, MacVLAN, and MacVTap</h1>
+  <h3>Purpose</h3>
+  <p>Macvtap is a new device driver meant to simplify virtualized bridged networking. It replaces the combination of the tun/tap and bridge drivers with a single module based on the macvlan device driver. A macvtap endpoint is a character device that largely follows the tun/tap ioctl interface and can be used directly by kvm/qemu and other hypervisors that support the tun/tap interface. The endpoint extends an existing network interface, the lower device, and has its own mac address on the same ethernet segment. Typically, this is used to make both the guest and the host show up directly on the switch that the host is connected to.
+  <h2>Category</h2>
+  <ol>
+    <li><a href="#tuntap">TUN/TAP</a>
+    <li><a href="#macvlan">MacVLan/MacVTap</a>
+    <li><a href="#workingMode">MacVLan/MacVTap working mode</a>
+    <li><a href="#setting">Setting up macvtap (macvlan)</a>
+    <li><a href="#ovs">Demo: OpenvSwitch vs MacVTap</a>
+    <li><a href="#perf">Performance measures</a>
+    <li><a href="#uml">User-mode Linux(UML) with MacVTap</a>
+    <li><a href="#uml-ovs">User-mode Linux(UML) with OpenvSwitch and MacVTap</a>
+  </ol>
+  <hr>
+  <ol>
+    <li id="tuntap">
+      <h3>TUN/TAP</h3>
+      <h3>Physical NIC network stack</h3>
+      <img src="img/nic0.png"><br>
+      <h3>TUN dervice</h3>
+      <p>Simulate an UDP VPN process.</p>
+      <img src="img/tuntapwork.png"><br>
+      <h3>TAP dervice</h3>
+      <p>Like TUN device, here is a list of the main differences between tun and tap.</p>
+      <ol>
+	<li>/dev/tunX works on IP layer (ip_forward)
+	<li>/dev/tapX work on MAC layer (bridge, MAC broadcast)
+      </ol>
+      <br>
+     <li id="macvlan">
+       <h3>MacVLAN/MacVTap</h3>
+       <h3>MacVLan</h3>
+       <p>Macvlan working mode</p>
+       <img src="img/macvlan0.png"><br>
+       <p>Macvlan work with namespace</p>
+       <img src="img/namespace.png"><br>
+       <h3>MacVTap</h3>
+       <p>Use /dev/tapX instead of network stack.</p>
+       <img src="img/macvtap.png"><br>
+       <p>MacVLan and MacVTap are both working on MAC layer.</p>
+     <li id="workingMode">
+       <h3>MacVLan/MacVTap working mode</h3>
+       <p>Both macvlan and macvtap can be in one of four modes, defining the communication between macvtap endpoints on a single lower device: 
+	 <ol>
+	   <li><p>Virtual Ethernet Port Aggregator (<b>VEPA</b>), the default mode: data from one endpoint to another endpoint on the same lower device gets sent down the lower device to external switch. If that switch supports the hairpin mode, the frames get sent back to the lower device and from there to the destination endpoint. <br>
+	     <p>Most switches today do not support hairpin mode, so the two endpoints are not able to exchange ethernet frames, although they might still be able to communicate using an tcp/ip router. A linux host used as the adjacent bridge can be put into hairpin mode by writing to /sys/class/net/<b>dev</b>/brif/<b>port</b>/hairpin_mode. This mode is particularly interesting if you want to manage the virtual machine networking at the switch level. A switch that is aware of the VEPA guests can enforce filtering and bandwidth limits per MAC address without the Linux host knowing about it. <br>
+	       <img src="img/hairpin.png"><br>
+	       <img src="img/lxc-macvlan-vepa.png"><br>
+	   <li><b>Bridge mode</b>: this works almost like a traditional bridge, in that data received on a macvlan in bridge mode and destined for another macvlan of the same lower device is sent directly to the target (if the target macvlan is also in bridge mode), rather than being sent outside. This of course works well with non-hairpin switches, and inter-VM traffic has better performance than VEPA mode, since the external round-trip is avoided.<br>
+	     <img src="img/lxc-macvlan-bridge.png"><br>
+	   <li><b>Private mode</b>: this is essentially like VEPA mode, but with the added feature that no macvlans on the same lower device can communicate, regardless of where the packets come from (so even if inter-VM traffic is sent back by a hairpin switch or an IP router, the target macvlan is prevented from receiving it). I haven't tried, but I suppose that it is the operating mode of the target macvlan that determines whether it receives the traffic or not. This mode is useful, of course, if we really want macvlan isolation.
+	   <li><b>Passthru mode</b>: this mode was added later, to work around some limitation of macvlans (more details here). I'm not 100% clear on what's the problem passthru mode tries to solve, as I was able to set promiscuous mode, create bridges, vlans and sub-macv{lan,tap} interfaces in KVM guests using a plain macvtap in VEPA mode for their networking (so no need for passthru). Since I'm surely missing something, more information (as usual) is welcome.
+	 </ol>
+       <li id="setting">
+	 <h3>Setting up macvtap (or macvlan)</h3>
+	 <p>A macvtap interface is created an configured using the <b>ip link</b> command from <b>iproute2</b>, in the same way as we configure macvlan or veth interfaces. <br>
+	   Example:<br>
+	   <pre>$ sudo ip link add link eth0 name macvtap0 address 52:54:00:b8:9c:58 type macvtap mode bridge
+$ sudo ip link set macvtap0 up
+$ ip link show macvtap0
+</pre>
+	   <h3>Qemu on macvtap</h3>
+	   <p>Qemu as of 0.12 does not have direct support for macvtap, so we have to (ab)use the tun/tap configuration interface. To start a guest on the interface from the above example, we need to pass the device node as an open file descriptor to qemu and tell it about the mac address. The scripts normally used for bridge configuration must be disabled. A bash redirect can be used to open the character device in read/write mode and pass it as file descriptor 3. </p>
+	   <pre>$ qemu -net nic,model=virtio,addr=1a:46:0b:ca:bc:7b -net tap,fd=3 3<>/dev/tap11</pre>
+       <li id="ovs">
+	 <h3>Demo: OpenvSwitch vs MacVTap</h3>
+	 <img src="img/arch.png"><br>
+	 <p>Define MacVTap network and Openvswitch in liabvirt
+	   <pre>$ cat network.xml
+&lt;network&gt;
+  &lt;name&gt;ovs-bridge-eth1&lt;/name&gt;
+  &lt;forward mode='bridge'/&gt;
+  &lt;bridge name='br1'/&gt;
+  &lt;virtualport type='openvswitch'&gt;
+    &lt;parameters interfaceid='bffd2747-4b84-44b5-bdf4-faede6e413c5'/&gt;
+  &lt;/virtualport&gt;
+&lt;/network&gt;
+&lt;network&gt;
+   &lt;name&gt;macvtap-bridge-eth1&lt;/name&gt;
+   &lt;forward mode="bridge"&gt;
+      &lt;interface dev="eth1"/&gt;
+   &lt;/forward&gt;
+&lt;/network&gt;
+&lt;network&gt;
+   &lt;name&gt;macvtap-vepa-eth2&lt;/name&gt;
+   &lt;forward mode="vepa"&gt;
+      &lt;interface dev="eth2"/&gt;
+   &lt;/forward&gt;
+&lt;/network&gt;
+&lt;network&gt;
+   &lt;name&gt;macvtap-bridge-eth2&lt;/name&gt;
+   &lt;forward mode="bridge"&gt;
+      &lt;interface dev="eth2"/&gt;
+   &lt;/forward&gt;
+&lt;/network&gt;
+
+$ sudo virsh net-define network.xml</pre>
+
+	 <p>A part of libvirt XML definition of MacVTap
+	   <pre>
+...
+&lt;devices&gt;
+&lt;interface type='network'&gt;
+      &lt;mac address='52:54:00:0a:8a:c1'/&gt;
+      &lt;source <b>network='ovs-bridge-eth1'</b>/&gt;
+      &lt;model type='rtl8139'/&gt;
+      &lt;address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0' <b>multifunction='on'</b>/&gt;
+    &lt;/interface&gt;
+   &lt;interface type='network'&gt;
+      &lt;mac address='52:54:00:0a:8a:c2'/&gt;
+      &lt;source <b>network='macvtap-bridge-eth2'</b>/&gt;
+      &lt;model type='rtl8139'/&gt;
+      &lt;address type='pci' domain='0x0000' bus='0x00' slot='0x03' <b>function='0x1'</b>/&gt;
+    &lt;/interface&gt;
+...
+&lt;/devices&gt;
+
+$ sudo virsh create VM0.xml
+</pre>
+	   <p>Connect host via macvlan
+<pre>$ cat setmacvlan
+#! /bin/bash
+sudo ip link add link eth2 name vlan0 address 50:e5:49:45:76:db type macvlan mode bridge
+sudo ifconfig eth2 0.0.0.0
+sudo ifconfig vlan0 172.16.100.101/24
+
+$ cat delmacvlan
+#! /bin/bash
+sudo ifconfig vlan0 down
+sudo ifconfig eth2 172.16.100.101/24
+sudo ip link del dev vlan0
+</pre>
+
+	   <p>OpenVSwitch hairping mode
+<pre>$ cat hairpin-On.sh
+#! /bin/bash
+
+sudo ovs-ofctl add-flow brPrivate2 actions=all,in_port
+sudo ovs-ofctl dump-flows brPrivate2
+
+$ cat hairpin-Off.sh 
+#! /bin/bash
+
+sudo ovs-ofctl del-flows brPrivate2
+sudo ovs-ofctl add-flow brPrivate2 priority=0,actions=normal
+sudo ovs-ofctl dump-flows brPrivate2
+</pre>
+
+	   <p>Trace libvirt commands
+<pre>$ ps aux |grep kvm
+libvirt+  4486  1.7  2.8 4676344 237544 ?      Sl   Jan19  12:32 
+qemu-system-x86_64 
+-enable-kvm -name VM2 -S -machine pc-i440fx-2.1,accel=kvm,usb=off -cpu qemu64 
+-m 2048 -realtime mlock=off -smp 1,sockets=1,cores=1,threads=1 
+-uuid 3adebedc-eb5c-4a26-96fe-5933861c4abd -no-user-config -nodefaults 
+-chardev socket,id=charmonitor,path=/var/lib/libvirt/qemu/VM2.monitor,server,nowait 
+-mon chardev=charmonitor,id=monitor,mode=control -rtc base=utc,driftfix=slew 
+-global kvm-pit.lost_tick_policy=discard -no-hpet -no-shutdown -boot strict=on 
+-device ich9-usb-ehci1,id=usb,bus=pci.0,addr=0x5.0x7 
+-device ich9-usb-uhci1,masterbus=usb.0,firstport=0,bus=pci.0,multifunction=on,addr=0x5 
+-device ich9-usb-uhci2,masterbus=usb.0,firstport=2,bus=pci.0,addr=0x5.0x1 
+-device ich9-usb-uhci3,masterbus=usb.0,firstport=4,bus=pci.0,addr=0x5.0x2 
+-device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x6 
+-drive file=/home/cloud/libvirt/vm2.img,if=none,id=drive-virtio-disk0,format=raw,cache=none 
+-device virtio-blk-pci,scsi=off,bus=pci.0,addr=0x7,drive=drive-virtio-disk0,id=virtio-disk0,bootindex=1 
+<b>-netdev tap,fd=24,id=hostnet0 
+-device rtl8139,netdev=hostnet0,id=net0,mac=52:54:00:0a:8a:c5,bus=pci.0,multifunction=on,addr=0x3 
+-netdev tap,fd=27,id=hostnet1 
+-device rtl8139,netdev=hostnet1,id=net1,mac=52:54:00:0a:8a:c6,bus=pci.0,addr=0x3.0x1 </b>
+-chardev pty,id=charserial0 -device isa-serial,chardev=charserial0,id=serial0 
+-chardev spicevmc,id=charchannel0,name=vdagent 
+-device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=com.redhat.spice.0 
+-spice port=5902,addr=127.0.0.1,disable-ticketing,seamless-migration=on 
+-device qxl-vga,id=video0,ram_size=67108864,vram_size=67108864,bus=pci.0,addr=0x2 
+-device intel-hda,id=sound0,bus=pci.0,addr=0x4 
+-device hda-duplex,id=sound0-codec0,bus=sound0.0,cad=0 
+-chardev spicevmc,id=charredir0,name=usbredir 
+-device usb-redir,chardev=charredir0,id=redir0 
+-chardev spicevmc,id=charredir1,name=usbredir 
+-device usb-redir,chardev=charredir1,id=redir1 
+-chardev spicevmc,id=charredir2,name=usbredir 
+-device usb-redir,chardev=charredir2,id=redir2 
+-chardev spicevmc,id=charredir3,name=usbredir 
+-device usb-redir,chardev=charredir3,id=redir3 
+-device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x8 
+-msg timestamp=on
+</pre>
+
+<li id="perf">
+  <h3>Performances measures</h3>
+  <table border="1">
+    <tr><th><th width="220">MacVTap bridge; vepa<th width="120">ovs<th width="120">vde2<th>host1<th>host2</tr>
+    <tr><th>NIC<td>virtio+vhost<td>virtio+vhost<td>virtio<td>Intel Corporation 82574L<td>D-Link System Inc DGE-528T</tr>
+    <tr>internal<th>internal<td>8.54 Gbits/sec; n/a<td>8.52 Gbits/sec<td>647 Mbits/sec<td>n/a<td>n/a</tr>
+    <tr>external<th>external<td>941 Mbits/sec; 940 Mbits/sec<td>940 Mbits/sec<td>932 Mbits/sec<td>944 Mbits/sec<td>944 Mbits/sec</tr>
+  </table>
+  <img src="img/internal.png"><br>
+  <img src="img/external.png"><br>
+
+<pre>$ cat start-MacVTap0-AsDaemon
+#! /bin/bash
+
+MACaddr='52:54:00:b8:9c:58'
+
+# Don't Edit, File automatically generated by Config-Kvm-vhoston script
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+
+sudo ip link add link eth0 name macvtap0 address ${MACaddr} type macvtap mode bridge
+sleep 2
+sudo ip link set dev macvtap0 up
+TAPNUM=$(&lt; /sys/class/net/macvtap0/ifindex)
+sudo chmod 666 /dev/tap${TAPNUM}
+vhostOn.sh
+mkdir /src3/KVM/network-11586
+
+echo "Starting VM: MacVTap0..., mem=${MEM}"
+screen -S MacVTap0 -d -m run-MacVTap0-AsDaemon
+</pre>
+
+<pre>$ cat run-MacVTap0-AsDaemon
+#! /bin/bash
+MEM=512M
+MACaddr=$(&lt; /sys/class/net/macvtap0/address)
+TAPNUM=$(&lt; /sys/class/net/macvtap0/ifindex)
+
+qemu-system-x86_64 -name MacVTap0 -localtime -curses \
+       -m ${MEM} -enable-kvm \
+       -monitor unix:/src3/KVM/network-11586/MonSock,server,nowait \
+       -netdev tap,fd=3,id=hostnet0,vhost=on \
+       -net nic,vlan=0,netdev=hostnet0,macaddr=${MACaddr},model=virtio \
+       -drive index=0,media=disk,if=virtio,file=../img/MacVLan0.img 3&lt;&gt;/dev/tap${TAPNUM}
+</pre>
+
+<pre>$ cat stop-MacVTap0-restore-lan
+#! /bin/bash
+
+# Don't Edit, File automatically generated by Config-Kvm-vhoston script
+
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+
+if [ -S /src3/KVM/network-11586/MonSock ]; then
+    echo "system_powerdown" | socat - unix-connect:/src3/KVM/network-11586/MonSock
+    echo "Please wait 10 seconds."
+    sleep 10
+else
+    echo "Socket has been removed! Shutdown by ssh or resotre Lan only."
+fi
+
+ping -c 3 192.168.180.200
+if [ $? -eq 0 ]; then 
+    echo "MacVTap0 still alive, shut it down.  Enter passwd twice!"
+    ssh -t jssu@192.168.180.200 'sudo init 0'
+else
+    rm -rf /src3/KVM/network-11586
+fi
+
+echo "Restore lan..."
+if [ -d /proc/sys/net/ipv4/conf/macvtap0 ]; then
+    sudo ip link set dev macvtap0 down
+    sudo ip link delete macvtap0
+fi
+</pre>
+<hr>
+
+<li id="uml">
+  
+  <h3>User-mode Linux(UML) with MacVTap</h3>
+  <pre>$ cat startUML-MacVTap-AsDaemon
+#! /bin/bash
+
+MACaddr='50:e5:49:b8:9c:01'
+
+#############################################################
+IsThereTapDevice()
+  {
+   declare int i=0;
+   for devices in `find /sys/class/net -type l -name "vtap*"`
+     do
+       ((i++));
+     done
+
+   if [ ${i} -gt 0 ]
+     then echo "Yes"
+   else echo "No"
+   fi
+  }
+#############################################################
+
+sudo echo Need SU passwd: 
+if [ `IsThereTapDevice` = "No" ]
+   then sudo iptables --flush
+        sudo iptables --table nat --flush
+        sudo iptables --delete-chain
+        sudo iptables --table nat --delete-chain
+        sudo iptables --table nat --append POSTROUTING --out-interface eth1 -j MASQUERADE
+fi 
+
+#sudo tunctl -u jssu -t tap0
+sudo ip link add link eth0 name vtap0 address ${MACaddr} type macvtap mode bridge
+sleep 2
+sudo ip link set dev vtap0 up
+TAPNUM=$(< /sys/class/net/vtap0/ifindex)
+sudo chmod 666 /dev/tap${TAPNUM}
+sudo sysctl net.ipv4.ip_forward=1
+#sudo arp -Ds 192.168.180.101 eth0 pub
+
+sudo screen -S MacVTap -d -m linux.uml \
+	   ubd0=DebJes-MacVTap.ext4 \
+	   eth0=tuntap,tap${TAPNUM} \
+	   mem=1024M \
+	   con=pty con0=fd:0,fd:1 umid=MacVTap
+
+sleep 30
+sudo ifconfig tap${TAPNUM} 192.168.180.3 netmask 255.255.255.255 up
+sudo sysctl net.ipv4.conf.tap${TAPNUM}.proxy_arp=1
+sudo route add -host 192.168.180.101 dev tap${TAPNUM}
+</pre>
+
+  <pre>$ cat stop-uml-restore-lan-MacVTap
+
+#############################################################
+IsThereTapDevice()
+  {
+   declare int i=0;
+   for devices in `find /sys/class/net -type l -name "vtap*"`
+     do
+       ((i++));
+     done
+
+   if [ ${i} -gt 0 ]
+     then echo "Yes"
+   else echo "No"
+   fi
+  }
+#############################################################
+
+sudo echo Need SU passwd: 
+sudo uml_mconsole MacVTap sysrq s
+sudo uml_mconsole MacVTap sysrq u
+sudo uml_mconsole MacVTap sysrq e
+sudo uml_mconsole MacVTap halt
+
+TAPNUM=$(< /sys/class/net/vtap0/ifindex)
+sudo ifconfig tap${TAPNUM} 192.168.180.3 down
+sudo sysctl net.ipv4.conf.tap${TAPNUM}.proxy_arp=0
+sudo ip link set dev vtap0 down
+sudo ip link delete vtap0
+
+if [ `IsThereTapDevice` = "No" ]; then
+    sudo sysctl net.ipv4.ip_forward=0
+    sudo iptables --flush
+    sudo iptables --table nat --flush
+    sudo iptables --delete-chain
+    sudo iptables --table nat --delete-chain
+fi 
+</pre>
+  <h4>Known issues</h4>
+  <ul>
+    <li>Use tap device rather than tun device.
+    <li>We can't configure the tap device until the VM booted on.
+    <li>Like uml-switch mode instead of bridge mode.
+    <li>Can not run in user mode.
+      <pre>TUNSETIFF failed, errno = 1
+SIOCSIFFLAGS: Operation not permitted
+</pre>
+    <li>I have got the error message when transfer packets through VDE swtch.
+      <pre>uml_net_start_xmit: failed(-1)
+</pre>
+  </ul>
+
+<li id="uml-ovs">
+
+  <h3>User-mode Linux(UML) with OpenvSwitch MacVTap</h3>
+  <pre>$ cat startUML-OVS-MacVTap-AsDaemon
+#! /bin/bash
+
+MACaddr='50:e5:49:b8:9c:01'
+
+sudo ip link add link brLAN name vtap0 address ${MACaddr} type macvtap mode bridge
+sleep 2
+sudo ip link set dev vtap0 up
+TAPNUM=$(< /sys/class/net/vtap0/ifindex)
+sudo chmod 666 /dev/tap${TAPNUM}
+# sudo sysctl net.ipv4.ip_forward=1
+# sudo arp -Ds 192.168.180.101 eth0 pub
+
+sudo screen -S MacVTap -d -m linux.uml \
+     ubd0=DebJes-MacVTap.ext4 \
+     eth0=tuntap,tap${TAPNUM} mem=1024M \
+     con=pty con0=fd:0,fd:1 umid=MacVTap
+
+sleep 30
+sudo ovs-vsctl add-port brLAN tap${TAPNUM}
+sudo ifconfig tap${TAPNUM} 0.0.0.0 up
+</pre>
+
+  <pre>$ cat stop-uml-restore-lan-OVS-MacVTap
+#! /bin/bash
+
+sudo echo Need SU passwd:
+sudo uml_mconsole MacVTap sysrq s
+sudo uml_mconsole MacVTap sysrq u
+sudo uml_mconsole MacVTap sysrq e
+sudo uml_mconsole MacVTap halt
+
+TAPNUM=$(< /sys/class/net/vtap0/ifindex)
+sudo ovs-vsctl del-port brLAN tap${TAPNUM}
+sudo ip link set dev vtap0 down
+sudo ip link delete vtap0
+</pre>
+  
+  <h4>Known issues</h4>
+  <ul>
+    <li>We couldn't configure the tap device until the VM booted on.
+    <li>Need root permission.
+  </ul>
+  
+  
+<iframe width="600" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1CNZ-hsFuj3TeZi5Ex7KDGktaASAEm8JilJie7Gb95ww/pubchart?oid=942212215&amp;format=interactive"></iframe>
+
+  </ol>
+
+  <h2>References</h2>
+  <ul>
+    <li><a href="http://virt.kernelnewbies.org/MacVTap">MacVTap - Linux Virtualization Wiki</a>
+    <li><a href="http://seravo.fi/2012/virtualized-bridged-networking-with-macvtap">Virtualized bridged networking with MacVTap - Seravo</a>
+    <li><a href="https://blog.kghost.info/2013/03/27/linux-network-tun/">网络虚拟化技术（二）: TUN/TAP MACVLAN MACVTAP</a>
+    <li><a href="http://serverfault.com/questions/547361/macvlan-based-interface-pings-from-host-but-not-from-namespace">linux - Macvlan based interface pings from host but not from namespace - Server Fault</a>
+    <li><a href="http://serverfault.com/questions/599799/ip-address-reuse-on-macvlan-devices">linux - IP address reuse on macvlan devices - Server Fault</a>
+    <li><a href="https://blog.flameeyes.eu/2010/09/linux-containers-and-networking">Linux Containers and Networking | Flameeyes's Weblog</a>
+    <li><a href="http://www.furorteutonicus.eu/2013/08/04/enabling-host-guest-networking-with-kvm-macvlan-and-macvtap/">Enabling host-guest networking with KVM, Macvlan and Macvtap ⇔ Furor Teutonicus</a>
+    <li><a href="http://backreference.org/2014/03/20/some-notes-on-macvlanmacvtap/">Some notes on macvlan/macvtap</a>
+    <li><a href="https://www.youtube.com/watch?v=jHrJvKzu-vk">Linux bridge vs macvtap</a>
+    <li><a href="http://user-mode-linux.sourceforge.net/">The User-mode Linux Kernel Home Page</a>
+    <li><a href="http://user-mode-linux.sourceforge.net/old/networking.html">The User-mode Linux Kernel Home Page Networking (Old)</a>
+    <li><a href="http://en.wikipedia.org/wiki/Magic_SysRq_key">Magic SysRq key</a>
+    <li><a href="http://lxr.free-electrons.com/source/arch/um/drivers/net_kern.c#L210">Souce code: arch/um/drivers/net_kern.c#L210</a>
+    <li><a href="https://www.kernel.org/doc/mirror/ols2003.pdf">Proceedings of the Linux Symposium, UML Simulator</a>
+  </ul>
+
+
+    <!-- 頁底 -->
+<div id="footer" style="width: 100%; clear: left;" align="center">
+  <hr>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+</body>
+</html>

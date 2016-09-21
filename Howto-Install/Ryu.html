@@ -1,0 +1,44 @@
+<HTML>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>Ryu</TITLE>
+  <link type="text/css" rel="stylesheet" href="/css/style_2014.css" />
+  <!--<script src="/css/google-code-prettify/run_prettify.js?skin=sons-of-obsidian"></script>-->
+  <!--<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?skin=sons-of-obsidian"></script>-->
+  <style>
+  </style>
+</HEAD>
+<BODY>
+  <h1>Install</h1>
+  <h2>pip install</h2>
+  <pre class="dol">sudo aptitude install python-pip libxml2-dev libxslt1-dev</pre>
+  <pre class="dol">sudo pip install ryu</pre>
+  <h2>git install</h2>
+  <pre class="dol">sudo aptitude install python-dev libxml2-dev libxslt1-dev</pre>
+  <pre class="dol">git clone git://github.com/osrg/ryu.git</pre>
+  <pre class="dol">cd ryu; sudo python ./setup.py install</pre>
+
+  <h1><a href="https://github.com/osrg/ryu/wiki/OpenFlow_Tutorial" target="_blank">OpenFlow Tutorial</a></h1>
+  <p>You will need the following installed in your environment that runs Ryu</p>
+  <ul>
+    <li>python-eventlet
+    <li>python-routes
+    <li>python-webob
+    <li>python-paramiko
+  </ul>
+  <pre class="dol">sudo aptitude install python-eventlet python-routes python-webob python-paramiko</pre>
+
+  <h2>running Ryu</h2>
+  <pre class="dol">PYTHONPATH=. ./bin/ryu-manager ryu/app/simple_switch.py</pre>
+  <p>This example runs simple_siwtch ryu application. If you have your own ryu application, replace ryu/app/simple_switch.py with yours. By adding --verbose option, you can observe more logs from Ryu.</p>
+
+  <!-- 頁底 -->
+  <div id="footer" style="width: 100%; clear: left;" align="center">
+    <hr>
+    <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+    <address style="text-align: right; float: right; margin-right:1em;">
+      <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+    </address>
+  </div>
+</BODY>
+</HTML>

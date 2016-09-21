@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html b:version="2" class="v2" dir="ltr">
+  <head><title>Roggy: Vyatta as an Internet Gateway</title>
+  </head>
+<body class="">
+<h4><a href="http://packages.vyatta.com/vyatta/iso/VC6.5/" 
+  target="newwindow">Vyatta 6.5R1Iso</a>&nbsp;&nbsp;
+  <a href="http://www.vyatta.com/download/docdl" 
+  target="newwindow">Vyatta Doc Download</a>&nbsp;&nbsp;
+  <a href="../Router/VC6.5Doc/DocVyatta.html" target="newwindow">Vyatta 
+  Doc</a>&nbsp;&nbsp;
+  <a href="http://wiki.het.net/wiki/Where_to_get" 
+  target="newwindow">Vyatta Where_to_get</a></h4>
+<h4><a href="#Vyatta-Howto" target="newwindow">Vyatta Howto</a>&nbsp;&nbsp;
+  <a href="#Vyatta-Config"  target="newwindow">Vyatta Config Guide</a>&nbsp;&nbsp;
+  <a href="http://vblog.strutt.org.uk/2011/11/vyatta-router-setup/" 
+  target="newwindow">Vyatta router setup (vmware?)</a></h4>
+<h4></h4>
+<h4><a href="" 
+  target="newwindow"></a></h4>
+<a name="VyattaVC65"></a><h3>My Virtual Vyatta Router</h3>
+<OL>
+  <LI> <h4>Physical Hosts Network Environments</h4>
+<PRE>
+hsu@Amath-Client00:~$ more /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+# The loopback network interface
+auto    lo
+iface   lo inet loopback
+address 127.0.0.1
+netmask 255.0.0.0
+auto  eth0
+iface eth0 inet static
+	address 192.168.0.33
+	netmask 255.255.255.0
+	gateway 192.168.0.1
+auto  eth1
+iface eth1 inet static
+	address 192.168.1.33
+	netmask 255.255.255.0
+#	gateway 192.168.1.1
+amd-6:~$ more /etc/network/interfaces
+auto lo
+iface lo inet loopback
+address 127.0.0.1
+netmask 255.0.0.0
+auto eth0
+iface eth0 inet static
+address 192.168.0.32
+netmask 255.255.255.0
+gateway 192.168.0.1
+auto eth1
+iface eth1 inet static
+address 192.168.1.32
+netmask 255.255.255.0
+# gateway 192.168.1.1
+</PRE>
+  <LI> <h4>ISO Download</h4>
+<P> Download VC6.5 from: <a href="http://packages.vyatta.com/vyatta/iso/VC6.5/" 
+    target="newwindow">vyatta-livecd_VC6.5R1_amd64.iso</a>
+  <LI> <h4>Create 4G free space</h4>
+<PRE>
+hsu@amd-6:/src4/ceph/Router$ dd if=/dev/zero of=MyRouter-Template.img bs=1M count=4000
+</PRE>
+  <LI> <h4>Create partitions on MyRouter-Template.img</h4>
+<PRE>
+hsu@amd-6:/src3/KVM/bin$ start-Gparted-6-efs /src4/ceph/Router/MyRouter-Template.img
+</PRE>
+    <UL>
+      <LI> Partition 1: 487M, ext2
+      <LI> Partition 2: 3000M, ext4
+      <LI> Partition 3: 512M, swap
+    </UL>
+<PRE>
+Gparted:~$ sudo fdisk -l /dev/sdb
+Disk /dev/sdb: 4194 MB, 4194304000 bytes
+255 heads, 63 sectors/track, 509 cylinders, total 8192000 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x000962db
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048      999423      498688   83  Linux
+/dev/sdb2          999424     7143423     3072000   83  Linux
+/dev/sdb3         7143424     8191999      524288   82  Linux swap / Solaris
+</PRE>
+  <LI> <h4>Install Vyatta</h4>
+<P> After booting, login as "vyatta", passwd "yvatta".  When seeing system prompt, 
+type "install system" without the double quotes.  When asking for partitioning hard 
+disk, choose skip and specify installing the root on sda2. For everything else, just 
+accept default. Otherwise, vyatta just ignore whatever you specify. When seeing 
+"Done!", at system prompt, type "poweroff"
+<PRE>
+ $ kvm -no-kvm -cdrom vyatta-livecd_VC6.5R1_amd64.iso -hda MyRouter-Template.img -boot d
+ $ poweroff 
+</PRE>
+  <LI> <h4>Booting MyRouter-Template.img</h4>
+<P> Check whether installation is successful by booting image.  Also, we need 
+<b>ssh</b> and eth0, eth1 interfaces.  Hardcode their MAC addresses:
+<code>1c:6f:65:4f:cc:8f</code> and <code>1c:6f:65:e5:2f:3d</code>.  The rest 
+settings should be done via <b>configure</b> command, which is a function defined  
+in <code>/etc/bash_completion.d/configure</code> file?
+<PRE>
+hsu@MyRouter:~$ type configure
+configure is aliased to `_vyatta_op_run configure'
+#########################################################################################
+# From the typeset -f output in the bash shell, we see the definition of _vyatta_op_run,
+# apparently, defined in /opt/vyatta/share/vyatta-op/functions/interpreter/vyatta-op-run.
+#########################################################################################
+#  _vyatta_op_run () 
+#  { 
+#      local -i estat;
+#      local tpath=$vyatta_op_templates;
+#      local restore_shopts=$( shopt -p extglob nullglob | tr \\n \; );
+#      shopt -s extglob nullglob;
+#      _vyatta_op_last_comp=${_vyatta_op_last_comp_init};
+#      false;
+#      estat=$?;
+#      stty echo 2> /dev/null;
+#      i=1;
+#      declare -a args;
+#      for arg in "$@";
+#      do
+#          local orig_arg=$arg;
+#          if [[ $arg == "*" ]]; then
+#              arg="*";
+#          else
+#              arg=($(_vyatta_op_conv_node_path $tpath $arg));
+#          fi;
+#          if [[ "${arg[1]}" == "ambiguous" ]]; then
+#              echo -ne "\n  Ambiguous command: ${args[@]} [$arg]\n" 1>&2;
+#              local -a cmds=($(compgen -d $tpath/$arg));
+#              _vyatta_op_node_path=$tpath;
+#              local comps=$(_vyatta_op_help $arg ${cmds[@]##*/});
+#              echo -e "$comps\n" | sed -e 's/^P/  P/';
+#              eval $restore_shopts;
+#              return 1;
+#          else
+#              if [[ "${arg[1]}" == "invalid" ]]; then
+#                  echo -ne "\n  Invalid command: ${args[@]} [$arg]\n\n" 1>&2;
+#                  eval $restore_shopts;
+#                  return 1;
+#              fi;
+#          fi;
+#          if [ -f "$tpath/$arg/node.def" ]; then
+#              tpath+=/$arg;
+#          else
+#              if [ -f $tpath/node.tag/node.def ]; then
+#                  tpath+=/node.tag;
+#              else
+#                  echo -ne "\n  Invalid command: ${args[@]} [$arg]\n\n" 1>&2;
+#                  eval $restore_shopts;
+#                  return 1;
+#              fi;
+#          fi;
+#          if [[ "$arg" == "node.tag" ]]; then
+#              args[$i]=$orig_arg;
+#          else
+#              args[$i]=$arg;
+#          fi;
+#          let "i+=1";
+#      done;
+#      local run_cmd=$(_vyatta_op_get_node_def_field $tpath/node.def run);
+#      run_cmd=$(_vyatta_op_conv_run_cmd "$run_cmd");
+#      local ret=0;
+#      local cmd_regex="^(LESSOPEN=|less|pager|tail|/opt/vyatta/bin/vyatta-tshark-interface-port.pl).*";
+#      if [ -n "$run_cmd" ]; then
+#          eval $restore_shopts;
+#          if [[ -t 1 && "${args[1]}" == "show" && ! $run_cmd =~ $cmd_regex ]]; then
+#              eval "($run_cmd) | ${VYATTA_PAGER:-cat}";
+#          else
+#              eval "$run_cmd";
+#          fi;
+#      else
+#          echo -ne "\n  Incomplete command: ${args[@]}\n\n" 1>&2;
+#          eval $restore_shopts;
+#          ret=1;
+#      fi;
+#      return $ret
+#  }
+</PRE>
+<P> Set eth0, eth1, and ssh so that we have network and can remote login via <b>ssh</b>.
+<PRE>
+$ kvm -hda MyRouter-Template.img
+# After login with newly specified passwd
+$ df
+$ more /etc/mtab
+# We found /opt/vyatta/etc/config is mounted in /config directory
+$ cp /config/config.boot  /config/config.boot.orig
+$ nano /config/config.boot
+$ diff /config/config.boot /config/config.boot.orig
+1,23d0
+< interfaces {
+<     ethernet eth0 {
+<         address 192.168.0.2/24
+<         duplex auto
+<         hw-id 1c:6f:65:4f:cc:8f
+<         smp_affinity auto
+<         speed auto
+<     }
+<     ethernet eth1 {
+<         address 192.168.1.1/24
+<         duplex auto
+<         hw-id 1c:6f:65:e5:2f:3d
+<         smp_affinity auto
+<         speed auto
+<     }
+<     loopback lo {
+<     }
+< }
+< service {
+<          ssh {
+<                port 22
+<              }
+< }
+    .
+    .
+    .
+    .
+    .
+</PRE>
+<P> Also modify the PATH variable in <code>/etc/profile</code> as follow:
+vyatta@MyRouter:~$ diff /etc/profile /etc/profile.orig
+<PRE>
+7c7
+<   PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:."
+---
+>   PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+</PRE>
+<P> Add two lines to /etc/rc.local 
+<PRE>
+$ diff /etc/rc.local  /etc/rc.local.orig
+18,21d17
+< 
+< ifconfig eth1 192.168.1.1
+< route add default gw 192.168.1.32
+< 
+</PRE>
+<P> Poweroff vyatta.  At this stage, we move previous vyatta image to bkp and cp new 
+    template image to MyRouter.img.  And start MyRouter using previous script, we then 
+    can have legal interface eth1 and our network is ready and we can remote login via 
+    the <b>ssh</b> command.  And after login, the next three commands successfully 
+    add user hsu, passwd hsu, and let hsu be administrator.
+<PRE>
+  # In amd-6:hsu@amd-6:/src4/ceph/Router
+  $ mv MyRouter.img MyRouter-VC6.4.img
+  $ cp MyRouter-Template.img MyRouter.img
+  # In amd-6:hsu@amd-6:/src4/ceph/bin
+  $ start-MyRouter-13 
+  $ ssh -X vyatta@192.168.1.1
+vyatta@MyRouter:~$ configure
+[edit]
+vyatta@MyRouter# set system login user hsu
+[edit]
+vyatta@MyRouter# set system login user hsu authentication plaintext-password ----[edit]
+vyatta@MyRouter# set system login user hsu level admin
+[edit]
+vyatta@MyRouter# commit
+[edit]
+vyatta@MyRouter# save
+Saving configuration to '/config/config.boot'...
+Done
+[edit]
+vyatta@MyRouter#  exit
+exit
+</PRE>
+  <LI> <h4>Configure Vyatta</h4>
+<P> Vyatta must be setup via <b>configure</b> command.  It is of no use to hand editing 
+the related configuration files.  It seems, everytime, we boot the vyatta system, the 
+system setting is read from <code>/opt/vyatta/etc/config/config.boot</code> and the 
+results are shown in the <code>/opt/vyatta/config/active</code> directory.
+<PRE>
+ $ configure 
+ # set system host-name MyRouter
+ # set interfaces ethernet eth0 address 192.168.0.2/24
+ # set interfaces ethernet eth1 address 192.168.1.1/24 
+ ;; Setting eth1 failed 
+ # set system gateway-address 192.168.1.1
+ # set system name-server 168.95.192.1
+ # set system name-server 168.95.1.1
+ # show system name-server 
++name-server 168.95.192.1
++name-server 168.95.1.1
+ # set system login user hsu
+ # set system login user hsu authentication plaintext-password ----
+ ;; Setting passwd failed 
+ # set system login user hsu level admin
+ # commit
+ # save
+ # exit
+ ;; Cannot exit: configuration modified.
+ ;; Use 'exit discard' to discard the changes and exit.
+ # exit discard
+</PRE>
+<P> The difference of config.boot file is:
+<PRE>
+ $ diff /config/config.boot /config/config.boot.orig >/tmp/config.boot.diff
+ $ cat /tmp/config.boot.diff
+1,23d0
+< interfaces {
+<     ethernet eth0 {
+<         address 192.168.0.2/24
+<         duplex auto
+<         hw-id 1c:6f:65:4f:cc:8f
+<         smp_affinity auto
+<         speed auto
+<     }
+<     ethernet eth1 {
+<         address 192.168.1.1/24
+<         duplex auto
+<         hw-id 1c:6f:65:e5:2f:3d
+<         smp_affinity auto
+<         speed auto
+<     }
+<     loopback lo {
+<     }
+< }
+< service {
+<     ssh {
+<         port 22
+<     }
+< }
+25,34d1
+<     config-management {
+<         commit-revisions 20
+<     }
+<     console {
+<         device ttyS0 {
+<             speed 9600
+<         }
+<     }
+<     gateway-address 192.168.1.1
+<     host-name MyRouter
+36,42d2
+<         user hsu {
+<             authentication {
+<                 encrypted-password $1$7x/zrIyo$/dnPj2A9RXN0m9u6e5Yup0
+<                 plaintext-password ""
+<             }
+<             level admin
+<         }
+45c5
+<                 encrypted-password $1$o96GVKA8$iN/9gfglFjlWxprGsohgn0
+---
+>                 encrypted-password "$1$o96GVKA8$iN/9gfglFjlWxprGsohgn0"
+50,59d9
+<     name-server 168.95.192.1
+<     name-server 168.95.1.1
+<     ntp {
+<         server 0.vyatta.pool.ntp.org {
+<         }
+<         server 1.vyatta.pool.ntp.org {
+<         }
+<         server 2.vyatta.pool.ntp.org {
+<         }
+<     }
+61d10
+<         auto-sync 1
+63,67c12,14
+<             components main
+<             distribution stable
+<             password ""
+<             url http://packages.vyatta.com/vyatta
+<             username ""
+---
+>             distribution "stable"
+>             components "main"
+>             url "http://packages.vyatta.com/vyatta"
+80c27,45
+<     time-zone GMT
+---
+>     ntp {
+>         server "0.vyatta.pool.ntp.org"
+>         server "1.vyatta.pool.ntp.org"
+>         server "2.vyatta.pool.ntp.org"
+>     }
+>     console {
+>         device ttyS0 {
+>             speed 9600
+>         }
+>     }
+>     config-management {
+>         commit-revisions 20
+>     }
+> }
+> interfaces {
+>     loopback lo
+>     ethernet eth0 {
+>         hw-id 52:54:00:12:34:56
+>     }
+82,83d46
+< 
+< 
+85c48
+< /* === vyatta-config-version: "webproxy@1:ipsec@4:webgui@1:wanloadbalance@3:conntrack@1:firewall@5:qos@1:dhcp-server@4:cluster@1:system@6:nat@4:conntrack-sync@1:zone-policy@1:config-management@1:dhcp-relay@1:vrrp@1:quagga@2" === */
+---
+> /* === vyatta-config-version: "zone-policy@1:ipsec@4:config-management@1:wanloadbalance@3:cluster@1:dhcp-relay@1:nat@4:webproxy@1:qos@1:system@6:conntrack@1:conntrack-sync@1:vrrp@1:firewall@5:webgui@1:quagga@2:dhcp-server@4" === */
+</PRE>
+</OL>
+<P><b>Note: (12/30/2012)</b>  The followings are kept for reference purpose. 
+   VC6.5 is rather stable, now!
+<a name="MyRouterVC64"></a><h2>My Router (VC6.4) Installation and Configuration</h2>
+<P> We choose <a href="http://en.wikipedia.org/wiki/Vyatta" 
+target=newwindow">Vyatta</a> to create our virtual router/gateway.  So far so good.  
+Download its iso from <a href="http://packages.vyatta.com/vyatta/iso/VC6.5/" 
+target=newwindow">vyatta-livecd_VC6.5R1_amd64.iso</a>.  
+<P> <b>Note: (11/24/2012)</b> <a href="http://en.wikipedia.org/wiki/Vyatta" 
+target="newwindow">Vyatta</a>, a Debian-based software-based virtual router, and 
+claimed to be similar to Juniper JUNOS or Cisco IOS. It has two editions: (1) 
+subscription and (2) open sourced editions.  Subscription edition provides web-based 
+management interface, i.e. user friendlier.  We take the second approach.  Almost all 
+the setups you did based on your Debian experience are in vain, i.e. after rebooting, 
+setups are gone.  Only can be done via <b>configure</b>, a command no where to be 
+found.  Worst of all, you won't be able to upgrade your software packages using 
+Debian mirror.  And you can't install additional packages, such as synaptic and emacs.  
+<b>nano</b> is the only text editor (similar to emacs) available.  There is no X GUI 
+interface, everything is based on command line interface (CLI).  It dose not offer any 
+upgrade path.  You only can reinstall newer version via ISO image. Its documentaion 
+web page: <a href="http://www.vyatta.com/download/docdl" target="newwindow">Vyatta 
+Docdl</a>, zip download: 
+<a href="http://www.vyatta.com/downloads/documentation/VC6.5/VC65.zip" 
+target="newwindow">VC65.zip</a>
+<P> <b>Note: (10/08/2012)</b> MyRouter is OK, now, I think.  To test it, bring up 
+Test-Eth1 (on ac00), a VM with only IP 192.168.1.254, edit its /etc/rc.local so that 
+its default gateway is 192.168.1.1, not 192.168.1.33, the second IP address of ac00.  
+Reboot it.  And on amd-6, booting MyRouter and ceph-client1.  Login Test-Eth1, from 
+it we can successfully login 192.168.0.33 (ac00), 192.168.0.32 (amd-6), 192.168.0.130 
+(ceph-client1), but not machines on the 140.120 network.  But, I think this is OK, 
+since 192.168.1.0/24 is our own private lan.  (Originally, Test-Eth1 with 192.168.1.33 
+default gateway can reach anywhere.)
+<P> <a name="Config-Kvm-MyRouter"></a> <b>Note: (10/08/2012)</b> Our router should 
+route 192.168.1.0/24 subnet to other subnet.  For consistency, we use eth1 (if possible 
+at all, for virtual machines with only one 192.168.1.* IP address, it only has (virtual) 
+eth0 card,) to connect our 192.168.1.0/24 subnet.  For Setting up Kvm with 2 Nics and 2 
+Taps, you may consult the <a href="#KvmWith2Nics">Kvm with 2 Nics</a>. The correct way 
+to setup MyRouter is as follows:  <b>Notice</b> that the MAC addresses of the two nics 
+must be the same as the MAC addresses for ethernet eth0 and ethernet eth1 recorded in 
+the <code>/opt/vyatta/etc/config/config.boot</code> file.
+<PRE>
+ $ Config-Kvm ../Router/MyRouter.img MyRouter 192.168.1.1 eth1 13 
+ # Edit start-MyRouter-13, start-MyRouter-13-AsDaemon, stop-MyRouter-restore-lan-13 
+ # As follows:
+ $ diff start-MyRouter-13  start-MyRouter-13.orig
+17,22d16
+< ################################################################################
+< sudo tunctl -u hsu -t tap103
+< sudo ifconfig tap103 192.168.0.32 netmask 255.255.255.255 up
+< sudo iptables --table nat -A POSTROUTING --out-interface eth0 -j MASQUERADE
+< sudo iptables -A FORWARD --in-interface tap103 -j ACCEPT
+< ################################################################################
+28,32d21
+< ################################################################################
+< sudo sysctl net.ipv4.conf.tap103.proxy_arp=1
+< sudo arp -Ds 192.168.0.2 eth0 pub
+< sudo route add -host 192.168.0.2 dev tap103
+< ################################################################################
+35,37d23
+< ################################################################################
+< vde_switch -tap tap103 -mod 644 -sock=/src4/ceph/network-3039 -mgmt /src4/ceph/network-3039/vde_switch.mgmt -daemon </dev/null >/dev/null
+< ################################################################################
+39,43c25
+< ################################################################################
+< # The MAC addresses for eth0 and eth1 are inscribed in config.boot file, can't be 
+< # changed arbitrarily.
+< ################################################################################
+< kvm -net vde,vlan=0,sock=/src4/ceph/network-3039 -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -net vde,vlan=1,sock=/src4/ceph/network-3049  -net nic,vlan=1,macaddr=1c:6f:65:e5:2f:3d -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -hda ../Router/MyRouter.img &
+---
+> kvm -net vde,vlan=0,sock=/src4/ceph/network-3049 -net nic,vlan=0,macaddr=1c:6f:65:e5:2f:3d -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -hda ../Router/MyRouter.img &
+ ############################################################################
+ # For start-MyRouter-13-AsDaemon script, it is almost identical to start-MyRouter-13,
+ # We only need to pay attention to the "-net" options for the kvm command.  And the 
+ # eth0 and eth1 MAC addresses are hard-coded in its /opt/vyatta/etc/config/config.boot 
+ # file.   We also use vlan0 and vlan1 as different (virtual) switches for two different
+ # subnets.  It seems OK, now.   Surely, we need more testing!!  The difference of the 
+ # last line in the start-MyRouter-13-AsDaemon and start-MyRouter-13-AsDaemon.orig shell
+ # scripts is kept, the rest differences are the same as above.
+ ############################################################################
+< screen -S MyRouter -d -m kvm  -net vde,vlan=0,sock=/src4/ceph/network-3039 -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -net vde,vlan=1,sock=/src4/ceph/network-3049  -net nic,vlan=1,macaddr=1c:6f:65:e5:2f:3d  -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -curses -hda ../Router/MyRouter.img &
+---
+> screen -S MyRouter -d -m kvm -net vde,vlan=0,sock=/src4/ceph/network-3049 -net nic,vlan=0,macaddr=1c:6f:65:e5:2f:3d -net nic,vlan=0,macaddr=1c:6f:65:4f:cc:8f -m 512M -monitor unix:/src4/ceph/network-3049/MonSock,server,nowait -curses -hda ../Router/MyRouter.img &
+$ diff stop-MyRouter-restore-lan-13 stop-MyRouter-restore-lan-13.orig
+45,47d44
+< ################################################################################
+< sudo pkill -f "vde_switch -tap tap103 -mod 644 -sock=/src4/ceph/network-3039 -mgmt /src4/ceph/network-3039/vde_switch.mgmt"
+< ################################################################################
+52,56d48
+< ################################################################################
+< if [ -S /src4/ceph/network-3039/ctl ]; then rm /src4/ceph/network-3039/ctl; fi
+< if [ -S /src4/ceph/network-3039/vde_switch.mgmt ]; then rm /src4/ceph/network-3039/vde_switch.mgmt; fi
+< if [ -d /src4/ceph/network-3039 ]; then rm -rf /src4/ceph/network-3039; fi
+< ################################################################################
+65,71d56
+< ################################################################################
+< sudo sysctl net.ipv4.conf.tap103.proxy_arp=0
+< sudo ifconfig tap103 192.168.0.32 down
+< # sudo iptables --table nat -D POSTROUTING --out-interface eth1 -j MASQUERADE
+< sudo iptables -D FORWARD --in-interface tap103 -j ACCEPT
+< sudo tunctl -d tap103
+< ################################################################################
+</PRE>
+<h4>Virtual Router Installation</h4>
+<P> The <b>mkpartfs</b> command provided by qemu-kvm ends up with "/dev/sda 
+<a href="http://serverfault.com/questions/104923/unrecognised-disc-label-when-using-parted-with-qemu-images" 
+target="newwindow">unrecognized disk label</a>".  We can use <b>start-Gparted-6-efs</b> 
+(in <code>/src3/KVM/bin</code>) and specify <code>/src4/ceph/Router/MyRouter.img</code> 
+as its argument and use <b>gparted</b> command to partition <code>/dev/sdb</code> (1) 
+First partition 488M, ext2, (2) second partition 3096M, ext4, (3) third partition 512M, 
+swap.  I always got 513M for 3rd partition.  Also turn on the boot flag for the first 
+partition.  Apparently, first 1MB is reserved for MBR, not used.  I asked for 488M, 
+only got 487M and the second partition (/) started at sector 999424, the correct offset 
+to use <b>Config-Kvm</b> shell script.  The first partition is totally wasted, but we 
+need it to get the right offset for <b>Config-Kvm</b> shellscript to be functional.
+<PRE>
+ $ mkdir /src4/ceph/Router
+ $ mv *iso /src4/ceph/Router
+ $ cd /src4/ceph/Router
+ $ qemu-img create MyRouter.img 4G
+</PRE>
+############################################################
+<P> <b>Well-Known failure</b>: When booting vyatta for kvm-image installation, we need
+to use the <a href="http://www.thegeekstuff.com/2011/09/parted-command-examples/" 
+target="newwindow">gparted command</a> to partition the image.
+When asking for partitioning hard disk, choose gparted:
+<PRE>
+ # When seeing system prompt, type "install system" without the double quotes.
+ # print ;; print info about hard disk.
+ # mkpartfs primary ext2 1 512  ;; in the unit of MBs.
+ # set 1 boot on ;; enable boot option on partition 1.
+ # print
+ # mkpartfs primary ext4 512 
+</PRE>
+############################################################
+<PRE>
+ $ kvm -no-kvm -cdrom vyatta-livecd-virt_VC6.4-2012.05.31_amd64.iso -hda MyRouter.img -boot d
+</PRE>
+<P> When asking for partitioning hard disk, choose skip and specify installing the 
+root on sda2.  For everything else, just accept default.  Otherwise, vyatta just 
+ignore whatever you specify.  When seeing "Done!", at system prompt, type
+<PRE>
+ $ poweroff 
+</PRE>
+<P> Booting image: 
+<PRE>
+$ kvm -hda MyRouter.img
+</PRE>
+<PRE>
+ # login via vyatta and enter your new password.
+ $ df 
+ $ ls -l  
+ $ ls -l / 
+ $ ls -l /boot 
+ $ more /etc/mtab 
+ $ more /etc/fstab 
+ $ ls -l /dev/sda1
+ $ ls -l /opt/vyatta
+ $ ls -l /opt/vyatta/bin 
+ $ /sbin/ifconfig -a
+ $ ls -l /etc/network  
+ $ more /etc/network/interfaces  
+ . 
+ . 
+ . 
+auto lo 
+iface lo inet loopback
+ $ poweroff 
+</PRE>
+<P> We then create a Router with two NICs
+<PRE> 
+ $ cp MyRouter.img MyRouter-Template.img
+ $ kvm -hda MyRouter-Template.img
+ # MyRouter-Template.img is OK, poweroff.  It's a Template, we don't use it.
+ # Configure MyRouter.img as described in <a href="#Config-Kvm-MyRouter" target="_newwindow">here</a>.
+ # Need to edit /opt/vyatta/etc/config/config.boot file.  The mac addresses of eth0 
+ # and eth1 must match the ones we gave online when booting kvm -hda MyRouter.img.
+</PRE>
+<P> For ethernet and ssh to work correctly in vyatta router, we use nano to edit its 
+config.boot file:
+<PRE>
+vyatta@vyatta:~$ ls -l /opt/vyatta/etc/config/config*
+-rwxrwxr-x 1 root vyattacfg 1624 Sep 24 06:47 /opt/vyatta/etc/config/config.boot
+-rwxrwxr-x 1 root vyattacfg 1440 Sep 24 02:40 /opt/vyatta/etc/config/config.boot.orig
+$ diff /opt/vyatta/etc/config/config.boot /opt/vyatta/etc/config/config.boot.orig
+41,46d40
+< service {
+<     ssh   {
+<        port 22
+<        protocol-version v2
+<           }
+< }
+50c44
+<         hw-id 1c:6f:65:4f:cc:8f
+---
+>         hw-id 52:54:00:12:34:56
+55,60c49,54
+< /*    ethernet eth2 {             */
+< /*        hw-id 1c:6f:65:a8:8d:0f */
+< /*    }                           */
+< /*    ethernet eth3 {             */
+< /*        hw-id 1c:6f:65:4f:cc:8f */
+< /*    }                           */
+---
+>     ethernet eth2 {
+>         hw-id 1c:6f:65:a8:8d:0f
+>     }
+>     ethernet eth3 {
+>         hw-id 1c:6f:65:4f:cc:8f
+>     }
+ 
+ # To set correct root passwd
+ $ sudo su root
+ sudo: unable to resolve host vyatta
+ # passwd root
+ # As usual, enter password twice.
+</PRE>
+<P> It seems we need to set almost everything via configure command.  Otherwise, 
+after reboot, we lost all the settings we had done in the previous session.
+<PRE>
+# Backup what we have done.
+$ sudo cp /opt/vyatta/etc/config/config.boot /opt/vyatta/etc/config/config.boot-09-24-2012
+# PATH=.:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+$ which configure # No where to be found
+$ configure # Everybody can execute this command?
+vyatta@vyatta:~$ configure
+vyatta@vyatta:~$ su
+vyatta@vyatta# which configure
+vyatta@vyatta# configure
+vyatta@vyatta# set system host-name MyRouter
+[edit]
+vyatta@vyatta# set interfaces ethernet eth0 address 192.168.0.2/24
+sh: 1: Syntax error: "(" unexpected
+sh: 1: Syntax error: "(" unexpected
+[edit]
+vyatta@vyatta# set interfaces ethernet eth0 address 192.168.0.2/24
+sh: 1: Syntax error: "(" unexpected
+sh: 1: Syntax error: "(" unexpected
+  Configuration path: [interfaces ethernet eth0 address 192.168.0.2/24] already exists
+[edit]
+vyatta@vyatta# set interfaces ethernet eth1 address 192.168.1.1/24
+sh: 1: Syntax error: "(" unexpected
+sh: 1: Syntax error: "(" unexpected
+[edit]
+vyatta@vyatta# set system gateway-address 192.168.1.1
+[edit]
+vyatta@vyatta# set system name-server 168.95.192.1
+[edit]
+vyatta@vyatta# set system name-server 168.95.1.1
+[edit]
+vyatta@vyatta# show system name-server 
++name-server 168.95.192.1
++name-server 168.95.1.1
+[edit]
+vyatta@vyatta# set system login user hsu
+[edit]
+vyatta@vyatta# set system login user hsu authentication plaintext-password ----
+[edit]
+vyatta@vyatta# set system login user hsu level admin
+sh: 1: Syntax error: "(" unexpected
+[edit]
+vyatta@vyatta# commit
+[ system host-name MyRouter ]
+sudo: unable to resolve host vyatta
+[ interfaces ethernet eth1 address 192.168.1.1/24 ]
+sudo: unable to resolve host MyRouter
+[ interfaces ethernet eth0 address 192.168.0.2/24 ]
+sudo: unable to resolve host MyRouter
+RTNETLINK answers: File exists
+[ system login ]
+sudo: unable to resolve host MyRouter
+[ system name-server 168.95.192.1 ]
+sudo: unable to resolve host MyRouter
+[ system name-server 168.95.1.1 ]
+sudo: unable to resolve host MyRouter
+Commit failed
+sudo: unable to resolve host MyRouter
+sudo: unable to resolve host MyRouter
+[edit]
+vyatta@vyatta# save
+Warning: you have uncommitted changes that will not be saved.
+sudo: unable to resolve host MyRouter
+Saving configuration to '/config/config.boot'...
+Done
+[edit]
+vyatta@vyatta# exit
+Cannot exit: configuration modified.
+Use 'exit discard' to discard the changes and exit.
+[edit]
+vyatta@vyatta# exit discard
+exit
+</PRE>
+<P> The final outcome of <code>config.boot</code> file is as follows:
+<PRE>
+$ diff /opt/vyatta/etc/config/config.boot /opt/vyatta/etc/config/config.boot.orig
+1,24d0
+< interfaces {
+<     ethernet eth0 {
+<         address 192.168.0.2/24
+<         duplex auto
+<         hw-id 1c:6f:65:4f:cc:8f
+<         smp_affinity auto
+<         speed auto
+<     }
+<     ethernet eth1 {
+<         address 192.168.1.1/24
+<         duplex auto
+<         hw-id 1c:6f:65:e5:2f:3d
+<         smp_affinity auto
+<         speed auto
+<     }
+<     loopback lo {
+<     }
+< }
+< service {
+<     ssh {
+<         port 22
+<         protocol-version v2
+<     }
+< }
+26,30d1
+<     config-management {
+<         commit-revisions 20
+<     }
+<     gateway-address 192.168.1.1
+<     host-name MyRouter
+32,38d2
+<         user hsu {
+<             authentication {
+<                 encrypted-password $1$HqUAvE5Z$xvUSwx7JHivpFMsxi3u6C/
+<                 plaintext-password ""
+<             }
+<             level admin
+<         }
+41c5
+<                 encrypted-password $1$w4SHcSLk$EC3uunhRpoMQb0k3MWz4o1
+---
+>                 encrypted-password "$1$w4SHcSLk$EC3uunhRpoMQb0k3MWz4o1"
+46,52d9
+<     name-server 168.95.192.1
+<     name-server 168.95.1.1
+<     ntp {
+<         server 0.vyatta.pool.ntp.org
+<         server 1.vyatta.pool.ntp.org
+<         server 2.vyatta.pool.ntp.org
+<     }
+54d10
+<         auto-sync 1
+56,60c12,14
+<             components main
+<             distribution stable
+<             password ""
+<             url http://packages.vyatta.com/vyatta
+<             username ""
+---
+>             distribution "stable"
+>             components "main"
+>             url "http://packages.vyatta.com/vyatta"
+73c27,54
+<     time-zone Asia/Taipei
+---
+>     ntp {
+>         server "0.vyatta.pool.ntp.org"
+>         server "1.vyatta.pool.ntp.org"
+>         server "2.vyatta.pool.ntp.org"
+>     }
+>     console {
+>         device ttyS0 {
+>             speed 9600
+>         }
+>     }
+>     config-management {
+>         commit-revisions 20
+>     }
+> }
+> interfaces {
+>     loopback lo
+>     ethernet eth0 {
+>         hw-id 52:54:00:12:34:56
+>     }
+>     ethernet eth1 {
+>         hw-id 1c:6f:65:e5:2f:3d
+>     }
+>     ethernet eth2 {
+>         hw-id 1c:6f:65:a8:8d:0f
+>     }
+>     ethernet eth3 {
+>         hw-id 1c:6f:65:4f:cc:8f
+>     }
+76c57
+< /* === vyatta-config-version: "nat@4:system@5:webgui@1:cluster@1:conntrack@1:dhcp-relay@1:webproxy@1:config-management@1:conntrack-sync@1:quagga@2:wanloadbalance@3:zone-policy@1:dhcp-server@4:firewall@5:ipsec@3:qos@1:content-inspection@3:vrrp@1" === */
+---
+> /* === vyatta-config-version: "zone-policy@1:config-management@1:wanloadbalance@3:cluster@1:dhcp-relay@1:nat@4:ipsec@3:webproxy@1:qos@1:content-inspection@3:conntrack@1:conntrack-sync@1:system@5:vrrp@1:firewall@5:webgui@1:quagga@2:dhcp-server@4" === */
+</PRE>
+<P> Prepare the rc.local file
+<PRE>
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+# Mount /usr/local and /src2 host file systems to UML and 
+# overwrite /etc/udev/rules.d/70-persistent-net.rules
+# mount -o ro /dev/sdb11 /src2 
+# mount -o ro /dev/sdb6 /usr/local 
+ifconfig eth1 192.168.1.1
+route add default gw 192.168.1.32
+exit 0
+</PRE>
+<P> After reboot, I got working account hsu, I can ping eth1, I even can remote login 
+192.168.1.1 (from 192.168.0.2, MyRouter, but not from 192.168.0.32, the amd-6 host), a 
+new subnet.  Also from 192.168.1.1, now I can ssh to amd-op.  The unresolved problems 
+are: Where is the <b>configure</b> command?  There are quite a few syntax error messges 
+during configuration session.  We even failed on commit and save commands.  Can I trust 
+this <b>configure</b> command?
+<PRE>
+hsu@MyRouter:~$ ssh -X hsu@192.168.1.1
+hsu@192.168.1.1's password: 
+Linux MyRouter 3.0.23-1-amd64-vyatta-virt #1 SMP Fri Mar 23 19:38:13 PDT 2012 x86_64
+Welcome to Vyatta.
+  .
+  .
+  .
+hsu@MyRouter:~$ ping -c 3 192.168.0.2
+  .
+  .
+  .
+64 bytes from 192.168.0.2: icmp_req=3 ttl=64 time=0.049 ms
+  .
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+  .
+hsu@MyRouter:~$ ping -c 3 192.168.0.32
+  .
+  .
+  .
+64 bytes from 192.168.0.32: icmp_req=3 ttl=64 time=0.422 ms
+  .
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+  .
+hsu@MyRouter:~$ ssh -X hsu@140.120.7.41
+  .
+  .
+  .
+Last login: Mon Sep 24 21:43:17 2012 from 122-118-191-184.dynamic.hinet.net
+hsu@amd-op:~$ 
+</PRE>
+<P> For the host 192.168.0.32 (amd-6) to be able to ssh to 192.168.1.1, we add 
+192.168.0.2 as its gateway to 192.168.1.0 sunnet
+<PRE>
+$ ssh -X hsu@192.168.1.1
+ssh: connect to host 192.168.1.1 port 22: Connection timed out
+hsu@amd-6:~/inet$ man route
+hsu@amd-6:~/inet$ route -n  # Original routing table
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.0.1     0.0.0.0         UG    0      0        0 eth0
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.2     0.0.0.0         255.255.255.255 UH    0      0        0 tap11
+############################################################################
+# In start-MyRouter-13* scripts, we add the next two lines for routing tap devices
+# sudo route add -host 192.168.1.1 dev tap13
+# sudo route add -host 192.168.0.2 dev tap103
+hsu@amd-6:~/inet$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.0.1     0.0.0.0         UG    0      0        0 eth0
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.2     0.0.0.0         255.255.255.255 UH    0      0        0 tap103
+192.168.1.0     0.0.0.0         255.255.255.0   U     0      0        0 eth1
+192.168.1.1     0.0.0.0         255.255.255.255 UH    0      0        0 tap13
+############################################################################
+hsu@amd-6:~/inet$ sudo route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.0.2 
+[sudo] password for hsu: 
+hsu@amd-6:~/inet$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.0.1     0.0.0.0         UG    0      0        0 eth0
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.0.2     0.0.0.0         255.255.255.255 UH    0      0        0 tap11
+192.168.1.0     192.168.0.2     255.255.255.0   UG    0      0        0 tap11
+# The following command delete 192.168.0.2 as a router for 192.168.1.0/24
+# $ sudo route del -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.0.2
+hsu@amd-6:~/inet$ ssh -X hsu@192.168.1.1
+The authenticity of host '192.168.1.1 (192.168.1.1)' can't be established.
+RSA key fingerprint is 4e:6a:b5:5b:7e:56:af:15:28:3d:5f:e4:1f:f9:ff:90.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.1.1' (RSA) to the list of known hosts.
+hsu@192.168.1.1's password: 
+X11 forwarding request failed on channel 0
+Linux MyRouter 3.0.23-1-amd64-vyatta-virt #1 SMP Fri Mar 23 19:38:13 PDT 2012 x86_64
+Welcome to Vyatta.
+This system is open-source software. The exact distribution terms for 
+each module comprising the full system are described in the individual 
+files in /usr/share/doc/*/copyright.
+Last login: Thu Sep 27 09:59:04 2012 from 192.168.1.1
+hsu@MyRouter:~$ 
+</PRE>
+<P> On another host 192.168.0.33 (ac00), we need to add 192.168.0.2 as its 
+router/gateway to 192.168.1.0 subnet, too.
+<PRE>
+ $ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.0.1     0.0.0.0         UG    0      0        0 eth0
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+hsu@Amath-Client00:/src4/ceph/Doc$ ping -c 3 192.168.1.1
+PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
+--- 192.168.1.1 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2017ms
+hsu@Amath-Client00:/src4/ceph/Doc$ sudo route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.0.2
+[sudo] password for hsu: 
+hsu@Amath-Client00:/src4/ceph/Doc$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.0.1     0.0.0.0         UG    0      0        0 eth0
+192.168.0.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+192.168.1.0     192.168.0.2     255.255.255.0   UG    0      0        0 eth0
+hsu@Amath-Client00:/src4/ceph/Doc$ ping -c 3 192.168.1.1
+PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
+64 bytes from 192.168.1.1: icmp_req=1 ttl=63 time=451 ms
+64 bytes from 192.168.1.1: icmp_req=2 ttl=63 time=0.732 ms
+64 bytes from 192.168.1.1: icmp_req=3 ttl=63 time=0.744 ms
+--- 192.168.1.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.732/150.871/451.137/212.320 ms
+# The following command delete 192.168.0.2 as a router for 192.168.1.0/24
+# $ sudo route del -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.0.2
+hsu@Amath-Client00:/src4/ceph/Doc$ ssh -X hsu@192.168.1.1
+hsu@192.168.1.1's password: 
+X11 forwarding request failed on channel 0
+Linux MyRouter 3.0.23-1-amd64-vyatta-virt #1 SMP Fri Mar 23 19:38:13 PDT 2012 x86_64
+Welcome to Vyatta.
+This system is open-source software. The exact distribution terms for 
+each module comprising the full system are described in the individual 
+files in /usr/share/doc/*/copyright.
+Last login: Thu Sep 27 05:24:57 2012 from 192.168.0.33
+# We notice that "sudo dpkg-reconfigure tzdata" done this morning (09/27/2012) for
+# setting time zone lost effect after system rebooting.  Need to set time zone via 
+# configure command.
+hsu@MyRouter:~$ date
+Thu Sep 27 06:04:02 GMT 2012
+hsu@MyRouter:~$ exit
+logout
+-bash: /vyatta-monitor-cleanup: No such file or directory
+Connection to 192.168.1.1 closed.
+</PRE>
+<P> For ac00 (192.168.0.33) and amd-6 (192.168.0.32) to be able to reach the gateway 
+(virtual) 192.168.1.1, we add 192.168.0.2 (vyatta virtual router) as the gateway for 
+192.168.1.0/24 subnet.  But, this will route 192.168.1.32 via 192.168.0.2.  The two 
+subnets are no longer independent!  By the way, without vyatta router, we can remote 
+login amd6 from ac00 via 192.168.1.32 and then from amd-6 to amd-op.  So, we did't 
+gain anything by providing gateway for 192.168.1.0/24 subnet.  Or, I did create a 
+malfunctioning router?  The following command helps us analyze packet traffics:
+<a href="http://www.wains.be/pub/networking/tcpdump_advanced_filters.txt" 
+target="newwindow">tcpdump advanced filters</a>
+<PRE>
+hsu@Amath-Client00:/src4/ceph/Doc$ ssh -X hsu@192.168.1.32
+hsu@192.168.1.32's password: 
+      .  
+      .  
+      .  
+Last login: Sat Oct  6 13:54:14 2012 from amath-client00
+amd-6:~$ xs amd-op
+hsu@amd-op's password: 
+      .  
+      .  
+      .  
+Last login: Sat Oct  6 13:52:02 2012 from 122-118-176-243.dynamic.hinet.net
+hsu@amd-op:~$ 
+</PRE>
+<a name="Vyatta-Howto"></a><h2>Vyatta Howto <a href="http://vwiki.co.uk/Vyatta">(Source 
+Origin)</a></h2>
+<p>Unix based Open Source firewall router that sees itself in competition with 
+Cisco.  The firewall module is not on by default, so once interfaces are
+ defined it will pass traffic freely.  All configuration is done via the
+ CLI <sup id="cite_ref-0" class="reference"><a href="#cite_note-0">[1]</a></sup>.</p>
+<table id="toc" class="toc"><tbody><tr><td><div id="toctitle"><h3>Contents</h3><span class="toctoggle">&nbsp;[<a href="#" class="internal" id="togglelink">hide</a>]&nbsp;</span></div>
+<ul>
+  <li class="toclevel-1 tocsection-1"><a href="#Set-up"><span class="tocnumber">1</span> <span class="toctext">Set-up</span></a>
+  <ul>
+    <li class="toclevel-2 tocsection-2"><a href="#Installation_.28ISO_Install.29"><span class="tocnumber">1.1</span> <span class="toctext">Installation (ISO Install)</span></a></li>
+    <li class="toclevel-2 tocsection-3"><a href="#Installation_.28OVF_Deployment.29"><span class="tocnumber">1.2</span> <span class="toctext">Installation (OVF Deployment)</span></a></li>
+    <li class="toclevel-2 tocsection-4"><a href="#Basic_Set-up"><span class="tocnumber">1.3</span> <span class="toctext">Basic Set-up</span></a></li>
+    <li class="toclevel-2 tocsection-5"><a href="#DNS_Client"><span class="tocnumber">1.4</span> <span class="toctext">DNS Client</span></a></li>
+    <li class="toclevel-2 tocsection-6"><a href="#SNMP_Server"><span class="tocnumber">1.5</span> <span class="toctext">SNMP Server</span></a></li>
+  </ul>
+</li>
+  <li class="toclevel-1 tocsection-7"><a href="#Configuration"><span class="tocnumber">2</span> <span class="toctext">Configuration</span></a>
+  <ul>
+    <li class="toclevel-2 tocsection-8"><a href="#Basic_Commands"><span class="tocnumber">2.1</span> <span class="toctext">Basic Commands</span></a></li>
+    <li class="toclevel-2 tocsection-9"><a href="#User_Accounts"><span class="tocnumber">2.2</span> <span class="toctext">User Accounts</span></a></li>
+    <li class="toclevel-2 tocsection-10"><a href="#Firewall"><span class="tocnumber">2.3</span> <span class="toctext">Firewall</span></a></li>
+    <li class="toclevel-2 tocsection-11"><a href="#NAT"><span class="tocnumber">2.4</span> <span class="toctext">NAT</span></a></li>
+  </ul>
+</li>
+  <li class="toclevel-1 tocsection-12"><a href="#Troubleshooting_and_General_Commands"><span class="tocnumber">3</span> <span class="toctext">Troubleshooting and General Commands</span></a>
+  <ul>
+    <li class="toclevel-2 tocsection-13"><a href="#Unable_to_Commit_Interface_Change_.28RTNETLINK.29"><span class="tocnumber">3.1</span> <span class="toctext">Unable to Commit Interface Change (RTNETLINK)</span></a></li>
+    <li class="toclevel-2 tocsection-14"><a href="#TCPdump"><span class="tocnumber">3.2</span> <span class="toctext">TCPdump</span></a></li>
+  </ul>
+</li>
+  <li class="toclevel-1 tocsection-15"><a href="#Notes"><span class="tocnumber">4</span> <span class="toctext">Notes</span></a></li>
+</ul>
+</td></tr></tbody></table>
+<h3> <a name="Set-up"></a> Set-up </h3>
+<p><a href="http://packages.vyatta.com/vyatta/iso/">Vyatta Download</a></p>
+<h4>Installation (ISO Install)</h4>
+<ol>
+  <li> Download the LiveOS ISO
+</li>
+  <li> Create Red Hat RHEL5 (32 bit) VM with
+<ul>
+  <li> 2GB hard drive
+</li>
+  <li> 2x E1000 NIC
+</li>
+  <li> 128MB RAM
+</li></ul>
+</li>
+  <li> Connect ISO and allow to boot fully
+</li>
+  <li> Login as <code> root / vyatta </code>
+</li>
+  <li> To install to local disk, run the install script with the following command
+<ul>
+  <li> <code> install-system </code>
+</li>
+  <li> Accept all defaults
+</li></ul>
+</li>
+  <li> Reboot and disconnect ISO
+</li></ol>
+<h4> <a name="Installation_.28OVF_Deployment.29"></a> Installation (OVF Deployment)</h4>
+<ol>
+  <li> Get the URL or download the OVF from <a rel="nofollow" class="external free" href="http://www.vyatta.com/downloads/">http://www.vyatta.com/downloads/</a>
+</li>
+  <li> Import into vCentre
+</li>
+  <li> Reconfigure network 2nd NIC is connected to as required
+</li>
+  <li> Start the VM
+</li>
+  <li> Login via the console using <code> vyatta / vyatta </code>
+</li></ol>
+<h4> <a name="Basic_Set-up"></a> Basic Set-up </h4>
+<ol>
+  <li> Login and run the following commands to set IP address and default gateway
+<ul>
+  <li> <code> configure </code>
+</li>
+  <li> <code> set system host-name router-name </code>
+</li>
+  <li> <code> set interfaces ethernet eth0 address 192.168.1.10/24 </code> (repeat for other interfaces)
+</li>
+  <li> <code> set system gateway-address 192.168.10.1 </code>
+</li></ul>
+</li>
+  <li> Enable remote ssh access
+<ul>
+  <li> <code> set service ssh </code>
+</li></ul>
+</li>
+  <li> Enable/config NTP (optional, out of the box the router will sync to Vyatta's NTP server pool)
+<ul>
+  <li> <code> set system time-zone Europe/London </code>
+</li>
+  <li> <code> set system ntp server 192.168.1.50 </code>
+</li>
+  <li> <code> delete system ntp server 0.vyatta.pool.ntp.org </code>
+</li>
+  <li> <code> delete system ntp server 1.vyatta.pool.ntp.org </code>
+</li>
+  <li> <code> delete system ntp server 2.vyatta.pool.ntp.org </code>
+</li></ul>
+</li>
+  <li> Commit changes and save
+<ul>
+  <li> <code> commit </code>
+</li>
+  <li> <code> save </code>
+</li>
+  <li> <code> exit </code>
+</li></ul>
+</li></ol>
+<h4> <a name="DNS_Client"></a> DNS Client </h4>
+<ol>
+  <li> To set DNS servers, use following command (repeat for more servers)
+<ul>
+  <li> <code> set system name-server 172.16.0.34 </code>
+</li></ul>
+</li>
+  <li> To set DNS suffix search order, in order of preference (1st entered is 1st used)
+<ul>
+  <li> <code> set system domain-search domain mydomain.com </code>
+</li></ul>
+</li>
+  <li> To review config
+<ul>
+  <li> <code> show system name-server </code>
+</li>
+  <li> <code> show system domain-search </code>
+</li></ul>
+</li></ol>
+<h4> <a name="SNMP_Server"></a> SNMP Server </h4>
+<p>To set up the SNMP service and allow a polling server to interact with (for example 
+perform SNMP Gets, etc) with the router</p>
+<ol>
+  <li> Go into configuration mode
+<ul>
+  <li> <code> configure </code>
+</li></ul>
+</li>
+  <li> Create a SNMP community
+<ul>
+  <li> <code> set service snmp community public </code>
+</li></ul>
+</li>
+  <li> Go into the created community
+<ul>
+  <li> <code> edit service snmp community mp-public </code>
+</li></ul>
+</li>
+  <li> Create a SNMP client that's allowed to make SNMP requests
+<ul>
+  <li> <code> set client 192.168.1.25 </code>
+</li></ul>
+</li>
+  <li> Apply changes and move back up to top-level part of config
+<ul>
+  <li> <code> commit </code>
+</li>
+  <li> <code> top </code>
+</li></ul>
+</li></ol>
+<p>To set up SNMP trapping (assumes you're already in config mode)
+</p>
+<ol>
+  <li> Configure a trap destination (repeat for further destinations)
+<ul>
+  <li> <code> set service snmp trap-target 192.168.10.199 </code>
+</li></ul>
+</li>
+  <li> Apply changes 
+<ul>
+  <li> <code> commit </code>
+</li></ul>
+</li></ol>
+<h3> <a name="Configuration"></a> Configuration </h3>
+<h4> <a name="Basic_Commands"></a> Basic Commands </h4>
+<p>In similar fashion to Cisco IOS, configuration has to be entered in 
+config mode, and the configuration can only be viewed in Operator mode.
+</p>
+<table class="vwikitable">
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Description</th>
+</tr>
+<tr>
+<td> <code>configure</code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td> Enter configuration mode
+</td></tr>
+<tr>
+<td> <code>commit</code>         </td>
+<td>&nbsp;&nbsp;</td>
+<td> Apply changes made since last commit
+</td></tr>
+<tr>
+<td> <code>save</code>           </td>
+<td>&nbsp;&nbsp;</td>
+<td> Save changes since last save (otherwise lost at reboot)
+</td></tr>
+<tr>
+<td> <code>discard</code>        </td>
+<td>&nbsp;&nbsp;</td>
+<td> Discard changes made since last commit
+</td></tr></tbody></table>
+<h4> <a name="User_Accounts"></a> User Accounts </h4>
+<table class="vwikitable">
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Description</th>
+</tr>
+<tr>
+<td> <code> set system login user &lt;user&gt; </code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td> Create user
+</td></tr>
+<tr>
+<td> <code> set system login user &lt;user&gt; authentication plaintext-password &lt;password&gt; </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Change users password
+</td></tr>
+<tr>
+<td> <code> set system login user &lt;user&gt; level admin </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Change users authorisation level
+</td></tr>
+<tr>
+<td> <code> delete system login user &lt;user&gt; </code>    </td>
+<td>&nbsp;&nbsp;</td>
+<td> Delete user
+</td></tr></tbody></table>
+<h4> <a name="Firewall"></a> Firewall </h4>
+<p>If an interface has no firewall config, then it passes all traffic.  
+Once any firewall config is applied then that interface acts as a 
+firewall.
+</p>
+<ul>
+  <li> <a href="http://www.carbonwind.net/VyattaOFR/Firewall/Firewall.htm">http://www.carbonwind.net/VyattaOFR/Firewall/Firewall.htm</a> - A bit old, but a useful 
+page to learn from
+</li></ul>
+<table class="vwikitable">
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Description</th>
+</tr>
+<tr>
+<td> <code>delete firewall name home_in rule 5</code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td> Delete firewall rule no 5
+</td></tr></tbody></table>
+<p><br>
+</p>
+<pre>vyatta@vyatta:~$ configure
+vyatta@vyatta# set firewall name home_out rule 10 action accept
+vyatta@vyatta# set firewall name home_out rule 10 description "VC client access"
+vyatta@vyatta# set firewall name home_out rule 10 destination address 10.1.1.5
+vyatta@vyatta# set firewall name home_out rule 10 destination port 80,443,8084,8443,9084
+vyatta@vyatta# set firewall name home_out rule 10 protocol tcp
+vyatta@vyatta# set interfaces ethernet eth0 firewall in name home_out
+vyatta@vyatta# commit
+vyatta@vyatta# exit
+vyatta@vyatta:~$ show firewall home_out
+Active on (eth0,IN)
+State Codes: E - Established, I - Invalid, N - New, R - Related
+rule  action  source              destination         proto  state
+----  ------  ------              -----------         -----  -----
+10    ACCEPT  0.0.0.0/0           10.1.1.5            tcp    any
+                                  dst ports: 80,443,8084,8443,9084
+1025  DROP    0.0.0.0/0           0.0.0.0/0           all    any
+</pre>
+<p><b>The firewall filters in both directions, in and out of the interface. Traffic 
+has to be configured in both directions to work!</b>  Therefore its necessary to config 
+as shown...
+</p>
+<pre>vyatta@vyatta:~$ show firewall home_in
+Active on (eth0,OUT)
+State Codes: E - Established, I - Invalid, N - New, R - Related
+rule  action  source              destination         proto  state
+----  ------  ------              -----------         -----  -----
+5     ACCEPT  0.0.0.0/0           0.0.0.0/0           icmp   any
+10    ACCEPT  0.0.0.0/0           88.221.188.7        tcp    any
+                                  dst ports: 443
+11    ACCEPT  0.0.0.0/0           92.123.36.7         tcp    any
+                                  dst ports: 443
+1025  DROP    0.0.0.0/0           0.0.0.0/0           all    any
+vyatta@vyatta:~$ show firewall home_out
+Active on (eth0,IN)
+State Codes: E - Established, I - Invalid, N - New, R - Related
+rule  action  source              destination         proto  state
+----  ------  ------              -----------         -----  -----
+5     ACCEPT  0.0.0.0/0           0.0.0.0/0           icmp   any
+110   ACCEPT  88.221.188.7/32     0.0.0.0/0           tcp    any
+              src ports: 443
+111   ACCEPT  92.123.36.7         0.0.0.0/0           tcp    any
+              src ports: 443
+1025  DROP    0.0.0.0/0           0.0.0.0/0           all    any
+</pre>
+<h4> <a name="NAT"></a> NAT </h4>
+<p>For full details see <a href="http://www.vyatta.com/sites/vyatta.com/files/pdfs/Vyatta_NATRef_R6.2_v01.pdf">http://www.vyatta.com/sites/vyatta.com/files/pdfs/Vyatta_NATRef_R6.2_v01.pdf</a> or 
+<a href="http://www.general-files.com/files-v/vyatta-natref-r6-2-v01/" 
+target="newwindow">Vyatta_NATRe-f_R6.2_v0-1.pdf</a>
+</p>
+<p>To allow <b>masquerade NAT</b>, out through eth0, from multiple inside addresses out 
+through the router's outside interface address
+</p>
+<pre>set service nat rule 10 type masquerade
+set service nat rule 10 source address 10.1.1.0/24
+set service nat rule 10 outbound-interface eth0
+commit
+</pre>
+<p>To allow <b>destination NAT</b>, into the router, presenting machines on the inside, 
+to the outside world</p>
+<pre>set interfaces ethernet eth0 address 192.168.1.20/24
+set service nat
+set service nat rule 20 description InsideServerName
+set service nat rule 20 type destination
+set service nat rule 20 inbound-interface eth0
+set service nat rule 20 destination address 192.168.1.20
+set service nat rule 20 inside-address address 10.1.1.20
+set service nat rule 20 protocol all
+</pre>
+<p>To allow <b>source NAT</b>, going out from the router, so that machines on the 
+inside, pick up external addresses as they communicate to the outside world</p>
+<pre>set service nat
+set service nat rule 1020 description InsideServerName
+set service nat rule 1020 type source
+set service nat rule 1020 inbound-interface eth0
+set service nat rule 1020 source address 10.1.1.20
+set service nat rule 1020 outside-address address 192.168.1.20
+set service nat rule 1020 protocol all
+</pre>
+<p>To configure <b>bidirectional NAT</b>, whereby machines on the inside
+ appear to the outside world by the same address for traffic initiated 
+from either outside or inside the router just combine both source and 
+destination NAT configuration.
+</p><p>To <b>delete</b> a NAT rule, use syntax similar to the following...
+</p>
+<pre>delete service nat rule 42
+</pre>
+<a name="Troubleshooting_and_General_Commands"></a><h3>Troubleshooting and General 
+Commands</h3>
+<table class="vwikitable">
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Comments</th>
+</tr>
+<tr>
+<td><code> reboot </code>              </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> shutdown </code>            </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show arp </code>            </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show interfaces</code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show ip route </code>       </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show nat rules </code>      </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> show configuration </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td>
+</td></tr>
+<tr>
+<td><code> set system flow-accounting interface eth0 </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Enable flow accounting
+</td></tr>
+<tr>
+<td><code> delete system flow-accounting </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Disable flow accounting
+</td></tr>
+<tr>
+<td><code> show flow-accounting interface eth0 </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Show flow accounting for <code> eth0 </code>
+</td></tr>
+<tr>
+<td><code> show flow-accounting interface eth0 host 10.1.1.1 </code> </td>
+<td>&nbsp;&nbsp;</td>
+<td> Show flow accounting for specific IP through <code> eth0 </code>
+</td></tr></tbody></table>
+<a name="Unable_to_Commit_Interface_Change_.28RTNETLINK.29"></a><h4>Unable to Commit 
+Interface Change (RTNETLINK)</h4>
+<p>When trying to commit interface changes you receive an error like...</p>
+<pre>admin@router# commit
+[ interfaces ethernet eth1 address ]
+RTNETLINK answers: File exists
+Commit failed</pre>
+<p>A <code> show interfaces </code> shows the config to be correct, but a <code> show 
+configuration </code> shows that the config hasn't been saved properly.</p>
+<p>To resolve - restart the router (<code>reboot</code>).
+</p>
+<p>On restart the conflicted part of the configuration is lost (so can no longer be 
+seen via <code> show interfaces </code>).  However it can be reapplied, and shouldn't 
+generate an error this time around.</p>
+<a name="TCPdump"></a><h4>TCPdump</h4>
+<p>TCPdump can only be run as root, therefore you may need to set the root password 
+first...</p>
+<pre>sudo passwd root
+</pre>
+<p>...then you'll be elevate to be the super user, from where you can run TCPdump...</p>
+<pre>su -
+</pre>
+<p>Some basic TCPdump examples...</p>
+<table class="vwikitable">
+<tbody>
+<tr>
+  <th align="left"> Command </th><th>&nbsp;&nbsp;</th><th align="left"> Comments</th>
+</tr>
+<tr>
+<td><code> tcpdump -i eth0 port 80 </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td> Anything on port 80 through eth0
+</td></tr>
+<tr>
+<td><code> tcpdump -i eth0 dst 10.10.0.10 and port 80 </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td> Anything going to 10.10.0.10:80 through eth0
+</td></tr>
+<tr>
+<td><code> tcpdump -w capture.pcap -i eth0 port 80 </code>  </td>
+<td>&nbsp;&nbsp;</td>
+<td> Write capture to capture.pcap
+</td></tr></tbody></table>
+<p>For more info see the TCPdump man page - 
+<a href="http://www.tcpdump.org/tcpdump_man.html">http://www.tcpdump.org/tcpdump_man.html</a></p>
+<a name="Notes"></a><h3>Notes</h3>
+<ol class="references">
+  <li id="cite_note-0">There was a web interface available with the free version (which 
+was just a pretty version of the CLI anyway), but this now only available via the 
+paid-for version due to its use of the <a href="http://vwiki.co.uk/Acronyms#R" 
+title="Acronyms">REST</a> <a href="http://vwiki.co.uk/Acronyms#A" 
+title="Acronyms">API</a> (which is a premium feature).
+</li></ol>
+<h4 class="date-header"><span>Tuesday, August 14, 2012</span></h4>
+<a name="Vyatta-Config"></a><h2>Another Vyatta config guide 
+<a href="http://blog.edgoad.com/2012/08/another-vyatta-config-guide.html" 
+target=newwindow">(Source Origin)</a>
+</h3>
+<P> I find myself using the Vyatta virtual router 
+(<a href="http://www.vyatta.org/">http://www.vyatta.org</a>) for most everytime I 
+need a router. It hasn't yet replaced my core enterprise routers, but it fits in 
+nicely for smaller environments. This example is going to be a basic home 
+configuration - The internet interface receives its address via DHCP, the 
+internal interface is static at 10.0.0.1/24 and provides DHCP, DNS, and Proxy 
+services. Additionally, an internal web server is published via HTTPS.
+<P> <b>NOTE:</b> I am using Vyatta version 6.4 which changed some of the 
+configuration commands. Confirm the version you are running to ensure 
+the commands are appropriate<br>
+<img src="http://3.bp.blogspot.com/--kBpH1OlJvE/UCpvOfnXC9I/AAAAAAAANyI/t0RSUJcsERs/s320/Vyatta.png" height="320" border="0" width="159"></div>
+<h4>1. Deploy the router</h4>
+<P> Deploying the router is probably the easiest step to perform, especially 
+if you are running VMware. If your running VMware, simply go to&nbsp;
+<a href="http://www.vyatta.com/downloads/vmware_ovf.php">http://www.vyatta.com/downloads/vmware_ovf.php</a>&nbsp;
+to get the link for the latest OVF available. Import this into VMware and your good 
+to go.
+<P> If your running some other virtualization stack (Hyper-V, Xen, etc...), 
+you will need to install from ISO. The latest stable version can be 
+found at&nbsp;<a href="http://packages.vyatta.com/vyatta/iso/stable/" 
+target="newwindow">http://packages.vyatta.com/vyatta/iso/stable/</a>, also 
+<a href="http://packages.vyatta.com/vyatta/iso/" 
+target="newwindow">Various Isos</a>, just download the LiveCD, create a VM with 
+<b>512MB RAM, 4GB disk, 2 NICs</b>, and boot from the ISO. <b>NOTE:</b> Be careful 
+the type of NIC chosen as not all adapters are supported by Vyatta. For Hyper-V, you 
+have to use the <b>Legacy Network Adapter</b>. The default adapter type will not work
+<P> Once booted, log into the console with username/password of <b>vyatta/vyatta</b>. 
+At the prompt type the following command, accept the default options, allow the 
+install to overwrite the disk, and set the password.
+<pre>$ install system</pre> 
+<P> When installed, type the following command, and remove the ISO. Power back up and 
+your up and running.
+<pre>$ poweroff</pre>
+<P> <b>NOTE:</b> I find it a good step to write down the MAC addresses of 
+the interfaces so I can easily determine which is internal and which is 
+external.
+<h4>2. Configure the interfaces</h4>
+<P> Log into the console as the <b>vyatta</b> user and enter configuration mode by 
+typing 
+<pre>$ configure</pre>
+<h4>Identify the interfaces</h4>
+<P> The first step needed is to determine which interface is which. We know 
+that we will have 1 interface on the open internet, and the other 
+interface on the trusted network - we obviously dont want to get these 
+backwards.
+<P> While in configuration mode, type the following command and you will see 
+something similar to below.
+<pre>show interfaces</pre> 
+<table align="center" bgcolor="black">
+<tbody>
+<tr><td><span style="color: white; font-family: Courier New, Courier, monospace; font-size: x-small;"><b>vyatta@vyatta# show interfaces<br>&nbsp;ethernet eth0 {<br>&nbsp; &nbsp; &nbsp;hw-id 00:15:5d:14:ed:2e<br>&nbsp;}<br>&nbsp;ethernet eth1 {<br>&nbsp; &nbsp; &nbsp;hw-id 00:15:5d:14:ed:2f<br>&nbsp;}<br>&nbsp;loopback lo {<br>&nbsp;}</b></span></td></tr>
+</tbody></table>
+<P> The router sees the interfaces as <b>eth0 </b>and <b>eth1 </b>and 
+provides the associated MAC addresses. Using the MAC addresses of the 
+interfaces, I can determine which interface is which, and even move them
+ based on need. In my case, <b>eth0</b> is the external interface<br>
+<br>
+<h4>Configure DHCP</h4>
+<P> Since our external interface will be receiving its IP address from our ISP, we 
+configure it to use DHCP. To configure <b>eth0 </b>for DHCP, simply type 
+<pre>
+ set interfaces ethernet eth0 address dhcp
+</pre>
+<h4>Configure Static Address</h4>
+<P> Our internal network is owned/managed by us, so we can choose to use a private  
+addressing scheme for our systems. To configure <b>eth1 </b>for a static address, 
+simply type 
+<pre>
+ set interfaces ethernet eth1 address 10.0.0.1/24
+</pre>
+<h4>Commit the Changes</h4>
+<P> Whenever you make a change to the Vyatta configuration, it doesn't take effect 
+until you commit them. Additionally, the changes aren't resilient (don't remain after 
+reboot) until you save them.
+<P> To commit and save the changes, type 
+<pre>
+ commit
+ save
+</pre>
+<h4>3. Configure the services</h4>
+<h4>System Names</h4>
+<P> We want to give our router a descriptive name as well as create an internal domain 
+name. In this case I am naming it <b>intRtr </b>for internet router, and giving it a 
+domain of <b>goad.local</b>. This gives me a unique name and domain to identify the 
+router and other systems.
+<pre>
+ set system host-name intRtr
+ set system domain-name goad.local
+</pre>
+<h4>DHCP</h4>
+<P>Next we configure the DHCP server on the router. This involves creating a pool of 
+addresses for DHCP to use, configuring the default gateway, DNS server and domain name.
+<pre>
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 start 10.0.0.65 stop 10.0.0.199
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 default-router 10.0.0.1
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 dns-server 10.0.0.1
+ set service dhcp-server shared-network-name ETH1_POOL subnet 10.0.0.0/24 domain-name goad.local
+ set service dhcp-server shared-network-name ETH1_POOL authoritative enable&nbsp;
+</pre>
+<h4>DNS</h4>
+<P> Now that clients have DHCP addresses, it is time to configure the DNS server. In 
+this case we are creating a caching DNS server that receives requests, forwards them 
+to the external DNS server, and caches them for future reference. This speeds up 
+recurring requests, as well as contains the configuration for easy management.
+<pre>
+ set service dns forwarding dhcp eth0
+ set service dns forwarding listen-on eth1
+</pre>
+<h4>PROXY</h4>
+<P> Now we set the outbound proxy<br>
+<pre>
+ set service webproxy listen-address 10.0.0.1
+ set service webproxy listen-address 10.0.0.1 disable-transparent
+</pre>
+<P> <span style="font-family: inherit;"><b>NOTE:</b> This means that clients will 
+have to configure their browsers as <b>http://10.0.0.1:3128</b> to utilize the 
+proxy</span>
+<h4>4. Configure outbound NAT for all traffic</h4>
+<P> For anything other that web traffic (or web traffic we don't want to proxy), we 
+enable Network Address Translation.
+<pre>
+ set nat source rule 10 source address 10.0.0.0/24
+ set nat source rule 10 outbound-interface eth0
+ set nat source rule 10 translation address masquerade
+</pre>
+<h4>5. Configure web publishing</h4>
+<P> Finally, we want to publish the web server so that when someone browses to port 
+<b>443 </b>on the external interface, it is forwarded internally.
+<pre>
+ set nat destination rule 200 destination port https
+ set nat destination rule 200 inbound-interface eth0
+ set nat destination rule 200 translation address 10.0.0.2
+ set nat destination rule 200 translation port https
+ set nat destination rule 200 protocol tcp
+ set interfaces ethernet eth0 firewall in name FROM-EXTERNAL
+ set firewall name FROM-EXTERNAL description "Block Unwanted Internet Traffic"
+ set firewall name FROM-EXTERNAL rule 10 description "Accept Established-Related Connections"
+ set firewall name FROM-EXTERNAL rule 10 action accept
+ set firewall name FROM-EXTERNAL rule 10 state established enable
+ set firewall name FROM-EXTERNAL rule 10 state related enable
+ set firewall name FROM-EXTERNAL rule 20 description "Allow https"
+ set firewall name FROM-EXTERNAL rule 20 action accept
+ set firewall name FROM-EXTERNAL rule 20 destination address 10.0.0.2
+ set firewall name FROM-EXTERNAL rule 20 destination port https
+ set firewall name FROM-EXTERNAL rule 20 protocol tcp
+</pre>
+<P> Thats it, 
+<pre>
+ commit
+ save
+</pre> 
+and your golden
+<h3><a href="http://theithollow.com/2012/04/18/virtual-routing-for-bubble-networks/" 
+  target="newwindow">Virtual Routing for Bubble Networks</a>&nbsp;&nbsp;
+<a href="http://roggyblog.blogspot.tw/2009/12/vyatta-as-internet-gateway.html"
+  target="newwindow">Vyatta as an Internet Gateway</a></h3>
+</body></html>

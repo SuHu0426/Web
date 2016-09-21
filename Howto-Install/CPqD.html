@@ -1,0 +1,477 @@
+<HTML>
+<HEAD>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <TITLE>CPqD/OpenFlow 1.3 Software Switch</TITLE>
+  <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+  <!--<script src="/css/google-code-prettify/run_prettify.js?skin=sons-of-obsidian"></script>-->
+  <!--<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?skin=sons-of-obsidian"></script>-->
+  <style>
+  </style>
+</HEAD>
+<BODY>
+  <h1><a href="http://cpqd.github.io/ofsoftswitch13/" target="_blank">CPqD/OpenFlow 1.3 Software Switch</a> (2014-10)</h1>
+  <p>The OpenFlow 1.3 software switch is built upon the <a href="http://yuba.stanford.edu/git/gitweb.cgi?p=openflow.git;a=tree;h=7f09f6a88d86883b516c99eb4058402eb07e5fd0;hb=d90824f0e8c3b6606d04e5a8813f03e89a6d0894">Stanford OpenFlow 1.0 reference switch</a> and <a href="https://github.com/TrafficLab/of11softswitch">Ericsson's Traffic Lab OpenFlow 1.1 switch</a> and is intended for fast experimentation purposes. 
+  <p>The following components are available in the release:
+    <ul>
+      <li>Ofdatapath: the switch implementation
+      <li>Ofprotocol: secure channel for connecting the switch to the controller
+      <li>Oflib: a library for converting to/from 1.3 wire format
+      <li>Dpctl: a tool for configuring the switch from the console
+    </ul>
+
+  <h1><a href="https://github.com/CPqD/ofsoftswitch13" target="_blank">Getting Started</a></h1>
+  <h2>Before building</h2>
+  <p>The switch makes use of the NetBee library to parse packets, so we need to install it first.</p>
+  <ol>
+    <li>Install the following packages:
+      <pre class="dol">sudo apt-get install cmake libpcap-dev libxerces-c-dev libpcre3-dev flex bison pkg-config autoconf libtool libboost-dev</pre>
+    <li>Download the most recent Netbee version, and unpack the source code from:<a href="http://www.nbee.org/download/nbeesrc-jan-10-2013.php" target="_blank">http://www.nbee.org/download/nbeesrc-jan-10-2013.php</a>
+<pre class="mdol">
+<code>cd ~/Downloads</code>
+<code>unzip nbeesrc-*</code>
+</pre>
+    <li>Unfortunately, we need to downgrade bison in order to get NetBee to compile correctly.
+<pre class="mdol">
+<code>bison --version</code>
+<code>wget -nc http://mirror.cs.nchu.edu.tw/debian/pool/main/b/bison/bison_2.5.dfsg-2.1_amd64.deb</code>
+<code>wget -nc http://mirror.cs.nchu.edu.tw/debian/pool/main/b/bison/libbison-dev_2.5.dfsg-2.1_amd64.deb</code>
+<code>sudo dpkg -i bison_2.5.dfsg-2.1_amd64.deb libbison-dev_2.5.dfsg-2.1_amd64.deb</code>
+</pre>
+    <li>Create the build system
+<pre class="mdol">
+<code>cd nbeesrc-*/src</code>
+<code>cmake .</code>
+</pre>
+    <li>Compile
+<pre class="mdol">
+<code>make</code>
+<code>echo $?</code>
+<code class="out">0</code>
+</pre>
+    <li>Add the shared libraries built in /nbeesrc/bin/ to your /usr/local/lib directory
+      <pre class="dol">sudo cp ../bin/libn*.so /usr/local/lib</pre>
+    <li>Run ldconfig
+      <pre class="dol">sudo ldconfig</pre>
+    <li>Put the contens of folder nbeesrc/include in the /usr/include
+<pre class="mdol">
+<code>sudo cp -R ../include/* /usr/local/include/</code>
+<code>cd ../..</code>
+</pre>
+  </ol>
+
+  <h2>Building</h2>
+  <ol>
+    <li>Get source
+      <pre class="dol">git clone https://github.com/CPqD/ofsoftswitch13.git</pre>
+      <!--<pre class="dol">wget https://github.com/CPqD/ofsoftswitch13/archive/master.zip</pre>
+	  <pre class="dol">unzip ../master.zip</pre>-->
+      
+    <li>Run the following commands in the of13softswitch directory to build and install everything:
+<pre class="mdol">
+<code>cd ofsoftswitch13</code>
+<code>./boot.sh</code>
+<code>./configure</code>
+<code>make</code>
+<code>echo $?</code>
+<code class="out">0</code>
+<code>sudo make install</code>
+<code>dpctl --version</code>
+<code class="out">dpctl 1.3.0 compiled Apr  1 2015 14:29:07</code>
+</pre>
+  </ol>
+
+  <h2>Running</h2>
+  <ol>
+    <li>Usage
+<pre class="mdol">
+<code>ofdatapath --help</code>
+<code class="out">ofdatapath: userspace OpenFlow datapath
+usage: ofdatapath [OPTIONS] LISTEN...
+where LISTEN is a passive OpenFlow connection method on which
+to listen for incoming connections from the secure channel.
+
+Passive OpenFlow connection methods:
+  ptcp:[PORT]             listen to TCP PORT (default: 6633)
+  punix:FILE              listen on Unix domain socket FILE
+
+Configuration options:
+  -i, --interfaces=NETDEV[,NETDEV]...
+                          add specified initial switch ports
+  -L, --local-port=NETDEV set network device for local port
+  --no-local-port         disable local port
+  -d, --datapath-id=ID    Use ID as the OpenFlow switch ID
+                          (ID must consist of 12 hex digits)
+  -m, --multiconn         enable multiple connections to the
+                          same controller.
+  --no-slicing            disable slicing
+
+Other options:
+  -D, --detach            run in background as daemon
+  -P, --pidfile[=FILE]    create pidfile (default: /usr/local/var/run/ofdatapath.pid)
+  -f, --force             with -P, start even if already running
+  -v, --verbose=MODULE[:FACILITY[:LEVEL]]  set logging levels
+  -v, --verbose           set maximum verbosity level
+  -h, --help              display this help message
+  -V, --version           display version information
+</code>
+</pre>
+    <li>Start the datapath
+<pre class="mdol">
+<code>sudo ofdatapath -D --pidfile=/usr/local/var/run/s1.pid ptcp:6633</code>
+<code>cat /usr/local/var/run/s1.pid</code>
+<code class="out">8522</code>
+</pre>
+    <li>Turn off the datapath
+<pre class="dol">sudo kill -2 `cat /usr/local/var/run/s1.pid`</pre>
+    <li>Start the secure channel, which will connect the datapath to the controller:
+<pre class="mdol">
+<code>ofprotocol tcp:&lt;switch-host&gt;:&lt;switch-port&gt; tcp:&lt;ctrl-host&gt;:&lt;ctrl-port&gt;</code>
+<code>ofprotocol --help</code>
+<code class="out">ofprotocol: secure channel, a relay for OpenFlow messages.
+usage: ofprotocol [OPTIONS] DATAPATH [CONTROLLER]
+DATAPATH is an active connection method to a local datapath.
+CONTROLLER is an active OpenFlow connection method; if it is
+omitted, then secchan performs controller discovery.
+
+Active OpenFlow connection methods:
+  tcp:HOST[:PORT]         PORT (default: 6633) on remote TCP HOST
+  unix:FILE               Unix domain socket named FILE
+  fd:N                    File descriptor N
+Passive OpenFlow connection methods:
+  ptcp:[PORT]             listen to TCP PORT (default: 6633)
+  punix:FILE              listen on Unix domain socket FILE
+
+Controller discovery options:
+  --accept-vconn=REGEX    accept matching discovered controllers
+  --no-resolv-conf        do not update /etc/resolv.conf
+
+Networking options:
+  --inactivity-probe=SECS time between inactivity probes
+  --max-idle=SECS         max idle for flows set up by secchan
+  --max-backoff=SECS      max time between controller connection
+                          attempts (default: 15 seconds)
+  -l, --listen=METHOD     allow management connections on METHOD
+                          (a passive OpenFlow connection method)
+  -m, --monitor=METHOD    copy traffic to/from kernel to METHOD
+                          (a passive OpenFlow connection method)
+  --out-of-band           controller connection is out-of-band
+  --stp                   enable 802.1D Spanning Tree Protocol
+  --no-stp                disable 802.1D Spanning Tree Protocol
+
+Rate-limiting of "packet-in" messages to the controller:
+  --rate-limit[=PACKETS]  max rate, in packets/s (default: 1000)
+  --burst-limit=BURST     limit on packet credit for idle time
+
+Daemon options:
+  -D, --detach            run in background as daemon
+  -P, --pidfile[=FILE]    create pidfile (default: /usr/local/var/run/ofprotocol.pid)
+  -f, --force             with -P, start even if already running
+
+Logging options:
+  -v, --verbose=MODULE[:FACILITY[:LEVEL]]  set logging levels
+  -v, --verbose           set maximum verbosity level
+  --log-file[=FILE]       enable logging to specified FILE
+                          (default: /usr/local/var/log/openflow/ofprotocol.log)
+
+Other options:
+  -h, --help              display this help message
+  -V, --version           display version information
+  --check-leaks=FILE      log malloc and free calls to FILE
+</code>
+</pre>
+  </ol>
+  <h2>Dpctl Documentation</h2>
+  <p>Dpctl is a management utility that enable some control over the OpenFlow switch. With this tool it's possible to add flows to the flow table, query for switch features and status, and change other configurations. </p>
+  <ol>  
+    <li>A dpctl command has the following syntax
+<pre class="mdol">
+<code>dpctl [OPTIONS] SWITCH COMMAND [ARG...]</code>
+<code>dpctl --help</code>
+<code class="out">dpctl: OpenFlow switch management utility
+usage: dpctl [OPTIONS] SWITCH COMMAND [ARG...]
+  SWITCH ping [N] [B]                    latency of B-byte echos N times
+  SWITCH monitor                         monitors packets from the switch
+
+  SWITCH features                        show basic information
+  SWITCH get-config                      get switch configuration
+  SWITCH port-desc                       print port description and status
+  SWITCH meter-config [METER]            get meter configuration
+  SWITCH stats-desc                      print switch description
+  SWITCH stats-flow [ARG [MATCH]]        print flow stats
+  SWITCH stats-aggr [ARG [MATCH]]        print flow aggregate stats
+  SWITCH stats-table                     print table stats
+  SWITCH stats-port [PORT]               print port statistics
+  SWITCH stats-queue [PORT [QUEUE]]      print queue statistics
+  SWITCH stats-group [GROUP]             print group statistics
+  SWITCH stats-meter [METER]             print meter statistics
+  SWITCH stats-group-desc [GROUP]        print group desc statistics
+
+  SWITCH set-config ARG                  set switch configuration
+  SWITCH flow-mod ARG [MATCH [INST...]]  send flow_mod message
+  SWITCH group-mod ARG [BUCARG ACT...]   send group_mod message
+  SWITCH meter-mod ARG [BANDARG ...]     send meter_mod message
+  SWITCH port-mod ARG                    send port_mod message
+  SWITCH table-mod ARG                   send table_mod message
+  SWITCH queue-get-config PORT           send queue_get_config message
+
+OpenFlow extensions
+  SWITCH set-desc DESC                   sets the DP description
+  SWITCH queue-mod PORT QUEUE BW         adds/modifies queue
+  SWITCH queue-del PORT QUEUE            deletes queue
+
+
+Active OpenFlow connection methods:
+  tcp:HOST[:PORT]         PORT (default: 6633) on remote TCP HOST
+  unix:FILE               Unix domain socket named FILE
+  fd:N                    File descriptor N
+
+Logging options:
+  -v, --verbose=MODULE[:FACILITY[:LEVEL]]  set logging levels
+  -v, --verbose           set maximum verbosity level
+  --log-file[=FILE]       enable logging to specified FILE
+                          (default: /usr/local/var/log/openflow/dpctl.log)
+
+Other options:
+  --strict                    use strict match for flow commands
+  -t, --timeout=SECS          give up after SECS seconds
+  -h, --help                  display this help message
+  -V, --version               display version information
+</code>
+</pre>
+    <li>Example
+<pre class="mdol">
+<code>dpctl tcp:127.0.0.1 features</code>
+<code class="out">
+SENDING:
+feat_req
+
+
+RECEIVED:
+feat_repl{dpid="0x0000f2a580810a1e", buffs="256", tabs="64", aux_id="0", caps="0x4f"]}
+
+</code>
+</pre>
+
+</ol>
+
+  <h2>Lab 1 - mininet</h2>
+  <h3>Mininet</h3>
+  <ol>
+    <li>Download and Install
+<pre class="mdol">
+<code>sudo mkdir /src3/mininet; sudo chown jssu:jssu /src3/mininet</code>
+<code>cd /src3/mininet</code>
+<code>git clone git://github.com/mininet/mininet</code>
+<code>mininet/util/install.sh -n3fxw</code>
+<code>mn --version</code>
+<code class="out">2.2.1d2</code>
+</pre>
+    <li>Starting the topology
+<pre class="dol">sudo mn --topo single,2 --mac --switch user --controller remote</pre>
+  </ol>
+  
+  <h3>Using dpctl</h3>
+  <ol>
+    <li>Show all flows present in table 0.
+<pre class="mdol">
+<code>sudo dpctl unix:/tmp/s1 stats-flow table=0</code>
+<code class="out">
+SENDING:
+stat_req{type="flow", flags="0x0", table="0", oport="any", ogrp="any", cookie=0x0", mask=0x0", match=oxm{all match}}
+
+
+RECEIVED:
+stat_repl{type="flow", flags="0x0", stats=[]}
+  
+</code>
+</pre>
+    <li>Ping between the topology hosts
+<pre class="mdol">
+<code>sudo dpctl unix:/tmp/s1 flow-mod table=0,cmd=add in_port=1 apply:output=2</code>
+<code>sudo dpctl unix:/tmp/s1 flow-mod table=0,cmd=add in_port=2 apply:output=1</code>
+<code>sudo dpctl unix:/tmp/s1 stats-flow table=0</code>
+<code class="out">
+SENDING:
+stat_req{type="flow", flags="0x0", table="0", oport="any", ogrp="any", cookie=0x0", mask=0x0", match=oxm{all match}}
+
+
+RECEIVED:
+stat_repl{type="flow", flags="0x0", stats=[
+{table="0", match="oxm{in_port="1"}", dur_s="7", dur_ns="727000", prio="32768", idle_to="0", hard_to="0", cookie="0x0", pkt_cnt="0", byte_cnt="0", insts=[apply{acts=[out{port="2"}]}]},
+{table="0", match="oxm{in_port="2"}", dur_s="2", dur_ns="937000", prio="32768", idle_to="0", hard_to="0", cookie="0x0", pkt_cnt="0", byte_cnt="0", insts=[apply{acts=[out{port="1"}]}]}]}
+  
+</code>
+<code class="mn">h1 ping h2</code>
+</pre>
+  </ol>
+  
+  
+  
+  <h2>Lab 2</h2>
+  <ol>
+    <li>Starting the topology
+      <p>Let's start a simple topology with KVM by using Tap device
+      <p>Host1: 192.168.180.200, host2: 192.168.180.201</p>
+      <img src="topo1.png" alt="topo1">
+  
+    <li>Initial a datapath
+<pre class="mdol">
+<code>sudo ofdatapath -D --pidfile=/usr/local/var/run/s1.pid -i eth0,tap0,tap1 punix:/usr/local/var/run/s1.sock</code>
+<code class="out">Apr 13 19:06:01|00001|dp_ports|ERR|tap0 device has assigned IPv6 address fe80::5824:18ff:fec1:bb3a
+RTNETLINK answers: No such file or directory
+Apr 13 19:06:01|00002|dp_ports|ERR|tap1 device has assigned IPv6 address fe80::9011:2fff:fe9a:3e03
+RTNETLINK answers: No such file or directory</code>
+</pre>
+
+    <li>Using dpctl
+      <p>Command, port-desc, sends a message requesting the ports description, with the current configurations.
+<pre class="mdol">
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock port-desc</code>
+<code class="out">
+SENDING:
+stat_req{type="port-desc", flags="0x0"}
+
+
+RECEIVED:
+stat_repl{type="port-desc", flags="0x0"
+{no="1", hw_addr="50:e5:49:42:f5:40", name="eth0", config="0x0", state="0x4", curr="0x2020", adv="0xe83f", supp="0x283f", peer="0x0", curr_spd="1048576kbps", max_spd="1048576kbps"},
+{no="2", hw_addr="de:24:01:f4:ad:d3", name="tap0", config="0x0", state="0x4", curr="0x802", adv="0x0", supp="0x0", peer="0x0", curr_spd="10240kbps", max_spd="0kbps"},
+{no="3", hw_addr="be:7c:7d:e2:74:1b", name="tap1", config="0x0", state="0x4", curr="0x802", adv="0x0", supp="0x0", peer="0x0", curr_spd="10240kbps", max_spd="0kbps"},
+{no="local", hw_addr="12:1f:88:b8:94:4d", name="tap:", config="0x0", state="0x4", curr="0x802", adv="0x0", supp="0x0", peer="0x0", curr_spd="10240kbps", max_spd="0kbps"}}}
+
+</code></pre>
+      <p>Show all flows present in table 0.
+<pre class="mdol">
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock stats-flow table=0</code>
+<code class="out">
+SENDING:
+stat_req{type="flow", flags="0x0", table="0", oport="any", ogrp="any", cookie=0x0", mask=0x0", match=oxm{all match}}
+
+
+RECEIVED:
+stat_repl{type="flow", flags="0x0", stats=[]}
+
+</code>
+</pre>
+      <p>Ping between the topology hosts
+<pre class="mdol">
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock flow-mod table=0,cmd=add in_port=2 apply:output=3</code>
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock flow-mod table=0,cmd=add in_port=3 apply:output=2</code>
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock stats-flow table=0</code>
+<code class="out">
+SENDING:
+stat_req{type="flow", flags="0x0", table="0", oport="any", ogrp="any", cookie=0x0", mask=0x0", match=oxm{all match}}
+
+
+RECEIVED:
+stat_repl{type="flow", flags="0x0", stats=[
+{table="0", match="oxm{in_port="2"}", dur_s="108", dur_ns="61000", prio="32768", idle_to="0", hard_to="0", cookie="0x0", pkt_cnt="29", byte_cnt="2282", insts=[apply{acts=[out{port="3"}]}]},
+{table="0", match="oxm{in_port="3"}", dur_s="100", dur_ns="505000", prio="32768", idle_to="0", hard_to="0", cookie="0x0", pkt_cnt="21", byte_cnt="1946", insts=[apply{acts=[out{port="2"}]}]}]}
+
+</code>
+<code class="vm">ping 192.168.180.254</code>
+</pre>
+      <p>Forward packets to gateway
+<pre class="mdol">
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock flow-mod table=0,cmd=add in_port=1 apply:output=2</code>
+<code>sudo dpctl unix:/usr/local/var/run/s1.sock flow-mod table=0,cmd=add in_port=2 apply:output=1</code>
+<code class="vm">sudo route add default gw 192.168.180.254</code>
+<code class="vm">ping 8.8.8.8</code>
+</pre>
+  </ol>
+
+  <h3>KVM net-tap scripts</h3>
+  <p>VM startup script</p>
+
+<pre class="mdol">
+<code>cat start-CPqD0-AsDaemon</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+
+MEM<span style="color:#efefef">=</span><span style="color:#fce94f">512</span>M
+MACaddr<span style="color:#efefef">=</span><span style="color:#fce94f">'52:54:00:b8:9c:58'</span>
+
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm-vhoston script</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+sudo <span style="color:#34e3e3">chmod</span> <span style="color:#fce94f">666</span> <span style="color:#efefef">/</span>dev<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>tun
+sudo tunctl <span style="color:#efefef">-</span>u jssu <span style="color:#efefef">-</span>t tap0
+<span style="color:#8a8a8a">#sudo ifconfig tap0 192.168.180.3 netmask 255.255.255.255 up</span>
+<span style="color:#8a8a8a">#sudo sysctl net.ipv4.conf.tap0.proxy_arp=1</span>
+<span style="color:#8a8a8a">#sudo route add -host 192.168.180.200 dev tap0</span>
+<span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>bin<span style="color:#efefef">/</span>vhostOn.sh
+mkdir <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-CPqD0
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Starting VM: CPqD0..., mem=</span><span style="color:#69c8db">${MEM}</span><span style="color:#fce94f">&quot;</span>
+
+screen <span style="color:#efefef">-</span>S CPqD0 <span style="color:#efefef">-</span>d <span style="color:#efefef">-</span>m qemu-system-x86_64 <span style="color:#efefef">-</span>name CPqD0 <span style="color:#efefef">-</span>localtime <span style="color:#efefef">-</span>curses \
+       <span style="color:#efefef">-</span>m <span style="color:#efefef">${MEM}</span> <span style="color:#efefef">-</span>enable-kvm \
+       <span style="color:#efefef">-</span>monitor unix<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-CPqD0<span style="color:#efefef">/</span>MonSock<span style="color:#efefef">,</span>server<span style="color:#efefef">,</span>nowait \
+       <span style="color:#efefef">-</span>netdev tap<span style="color:#efefef">,</span>id<span style="color:#efefef">=</span>hostnet0<span style="color:#efefef">,</span>ifname<span style="color:#efefef">=</span>tap0<span style="color:#efefef">,</span>vhost<span style="color:#efefef">=</span>on \
+       <span style="color:#efefef">-</span>net nic<span style="color:#efefef">,</span>vlan<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>netdev<span style="color:#efefef">=</span>hostnet0<span style="color:#efefef">,</span>macaddr<span style="color:#efefef">=</span><span style="color:#efefef">${MACaddr}</span><span style="color:#efefef">,</span>model<span style="color:#efefef">=</span>virtio \
+       <span style="color:#efefef">-</span>drive index<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>media<span style="color:#efefef">=</span>disk<span style="color:#efefef">,</span><span style="color:#ffffff; font-weight:bold">if</span><span style="color:#efefef">=</span>virtio<span style="color:#efefef">,</span><span style="color:#34e3e3">file</span><span style="color:#efefef">=/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>img<span style="color:#efefef">/</span>CPqD0.ovl
+</code>
+</pre>
+  <p>VM stop and restore lan script</p>
+<pre class="mdol">
+<code>cat stop-CPqD0-restore-lan</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm-vhoston script</span>
+
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ -</span>S <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-CPqD0<span style="color:#efefef">/</span>MonSock <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;system_powerdown&quot;</span> | socat <span style="color:#efefef">-</span> unix-connect<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-CPqD0<span style="color:#efefef">/</span>MonSock
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Please wait 5 seconds.&quot;</span>
+    <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">5</span>
+<span style="color:#ffffff; font-weight:bold">else</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Socket has been removed! Shutdown by ssh or resotre Lan only.&quot;</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#34e3e3">ping</span> <span style="color:#efefef">-</span>c <span style="color:#fce94f">3 192.168.180.200</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>eq <span style="color:#fce94f">0</span> <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;CPqD0 still alive, shut it down.  Enter passwd twice!&quot;</span>
+    <span style="color:#34e3e3">ssh</span> <span style="color:#efefef">-</span>t jssu&#64;<span style="color:#fce94f">192.168.180.200</span> <span style="color:#fce94f">'sudo init 0'</span>
+<span style="color:#ffffff; font-weight:bold">else</span>
+    <span style="color:#34e3e3">rm</span> <span style="color:#efefef">-</span>rf <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-CPqD0
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Restore lan...&quot;</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ -</span>d <span style="color:#efefef">/</span>proc<span style="color:#efefef">/</span>sys<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>ipv4<span style="color:#efefef">/</span>conf<span style="color:#efefef">/</span>tap0 <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+    sudo <span style="color:#efefef">/</span>sbin<span style="color:#efefef">/</span>ifconfig tap0 down
+    sudo tunctl <span style="color:#efefef">-</span>d tap0
+<span style="color:#ffffff; font-weight:bold">fi</span>
+</code>
+</pre>
+  
+  <h2>References</h2>
+  <ul>
+    <li><a href="https://github.com/CPqD/ofsoftswitch13">CPqD/ofsoftswitch13</a>
+    <li><a href="https://github.com/CPqD/ofsoftswitch13/wiki/Dpctl-Documentation">Dpctl Documentation</a>
+    <li><a href="https://github.com/CPqD/ofsoftswitch13/wiki/Dpctl-Flow-Mod-Cases">Dpctl Flow Mod Cases</a>
+    <li><a href="http://tocai.dia.uniroma3.it/compunet-wiki/index.php/Installing_and_setting_up_OpenFlow_tools">Installing and setting up OpenFlow tools</a>
+  </ul>
+
+  
+  <!-- 頁底 -->
+  <div id="footer" style="width: 100%; clear: left;" align="center">
+    <hr>
+    <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+    <address style="text-align: right; float: right; margin-right:1em;">
+      <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+    </address>
+  </div>
+</BODY>
+</HTML>

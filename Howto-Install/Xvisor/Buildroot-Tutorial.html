@@ -1,0 +1,53 @@
+<OL>
+  <LI><a href="http://fichugh.blogspot.tw/2016/02/buildroot-study.html" 
+      target="_b">buildRoot study</a>
+  <LI><a href="https://github.com/buildroot/buildroot" 
+      target="_b">buildroot github</a>&nbsp;&nbsp;
+      <a href="https://buildroot.org/downloads/" 
+      target="_b">buildroot tarballs</a>&nbsp;&nbsp;
+      <a href="https://git.busybox.net/buildroot" 
+      target="_b">buildroot source from busybox</a>
+  <LI><a href="https://hugh712.gitbooks.io/raspberry_mp3/content/buildroot.html" 
+      target="_b">buildroot</a>
+  <LI><a href="" 
+      target="_b"></a>
+</OL>
+
+
+<PRE>
+ $ cd /tmp 
+ $ wget https://buildroot.org/downloads/buildroot-2016.05.tar.gz  
+ $ tar -zxvf buildroot-2016.05.tar.gz
+ $ rm buildroot-2016.05.tar.gz; mv buildroot-2016.05 buildroot; cd buildroot
+ $ ls -l board | grep raspberry
+drwxr-xr-x  2 hsu hsu 4096 Jun  1 05:52 raspberrypi
+lrwxrwxrwx  1 hsu hsu   11 Jun  1 05:52 raspberrypi0 -> raspberrypi
+lrwxrwxrwx  1 hsu hsu   11 Jun  1 05:52 raspberrypi2 -> raspberrypi
+lrwxrwxrwx  1 hsu hsu   11 Jun  1 05:52 raspberrypi3 -> raspberrypi
+ # <a href="https://git.busybox.net/buildroot/tree/board/raspberrypi/readme.txt" target="_b">Rpi Readme</a>
+ # Basically, two make commands will do:
+ # $ make raspberrypi2_defconfig
+ # $ make # Build the rootfs
+ $ make help; make help | grep download | grep source
+ $ make list-defconfigs
+</PRE>
+
+<P> Firmware and Images from raspberrypi:
+
+<OL>
+  <LI><a href="https://github.com/raspberrypi/firmware/tree/master/boot" 
+      target="_b">raspberrypi/firmware</a>
+  <LI><a href="http://downloads.raspberrypi.org/raspbian/images/" 
+      target="_b">downloads.raspberrypi</a>
+  <LI><a href="https://www.raspberrypi.org/downloads/raspbian/" 
+      target="_b">Raspbian Jessie</a>&nbsp;&nbsp;  
+      <a href="https://www.raspberrypi.org/documentation/installation/installing-images/README.md" 
+      target="_b">Installation Guide</a>
+
+  <LI><a href="" 
+      target="_b"></a>
+  <LI><a href="" 
+      target="_b"></a>
+  <LI><a href="" 
+      target="_b"></a>
+</OL>

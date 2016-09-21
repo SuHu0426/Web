@@ -1,0 +1,64 @@
+$ sudo aptitude install iscsitarget iscsitarget-dkms
+
+
+
+$ sudo emacs /etc/default/iscsitarget
+
+1c1
+
+< ISCSITARGET_ENABLE=true
+
+---
+
+> ISCSITARGET_ENABLE=false
+
+
+
+$ sudo emacs /etc/iet/initiators.allow
+
+
+< ALL 192.168.117.0/24
+
+---
+
+> ALL ALL
+
+
+
+#$ dd if=/dev/zero of=/cephimg/lun0 bs=1024k count=4096
+
+$ qemu-img create /cephimg/lun0 20G
+
+
+
+$ sudo nano /etc/iet/ietd.conf 
+
+< Target iqn.2013-03.com.domain:storage.cephac14
+
+< Lun 0 Path=/cephimg/lun0,Type=fileio
+
+
+
+$ sudo /etc/init.d/iscsitarget restart
+
+
+
+
+$ sudo iscsiadm --mode discovery --type sendtargets --portal 192.168.117.14
+
+
+
+$ sudo iscsiadm -m node -T iqn.2013-03.com.domain:storage.lun -p 192.168.117.14 --login
+
+
+$ sudo iscsiadm -m iface -I ieth1 --op=new
+
+
+$ sudo iscsiadm  -m iface  -I ieth1 --op=update -n iface.net_ifacename -v eth1
+
+
+$ sudo iscsiadm -m iface
+
+
+$ sudo cat /etc/iscsi/ifaces/ieth1
+

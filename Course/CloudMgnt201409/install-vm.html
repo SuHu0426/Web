@@ -1,0 +1,81 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Install Debian (VM)</title>
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+    <script>
+    //====== KVM Installation graphics ======//
+    jQuery(document).ready(function() {
+	var change_content = function() {
+	    console.debug("Change Content" + count);
+	    var i = parseInt(count,10);
+	    var content_text = ['',
+				'安裝首頁, 選擇 install',
+				'語言選擇畫面, 雖然有中文, 但是為了避免不必要的麻煩, 我們選擇 English',
+				'選擇國家, 首先選擇 other',
+				'選擇 Asia',
+				'按一下鍵盤上的 T, 應該會跳到 Taiwan',
+				'語系選擇美語即可','鍵盤配置, 選擇 American English',
+				'Hostname, 機器名稱, 我們統一使用 "VM-編號"',
+				'Domain name, 在此我們不使用 Domain name, 請維持空白',
+				'Root password, 請務必設定正確！',
+				'再次確認 Root password',
+				'使用者全名, 使用 "Cloud" 即可',
+				'使用者帳號, 在此我們統一使用 "cloud"',
+				'使用者密碼',
+				'再次確認使用者密碼',
+				'硬碟分割, 我們選擇 Guided 來自動分割',
+				'選擇 SCSI1 (0,0,0) (sda) 的 QEMU HARDDISK',
+				'選擇 All files in one partition',
+				'確認無誤後選擇 Finish partition and write changes to disk',
+				'再次檢查分割區是否正確, 確認無誤就選擇 Yes 吧！',
+				'在安裝一些基本套件之後來到這個畫面, 設定 mirror 站, 將游標移到最上面, 選擇 enter information manually',
+				'輸入 mirror.cs.nchu.edu.tw, 這是我們系上 mirror 的站',
+				'目錄名稱就是 "/debian/", 不用更改',
+				'我們沒有使用 proxy, 保留空白',
+				'由於是 testing 系統我們 mirror 站還沒完全支援, 不過並不影響使用, 選擇 continue 即可.',
+				'是否同意收集我們軟體使用喜好, 選 "No" 即可',
+				'選擇所需的套件, 在此我們只想建立一個最簡單的虛擬機器, 使用"空白鍵"選擇 "SSH server" 與 "Standard system utilities" 即可, 其他套件之後有需要再安裝即可',
+				'在前頁所選的套件都安裝完畢後出現此畫面, 詢問是否安裝 GRUB boot loader, 選擇 Yes, 若選 No 將來則無法開機！',
+				'選擇 "/dev/sda" 將 GRUB 開機引導程式裝在第1顆硬碟.',
+				'恭喜安裝完畢！選擇 continue 後虛擬機器將會重新開機', 
+				'開機完成後, 趕快試試看剛剛設定的帳號密碼是否可以登入吧！'];
+	    $('#content').html("<p>" + content_text[i] + "</p>");
+	}
+	var count = 1;
+	$('#prev').click(function() {
+	    count--;
+	    if (count<2) {
+		count = 1;
+	    }
+	    $('img').attr('src', 'img/install-vm/' + count + '.png');
+	    $('#page').html(count);
+	    change_content();
+	});
+	$('#next').click(function() {
+	    count++;
+	    if (count>31) {
+		count = 31;
+	    }
+	    $('img').attr('src', 'img/install-vm/' + count + '.png');
+	    $('#page').html(count);
+	    change_content();
+	});
+	//====== End KVM Installation graphics ======//
+    });
+</script>
+</head>
+<body>
+<h1>Install Debian (VM)</h1>
+
+<table class="nobor">
+      <tr>
+	<td class="nobor">	  
+	  <input type="button" id="prev" value="prev"/><span id="page">1</span><input type="button" id="next" value="next"/>
+	  <br>
+	  <img src="img/install-vm/1.png">
+	<td class="nobor"><div id="content"><p>安裝首頁, 選擇 install</p></div>
+    </table>
+
+</body>
+</html>

@@ -1,0 +1,191 @@
+At ac10
+$ su
+# fdisk /dev/sda
+[...]
+[...]
+# fdisk -l /dev/sda
+
+# pvscan
+PV /dev/sdb2   VG pve   lvm2 [232.38 GB / 4.00 GB free]
+Total: 1 [232.38 GB] / in use: 1 [232.38 GB] / in no VG: 0 [0   ]
+## display pv 
+## pvdisplay
+
+# pvcreate /dev/sda{1,2,3}
+# pvscan 
+PV /dev/sdb2   VG pve             lvm2 [232.38 GB / 4.00 GB free]
+PV /dev/sda1                      lvm2 [77.62 GB]
+PV /dev/sda2                      lvm2 [77.64 GB]
+Total: 3 [387.64 GB] / in use: 1 [232.38 GB] / in no VG: 2 [155.26 GB]
+
+# pvdisplay
+
+# vgcreate -s 64MB hsu /dev/sda{1,2}
+
+# vgscan
+Reading all physical volumes.  This may take a while...
+Found volume group "pve" using metadata type lvm2
+Found volume group "hsu" using metadata type lvm2
+
+# vgdisplay
+[...]
+  --- Volume group ---
+  VG Name               hsu
+  System ID             
+  Format                lvm2
+  Metadata Areas        2
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                2
+  Act PV                2
+  VG Size               155.19 GB
+  PE Size               64.00 MB
+  Total PE              2483
+  Alloc PE / Size       0 / 0   
+  Free  PE / Size       2483 / 155.19 GB
+  VG UUID               dHpd1N-zbPl-uz2X-Ar8f-E87z-1xVH-YVjExd
+
+# vgextend hsu /dev/sda3
+# vgdisplay
+[...]
+  VG Name               hsu
+  System ID             
+  Format                lvm2
+  Metadata Areas        3
+  Metadata Sequence No  2
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                3
+  Act PV                3
+  VG Size               232.75 GB
+  PE Size               64.00 MB
+  Total PE              3724
+  Alloc PE / Size       0 / 0   
+  Free  PE / Size       3724 / 232.75 GB
+  VG UUID               dHpd1N-zbPl-uz2X-Ar8f-E87z-1xVH-YVjExd
+
+# pvscan
+  PV /dev/sdb2   VG pve   lvm2 [232.38 GB / 4.00 GB free]
+  PV /dev/sda1   VG hsu   lvm2 [77.56 GB / 77.56 GB free]
+  PV /dev/sda2   VG hsu   lvm2 [77.62 GB / 77.62 GB free]
+  PV /dev/sda3   VG hsu   lvm2 [77.56 GB / 77.56 GB free]
+  Total: 4 [465.13 GB] / in use: 4 [465.13 GB] / in no VG: 0 [0   ]
+
+# vgreduce hsu /dev/sda3
+
+# pvscan
+  PV /dev/sdb2   VG pve             lvm2 [232.38 GB / 4.00 GB free]
+  PV /dev/sda1   VG hsu             lvm2 [77.56 GB / 77.56 GB free]
+  PV /dev/sda2   VG hsu             lvm2 [77.62 GB / 77.62 GB free]
+  PV /dev/sda3                      lvm2 [77.62 GB]
+  Total: 4 [465.19 GB] / in use: 3 [387.57 GB] / in no VG: 1 [77.62 GB]
+
+
+# lvcreate -L 10G -n hsulv hsu
+# ls -l /dev/hsu/*
+lrwxrwxrwx 1 root root 21 2009-08-15 15:47 /dev/hsu/hsulv -> /dev/mapper/hsu-hsulv
+# ls -l /dev/mapper
+
+
+## snapshot
+# mkfs.ext3 /dev/hsu/hsulv
+# mount /dev/hsu/hsulv /mnt/tmp
+# cp -a /boot /lib /sbin /mnt/tmp
+# ls -l /mnt/tmp
+total 28
+drwxr-xr-x  4 root root  4096 2009-07-26 08:41 boot
+drwxr-xr-x 11 root root  4096 2009-07-26 12:49 lib
+drwx------  2 root root 16384 2009-08-15 15:52 lost+found
+drwxr-xr-x  2 root root  4096 2009-07-26 12:49 sbin
+
+# umount /mnt/tmp
+# lvcreate -L 5G -s -n hsulv-s /dev/hsu/hsulv
+Logical volume "hsulv-s" created
+# mkdir /mnt/stmp
+# mount /dev/hsu/hsulv /mnt/tmp
+# mount /dev/hsu/hsulv-s /mnt/stmp
+# df
+[...]
+/dev/mapper/hsu-hsulv		10321208    287584   9509336   3% /mnt/tmp
+/dev/mapper/hsu-hsulv--s	10321208    287584   9509336   3% /mnt/stmp
+
+# umount /mnt/stmp
+# rm -r /mnt/tmp/boot /mnt/tmp/lib/
+# cp -a /etc /mnt/tmp
+# lvdisplay /dev/hsu/hsulv-s 
+  --- Logical volume ---
+  LV Name                /dev/hsu/hsulv-s
+  VG Name                hsu
+  LV UUID                puURzd-3VVt-vV7L-it8T-0bMn-Xd4d-ddCYVZ
+  LV Write Access        read/write
+  LV snapshot status     active destination for /dev/hsu/hsulv
+  LV Status              available
+  # open                 0
+  LV Size                10.00 GB
+  Current LE             160
+  COW-table size         5.00 GB
+  COW-table LE           80
+  Allocated to snapshot  0.13% 
+  Snapshot chunk size    4.00 KB
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           254:4
+
+# mount /dev/hsu/hsulv-s /mnt/stmp/
+# df
+[...]
+/dev/mapper/hsu-hsulv   	10321208    163104   9633816   2% /mnt/tmp
+/dev/mapper/hsu-hsulv--s	10321208    287584   9509336   3% /mnt/stmp
+
+# cd /mnt/stmp
+# tar -jcv -f /tmp/back.tar.bz2 *
+# cd ..
+# umount /mnt/stmp
+# lvremove /dev/hsu/hsulv-s
+Do you really want to remove active logical volume "hsulv-s"? [y/n]: y
+  Logical volume "hsulv-s" successfully removed
+# umount /mnt/tmp
+# mkfs.ext3 /dev/hsu/hsulv 
+# mount /dev/hsu/hsulv /mnt/tmp
+# tar -jxv -f /tmp/back.tar.bz2 -C /mnt/tmp/
+# ls -l /mnt/tmp
+total 28
+drwxr-xr-x  4 root root  4096 2009-07-26 08:41 boot
+drwxr-xr-x 11 root root  4096 2009-07-26 12:49 lib
+drwx------  2 root root 16384 2009-08-15 15:52 lost+found
+drwxr-xr-x  2 root root  4096 2009-07-26 12:49 sbin
+
+# lvcreate -s -L 10G -n hsulv-s /dev/hsu/hsulv
+# umount /mnt/tmp
+# mount /dev/hsu/hsulv-s /mnt/stmp/
+# rm -r /mnt/stmp/*
+# ls -l /mnt/stmp
+total 0
+# mount /dev/hsu/hsulv /mnt/tmp
+# ls -l /mnt/tmp
+total 28
+drwxr-xr-x  4 root root  4096 2009-07-26 08:41 boot
+drwxr-xr-x 11 root root  4096 2009-07-26 12:49 lib
+drwx------  2 root root 16384 2009-08-15 15:52 lost+found
+drwxr-xr-x  2 root root  4096 2009-07-26 12:49 sbin
+# umount /mnt/stmp
+# lvremove /dev/hsu/hsulv-s
+# lvcreate -s -L 10G -n hsulv-s /dev/hsu/hsulv
+# mount /dev/hsu/hsulv-s /mnt/stmp/
+# ls -l /mnt/stmp
+total 28
+drwxr-xr-x  4 root root  4096 2009-07-26 08:41 boot
+drwxr-xr-x 11 root root  4096 2009-07-26 12:49 lib
+drwx------  2 root root 16384 2009-08-15 15:52 lost+found
+drwxr-xr-x  2 root root  4096 2009-07-26 12:49 sbin

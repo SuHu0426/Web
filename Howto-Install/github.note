@@ -1,0 +1,39 @@
+git config --global user.name "suhu0426"
+git config --global user.email "cssu@csmail.nchu.edu.tw"
+git config --global color.ui true
+git config --list
+
+$ ssh-keygen  -t rsa -C "cssu@csmail.nchu.edu.tw"
+
+$ git remote add gh-pages git@github.com:suhu0426/Web.git
+
+git clone https://github.com/SuHu0426/Web.git
+or
+git init
+git add file
+
+
+git branch gh-pages
+git checkout gh-pages
+git rm -rf .
+git status
+git add .
+git status
+git commit
+git push
+
+nano .gitignore
+.DS_Store
+*.swp
+log/*.log
+*~
+
+
+
+$ ssh-keygen  -t rsa -C "cssu@csmail.nchu.edu.tw"
+$ git init
+Initialized empty Git repository in /backup/Dropbox/Web/.git/
+$ git add index.html
+$ git commit
+$ git remote add origin git@github.com:suhu0426/Web.git
+

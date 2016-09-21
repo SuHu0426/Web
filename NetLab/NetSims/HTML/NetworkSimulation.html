@@ -1,0 +1,3642 @@
+<!DOCTYPE html>
+<html lang="en-US"><!--<![endif]-->
+  <head><title>Using open-source routers in GNS3 | Open-Source Routing and Network 
+         Simulation</title>
+  </head>
+  <body data-twttr-rendered="true">
+
+<OL>
+  <LI><a href="#OpenSourceNetSims">Open Source Network Simulators</a>
+  <LI><a href="#GNSOnQemu">Install and Configure GNS3 With Qemu</a>
+  <LI><a href="#Gns3QemuGuide">The Definitive QEmu guide</a>
+  <LI><a href="#SetUpGNS3">Set Up GNS3 with Open-Source Routers</a>
+  <LI><a href="#OpenSourceRouter">Open Source Routers in GNS3</a>
+  <LI><a href="#PersistentTinyCore">Persistent configuration in TinyCore</a>
+  <LI><a href="#InstallGNS3">Install GNS3</a>
+  <LI><a href="#CiscoIosOnGNS3">Cisco Ios On GNS3</a>
+  <LI><a href="#BasicBGP">Basic BGP</a>
+  <LI><a href="#GNS3WithMoreThan8Nics">More Than 8 NICs Support</a>
+  <LI><a href="#"></a>
+  <LI><a href="#References">References</a>
+</OL>
+
+<a name="OpenSourceNetSims"></a><h3>Open Source Network Simulators 
+<a href="http://www.brianlinkletter.com/open-source-network-simulators/">(Source 
+Origin)</h3></a>
+
+<TABLE>
+<TR><TD><a href="./Open-SourceNetworkSimulators.html#Cloonix">Cloonix</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#CORE">CORE</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#GNS3">GNS3</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#IMUNES">IMUNES</a>&nbsp;&nbsp;
+<TR><TD><a href="./Open-SourceNetworkSimulators.html#Marionnet">Marionnet</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#Mininet">Mininet</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#Netkit">Netkit</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#Psimulator2">Psimulator2</a>&nbsp;&nbsp;
+<TR><TD><a href="./Open-SourceNetworkSimulators.html#Virtualsquare">Virtualsquare</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#VNXAndVNUML">VNXAndVNUML</a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#"></a>&nbsp;&nbsp;
+    <TD><a href="./Open-SourceNetworkSimulators.html#"></a>&nbsp;&nbsp;
+</TABLE>
+
+
+<a name="GNSOnQemu"></a><h3>Install and Configure GNS3 & Qemu on Linux 
+<a href="https://ethernuno.wordpress.com/2014/03/06/install-and-configure-gns3-0-8-4-qemu-on-linux/">(Source Origin)</a></h3>
+
+Posted by <a href="https://ethernuno.wordpress.com/author/ethernuno/">ethernuno</a>
+ on <a href="https://ethernuno.wordpress.com/2014/03/06/install-and-configure-gns3-0-8-4-qemu-on-linux/">06/03/2014</time></a>	
+
+
+<p>This is a detailed installation and configuration of the latest stable VirtualBox, 
+GNS3, Qemu (already patched supporting ASA 8.(4).2 and Olive). Note that you need to 
+get your routers and ASA images yourself which is pretty easy. 
+(<b>The rest is Omitted.</b>)
+
+<p><strong>Step 0: Prepare your GNS3 folders.</strong> 
+
+<P> You will need to create 
+the following directories: I usually work with this directory structure:
+(<b>The rest is Omitted.</b>)
+
+<p><strong>Step 1: Update your system and install the needed dependencies:</strong></p>
+
+<a href="http://sourceforge.net/projects/gns-3/" target="newwindow">Latest Stable 
+GNS3 Download</a>
+
+<pre># wget -tries=45 http://sourceforge.net/projects/gns-3/files/Qemu/Linux/QEMU-0.14.1-GNS3-Ubuntu-Linux64.tgz/download
+</pre>
+
+(<b>The rest is Omitted.</b>)
+
+<p><strong>3- Configure GNS3 to support routers, ASA firewall 8.(4).2 and VirtualBox 
+machines.</strong></p>
+
+<p>Open gns3 and add the following setting in each section. Note that 
+your paths may differ depending on your OS or folder options. Press 
+Apply for each tab settings.</p>
+
+<p><strong>General Settings</strong></p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/general.png"><img src="https://ethernuno.files.wordpress.com/2014/03/general.png"></a></p>
+
+
+<p><strong>Dynamips Settings</strong></p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/dynamips.png"><img src="https://ethernuno.files.wordpress.com/2014/03/dynamips.png"></a></p>
+
+
+<p><strong>Capture Settings</strong></p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/capture.png"><img src="https://ethernuno.files.wordpress.com/2014/03/capture.png"></a></p>
+
+
+<p><strong>Qemu Settings</strong></p>
+
+<P> Inside gv
+
+<PRE>
+hsu@gv:~$ ls -l /usr/bin/qemu*
+-rwxr-xr-x 1 root root  868672 Dec 10 06:29 /usr/bin/qemu-img
+-rwxr-xr-x 1 root root  918424 Dec 10 06:29 /usr/bin/qemu-io
+-rwxr-xr-x 1 root root  844736 Dec 10 06:29 /usr/bin/qemu-nbd
+-rwxr-xr-x 1 root root 5942432 Dec 10 06:29 /usr/bin/qemu-system-i386
+-rwxr-xr-x 1 root root 6008736 Dec 10 06:29 /usr/bin/qemu-system-x86_64
+hsu@gv:~$ cd  /usr/bin
+hsu@gv:/usr/bin$ sudo ln -s qemu-system-x86_64 qemu
+[sudo] password for hsu: 
+hsu@gv:/usr/bin$ ls -l qemu*
+lrwxrwxrwx 1 root root      18 Feb  7 21:08 qemu -> qemu-system-x86_64
+-rwxr-xr-x 1 root root  868672 Dec 10 06:29 qemu-img
+-rwxr-xr-x 1 root root  918424 Dec 10 06:29 qemu-io
+-rwxr-xr-x 1 root root  844736 Dec 10 06:29 qemu-nbd
+-rwxr-xr-x 1 root root 5942432 Dec 10 06:29 qemu-system-i386
+-rwxr-xr-x 1 root root 6008736 Dec 10 06:29 qemu-system-x86_64
+</PRE>
+
+<P> After pressing "Test Settings" button, exactly the same messgae shows up.</p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/qemu.png"><img src="https://ethernuno.files.wordpress.com/2014/03/qemu.png"></a></p>
+
+
+<p><strong>ASA Settings</strong></p>
+
+<p>Get the needed firewall files (ASA) 
+<a href="http://www.mediafire.com/download.php?l010dd0c1nayf0d">here</a>, extract 
+and move the files to your ~/GNS3/Images/ directory. You should have two files: 
+The initrd: asa842<span class="skimlinks-unlinked">-initrd.gz</span> and 
+kernel: asa842-vmlinuz.</p>
+
+<PRE>
+$ mkdir /tmp/Zip 
+# move ASA842.zip from Downloads directory to /tmp/Zip 
+$ cd /tmp/Zip
+/tmp/Zip$ unzip ASA842.zip
+Archive:  ASA842.zip
+   creating: ASA842/
+  inflating: ASA842/asa842-initrd.gz  
+  inflating: ASA842/asa842-vmlinuz   
+hsu@Amath-Client00:/tmp/Zip$ ls -l
+total 24168
+drwxr-xr-x 2 hsu hsu     4096 Feb 15  2012 ASA842
+-rw-r--r-- 1 hsu hsu 24742912 Feb  8 09:47 ASA842.zip
+hsu@Amath-Client00:/tmp/Zip$ cd ASA842
+
+/tmp/Zip/ASA842$ ls -l
+total 24284
+-rw-r--r-- 1 hsu hsu 23504439 Feb 15  2012 asa842-initrd.gz
+-rw-r--r-- 1 hsu hsu  1359344 Feb 15  2012 asa842-vmlinuz
+$ scp asa* gv:$HOME/GNS3/Images
+</PRE>
+
+<P> On the Qemu -> ASA window:
+
+<OL>
+  <LI> Set identifier name to: "ASA 8.4(2)
+  <LI> initrd: /home/hsu/GNS3/Images/asa842-initrd.gz
+       <P> As usual, use the ellipses button next to the initrd box.
+  <LI> kernel: /home/hsu/GNS3/Images/asa842-vmlinuz 
+  <LI> Press the "save" button.
+</OL>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/qemuasaconfig.png"><img src="https://ethernuno.files.wordpress.com/2014/03/qemuasaconfig.png"></a></p>
+
+
+
+<p><strong>4- Configure IOS to run on GNS3.</strong></p>
+
+<P> The next picture is slightly different.  Follow the next anchor: 
+<a href="../README.html#IOSImagesAndHypervisors" target="_blank">Choose the "IOS images 
+and hypervisors" item from Edit menu</a>
+
+<p>We are almost done, we need to tell GNS3 where are the Cisco IOS 
+images to run. Goto "IOS images and hypervisors" settings and point to 
+each router image:</p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/iosconfig1.png"><img src="https://ethernuno.files.wordpress.com/2014/03/iosconfig1.png" width="810"></a></p>
+
+
+<p><strong>5- Configure "Idle-pc" values.</strong></p>
+
+<P><b>Note:</b> This part is useless, omitted.  Read the next article.
+
+<a name="CalculateIdlePC"></a>
+<h3 class="entry-title">How to Calculate Idle PC Value in GNS3 Network 
+Simulator 0.8.6? 
+<a href="http://www.smartpctricks.com/2014/05/calculate-idle-pc-value-in-gns3.html">(Source Origin)</a></h3>
+									
+	<div class="below-title-meta">
+		<div class="adt">
+		By        <span class="author">
+         <a href="http://www.smartpctricks.com/author/khaleel" title="Posts by Khaleel" rel="author">Khaleel</a>        </span> 
+         </div>
+     </div><!-- below title meta end -->
+			
+						
+
+				<div class="entry-content">
+<p>GNS3 (Graphical Network Simulator) is the best open source <strong>Network simulator</strong> that can be used while <strong>setting up a computer network</strong>. GNS3 works by consuming real Cisco IOS images which are emulated using a program called <strong>Dynamips</strong>.
+ Hence it provides real time experience to the user and serves many of 
+the network engineers today to design and collaborate their networks.</p>
+
+<p>Using GNS3 you can design and experiment multiple networks without 
+having any dedicated network hardware. The key feature of this router 
+simulator is that you will be able to connect real networks to virtual 
+GNS3 labs! GNS3 simulator is available for Windows, MAC, and Linux 
+platforms.</p>
+
+<h4>How GNS3 serves you?</h4>
+
+<ul>
+  <li>Design of high quality and composite network scenarios.</li>
+  <li>Supports many Cisco routers and PIX firewalls.</li>
+  <li>Simulation of simple Ethernet, ATM and Frame Relay switches.</li>
+  <li>Communicating simulated network to the real existing networks.</li>
+  <li>Packet capture using 'Wireshark'</li>
+</ul>
+
+<p>In this tutorial I would like to explain <em>How to Calculate an Idle PC in latest version of GNS3 0.8.6 running on Windows 7?</em>
+ The process of setting up anIdle PC value is the extreme basic step 
+while working with GNS3. The concept of an Idle-PC is one of the basic 
+problems that a beginner faces while getting started with GNS3.</p>
+
+<h4>What exactly is Idle PC value in GNS3?</h4>
+
+<p>While simulating your network in GNS3, there is a possibility for 100% CPU usage of your computer. This is due to the <strong>Dynamips</strong>, the core emulator, doesn't know when the virtual router is idle, or when it's executing tasks.</p>
+
+<p>Idle PC value calculates the time when the IOS image is idle (not 
+performing any task) and puts the router into an idle state (sleep 
+mode).</p>
+
+<p>Hence it significantly decreases CPU usage on the host without losing the virtual router's capacity to do real work.</p>
+
+<h4>Step By Step Procedure to Configure Idle PC Value</h4>
+
+<p>Well, let's get into the procedure to be followed for calculating a 
+good idle PC value in 0.8.6. After installing GNS3 load your IOS image 
+to GNS3 virtual router (this process is out of the scope of this 
+article)</p>
+
+<p><span style="text-decoration: underline;"><b>Step 1:</b></span><br>
+Once you have successfully loaded IOS to the router, create a topology 
+with a single router. Then start the router by clicking 'Start/Resume 
+all devices' button.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/gns3-idle-pc.png"><img class="alignnone size-full wp-image-731" alt="gns3 idle pc How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/gns3-idle-pc.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="101" width="203"></a><br>
+<span style="text-decoration: underline;"><b>Step 2:</b></span><br>
+Wait a little bit for the router to settle down. Double click on the router and verify that it has completed initialization.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-2.png"><img class="alignnone size-medium wp-image-732" alt="GNS3 2 300x167 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-2-300x167.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="167" width="300"></a></p>
+
+<p><span style="text-decoration: underline;"><b>Step 3:</b></span><br>
+Openthe task manager (Shift + Control + Escape) and look at the CPU usage,there's a probability that it may reach 100%.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-3.png"><img class="alignnone size-full wp-image-734" alt="GNS3 3 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-3.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="259" width="411"></a><br>
+<span style="text-decoration: underline;"><b>Step 4:</b></span><br>
+Go to the main window of GNS3, Right click on the router and select Idle PC<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-4.png"><img class="alignnone size-full wp-image-735" alt="GNS3 4 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-4.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="569" width="472"></a><br>
+GNS3 will now calculate better Idle PC Value for your host (It may take a title bit time).</p>
+
+<p><span style="text-decoration: underline;"><b>Step 4:</b></span><br>
+After the calculation GNS3 gets prompted with available Idle PC values.<br>
+Probably better idle pc values are marked with an asterisk symbol (*). Choose one of the values with an asterisk.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-5.png"><img class="alignnone size-full wp-image-736" alt="GNS3 5 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-5.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="152" width="428"></a><br>
+You'll get a confirmation that idle pc value has been applied.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-6.png"><img class="alignnone size-full wp-image-737" alt="GNS3 6 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-6.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="131" width="345"></a><br>
+Now Idle PC value has been successfully applied!<br>
+Once Idle PC value has been applied you may notice a striking drop in the CPU usage.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-7.png"><img class="alignnone size-medium wp-image-738" alt="GNS3 7 300x159 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-7-300x159.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="159" width="300"></a><br>
+Navigate to Edit -> IOS images and hypervisors or hit Ctrl+Shift+I together<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-8.png"><img class="alignnone size-full wp-image-741" alt="GNS3 8 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-8.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="223" width="345"></a><br>
+You will find the calculated Idle PC value there under Settings.<br>
+<a href="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-91.png"><img class="alignnone size-full wp-image-744" alt="GNS3 91 How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" src="http://www.smartpctricks.com/wp-content/uploads/2014/05/GNS3-91.png" title="How to Calculate Idle PC Value in GNS3 Network Simulator 0.8.6?" height="584" width="486"></a><br>
+Same value will be applied automatically next time when you add the same router.</p>
+
+<h4>Common GNS3 Idle PC Problem: "Could Not Find Asterisk in the Idle PC"</h4>
+
+<p>This happens commonly, what do we do if there is no asterisk symbol near to idle PC value?<br>
+Insuch situations,stop the simulation,start again and repeat the above 
+procedures. You should repeat this process until CPU usage goes down 
+to10-15%.</p>
+
+<p>NB:-  You may also select values without Asterisk symbol if it reduces CPU usage considerably.</p>
+
+<p>Now you can start creating new topologies and explore with GNS3. Hope
+ you guys got the complete idea about GNS3 Idle PC setup and get rid of 
+the100% CPU usage.</p>
+
+<h5>Related posts:</h5>
+
+<OL> 
+  <LI><a href="http://www.smartpctricks.com/2014/06/connect-gns3-to-virtualbox.html">
+Connect GNS3 to VirtualBox</a>
+  <LI><a  href="http://www.smartpctricks.com/2014/06/connecting-gns3-real-networks.html">
+Connecting GNS3 to Real Networks</a>
+  <LI><a  href="http://www.smartpctricks.com/2014/06/connect-gns3-to-internet.html">
+Connect GNS3 to Internet via Host Wi-Fi</a>
+  <LI><a  href="http://www.smartpctricks.com/2014/11/connect-cisco-iou-to-gns3-1-1.html">
+Connect Cisco IOU to GNS3-1.1</a>
+  <LI><a  href="http://www.smartpctricks.com/2014/09/setup-cisco-configuration-professional.html">
+Setup Cisco Configuration Professional CCP 2.7 for GNS3 Router</a>
+</OL>
+
+
+<p><strong>6- Create a simple topology like the following:</strong><br>
+Let's run some devices and configure ASA keys so you can play with it.</p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/topology1.png"><img src="https://ethernuno.files.wordpress.com/2014/03/topology1.png"></a></p>
+
+<p style="text-align:left;">
+</p><p style="text-align:left;">Turn the firewall features on with both 
+commands from configuration mode. Make you configure at least one 
+interface and save the configuration. Save Project in GNS3. After that 
+just reload the firewall:</p>
+
+<p>Configure Interface Inside and Outside settings:</p>
+
+<pre>en
+show ver
+conf t
+inter g0
+ip add 172.31.255.253 255.255.255.0
+nameif OUTSIDE
+security-level 0
+description LINK-&gt;EDGE-&gt;ISP
+no shut
+exit
+
+inter g1
+ip add 10.200.0.254 255.255.255.0
+nameif INSIDE
+security-level 100
+description LINK-&gt;DataCenter
+no shut
+exit
+</pre>
+
+<p>Copy the configuration and enter the licenses:</p>
+
+<pre>copy running-config flash:startup-config
+activation-key 0x4a3ec071 0x0d86fbf6 0x7cb1bc48 0x8b48b8b0 0xf317c0b5
+activation-key 0xb23bcf4a 0x1c713b4f 0x7d53bcbc 0xc4f8d09c 0x0e24c6b6
+copy running-config flash:startup-config
+reload
+</pre>
+<p style="text-align:left;">
+</p><p> Note that this will take some time, like 5 minutes, and 
+when you reload the ASA it will take some time again so be patient.</p>
+
+<p>After the reload, check ASA licensing features with:</p>
+
+<pre># show version
+</pre>
+<p>Here is the output:</p>
+
+<p><a href="https://ethernuno.files.wordpress.com/2014/03/asa_full_license.png"><img alt="asa_full_license" src="https://ethernuno.files.wordpress.com/2014/03/asa_full_license.png"></a></p>
+
+<a name="Gns3QemuGuide"></a><h3>The Definitive QEmu guide 
+<a href="https://community.gns3.com/servlet/JiveServlet/download/38-20417/The%20Definitive%20QEmu%20Guide%20for%20GNS3%20ver1.pdf" 
+target="newwindow">(Source Origin: The Definitive QEmu Guide for GNS3 ver1.pdf</a>
+</h3>
+
+<p> The Definitive Guide to QEmu and running Kustom VM Machines for GNS3</p>
+
+<p> <b>By The GNS3 Assist Team </b></p>
+
+<p> With Special Guest Star: Ankur J. Mallik<br/>
+ 2007-2014 GNS3 Technologies Inc. All Rights Reserved.</p>
+
+<p> <hr/>
+
+<h4> In this document, you will find answers to the most sought out questions in the 
+new GNS3 Jungle community.</h4>
+
+<P> Specifically, what is the BEST way of creating Kustom virtual machines with QEmu, 
+VirtualBox or VMWare?</p>
+
+<p> How can I load a switching and routing vender (like Juniper) onto one of these 
+virtual machines? How does GNS3 facilitate the use of such images in the current 
+topology structure?</p>
+
+<p> <b>DISCLAIMER:</b> At this point, the GNS3 Technologies Inc., holds firm that all 
+software used in the topology is the sole responsibility of the user. All software 
+licenses and keys are provided by the client. GNS3 Technologies Inc. is not in the 
+business of helping users with pirated material. Our business model is helping users 
+to create topologies that will educate, train and test actual real production networks. 
+Having said that, it is ASSUMED you are in compliance and that all related software 
+meets local and federal laws and regulations in its proper use. It is the user that 
+takes the risks and reaps the benefits of such endeavors.</p>
+
+<p> Having said all that, this document is really about two critical aspects: <br/>
+
+<OL>
+  <LI> <b>Mastering QEmu</b> within the scope of making sure your virtual machine is 
+       compatible with the QEmu version inside GNS3. 
+
+  <LI> <b>Installation of a non-Cisco based OS (like Juniper).</b> 
+
+<P> Many components within this section deal with file transfers and un-packaging 
+zipped files that are natively done with tools in a typical Linux distro. For Windows 
+users, there is a learning curve to using these tools, but once mastered, opens up 
+other possibilities.</p>
+</OL>
+
+<h4>The BEST way to create Kustom virtual images</h4>
+
+<P> Based upon how long GNS3 has been available, and the growing throngs of new users, 
+75 percent of all users are students 
+and learners of the Cisco CCNA track. Getting past that tier, there is only 25 percent 
+that are CCNP and CCIE COMBINED! It is in this sobering fact that true democracy 
+dictates to write for the majority. The reasons for pursuing such skill-sets most 
+likely is for 'the pursuit of happiness' to which each person consciously chooses to 
+follow this path as a means to make an honest living in the world of network 
+administration and cyber intelligence.</p>
+
+<OL> 
+  <LI>CCNA: Cisco Certified Network Associate 
+  <LI>CCNP: Cisco Certified Network Professional
+  <LI>CCIE: Cisco Certified Internetwork Expert
+</OL>
+
+<p> I can't think of a better way to influence new users both young and old, than to 
+embark on these new trials and tribulations by learning how to create new virtual 
+machines and getting them to work with the GNS3 platform. And all three possibilities, 
+Virtualbox, VMWare and QEmu are all excellent, but this document is geared to the 
+majority of the user base within the community. As you have probably figured out, 
+there are 'shortcuts' in this whole process to which I agree exist. Having predefined 
+and working images in native VMWare and Virtualbox is possible, but I wanted the new 
+user base to get familiar with QEmu since it really is QEmu working in the background 
+for GNS3 as well as Virtualbox. QEmu is the 'x' factor in getting a topology as close 
+as possible to your live production network. And the time you put in will make up for 
+it in the long term when you need your virtual topology to test out a very specific 
+objective that is non-Cisco. So obviously, QEmu is the BEST way to go with Kustom 
+virtual machines. By Kustom with a 'k' I am speaking about your very unique build.</p>
+
+<h4> How can I load a non-Cisco IOS onto one of these Kustom virtual machines?</h4>
+
+<p> With Juniper, it is one of the most sought out virtual machines in the community. 
+And following various You-tubes and blogs, may mislead you in the proper way to install 
+and support Juniper OS. In comparison with Cisco, there are Cisco images that are 
+readily used and acknowledged from Cisco since their own employees and organization use 
+the same tools. With Juniper, they seem to have a very stand-off approach which makes 
+no sense to me personally, but since Juniper virtual machines are considered 
+'unsupported' by Juniper, it leaves those students and even network professionals 
+vexed. To not respond to market changes and pressures that drive new business is 
+Juniper's choice. But sooner, rather than later, Juniper should embrace the fact that 
+so many network engineers as well as students see value in their product and should be 
+a little more open to supporting their own software in this venue. Having said all 
+that, it is assumed that unsupported software from a particular vender means the user 
+takes on the responsibility of keeping up to date with any policy changes to non-Cisco 
+software and services. Wow, I spent 4 pages going over these two points, but I believe 
+understanding the scope and risks will cut down on a lot of questions in a community 
+that have over 100,000 network professionals of varying talents and experiences. My 
+great grandfather would roll over in his grave if he knew how quickly the world 
+changes! In the world of network professionals, it changes on a daily basis. 
+
+<P> These are the steps involved with creating Kustom images. Please examine closely 
+the following work flow image:</p>
+
+<p><img src="../IMGs/QemuGuideGns3-4_1.jpg"/></p>
+
+<p> I tried to break down the complexity and boil plate the topics to four broad 
+processes:</p>
+
+<OL>
+  <LI> <a href="#VMCreation">Create the virtual machine with QEmu</a>
+
+  <LI> <a href="#FileTransfer">File transfer from one virtual machine to another.</a> 
+ 
+<P> Step two actually has another option of creating a CD image (an .ISO) of the 
+jinstall-x.x.x  file, and then using QEmu to define that .ISO image as a CDROM 
+storage device. If you have difficulty getting your virtual machines to transfer 
+files between each other, I suggest skipping this step and going straight to the 
+<a href="#AppendixA">Appendix</a> as the defacto 'work around' if you have any 
+problems with your personal HOST's virtualbox, VMWare or Loopback interfaces in 
+Windows 8.1 or higher.</p>
+
+  <LI> <a href="#UnzippingIOS">Unzipping the IOS package and installing it within 
+       the Kustom virtual machine.</a>
+
+  <LI> <a href="#"></a>Configuring GNS3 to call that image.
+</OL>
+
+<p> Obviously, if you already have the image with the IOS running on top of it, you 
+only need to know that the latest QEmu (specifically GNS3's version) can call .vdmk 
+images DIRECTLY. It literally took me 5 minutes to get a running Kustom VM running in 
+GNS3. But the purpose of this document is about creating our own, so please follow 
+closely to the following sections.  
+
+<P> Before I get into how to do this, I need to make 
+a well-deserved shout out to Ankur J. Mallik, for his outstanding knowledge of QEmu. 
+You are the king of Kustom builds and I thank you kind sir! I hope you get a ton of 
+business and you continue to prosper. Thank you for your kind words and generosity!</p>
+
+
+<a name="VMCreation"></a><h4>Okay, onto the first section:</h4>
+
+<p> Let's begin:</p>
+
+<h4> Setting up FreeBSD base for Junos to run on top</h4>
+
+
+<OL>
+   <LI> Create a Qemu disk image using Qemu-img.exe
+
+<p> For the beginner: QEmu stands for Quick EMUlation. The Official mascot is an EMU. A 
+quick Google search on EMUs is the following: <a href="http://en.wikipedia.org/wiki/Emu" 
+target="newwindow">http://en.wikipedia.org/wiki/Emu</a>. So if you feel comfortable 
+pronouncing QEMU as (kee-mu) or (que-emu), it doesn't matter. In this example, we will 
+be creating a FreeBSD virtual machine using QEmu for the express use of a Juno OS.</p>
+
+<p> The first thing to do is get a little familiar with how QEmu runs.</p>
+
+<p> With QEmu, there is no 'official' installation package. For simplicity, you should 
+run all commands within the Qemu directory. That also means, creating images within the 
+same directory. So if you download QEmu in 'Downloads' folder and you extract QEmu, then 
+when you open your command or terminal app, you need to be in the QEmu directory.</p>
+
+<p> Once you are in the Qemu directory, for example: C:\Downloads\Qemu &gt;, you are 
+now ready to run the first of many commands. You will need to run your command/terminal 
+as administrator! Command: 
+
+<PRE>
+ qemu-img.exe create -f qcow2 juniper-backend.img 12G
+</PRE>
+
+<p> Explanation: Creates an image disk named juniper-backend of 12 GB. -f stands for 
+format.</p>
+
+  <LI> Fire up the machine with Command: </p>
+
+<PRE>
+ qemu-sytem-x86_64w -m 1024 -hda juniper-backend.img -cdrom 4.11-RELEASE-i386-miniinst.iso -boot d -localtime
+</PRE>
+
+<p> Explanation:</p>
+
+  <UL> 
+    <LI> -m &gt; Size of RAM in megs</p>
+
+    <LI> -hda &gt; Use file as hardisk &gt; points to the img file we created</p>
+
+    <LI> -cdrom &gt; use the mentioned iso as cdrom</p>
+
+    <LI> -boot d &gt; boot with CDrom</p>
+  </UL>
+
+<P> <b>Notes: (01/03/2015) Iso from BSD:</b>
+<a href="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/i386/ISO-IMAGES/"
+ target="newwindow">FreeBSD i386 Iso</a>&nbsp;&nbsp;
+<a href="http://cdimage.debian.org/cdimage/jessie_di_beta_2/amd64/iso-cd/"
+ target="newwindow">Debian Jessie Netinst Iso</a>
+</OL>
+
+<p> Note: watch the spacing... it's supposed to be all one command, but sometimes 
+there is an annoying space between the end of the line and the next line. If it 
+doesn't start up immediately, you may have to remove a space where the command wraps 
+around to the next line:</p>
+
+<p><img src="../IMGs/QemuGuideGns3-6_1.png"/></p>
+
+<p> See the spacing on the far left side of the first command? QEmu will not run. You 
+will have to go back and delete that space. The second time I ran this command, it ran 
+fine.</p>
+
+<p> Now let's dive into installation. At the disk allocation menu (below) hit <b>A</b> 
+to use entire disk. <b>Q</b> to finish.</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-6_2.jpg"/></p>
+
+<p> Note: FreeBSD is a little different in formatting the hard disk as opposed to a 
+Windows format. The Windows Setup program usually formats the disk to NTFS and handles 
+the primary partition setup and configuration. With FreeBSD, there are options.</p>
+
+<p><img src="../IMGs/QemuGuideGns3-7_1.png"/></p>
+
+<p> You can use Standard or Express. Most videos out there use Express and that's fine. 
+If you hit Standard, it will then ask you a bunch of questions regarding the FreeBSD 
+installation. Either way it's fine... it's partitioning the disk drive that's REALLY 
+important. Either Express or Standard will take you to the next screen.</p>
+
+<p><img src="../IMGs/QemuGuideGns3-8_1.png"/></p>
+
+<p> Select A in the following screen is telling FreeBSD to use the entire hard disk. 
+Since we are dealing with a virtual machine, it will ONLY format the space that QEmu 
+created in the previous step. So it's okay to hit the 'A' and use the entire hard disk 
+on your new virtual machine. Also, by hitting Q, you are quitting this area of the 
+allocating the hard disk and you need to exit back to another screen that is prompted 
+in the next step. So hitting Q doesn't let you leave the actual installation, it gets 
+you out of the immediate area for allocating the hard disk. </p>
+
+<p><img src="../IMGs/QemuGuideGns3-9_1.jpg"/></p>
+
+<p> Do you see the second line? It shows where the partition starts and ends and sets 
+the subtype for Freebsd. When you hit 'Q', you will be brought to a similar looking 
+menu, but your next step will be to manually create a partition table within this 
+Freebsd space. See next screenshot.</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-9_2.jpg"/></p>
+
+<p> Go with the Standard MBR (no boot manager).  
+
+<P> Create a partition table by hitting 
+"C". A small window pops up and will require you to enter the size of this particular 
+partition. Follow the screenshot closely. In other you-tube videos and posts, some 
+people choose various sizes for the partition. The following are recommendations. If 
+you have experience with Freebsd or with installing Junos, you know you can change 
+these values. But for new users, you want to be a little generous in your partitions 
+to ensure your image will boot up after all this work.</p>
+
+<p><img src="../IMGs/QemuGuideGns3-10_1.jpg"/></p>
+
+<p> In this screen shot, the user pressed 'C' and then typed in '4028MB'. This 
+represents the first partition to have a little over 4 G of space out of a 12 gig 
+virtual hard drive.</p>
+
+<p><img src="../IMGs/QemuGuideGns3-11_1.jpg"/></p>
+
+<p> In this next screenshot, we have only two choices. A file system (FS), and a swap 
+partition, (or S). This first partition will be a file system partition.</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-11_2.jpg"/></p>
+
+<p> The user literally pressed '/'. That indicates a root partition.</p>
+
+<p> You will need to repeat these steps with one small variation. 4 of the 5 partitions 
+will be a file system, while one of them will be a swap partition. As mentioned before, 
+the size of each partition has varied, but the overall partition structure is important. 
+Also, your /var directory MUST be over 2G. I have had some unpredictable things with 
+the virtual machine because there was not enough space for the Juniper system to 
+function properly.</p>
+
+<p><a name=12></a><img src="../IMGs/QemuGuideGns3-12_1.jpg"/></p>
+
+<p> When all these partitions are created, hit Q to finish and exit out.</p>
+
+<p> The next step is to select a 'minimal' installation. The screenshot shows the 
+minimal installation section, but when you exit out of the FreeBSD Disklabel, the 
+option is found by scrolling down. Make sure you scroll down until you see 'minimal'.</p>
+
+<p><a name=13></a><img src="../IMGs/QemuGuideGns3-13_1.jpg"/></p>
+
+<p> As you can see, the screenshot shows 'option 4' at the top. That means the user 
+had to have scrolled down to get to the minimal install option.</p>
+
+<p><a name=14></a><img src="../IMGs/QemuGuideGns3-14_1.jpg"/></p>
+
+<p> After you hit 'okay', you will then be presented with where to install FreeBSD. In 
+this virtual machine, you already defined the -cdrom option in Qemu to mount the 
+FreeBSD .iso image. So choose option 1, and hit okay.</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-14_2.jpg"/></p>
+
+<p><a name=15></a><img src="../IMGs/QemuGuideGns3-15_1.jpg"/></p>
+
+<p> In this screenshot, you get a nasty warning about losing data. This is a new 
+install so just click 'yes'. 
+
+<p> <img src="../IMGs/QemuGuideGns3-15_2.jpg"/></p>
+
+<P> This shows up after the installation creates the 
+partitions and copies over the files and starts up the configuration. You have the 
+option to configure the FreeBSD here and some people choose to change  the root 
+password by clicking yes. But it's not really necessary for this exercise. 
+We will choose no.</p>
+
+<p> FreeBSD, blithely installs the files and this part of creating a FreeBSD virtual 
+machine with QEMU is over for now. 
+
+<a name="FileTransfer"></a><h4>File transfer from one virtual machine to another</h4>
+
+<p> This one was a difficult issue, because in the YouTube, and other posts, the method 
+of file transfer was using SCP. The problem is, FreeBSD and the Debian Jessie Virtual 
+machine I had were throwing up errors with the types of security. So I abandoned that 
+and asked for a simpler way to transfer files.  BEHOLD, an SCP/TFTP server. Of course 
+there are many to choose from, but the one that worked for me was the free Solarwinds 
+SCP server. If you have read my other Solarwinds integration manuals, you might be 
+thinking "Hey Matt, why do you always choose Solarwinds' products?" And here is the 
+honest answer, the controls are a little more intuitive than other products so I am a 
+little more comfortable with the interfaces. I love clicking on things and the better 
+networking tools look more like a video game or a very funny you-tube, the more I am 
+likely to use it. Others may prefer different tools. Here is a link: 
+<a href="http://www.solarwinds.com/products/freetools/free_tftp_server.aspx" 
+target="newwindow"><b>free_tftp_server.aspx</b></a></p>
+
+<p> When you get to the site, there are a couple of 'gotchas'!</p>
+
+<p> You will need to fill out a small form.</p>
+
+<p> They will ask if you want a bundle of trial software with this. I always just click 
+no and go to the download page.</p>
+
+<p> The following are the screenshots needed to setup your super file transfer to your 
+VM machine:</p>
+
+<p><img src="../IMGs/QemuGuideGns3-17_1.jpg"/></p>
+
+<p> Configure a user account that has permission to access the tftp folder.</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-17_2.jpg"/></p>
+
+<p> Notice the root directory to share your file is pointing to the Qemu directory. 
+Really it can be anywhere, but we are keeping all the files in Qemu for ease of 
+reference. That's really all there is to it with setting up your TFTP server. You will 
+have to know your host machine's IP address because it will fulfill the role of 
+'tftp server' when you enter the scp command, but we'll get to that in a minute. 
+The next step is to fire up your FreeBSD and add a couple of options in QEmu.</p>
+
+<a name="UnzippingIOS"></a><h4>Unzipping the IOS package and installing it within 
+the Kustom virtual machine</h4>
+
+<p><img src="../IMGs/QemuGuideGns3-18_1.jpg"/></p>
+
+<p> We are back at the command line, and we are now going to show off the versatility 
+of QEmu with <b>Command : </b>
+
+<PRE>
+ qemu-system-x86_64w -m 1G -hda juniper-backend.img -boot c -localtime -net nic,macaddr=00:aa:00:60:02:02,model=e1000 -net user</p>
+</PRE>
+
+<p> <b>Explanation:</b></p>
+
+<OL>
+  <LI> -boot c &gt; boot with 1st hard disk</p>
+
+  <LI> -net nic &gt; Create a new nic card with mac addr , model</p>
+
+  <LI> -net user &gt; Use the user mode network stack</p>
+</OL>
+
+<p> So think about how cool this is. You are emulating an image file and setting another 
+emulation for the Network Interface Card!!! Now, your machine has the ability to 
+network. The key concept here is to note the standard 'e1000' driver as well as using 
+the 'user mode' network stack. </p>
+
+<P> But wait! There's more! The next step is to configure 
+your new NIC card inside your QEmu session with an IP address. Please look at the 
+following screenshots closely:</p>
+
+<p><a name=19></a><img src="../IMGs/QemuGuideGns3-19_1.jpg"/></p>
+
+<p> After your QEmu is booted up, you need to enter your root user name and password. 
+The default is 'root' and the password is blank (no password). When you get the "#" 
+you are now rooted into the box. Enter this <b>command:</b></p>
+
+<PRE>
+  dhclient em0
+</PRE>
+
+<p> This is the command to request a DHCP address on the first Ethernet interface 
+'em0'.</p>
+
+<p> You can verify it has an IP address by entering the following command:</p>
+
+<PRE>
+  ifconfig
+</PRE>
+
+<p> If you look closely at the previous screenshot, you'll see a place that says 
+'inet 10.0.2.15'. That SHOULD look familiar with Virtualbox users since that IP address 
+is derived from a running DHCP service for Virtualbox. That's pretty awesome. Now that 
+your FreeBSD has gots its network on, it's time to run the next command.</p>
+
+<PRE>
+  scp <a href="mailto:matt@192.168.1.65:\jinstall-12.1R1.9-domestic-signed.tgz%20./">matt@192.168.1.65:\jinstall-12.1R1.9-domestic-signed.tgz</a> ./</p>
+</PRE>
+
+<p> This command, is the MOST difficult to master. It's so simple, but you need to nail 
+down all the variables to get this to work:</p>
+
+<OL>
+  <LI> First of all, matt is my user account. So obviously you need to know the user 
+       account for your TFTP account on your host machine.
+
+  <LI> The IP address of your HOST machine is your machine running TFTP. Make sure the 
+       service is running and your user name matches the permitted account in the 
+       TFTP.
+
+  <LI> the 'jinstall-12.1R1.9-domestic-signed.tgz' is just an example. Your zipped file 
+       will have a variation on the build number.  
+
+       <p> I'm not going to lie, this one will take some practice using the 'scp' 
+       command. But it does work! I've tried so many ways of using this, that this is 
+       the easiest way to transfer files from your host machine into your virtual 
+       machine in particular to FreeBSD. 
+
+       <P> If you thought THAT was a little difficult, hold on to your britches because 
+       the next section is really the hard part of the whole process.
+
+  <LI> Initiate Junos package installation</p>
+</OL>
+
+<p> <b>Command: </b>
+
+<PRE>
+  pkg_add -f jinstall-12.1R1.9-domestic-signed.tgz</p>
+</PRE>
+
+
+<p> <b>WARNING!!!: </b> If initiating this command gives you an error such as "This 
+doesn't look like a tar archive" Error in initiating "install_pkg" etc, that means 
+your Junos file has been altered, don't worry, that doesn't necessarily means that 
+it's corrupted. It means you have a zipped file <b>within</b> a zipped file. 
+Furthermore, since there are variations of packages that are wrapped with tools to 
+install a specific build like Junos, you may notice other zipped files after the first 
+unzipped command. If this is the case, please read the Appendix on what to do with all 
+those other zipped files. </P> 
+
+<P> Remember, you are transferring a presumably extracted file 
+you own. Since the actual jinstall file may be different, it's going to require some 
+understanding of what type of file you are transferring. Is it already unzipped? Great! 
+If not, I recommend reading the Appendix to figure out how to unzip a tar file.</p>
+
+<p> // <b>Do the following only if you get any of the above errors </b>//</p>
+
+<p> At this point you'll need to extract the jinstall-12.1R1.9-domestic-signed.tgz. I 
+can't stress how important this one part is... if you get this error, you will have to 
+do some remediation steps and figure out what the actual name of the file is. For me, 
+the file was not labeled 'jinstall-12.1R1.9-domestic.tgz'... it was actually labeled 
+'jinstall-12.1R1.9-domestic.gz'. When I ran the command to unzip it into the new 
+/var/tmp/j directory... I realized it did unzip the file, but the 
+jinstall-12.1R1.9-domestic.tgz is now in /var/tmp/j! I changed directories back into 
+the /var/tmp/j directory and then listed the files in that directory with 'ls'. Finally, 
+the zipped file jinstall-12.1R1.9-domestic.tgz was there! I then ran the command from 
+the previous and I extracted THAT file in the same directory. This ONE thing throws off 
+so many users who are not familiar with FreeBSD and the commands. If none of that was 
+clear to you, read the Appendix. 
+On with the next command.</p>
+
+<PRE> 
+ tar zxvf jinstall-12.1R1.9-domestic-signed.tgz</p>
+</PRE>
+
+<p> And then run a <b>ls </b>command to check if you see a file 
+   <b>jinstall-12.1R1.9-domestic.tgz.</b></p>
+
+<p> Note that the file name doesn't have the word <b>"signed". </b>This file comes 
+out after extraction of the <b>signed tgz</b>.</p>
+
+<p> Install the extracted tgz via the command: (where  -f = force)</p>
+
+<PRE> 
+ pkg_add -f <b>jinstall-12.1R1.9-domestic.tgz.</b></p>
+</PRE>
+
+<p> If these commands don't run right the first time, it's possible your version of the 
+4.11 Mini install is missing some packages to complete these commands. It gets real 
+dicey here because you have to be familiar with running a command called 'apt-get 
+install' X. Where X is the program you needed to run some of these commands. And while 
+your 4.11 Mini might be missing some packages, a guy next to you will download the 4.11 
+Mini and already have the package installed and have absolutely no problems finishing 
+this. Welcome to the world of open source! <p>
+
+<p><img src="../IMGs/QemuGuideGns3-21_1.jpg"/></p>
+
+<P> At this point, the Junos system files now 
+have been installed. This will require a reboot of the machine to complete all Juniper 
+package installation. Use halt and once the system is halted close it down. To halt a 
+Qemu, you can use Cntl + Alt + 2. Or just click on the x in the upper right corner of 
+QEmu.</p>
+
+<p> The next command is:</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-21_2.jpg"/></p>
+
+<p> Fire up the machine with serial enabled on telnet access</p>
+
+<p> This will enable serial access via telnet on your host machine 127.0.0.1 on 
+port 5501 and boot up the machine.</p>
+
+<p> Telnet into the machine.</p>
+
+<p> Once you are in there you'll see all base services and packages for Junos getting 
+installed.</p>
+
+<p> This will take a while. Grab a cup of coffee in the meantime. From here on out, the 
+initialization of Juniper will take a lot longer but if you get the Juniper prompt, you 
+know you have succeeded where others have failed.</p>
+
+<p><a name=22></a><img src="../IMGs/QemuGuideGns3-22_1.jpg"/></p>
+
+<P> Congratulations!</p>
+
+<h4> In conclusion:</h4>
+
+<p> As you can see, this exercise shows the real power of QEmu and although we used 
+Juniper as a demonstration, integration of other switching and routing products are 
+basically the same with QEmu. I really wish QEmu was more of a Honey Badger. Because 
+QEmu really don't care what it emulates! It only mimics the hardware on which the 
+software is intended to run. </p>
+
+<P> I'd like to see more emulated ARM hardware as well as 
+other proprietary systems. That will just make QEmu and GNS3 that more versatile and 
+robust for all types of real networks. 
+
+<a name="AppendixA"></a><h4>Appendix A: Installing the jinstall file from an 
+.ISO image.</h4>
+
+<p> Why am I putting in a 'work around' for transferring files with virtual machines? 
+Simple! My windows 8.1 build does not work between a QEmu machine with a 10.0.2.15 IP 
+address AND my Win 7 with SFTP/SCP server that has an address in the SAME subnet, even 
+though I double and triple checked my Virtualbox, VMWare DHCP services are running. It 
+became apparent to me to write up a work around to ensure you (the reader) are not left 
+empty handed after going through 20 some odd pages AND NO EMULATED Juniper software!</p>
+
+<p> If you have ever youtubed the juniper software and gns3, there is a video done by 
+IE that covers this process, but it is a bit dated. For one thing, the QEmu has 
+improved, so instead of the older QEmu commands in the video, you need to substitute 
+with the QEmu.exe of your choice. Secondly, DeepBurn is free for 30 days. Be forewarned, 
+at the time of this manual, the first mirror site where I downloaded my DeepBurn is 
+really infected with viruses. Don't install it unless you know for sure you scan and 
+removed the viruses prior to install. You can use other .ISO burners, but the steps are 
+the same. You will need to get your 'jinstall-x.x.x' file and burn it as an .ISO image 
+file. When that's done, you are ready to run this command in QEmu instead of performing 
+a file transfer.</p>
+
+<p><img src="../IMGs/QemuGuideGns3-23_1.jpg"/></p>
+
+<p> This command sets your hard drive to the "juniper-backend" hard drive image as well 
+as set your cdrom drive to the newly created 'j10.iso' from your favorite burner.</p>
+
+<OL>
+  <LI> When you are logged into the FreeBSD, you will now mount the cdrom device with 
+this command:
+
+<pre> 
+ mount /cdrom 
+</pre>
+
+  <LI> You will now make a directory to unzip the Jinstall file into with this 
+        command:
+
+<pre> 
+ mkdir /var/tmp/j
+</pre>
+
+  <LI> You need to navigate to that new directory with this command:
+
+<pre>  
+ cd /var/tmp/j
+</pre>
+
+  <LI> Extract the jinstall.x.x.x file into that directory with this command:
+
+<pre>  
+ tar zxvf /cdrom/jinstall-10.1R1.8-domestic-olive.tgz
+</pre>
+
+<p> Here is where I got really messed up. The command would not run... it would say 'no 
+file found'.  I ended up navigating back into the /cdrom directory and listing the 
+contents of that folder with 'ls'. I found it actually said 
+"jinstall-10.1R1.8-domestic-olive.gz". Difference was it was missing a 't' between 
+the two named files. After I corrected the command by removing the 't'. I found 
+ANOTHER zipped file inside the /var/tmp/j directory that MATCHED the .tgz extension. 
+The remainder of the commands worked fine after that correction. You're never going to 
+see that in any YouTube. It's probably ASSUMED that I know how to work with FreeBSD, 
+but the reality is, I only care about FreeBSD just long enough to get my jinstall file 
+extracted and installed... then ADIOS FreeBSD and hello JunOS!</p>
+
+  <LI> The next step is to create another new directory within the /var/tmp/j directory. 
+The command is:
+
+<pre>  
+ mkdir pkgtools 
+</pre>
+
+  <LI> Navigate to the new pkgtools. The command is:
+
+<pre>  
+ cd pkgtools
+</pre>
+
+  <LI> You're going to extract the pkgtools.tgz into THIS directory with this 
+      command:</p>
+
+<pre>  
+ tar zxfv ../pkgtools.tgz
+</pre>
+
+  <LI> There is a 'bin' directory created. Navigate to that with this command:
+
+<pre>  
+ cd bin
+</pre>
+
+  <LI> You're going to copy a file called 'true' to the /checkpic directory.
+
+
+<pre>  
+ cp /usr/bin/true ./checkpic
+</pre>
+
+  <LI> Exit out of this directory:
+
+<pre>  
+ cd .. 
+ # (don't forget to put a space between the d and the "..")
+</pre>
+
+  <LI> Zip the pkgtools file with this command:
+
+<pre>  
+ tar zcvf ../pkgtools.tgz * 
+</pre>
+
+  <LI> Exit the pkgtools directory:
+
+<pre>  
+ cd .. 
+</pre>
+
+  <LI> Remove the pkgtools directory:</p>
+
+<pre>  
+ rm -rf pkgtools 
+</pre>
+
+  <LI> Zip the JunOS package with this command:
+
+
+<pre>  
+ tar zcvf ../junos.tgz *
+</pre>
+
+  <LI> Install JunOS:
+
+<pre>  
+ pkg_add -f /var/tmp/junos.tgz 
+</pre>
+
+<P> Note: this one part takes a LOOONG time... be patient. You will eventually see this 
+    screen:
+
+
+<p><img src="../IMGs/QemuGuideGns3-25_1.jpg"/></p>
+
+
+  <LI> Once the JunOS file is installed, you need to run a command within JunOS. The 
+command is:
+
+<pre>  
+ init 6
+</pre>
+
+  <LI> Since the machine is rebooting, you will want to control QEmu by hitting this 
+key combination:
+
+<pre>  
+ Cntl + Alt +2
+</pre> 
+
+  <LI> Then quit this QEmu session with this command:
+
+<pre>  
+  Q
+</pre>
+
+  <LI> You are now ready to launch the JunOS so that you can telnet into the juniper 
+      OS. Use this command in QEmu: 
+
+<p> <img src="../IMGs/QemuGuideGns3-25_2.png"/></p>
+
+<p> This command now calls your juniper virtual machine with 512 Megabytes of RAM and 
+establishes a serial port where you can then telnet to '127.0.0.1:1001'.  
+
+<P>You will then see a screen like this:</p>
+
+<p> <img src="../IMGs/QemuGuideGns3-25_3.jpg"/></p>
+
+
+<p> It's not broken... it's actually running. You will need to get your favorite telnet 
+app (like Putty or SuperPutty) and use the configured IP address and port number from 
+the preceding QEMU command. 
+
+<P>Once in there, you will finally see this on your desktop:</p>
+
+<p><img src="../IMGs/QemuGuideGns3-26_1.jpg"/></p>
+
+<p> This screenshot shows the QEmu command, with the actual QEmu machine while I am 
+telnett'ing with Putty. What was not discussed is on the second reboot of the Juniper 
+OS, it boots up MUCH faster and I even get a console screen from the QEmu window. 
+
+<p> As you can see, it's pretty involved to get all this working. Of course automating 
+this process is 'gold' in the emerging SDN markets, but at least you know how to create 
+kustom vm machines with or without Juniper and FreeBSD. You need to use QEmu to emulate 
+the actual hardware a Routing and Switching vender uses. In this case, Juniper uses 
+FreeBSD... why? I have no idea. Then, you need to follow the rules of the hardware to 
+create devices on these vm machines that is compatible. Some users are just running 
+QEmu commands without really understanding all the parameters. An old PC tech back in 
+the 90s would readily identify the types of hardware since we used to install them in 
+the chasis of older PCs. A new user would not necessarily understand all the devices 
+that are emulated by QEmu.  
+
+<p> If you don't understand that -cdrom is representative of 
+an actual CDROM device, or that -m 256 represents 256 Megabytes of RAM, I also suggest 
+reading an old A+ guide. For the rest of the old timers, this shouldn't be too hard to 
+figure out.</p>
+
+<p> The QEmu machine at the software level follows the protocol of the command syntax 
+of the software itself. That seems obvious, but understanding the FreeBSD commands, 
+meant for me to read, read, read all the documentation from the FreeBSD.org website 
+to understand what the heck I am trying to do. When I was able to figure out the 
+commands, I had a little more freedom to improvise. With all these steps, you will have 
+to improvise and test. This definitive guide to QEmu is intended to show you  how to 
+use QEmu to emulate, using the most requested hardware and software from the GNS3 
+Jungle community. QEmu is not limited to just Juniper but can emulate many more 
+processor architectures...<br/> the following is just a sampling:</p>
+
+<p><img src="../IMGs/QemuGuideGns3-27_1.png"/></p>
+
+<p> As you can see, a vender only needs to find the right QEmu emulator that matches 
+their architecture and then modify the aforementioned -cdrom .ISO or perform a file 
+transfer within their own software and you are done!</p>
+
+<p> GNS3 wants to help you integrate your solutions so I will give a brief shout out 
+to the GNS3 Assist, GNS3 Integration and GNS3 Academy teams. If you have a need for 
+us to integrate your environment as well as help you build out curriculum for your 
+institution or corporate environment, send your request to Clinton Senkow, Director 
+of Partnerships at<a href="mailto:csenkow@gns3.net">: csenkow@gns3.net, a</a>nd he 
+will write up a complex contract to have us come over and train and integrate your 
+platform with our open source software. My personal favorite sandwich is an Open 
+Reuben and I prefer 4 star or better hotels...thanks! </p>
+</OL>
+
+<a name="SetUpGNS3"></a> <h3 class="post-title">Set Up GNS3 with Open-Source Routers 
+<a href="http://www.brianlinkletter.com/set-up-gns3-with-open-source-routers/">(Source 
+Origin)</a></h3>	
+
+<span>January 14, 2014</span>
+<span>- <a href="http://www.brianlinkletter.com/set-up-gns3-with-open-source-routers/#comments" 
+title="Comment on Set Up GNS3 with Open-Source Routers">3 Comments</a></span>
+
+<p><a href="http://www.gns3.net/" title="GNS3" target="_blank">GNS3</a> is a very 
+popular network simulation tool that runs on the major operating systems: Windows, 
+Mac OS, and Linux. GNS3 is primarily used to emulate networks of 
+<a href="http://www.cisco.com/en/US/products/hw/routers/index.html" 
+title="Cisco routers" target="_blank">Cisco routers</a> and is used by professionals 
+studying for <a href="http://www.cisco.com/web/learning/certifications/index.html" 
+title="Cisco certification" target="_blank">Cisco certification</a> exams. </p>
+
+<p>GNS3 supports Cisco router software images running on the Dynamips, (Dynamips is an 
+emulator that was written to emulate Cisco routers), hardware emulation program. GNS3 
+also supports other hardware emulation and virtualization technologies that can run 
+Linux virtual machines: <a href="http://wiki.qemu.org/" title="Qemu web site" 
+target="_blank">Qemu</a> and <a href="https://www.virtualbox.org/" title="Oracle VM 
+VirtualBox web site" target="_blank">VirtualBox</a>. </p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-with-Linux-routers-1.png" 
+alt="GNS3 network simulator with open-source Linux routers" height="629" 
+width="810"></a></p>
+
+<p>Our interest is to emulate networks of open-source routers and switches using 
+open-source technologies. While there are many web sites and online tutorials dedicated 
+to using GNS3 to emulate Cisco networks and Juniper networks, I found only a small 
+amount of information about using GNS3 to emulate a network of Linux virtual machines 
+running open-source routing and switching software. </p>
+
+<p>In this post, we show how to install and set up GNS3 and VirtualBox to 
+emulate a network consisting only of open-source routers and hosts.</p>
+
+<h4>Install GNS3</h4>
+
+<p>This procedure describes how to install GNS3 and its supporting software on a Linux 
+host computer running Xubuntu 13.10. Procedures to install GNS3 in Windows or Mac OS 
+are available in the <a href="https://community.gns3.com/docs/DOC-1752" 
+target="_blank">Quick Start Guide for Linux Users</a> and 
+<a href="http://www.gns3.net/documentation/" target="_blank">GNS3 documentation</a>.</p>
+
+<p>GNS3 can be installed using the Ubuntu Software Center but the version available in 
+the standard Ubuntu repositories is not the latest version of GNS3. To install the 
+latest version of GNS3, Dynamips, Qemu, and Wireshark, do the following:</p>
+
+<ol>
+  <li><p>Add the GNS3 PPA to the Xubuntu software repository, Update repository 
+      information and Install GNS3 package from new, updated PPA repository</p>
+
+<pre>
+ $ sudo add-apt-repository ppa:gns3/ppa
+ $ sudo apt-get update
+ $ sudo apt-get install dynamips gns3
+ # In Debian, dynamips and gns3 are readily available for installation.
+ # $ apt-cache search dynamips
+vpcs - virtual PC simulator for Dynamips
+dynamips - Cisco 7200/3600/3725/3745/2600/1700 Router Emulator
+ # It seems dynamips is a non-debian package.  Amdm does not mirror it. 
+ # Need to download it from nchc directly.  Dependency: libc6, libelf1,
+ # libpcap0.8, libuuid1.  In gv, need to install libpcap0.8.
+ # $ apt-cache search gns3
+libcgns3.1 - CFD General Notation System library
+libcgns3.1-dbg - CFD General Notation System library
+gns3 - Graphical Network Simulator
+</pre>
+
+
+  <p>Installing the GNS3 package also installs most supporting software. </p></li>
+
+  <li><p>I noticed the installer recommends two other packages be installed but does 
+         not install them because they are optional, so I installed them:</p>
+
+<pre>
+ $ sudo apt-get install snmp-mibs-downloader wireshark-doc
+</pre>
+
+  <li><p>Next I installed the virtual PC simulator program, <em>vpcs</em> which is in 
+         the same PPA:</p>
+
+<pre>
+ $ sudo apt-get vpcs
+</pre>
+</ol>
+
+<h5>Installation complete</h5>
+
+<p>We successfully installed GNS3. Next, we need to install software to support running 
+the Linux virtual machines that will be managed by GNS3.</p>
+
+<h4>VirtualBox</h4>
+
+<p>Many users of GNS3 choose to use VirtualBox to run Linux virtual machines because, 
+like GNS3, it works the same on Windows, Mac OS, and Linux operating systems. 
+VirtualBox can also utilize the hardware virtualization support technologies available 
+on most computers while Qemu can only access these features in the Linux operating 
+system (via KVM), with restrictions. Access to hardware virtualization support makes 
+very noticeable improvement in performance. </p>
+
+<p>The procedures I demonstrate using GNS3 and VirtualBox on my Linux system should 
+also be usable on computers running either Windows or Mac OS.</p>
+
+<h4>Install VirtualBox</h4>
+
+<p>When emulating nodes other than Cisco routers, GNS3 can use VirtualBox to manage 
+the virtual machines that run linux (or other PC operating systems).</p>
+
+<h5>Install from Ubuntu Software Center</h5>
+
+<p>The easiest way to install VirtualBox in an Ubuntu Linux-based system (I am using 
+Xubuntu) is to use the Ubuntu Software Center program. Search for VirtualBox in the 
+Ubuntu Software Center and click on "install".</p>
+
+<h5>Install from downloaded package</h5>
+
+<p>The version of VirtualBox available in the Ubuntu Software Center is not the latest 
+version available from VirtualBox's developer, Oracle. The version available from the 
+Ubuntu repositories is good enough. You don't need the latest version. However, if you 
+- like me - always want the latest and greatest version on your computer, follow the 
+steps described below to install the most recent available version of VirtualBox.  To 
+install the latest version of VirtualBox, download the latest package from the 
+<a href="https://www.virtualbox.org/wiki/Linux_Downloads">Oracle VirtualBox web 
+site</a>.  Then, in your File Manager, double-click on the <em>.deb</em> package 
+you downloaded. The Ubuntu Software Center will automatically start and install 
+the latest version VirtualBox from the downloaded <em>.deb</em> package. </p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-install-1.png" 
+alt="VirtualBox-install-1" height="654" width="734"></p>
+
+<p>In my case, I chose to install the latest version of VirtualBox, version 4.3, using 
+the procedure described above. At the time of writing this post, the latest VirtualBox 
+package was: <em>virtualbox-4.3_4.3.6-91406~Ubuntu~raring_amd64.deb</em>.</p>
+
+<h5>dkms package</h5>
+
+<p>The Oracle web site also recommends installing the <em>dkms</em> package, (Dynamic 
+Kernel Module Support Framework), to ensure that VirtualBox is properly updated if 
+the Linux kernel version changes during a system upgrade. To install the <em>dkms</em> 
+package, execute the command:</p>
+
+<pre>
+ $ sudo apt-get install dkms
+</pre>
+
+<h5>Installation complete</h5>
+
+<p>After installation is completed, the Oracle VirtualBox virtual machine manager will 
+appear in the Xfce menu under "System".</p>
+
+<h4>Initial GNS3 setup</h4>
+
+<p>In the Xubuntu start menu, GNS3 appears under "Education" and Wireshark appears 
+under "Internet". To start using GNS3, click on the menu command: </p>
+
+<pre>
+ <em>Start -> Education -> GNS3</em>
+</pre>
+
+<p>We see a setup menu wizard appear. Just click on the "OK" button at the bottom of 
+the wizard window. We do not need any of these setting when working exclusively with 
+Linux virtual machines in GNS3.</p>
+
+<p>Now, we see the blank GNS3 application window. At this point, we still cannot use 
+GNS3 because we need to create the virtual machines that GNS3 will use in the emulated 
+network.</p>
+
+<h4>Download Linux virtual appliances</h4>
+
+<p>the GNS3 web site provides a set of prepared Linux appliances that can be used to 
+emulate routers, servers, and hosts in a virtual network.  Navigate to the 
+<a href="http://www.gns3.net/appliances/">Appliances page on the GNS3 web site</a> and 
+download the appliances you will use to create virtual machines in your network 
+emulation scenario.  For Qemu Appliances, navigate the next web page:
+<a href="http://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/" 
+target="_blank">GNS3 Qemu Appliances</a>
+</p>
+
+<p>For our simple tests, we will download two VirtualBox appliances from the GNS3 web 
+site:</p>
+
+<ul>
+  <li>Linux Core 4.7.7 (<a href="http://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/linux-core-4.7.7.img/download">link</a>)</li>
+  <li>Linux Core Layer 3 switch with Quagga 0.99.22.4 and Openvswitch 1.11.0 (<a href="http://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/linux-core-4.7.7-openvswitch-1.11.0_guagga-0.99.22.4.img/download">link</a>)</li>
+</ul>
+
+<P> After download the images, test them via:
+
+<PRE> 
+ # Performance is NOT very good, since we are running kvm within kvm.
+ $ kvm -hda linux-core-4.7.7.img 
+ $ kvm -hda linux-core-4.7.7-openvswitch-1.11.0_guagga-0.99.22.4.img 
+ # Using "tc" account to login, <b>exitcheck.sh</b> command to shutdown. 
+</PRE>
+
+<h4>Create virtual machines in VirtualBox</h4>
+
+<p>We must create virtual machines using the appliances we downloaded earlier.  We need 
+to create a new VirtualBox virtual machine for every node we plan to use in the virtual 
+network.</p>
+
+<h5>The first virtual router</h5>
+
+<p>Start VirtualBox and then click the "New" icon in the <em>VirtualBox VM Manager</em> 
+window to start the <em>Create Virtual Machine</em> wizard.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-1.png" alt="VirtualBox-VM-setup-1" height="576" width="774"></p>
+
+<p>For the first machine, we will create the router VM. In the dialogue box, enter the 
+name "Quagga-1". The VM Type is "Linux" and the Version is "Other Linux".</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-2.png" 
+alt="VirtualBox-VM-setup-2" height="430" width="544"></p>
+
+<p>Then, click "Next".</p>
+
+<p>Set the memory size. Change the value to 128 MBytes. This can be changed later if we need to.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-3.png" 
+alt="VirtualBox-VM-setup-3" height="430" width="544"></p>
+
+<p>Click "Next".</p>
+
+<p>Choose the option to "Use an existing virtual hard drive" and then select the VDI 
+file we downloaded earlier: 
+<em>linux-core-4.7.7-openvswitch-1.11.0_guagga-0.99.22.4.vdi</em>.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-4.png" 
+alt="VirtualBox-VM-setup-4" height="430" width="544"></p>
+
+<p>Click "Create".</p>
+
+<p>The virtual machine is now created in VirtualBox.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-5.png" 
+alt="VirtualBox-VM-setup-5" height="576" width="774"></p>
+
+<h5>The first virtual host</h5>
+
+<p>To create the second virtual machine, which will be used to emulate a host computer 
+in the virtual network, repeat the steps we used to create the virtual router with the 
+following changes:</p>
+
+<ul>
+  <li>The VM name is <em>Host-1</em></li>
+  <li>The memory can be reduced to 64 MB</li>
+  <li>The appliance image is <em>linux-core-4.7.7.vdi</em></li>
+</ul>
+
+<p>Just as a check, to ensure we have the basic VM working, we will start it. Click on 
+the <em>Host-1</em> virtial machine in the Oracle VM VirtualBox Manager window and then 
+click on the green "Start" arrow. The machine will start up and you will see a terminal 
+window with a login prompt.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-6.png" 
+alt="VirtualBox-VM-setup-6" height="475" width="724"></p>
+
+<h5>Additional virtual machines</h5>
+
+<p>To create more virtual routers and hosts, we use VirtualBox's <em>Clone</em> feature 
+to create clones of the router and host virtual machines we previously created. </p>
+
+<p>Click on the virtual machine you wish to clone, then choose the VirtualBox Virtual 
+Machine Manager menu command:</p>
+
+<pre><em>Machine -> Clone...</em>
+</pre>
+
+<p>VirtualBox will open a dialogue box asking you for the name of the new virtual 
+machine. If you are cloning the <em>Host-1</em> virtual machine, enter <em>Host-2</em> 
+as the new machine name. </p>
+
+<p>Check the box, <em>Reinitialize the MAC address of all network cards</em> so that 
+the MAC addresses on the new virtual machine's network interfaces will be different 
+from the MAC addresses on the cloned virtual machine. This will prevent problems when 
+using both virtual machines in the same virtual network. Then, click <em>Next</em>.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-7.png" 
+alt="VirtualBox-VM-setup-7" height="444" width="544"></p>
+
+<p>Then, you can choose the clone type: either a <em>Full clone</em> or a <em>Linked 
+clone</em>. The <em>Full clone</em> creates a fully independent virtual machine with 
+its own virtual disk image that is a copy of the original virtual machine. The 
+<em>Linked clone</em> creates a smaller virtual disk image that is "linked" to the 
+original virtual machine's disk image. This linked virtual disk image will contain 
+only the changes made to the second virtual machine so it takes up much less disk space. 
+The <em>Linked clone</em> is dependent on the original virtual machine and it will 
+break if the original virtual machine is modified. </p>
+
+<p>In our case, we should use the full clone type because we have lots of disk space 
+and our disk images are very small (less than 30 MB), and we avoid the problems that 
+can occur if we accidentally modify the original virtual machine that is the source of 
+all the linked clones. Select <em>Full Clone</em> and click <em>Clone</em>.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-8.png" 
+alt="VirtualBox-VM-setup-8" height="444" width="544"></p>
+
+<p>Repeat this process to create more hosts with the name, <em>Host-x</em>, and more 
+routers with the name, <em>Quagga-x</em>, where <em>x</em> is a number. In my case, I 
+create a total of three hosts and two routers.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-9.png" 
+alt="VirtualBox-VM-setup-9" height="576" width="774"></p>
+
+<h4>Set up VirtualBox devices in GNS3</h4>
+
+<p>Each virtual machine we created in VirtualBox needs to be set up in GNS3, so that 
+they will appear in the GNS3 user interface. We need to update the VirtualBox 
+preferences in GNS3. Open the Preferences dialogue box with the GNS3 menu command:</p>
+
+<pre> 
+ <em>Edit -> Preferences...</em>
+</pre>
+
+<p>Then click on <em>VirtualBox</em> in the preference list.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-11.png" 
+alt="GNS3-setup-VirtualBox-1" height="774" width="747"></p>
+
+<p>In the VirtualBox preferences panel, click on the <em>VirtualBox Guest</em> tab. In 
+the VirtualBox Guest panel, first click on the <em>Refresh VM List</em> button to load 
+the virtual machines available in VirtualBox. The describe the first VirtualBox virtual 
+machine you wish to use in GNS3:</p>
+
+<ul>
+  <li>In the <em>Identifier name</em> field, enter name of device as you want it to 
+      appear in GNS3 (choose same as in VirtualBox)</li>
+  <li>In the <em>VM list</em> field, choose the VirtualBox VM from the drop-down 
+      menu</li>
+  <li>In the <em>Number of NICs</em> field, choose the number of network interfaces 
+      for the device:
+
+  <ul>
+    <li>Hosts get 1 interface</li>
+    <li>Routers get 8 interfaces</li>
+  </ul>
+</ul>
+
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-21.png" 
+alt="GNS3-setup-VirtualBox-2" height="774" width="747"></p>
+
+<p>Now set up the console access for each virtual machine. The VirtualBox VMs must be 
+configured to enable serial console access. The appliances we downloaded have this 
+configuration enabled.</p>
+
+<ul>
+  <li>Uncheck <em>Reserve First NIC for VirtualBox NAT with Host OS</em></li>
+  <li>Check <em>Enable console support</em></li>
+  <li>Check <em>Enable console server (for remote access)</em></li>
+  <li>Check <em>Start in headless mode (without GUI)</em></li>
+</ul>
+
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-3.png" 
+alt="GNS3-setup-VirtualBox-3" height="774" width="747"></p>
+
+<p>Click <em>Save</em> to create the <em>Host-1</em> VirtualBox device in the 
+preferences panel.</p>
+
+<p>Repeat for each of the other devices until all devices are created. The preferences 
+panel will look like the screenshot below:</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-4.png" 
+alt="GNS3-setup-VirtualBox-4" height="774" width="747"></p>
+
+<h4>Create a new custom device symbol in GNS3</h4>
+
+<p>It is helpful to have a custom device symbol to represent the VirtualBox device 
+running one of the router virtual machines. To create a new custom symbol, open the 
+Symbol Manager dialogue box with the GNS3 menu command:</p>
+
+<pre>
+ Edit -> Symbol Manager
+</pre>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-5.png" 
+alt="GNS3-setup-VirtualBox-5" height="601" width="707"></p>
+
+<p>Select a symbol you want to re-use (I chose the <em>router</em> symbol). Then, click 
+on the "&gt;" button to move a copy of the symbol over to the <em>Customized Nodes</em> 
+box. </p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-6.png" 
+alt="GNS3-setup-VirtualBox-6" height="601" width="707"></p>
+
+<p>Now we see the <em>router</em> symbol in the <em>Customized nodes</em> box. Click on 
+the new <em>router</em> symbol and change the <em>Name</em> to something descriptive, 
+like "router-virtualbox", and <em>Type</em> to "VirtualBox guest".</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-7.png" 
+alt="GNS3-setup-VirtualBox-7" height="601" width="707"></p>
+
+<p>The click the <em>Apply</em> button to make the changes. You now see a customized 
+node, <em>router-virtualbox</em> in the <em>Customized nodes</em> box.</p>
+
+<p>We do not need to create a customized node for the hosts. There is already a 
+virtualbox host symbol in the symbol library: <em>vbox_guest</em>.</p>
+
+<p>Click <em>OK</em> to close the Symbol Manager window.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-8.png" 
+alt="GNS3-setup-VirtualBox-8" height="601" width="707"></p>
+
+<p>Now, when you click on the <em>Browse all devices</em> button on the GNS3 user 
+interface, the custom node, <em>router-virtualbox</em> is available.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/GNS3-setup-VirtualBox-9.png" 
+alt="GNS3-setup-VirtualBox-9" height="629" width="810"></p>
+
+<h4>Conclusion and next steps</h4>
+
+<p>After completing the procedure described above, GNS3 is prepared to set up a network 
+that will include up to two Linux routers and three Linux hosts. </p>
+
+<p>GNS3 provides a lot of functionality that we do not use when we work exclusively with 
+Linux virtual machines as routers and hosts in the GNS3 simulated network. However, 
+there are some specific details that users need to know when setting up and using Linux 
+virtual machines to create a simulated network. In this post, we covered those set up 
+procedures.</p>
+
+<p>We will discuss the details related to using the Linux virtual appliances provided 
+by the GNS3 project in a simulated network in the next post.</p>
+
+<a name="OpenSourceRouter"></a><h3 class="post-title">Using open-source routers in GNS3 
+<a href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/">(Source 
+Origin)</a></h3>	
+
+<span class="the-time">January 25, 2014- <a title="Comment on Using open-source 
+routers in GNS3" 
+href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/#comments">3 
+Comments</a></span>
+
+<p><a href="http://www.gns3.net/" target="_blank">GNS3</a> can be used to simulate a 
+network composed exclusively of open-source routers, switches, servers, and hosts.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-cover-border2.png" 
+alt="Open-source Linux GNS3 simulation" height="522" width="810"></p>
+
+<p>In this post, we will investigate how well GNS3 works when we use it strictly as an 
+<em>open-source network simulator</em>, without using Cisco or Juniper routers in the 
+simulation.</p>
+
+<p><span></span></p>
+
+<h4>Build the network in GNS3</h4>
+
+<p>We are using <a href="https://www.virtualbox.org/" target="_blank">VirtualBox</a>
+ to run the Linux virtual machines in our simulated network. When using VirtualBox, 
+we must prepare a VirtualBox virtual machine for each node we will use.</p>
+
+<p>Let's use the virtual machines we already prepared in the the previous post about 
+<a href="#SetUpGNS3" target="_blank">Set up GNS3 with virtual Linux routers</a>. In 
+this case, we will have five virtual machines prepared: three hosts and two routers.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/VirtualBox-VM-setup-9.png" 
+alt="VirtualBox-VM-setup-9" class="aligncenter size-full wp-image-1607"></a></p>
+
+<p>After starting GNS3, add three hosts, two routers, one switch, and some ethernet 
+links to create the topology shown below. </p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/network-view.png" 
+alt="network-view"></a></p>
+
+<p>To build the topology, click on the <em>Browse all Devices</em> button to show 
+the <em>Devices</em> panel. Use the following devices to create the nodes.</p>
+
+<ul>
+  <li>router-virtualbox</li>
+  <ul>
+      <li>This is the custom node we created in an earlier post. Use this for the 
+          routers <em>Quagga-1</em> and <em>Quagga-2</em>.</li>
+  </ul>
+  <li>VirtualBox Guest</li>
+  <ul>
+      <li>Use this for the host computers <em>Host-1</em>, <em>Host-2</em>, and 
+          <em>Host-3</em>.</li>
+  </ul>
+  <li>Ethernet Switch</li>
+  <ul>
+      <li>This is a basic switch provided by GNS3. Use it to creat the switch 
+          <em>SW1</em>.</li>
+  </ul>
+</ul>
+
+<h5>Add network devices</h5>
+
+<p> First, click on the <em>router-virtualbox</em> device and drag it to the middle 
+panel in the GNS3 window. After you drop it, a dialogue box appears asking which 
+VirtualBox guest will run on this node. Choose the guest, <em>Quagga1</em>, which has 
+a disk image with Tiny Core Linux, Quagga, and Openvswitch installed.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-01a.png" 
+alt="Using Linux open source routers in GNS3" class="aligncenter size-full 
+wp-image-1668" height="629" width="810"></p>
+
+<p>Now a router symbol with the label <em>Quagga1</em> appears in GNS3. </p>
+
+<p>Repeat this process for each device in the planned topology until we have three 
+hosts, two routers, and one switch arranged as shown below.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-03.png"
+ alt="Using-GNS3-03" height="629" width="810"></p>
+
+<h5>Add network links</h5>
+
+<p>Click on the <em>Add a Link</em> button to set up links between the nodes in the 
+network. The button will change to show a red stop sign with a white "X". This 
+indicates we need to click the button again to exit the link-add mode when we are 
+done adding links. GNS3 only supports  Ethernet links between VirtualBox virtual 
+machines so we do not need to select the link type. The default link type, 
+<em>GigaEthernet</em>, will work correctly.</p>
+
+<p>To add a link between two nodes, click on the first node, then select  the port in 
+the pop-up menu. Then click on the second link and select the port. The link is 
+created. In this case, we will connect the two routers so that the link connects port 
+<em>eth7</em> on each router. If you are wondering which ports are already used, you 
+can check in the <em>Topology Summary</em> panel in the lower right of the GNS3 window. 
+In the <em>Topology Summary</em> panel, double-click on the node you are interested 
+in to see which ports are already connected.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-04.png"
+ alt="Using-GNS3-04" height="629" width="810"></p>
+
+<p>Now create the network topology shown in the screen capture below. Connect port 
+<em>eth0</em> on each device to the appropriate network element: <em>Quagga-1</em>, 
+<em>Host-1</em>, and <em>Host-2</em> all connect to switch <em>SW1</em>; 
+<em>Quagga-2</em> connects directly to <em>Host-3</em>.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-05.png"
+ alt="Using-GNS3-05" height="629" width="810"></p>
+
+<h5>Start the network simulation</h5>
+
+<p>Now that we have created the devices and links, we can start the routers and hosts 
+in the network and configure them so we can perform some very basic tests on the 
+networking software on each device.</p>
+
+<p>Click the  <em>Start All Devices</em> green arrow button on the GNS3 user interface. 
+All the links will in network diagram turn green. All the nodes listed in the 
+<em>Topology Summary</em> panel will turn green.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-06.png"
+ alt="Using-GNS3-06" height="629" width="810"></p>
+
+<h5>Login to all devices</h5>
+
+<p>Now, we log into each node using its console window.</p>
+
+<p>You can start a console on any individual node by right-clicking on the node and 
+selecting <em>Console</em> from the drop-down menu; or by clicking on a node and then 
+clicking on the <em>Console</em> button at the top of the GNS3 user interface (it 
+looks like a small terminal screen). </p>
+
+<p>You can start all consoles at the same time by clicking on the <em>Console connect 
+to all devices</em> command in the GNS3 <em>Control</em> menu.</p>
+
+<pre>
+  <em>Control -> Console connect to all devices</em>
+</pre>
+
+<p>A new terminal window will appear for each virtual machine. Arrange the terminals 
+on your desktop according to your preference. Hit the <em>Enter</em> key on each 
+terminal to get a prompt.</p>
+
+<p>The login for each virtual machine we are using in this example is 
+<code>tc</code>.</p>
+
+<pre>
+box login: tc
+</pre>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-07.png"
+alt="Using-GNS3-07" width="810" height="521"></a></p>
+
+<p>Now we are logged into each of the hosts and routers in the network. </p>
+
+<h4>Configure the network devices</h4>
+
+<p>We can configure each node in the network so that the routers can route traffic from 
+one network to the other and then we will run a few basic tests to verify that the 
+configuration works.</p>
+
+<p>We will configure three networks and set up a dynamic routing protocol, OSPF, that 
+will run on the network connecting the two routers together and pass network information 
+from one router to the next.</p>
+
+<h5>Network 10.0.100.0/24</h5>
+
+<p>The first network consists of the hosts <em>Host-1</em> and <em>Host-2</em> and the 
+router <em>Quagga-1</em>. We will assign this network the network address, 
+10.0.100.0/24.</p>
+
+<p>On <em>Quagga-1</em>, enter the following commands to start Quagga and use the Quagga 
+command-line-interface to configure the router's port <em>eth0</em> with a valid IP 
+address. </p>
+
+<pre>
+ $ sudo vtysh
+box# configure terminal
+box(config)# interface eth0
+box(config-if)# ip address 10.0.100.1/24 
+box(config-if)#  exit
+box(config)# exit
+box#
+</pre>
+
+<p>On <em>Host-1</em>, enter the following commands to configure the <em>eth0</em> 
+interface on Host-1 and create a default route toward router <em>Quagga-1</em> (which 
+in this network has IP adress 10.0.100.1).</p>
+
+<pre>
+ $ sudo ip addr add 10.0.100.2/24 broadcast 10.0.100.255 dev eth0
+ $ sudo ip route add default via 10.0.100.1
+</pre>
+
+<p>On <em>Host-2</em>, enter the following commands to configure the <em>eth0</em> 
+interface IP address and create a default route.</p>
+
+<pre>
+ $ sudo ip addr add 10.0.100.3/24 broadcast 10.0.100.255 dev eth0
+ $ sudo ip route add default via 10.0.100.1
+</pre>
+
+<p>Now, each node on this network should be reachable by any other node on the same 
+network. <em>Host-1</em>, <em>Host-2</em>, and <em>Quagga-1</em> can all ping each 
+other.</p>
+
+<h5>Network 10.0.200.0/24</h5>
+
+<p>The second network consists of the hosts <em>Host-3</em> and the router 
+<em>Quagga-2</em>. We will assign this network the network address, 10.0.200.0/24.</p>
+
+<p>On <em>Quagga-2</em>, enter the following commands to start Quagga and use the 
+Quagga command-line-interface to configure the router's port <em>eth0</em> with a 
+valid IP address. </p>
+
+<pre>
+ $ sudo vtysh
+box# configure terminal
+box(config)# interface eth0
+box(config-if)# ip address 10.0.200.1/24 
+box(config-if)#  exit
+box(config)# exit
+box#
+</pre>
+
+<p>On <em>Host-3</em>, enter the following commands to configure the <em>eth0</em> 
+interface on Host-3 and create a default route toward router <em>Quagga-2</em> (which 
+in this network has IP adress 10.0.200.1).</p>
+
+<pre>
+$ sudo ip addr add 10.0.200.2/24 broadcast 10.0.200.255 dev eth0
+$ sudo ip route add default via 10.0.200.1
+</pre>
+
+<h5>Network 10.0.1.0/24</h5>
+
+<p>The second network consists of the routers <em>Quagga-1</em> and <em>Quagga-2</em>. 
+We used port <em>eth7</em> on each router to create the link between them. We will 
+give this network the network address 10.0.1.0/24.</p>
+
+<p>We are already running <em>vtysh</em> on both routers.</p>
+
+<p>On <em>Quagga-1</em>, enter the following commands to configure port <em>eth7</em>,
+ set up OSPF in the network, and to export directly connected network addresses to 
+the OSPF protocol so they can be shared with other routers.</p>
+
+<pre>
+box# configure terminal
+box(config)# router ospf
+box(config-router)# network 10.0.1.0/24 area 0
+box(config-router)# redistribute connected
+box(config-router)# exit
+box(config)# interface eth7
+box(config-if)# ip address 10.0.1.1/24 
+box(config-if)# exit
+box(config)# exit
+box#
+</pre>
+
+<p>On <em>Quagga-2</em>, enter the following commands to configure port <em>eth7</em>,
+ set up OSPF in the network, and to export directly connected network addresses to 
+the OSPF protocol so they can be shared with other routers.</p>
+
+<pre>
+box# configure terminal
+box(config)# router ospf
+box(config-router)# network 10.0.1.0/24 area 0
+box(config-router)# redistribute connected
+box(config-router)# exit
+box(config)# interface eth7
+box(config-if)# ip address 10.0.1.2/24 
+box(config-if)# exit
+box(config)# exit
+box#
+</pre>
+
+<h5>Network configuration completed</h5>
+
+<p>Now we are able to pass data from any node on network 10.0.100.0/24 to any node 
+network 10.0.200.0/24. We can verify this by using the <em>ping</em> command to 
+verify that data can pass from <em>Host-1</em> on network 10.0.100.0/24 to 
+<em>Host-3</em> on network 10.0.200.0/24.</p>
+
+<p>On <em>Host-1</em>, execute the <em>ping</em> command and see the following 
+results:</p>
+
+<pre>
+$ ping -c 1 10.0.200.2
+PING 10.0.200.2 (10.0.200.2): 56 data bytes
+64 bytes from 10.0.200.2: seq=0 ttl=62 time=0.000 ms
+
+--- 10.0.200.2 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 0.000/0.000/0.000 ms
+</pre>
+
+<p>We see that traffic will pass in both directions between <em>Host-1</em> and 
+<em>Host-3</em> through all three networks in this simulation.</p>
+
+<h4>Capture and analyze network traffic</h4>
+
+<p>We can set up GNS3 to capture data on any interface in the network.  To start a 
+data capture, right-click on a link in the network diagram and then select <em>Start 
+capturing</em> from the drop-down menu<sup><a href="#fn1-1639" 
+title="This screen capture also shows that the GNS3 user interface can be modified by 
+removing panels, or adding panels, as required" rel="footnote">1</a></sup>.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-08.png"
+ alt="Using-GNS3-08"></p>
+
+<p>Then select which interface on the link you wish to from which you want to capture 
+data. Note that you cannot choose an interface connected to switch <em>SW1</em>; only 
+interfaces connected to running virtual machines can support capturing data.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-09c.png" alt="Using-GNS3-09c"></p>
+
+<h5>Restart node to enable data capture</h5>
+
+<p>We see an error message pop up that says we must restart the node that has the 
+interface from which you want to capture data before data can be captured. This is an 
+inconvenient feature in GNS3. </p>
+
+<p>To restart the node, right-click on the node <em>Quagga-1</em> and select 
+<em>Stop</em> in the pop-up menu. At this point we will also add a second data 
+capture point so that we are capturing data on both interfaces on router
+ <em>Quagga-1</em>, <em>eth0</em> and <em>eth7</em>.</p>
+
+<p>To start the router <em>Quagga-1</em> again, right-click <em>Quagga-1</em> and 
+select <em>Start</em> in the pop-up menu. When the node completes starting up, start 
+the console and reconfigure the node as previously described.</p>
+
+<p><em>Note:</em> When we restart <em>Quagga-1</em> we lose the configurations we made 
+because the TinyCore Linux appliances provided by the GNS3 project are read-only 
+filesystems. This is related to the <a target="_blank" 
+href="http://wiki.tinycorelinux.net/wiki:start#persistence">Persistence feature of 
+TinyCore Linux</a> that we will discuss, along with a remedy, in a future post. In 
+this case, we will need to enter in all our configurations again for router 
+<em>Quagga-1</em>.</p>
+
+<p>We now know that we should define any data capture points before starting the 
+simulation and configuring the network nodes.</p>
+
+<h5>Start Wireshark</h5>
+
+<p>Start Wireshark to see the packets at each capture point. To view the data being 
+captured, click on the interface in the <em>Captures</em> panel and then right-click 
+to see the pop-up window. Select <em>Start Wireshark</em> from the menu. </p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-11.png"
+ alt="Using-GNS3-11"></p>
+
+<p>A Wireshark window will open up showing the data that is being captured on that 
+interface. In this case, we are looking at the data captured on the <em>eth7</em> 
+interface on router <em>Quagga-1</em>. We see OSPF packets being exchanged between 
+<em>Quagga-1</em> and <em>Quagga-2</em>.</p>
+
+<p><img src="http://www.brianlinkletter.com/wp-content/uploads/2014/01/Using-GNS3-12.png"
+ alt="Using-GNS3-12"></p>
+
+<h4>Save the project</h4>
+
+<p>The project topology can be saved for future use. Use the following menu command 
+or press the <em>Ctrl-S</em> key combination to save the project.</p>
+
+<pre>
+  <em>File</em> -> <em>Save Project</em>
+</pre>
+
+<p>Not all information related to the project is saved by GNS3. The data capture points 
+are not saved. When you open the saved project, you must define your data capture points 
+again.</p>
+
+<p>Also, the node configurations are not saved and each node will need to be manually 
+configured again when the saved project is started again.  This is because we are 
+using the read-only TinyCore Linux appliances provided by GNS3. In a future post, we 
+will describe <a href="http://wiki.tinycorelinux.net/wiki:persistence_for_dummies" 
+target="_blank">a procedure that creates persistent network configurations</a> and 
+saves them on each TinyCore Linux appliance.</p>
+
+<h4>Conclusion</h4>
+
+<p>We showed how to set up a network in GNS3 using only the open-source appliances 
+provided by the GNS3 project. We demonstrated that the simulated open-source hosts 
+and routers can be configured to pass data between themselves and to route packets 
+from one network to another.</p>
+
+<p>The GNS3 project provides Linux appliances that can be used as Linux switches, 
+routers, and hosts. This makes it easier to use open-source software in GNS3 because 
+the provided appliances are already configured to work correctly with GNS3.</p>
+
+<p>When it is used exclusively to simulate open-source routers and hosts, GNS3 is 
+provides similar functionality to, but is more complex to use, than other open-source 
+network simulators. I understand that I have explored only a small portion of GNS3's 
+capabilities. GNS3's main function is to emulate Cisco routers and using only 
+open-source routers is not the normal GNS3 use-case.</p>
+
+<hr class="footnotes">
+<ol class="footnotes">
+  <li><p>This screen capture also shows that the GNS3 user interface can 
+    be modified by removing panels, or adding panels, as required <a href="#rf1-1639" class="backlink" title="Jump back to footnote 1 in the text.">back</a></p></li>
+</ol>
+
+
+<hr><h4>Related posts:</h4>
+
+<ol>
+  <li><a href="http://www.brianlinkletter.com/set-up-gns3-with-open-source-routers/" rel="bookmark" title="Set Up GNS3 with Open-Source Routers">Set Up GNS3 with Open-Source Routers </a></li>
+  <li><a href="http://www.brianlinkletter.com/network-simulator-roundup/" rel="bookmark" title="Open-source network simulator roundup">Open-source network simulator roundup </a></li>
+  <li><a href="http://www.brianlinkletter.com/gns3-qemu-or-virtualbox/" rel="bookmark" title="GNS3: Qemu or VirtualBox?">GNS3: Qemu or VirtualBox? </a></li>
+  <li><a href="http://www.brianlinkletter.com/open-source-network-simulators/" rel="bookmark" title="Open-Source Network Simulators">Open-Source Network Simulators </a></li>
+  <li><a href="http://www.brianlinkletter.com/even-more-open-source-network-simulators/" rel="bookmark" title="Even more open-source network simulators">Even more open-source network simulators </a></li>
+</ol>
+
+<span class="the-category">In <a href="http://www.brianlinkletter.com/category/open-source-routing/">Open Source Routing</a></span>
+<span class="the-tags"><a href="http://www.brianlinkletter.com/tag/gns3/" rel="tag">GNS3</a></span>								
+
+
+<ul class="pager">
+  <li class="previous">
+     <span><a href="http://www.brianlinkletter.com/gns3-qemu-or-virtualbox/" 
+           rel="prev" title="GNS3: Qemu or VirtualBox?"> GNS3: Qemu or 
+           VirtualBox?</a></span></li>
+						
+  <li class="next">
+     <span><a href="http://www.brianlinkletter.com/marionnet-x-configuration-in-knoppix/"
+           rel="next" title="Marionnet: X configuration in Knoppix"> Marionnet: X 
+           configuration in...</a></span></li>
+</ul>	
+							
+<h4>3 responses to <em>Using open-source routers in GNS3</em></h4>
+
+<ol class="commentlist">
+  <li class="comment even thread-even depth-1 clearfix">
+      <img 
+src="http://0.gravatar.com/avatar/48b9f9826ff8d6b9aa42bcab4343e25f?s=50&d=identicon&r=G">
+Abhishek
+      <span class="date"><a href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/#comment-14124" title="Permalink">May 10, 2014 at 1:58 am</a></span>
+
+	<p>Hi,</p>
+
+        <p>A very good article and rare article on how to use open source router and 
+           switches in GNS3.</p>
+
+        <p>I am a L2 &amp; L3 developer. I have one doubt, </p>
+
+        <p>1. Can I integrate any router or switches with GNS3, or only that router and 
+              switches are integrable which is mentioned at GNS3 Website ?<br>
+           2. I am using a executable of router and switches which is run on fedora
+              11, and this contains only control plane developement . There is no 
+              data plane. Can we integrate this router with GNS3.<br>
+           3. After clicking on start or run button , what will happen in GNS3, 
+              executables are executed in background.</p>
+
+        <p>Please suggest me with a solution. I am a novice user to GNS3, so please 
+           sorry for a silly question.</p>
+
+<p>Best Regards,<br>
+Abhishek</p>
+
+	<a class="comment-reply-link" href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/?replytocom=14124#respond" onclick='return addComment.moveForm( "comment-14124", "14124", "respond", "1639" )' aria-label="Reply to Abhishek">Reply</a>		
+<ul class="children">
+  <li class="comment byuser comment-author-admin bypostauthor odd alt depth-2 clearfix">
+      <img 
+src="http://0.gravatar.com/avatar/5f6f3e1e43fa2d96d8b4351183cad847?s=100&r=pg&d=mm">
+				
+      <a href="http://www.brianlinkletter.com/" target="_blank">Brian Linkleter</a>
+      <a href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/#comment-14240" title="Permalink">May 12, 2014 at 2:26 pm</a></span>
+								
+      <p>Hi Abhishek,</p>
+
+      <p>Thanks for your questions. Here is my best effort to answer them, in order:</p>
+
+      <p>1. You can incorporate any system that can run in VirtualBox into a GNS3 
+            simulation. The GNS3 project team helpfully provides some prepared 
+            virtual systems but you can create your own. If you are just starting, 
+            and assuming you want to run open-source routers in GNS3, I suggest you 
+            use the Linux virtual systems provided by GNS3.<br>
+         2. I am not sure what you mean when you say there is no data plane. The 
+            standard <a href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/www.cyberciti.biz/faq/rhel-centos-fedora-linux-ip-forwarding-tutorial/" 
+            target="_blank" rel="nofollow">packet forwarding</a> functions provided by 
+            the Linux kernel offer a suitable data plane for network simulation in 
+            GNS3. You can also manipulate forwarding performance using 
+            <a href="http://www.linuxfoundation.org/collaborate/workgroups/networking/netem" 
+            target="_blank" rel="nofollow">netem</a> and 
+            <a href="http://tldp.org/HOWTO/Traffic-Control-HOWTO/intro.html" 
+            target="_blank" rel="nofollow">traffic control</a>.<br>
+         3. When you start a GNS3 simulation, the virtual machines that are included in 
+            the simulation scenario start up. Some may start up faster than others but 
+            eventually they should all start.</p>
+
+      <p>Thanks,<br>
+          Brian</p>
+
+<a class="comment-reply-link" href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/?replytocom=14240#respond" onclick='return addComment.moveForm( "comment-14240", "14240", "respond", "1639" )' aria-label="Reply to Brian Linkleter">Reply</a>		
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol>    
+
+<h4>Trackbacks and Pingbacks:</h4>
+
+<ol class="pinglist">
+  <li>
+      <a href="http://www.brianlinkletter.com/persistent-configuration-changes-in-tinycore-linux/" 
+         rel="external nofollow" class="url">Persistent configuration changes in 
+         TinyCore Linux | Open-Source Routing and Network Simulation</a></span> -
+		<span class="date">
+			February 22, 2014		</span>
+		<span class="pingcontent">
+
+      <p>[...] the previous post about using GNS3 to simulate a network composed 
+         exclusively of open-source routers, switches, and hosts, we used the TinyCore 
+         Linux appliances provided by the GNS3 [...]</p>
+		</span>
+	</li>
+</ol>
+
+<a name="PersistentTinyCore"></a><h3 class="post-title">Persistent configuration 
+changes in TinyCore Linux <a target="newwindow" 
+href="http://www.brianlinkletter.com/persistent-configuration-changes-in-tinycore-linux/">(Source Origin)</a></h3>	
+<span class="the-time">February 22, 2014</span>  1 Comment
+						
+<p><a href="http://www.tinycorelinux.net/6.x/x86_64/" target="newwindow">TinyCore 
+Download</a>,&nbsp;&nbsp; or <a href="http://www.tinycorelinux/5.x/x86/release/">Old 
+but stable TinyCore Download</a>, is very suitable for devices like routers that 
+require a higher level of security. All changes made to a running TinyCore Linux system 
+exist only in system RAM and are lost when the system restarts or is shut down. Viruses 
+or file corruption can be removed simply by rebooting the system. 
+<a href="http://www.tinycorelinux.net/" target="newwindow">TinyCore Linux Info</a>, 
+</p>
+
+<p> When used as part of an open-source network simulator, the TinyCore Linux appliance 
+can be restored to a base configuration every time it is started. This means the same 
+appliance can be reused in new simulation scenarios without having to clear 
+configurations that may be left over from a previous simulation effort.</p>
+
+<p>However, in some cases we may want to save the configuration changes we make.  For 
+example, we may wish to have a basic network configuration working at start time.  Or, 
+we may wish to build a complex simulation scenario that will be re-used by other 
+researchers. In this post, we discuss the TinyCore Linux system architecture and how 
+to save configuration changes.</p>
+
+<h4>TinyCore Linux architecture</h4>
+
+<p>The base <a href="http://distro.ibiblio.org/tinycorelinux/architecture.html">TinyCore 
+Linux architecture</a> consists of two files: <em>vmlinuz</em> and <em>core.gz</em>.</p>
+
+<p>The file <em>vmlinuz</em> contains the TinyCore Linux kernel. The compressed file 
+<em>core.gz</em> contains the base TinyCore filesystem. When the TinyCore Linux system 
+boots, these two files are uncompressed and loaded into the system's memory.
+</p>
+
+<PRE>
+ $ kvm -hda TinyCore-5.4.iso& 
+ # Inside the qemu window, press the terminal icon, we get an X terminal.
+ # Inside this X terminal, 
+ $ find / -name vmlinuz 2>/dev/null 
+ $ ls -l /mnt/sda/boot 
+ # Poweroff TinyCore
+ $ exitcheck.sh 
+</PRE>
+
+<a name="rf1-1704"></a><p>Applications added to the base system are stored in the 
+<em>/mnt/sda1/tce/optional</em> directory as compressed archive 
+files<sup><a href="#fn1-1704">1</a></sup>. During system boot, TinyCore Linux 
+uncompressed and loads these files and directories into RAM if they are listed the 
+file <em>/mnt/sda1/tce/onboot.lst</em>.</p>
+
+<P><b>Notes: (12/19/2014)</b>  We only see the <code>/mnt/sda/cde</code> directory 
+with the <b>onboot.lst</b> file and <b>optional</b> subdirectory in it.  Directory 
+<code>/mnt/sda1</code> is empty!  On the other hand, we see <b>.filetool.lst</b>, 
+and <b>bootlocal.sh</b>, etc., files in the <code>/opt</code> directory.
+
+
+<p>Configuration files created by the user are stored in the compressed archive file 
+<em>/mnt/sda1/tce/mydata.tgz</em>. At boot time, TinyCore extracts the contents of 
+this file into the <em>$HOME</em> and <em>/opt</em> directories - and any other 
+directory specified in the hidden file, <em>/opt/.filetool.lst</em>. </p>
+
+<p>The shell script <em>/opt/bootlocal.sh</em> runs after the system boot process is 
+completed. The user may add commands to this script to create an initial configuration 
+for the TinyCore appliance at startup (see the section on persistence, below).</p>
+
+<h4>Persistence in TinyCore</h4>
+
+<p>TinyCore Linux runs in RAM so all changes made while the system is running 
+will be lost after a system reboot unless the user takes action to 
+<a href="http://wiki.tinycorelinux.net/wiki:backup">back up the configuration 
+changes</a>.</p>
+
+<p>The TinyCore Linux <em>filetool.sh</em> script (in <code>/usr/bin</code> directory) 
+provides the backup function that supports 
+<a href="http://wiki.tinycorelinux.net/wiki:start#persistence">persistence</a>. 
+The script backs up files created in the <em>/opt</em> and <em>$HOME</em> directories. 
+The script will also back up directories containing configuration files associated with 
+networking software like <em>Quagga</em> if those directories are listed in the 
+<em>/opt/.filetool.lst</em> file. Network configuration changes made using Linux 
+commands like the <em>ip</em> command cannot be saved. But, we can add these commands 
+to the <em>/opt/bootlocal.sh</em> shell script, which runs at startup.</p>
+
+<p>Once you have created the network configurations you wish to save, by editing the 
+<em>/opt/bootlocal.sh</em> script and/or saving the <em>Quagga</em> or 
+<em>Openvswitch</em> config files, back up the configuration using the 
+<em>filetool.sh</em> script as follows:</p>
+
+<pre>
+ $ filetool.sh -b
+</pre>
+
+<p>When the system is running, you can restore the saved base configuration by running 
+the command:</p>
+
+<pre>
+ $ filetool.sh -r
+</pre>
+
+<h4>Example: TinyCore appliances in GNS3 Open-Source Simulator</h4>
+
+<p>In the previous post about <a title="Using open-source routers in GNS3" 
+href="http://www.brianlinkletter.com/using-open-source-routers-in-gns3/">using GNS3 to 
+simulate a network composed exclusively of open-source routers, switches, and hosts</a>, 
+we used the <a href="http://www.gns3.net/appliances/">TinyCore Linux appliances</a> 
+provided by the GNS3 project.</p>
+
+<p>As described above, we know that <em>filetool.sh</em> script backs up the 
+directories listed in the file <em>/opt/.filetool.lst</em>. The <em>filetool.sh</em> 
+script saves the contents of these directories in the compressed archive file 
+<em>/mnt/sda1/tce/mydata.tgz</em>.</p>
+
+<p>Look at the contents of the <em>/opt/.filetool.lst</em> file to  determine what 
+directories the <em>filetool.sh</em> script will  back up on each TinyCore Linux 
+appliance we plan to use.</p>
+
+<h5>Saving Host and Quagga appliances configurations</h5>
+
+<UL>
+  <LI>Host appliance
+
+<p>On the Host appliances (in our example, it is the <em>Linux Core 4.7.7</em> 
+appliance from the <a href="http://www.gns3.net/appliances/">GNS3 appliances web 
+page</a>), we examine  the contents of <em>/opt/.filetool.lst</em>.  On each Host 
+appliance, in addition to the <em>$HOME</em> and <em>/opt</em> directories, we see 
+we also save the configuration files for the DHCP client.</p>
+
+<pre>
+ $ cat /opt/.filetool.lst
+opt
+home
+/etc/shadow
+/usr/local/etc/ssh
+/sbin/dhclient
+</pre>
+
+
+  <LI>Quagga appliance
+
+<p>On the Quagga appliances (in our example, it is the <em>Linux Core 4.7.7 Layer 3 
+Switch with Quagga and Openvswitch</em> appliance from the 
+<a href="http://www.gns3.net/appliances/">GNS3 appliances web page</a>), we examine 
+the contents of <em>/opt/.filetool.lst</em>.  On each Quagga appliance, in addition 
+to the normal directories, we also see that the backup script will save the 
+configuration files for the Openvswitch and Quagga programs.</p>
+
+<pre>
+ $ cat /opt/.filetool.lst
+opt
+home
+/etc/shadow
+/usr/local/etc/ssh
+/sbin/dhclient
+/usr/local/etc/openvswitch/
+/usr/local/etc/quagga
+/usr/local/var/quagga/
+</pre>
+</UL>
+
+<h5>Host-1</h5>
+
+<p>Add the following commands to the <em>/opt/bootlocal.sh</em> file on <em>Host-1</em> 
+using the <em>vi</em> text editor<sup><a href="#fn2-1704" title="vi is 
+the only text editor installed in TinyCore Linux" rel="footnote">2</a></sup>. These 
+commands will run when the TinyCore Linux virtual machine starts.</p>
+
+<pre>
+ $ sudo ip addr add 10.0.100.2/24 broadcast 10.0.100.255 dev eth0
+ $ sudo ip route add default via 10.0.100.1
+ $ sudo pkill udhcpc
+</pre>
+
+<p>Then execute the backup command:</p>
+
+<pre>
+ $ filetool.sh -b
+</pre>
+
+<h5>Host-2</h5>
+
+<p>Add the following commands to the <em>/opt/bootlocal.sh</em> file on 
+<em>Host-2</em>. </p>
+
+<pre>
+ $ sudo ip addr add 10.0.100.3/24 broadcast 10.0.100.255 dev eth0
+ $ sudo ip route add default via 10.0.100.1
+ $ sudo pkill udhcpc
+</pre>
+
+<p>Then execute the backup command:</p>
+
+<pre>
+ $ filetool.sh -b
+</pre>
+
+<h5>Host-3</h5>
+
+<p>Add the following commands to the <em>/opt/bootlocal.sh</em> file on 
+<em>Host-3</em>.</p>
+
+<pre>
+ $ sudo ip addr add 10.0.200.2/24 broadcast 10.0.200.255 dev eth0
+ $ sudo ip route add default via 10.0.200.1
+ $ sudo pkill udhcpc
+</pre>
+
+<p>Then execute the backup command:</p>
+
+<pre>
+ $ filetool.sh -b
+</pre>
+
+<h5>Quagga-1</h5>
+
+<p>Most of the network configurations on <em>Quagga-1</em> are done in the quagga 
+open-source router program. Quagga saves its configurations in the directory, 
+<em>/usr/local/etc/quagga</em>. The TinyCore Linux appliance we are using is set up 
+to save the contents of this directory<sup><a href="#fn3-1704" title="as 
+specified in the file, /opt/.filetool.lst" rel="footnote">3</a></sup> when the 
+<em>filetool.sh</em> script is run.</p>
+
+<p>To configure router <em>Quagga-1</em> and save the configuration, execute the 
+following commands:</p>
+
+<pre>
+ $ vtysh
+box# configure terminal
+box(config)# router ospf
+box(config-router)# network 10.0.1.0/24 area 0
+box(config-router)# redistribute connected    
+box(config-router)# exit
+box(config)# interface eth7
+box(config-if)# ip address 10.0.1.1/24
+box(config-if)# exit
+box(config)# interface eth0
+box(config-if)# ip address 10.0.100.1/24
+box(config-if)# exit
+box(config)# exit
+box# write
+box# exit
+$
+</pre>
+
+<p>Add the following command to the <em>/opt/bootlocal.sh</em> file on 
+<em>Quagga-1</em>.</p>
+
+<pre>
+ $ sudo pkill udhcpc
+</pre>
+
+<p>Then save the configuration</p>
+
+<pre>
+ $ filetool.sh -b
+</pre>
+
+<h5>Quagga-2</h5>
+<p>To configure router <em>Quagga-2</em> and save the configuration, execute the 
+following commands:</p>
+
+<pre>
+ $ vtysh
+box# configure terminal
+box(config)# router ospf
+box(config-router)# network 10.0.1.0/24 area 0
+box(config-router)# redistribute connected
+box(config-router)# exit
+box(config)# interface eth7
+box(config-if)# ip address 10.0.1.2/24
+box(config-if)# exit
+box(config)# interface eth0
+box(config-if)# ip address 10.0.200.1/24
+box(config-if)# exit
+box(config)# exit
+box# write
+box# exit
+$
+</pre>
+
+<p>Add the following command to the <em>/opt/bootlocal.sh</em> file on 
+<em>Quagga-2</em>.</p>
+
+<pre>
+ $ sudo pkill udhcpc
+</pre>
+
+<p>Then save the configution</p>
+
+<pre>
+ $ filetool.sh -b
+</pre>
+
+<h4>Shut down TinyCore</h4>
+
+<p>To power off a TinyCore Linux system, use the command:</p>
+
+<pre>
+ $ sudo poweroff
+</pre>
+
+<p>To reboot a TinyCore Linux system, use the command:</p>
+
+<pre>
+ $ sudo reboot
+</pre>
+
+<h4>Conclusion</h4>
+
+<p>We now understand more about how TinyCore Linux works and we created a persistent 
+base configuration for each node in our <a title="Using open-source routers in GNS3" 
+href="#OpenSourceRouter">GNS3 example</a> so that the simulated network is able to pass 
+traffic between networks immediately after the simulation is started, without any 
+additional configuration.</p>
+
+
+<ol class="footnotes">
+  <li><p>Application archive files have the <em>.tcz</em> file 
+      extension <a href="#rf1-1704" class="backlink" title="Jump back to footnote 
+      1 in the text.">back</a></p></li>
+  <li><p><em>vi</em> is the only text editor installed in TinyCore 
+      Linux <a href="#rf2-1704" class="backlink" title="Jump back to footnote 2 
+      in the text.">back</a></p></li>
+  <li><p>as specified in the file, /opt/.filetool.lst 
+      <a href="#rf3-1704" title="Jump back to footnote 3 in the text.">back</a></p></li>
+</ol>
+
+<a name="InstallGNS3"></a><h3> How To Install GNS3 (Graphical Network Simulator) 
+<a target="newwindow" href="http://www.unixmen.com/install-gns3-graphical-network-simulator-ubuntu-13-04/">(Source Origin)</h3>
+                                                                                
+ <span class="author">  by  <span>SK</span> </span>
+                            
+<p><a href="http://www.gns3.net/screenshots/" 
+target="_blank"><strong>GNS3</strong></a> is an open source, GUI Network Simulator. It 
+can be used to simulate complex networks while being as close as possible from the way 
+real networks perform, all of this without having dedicated network hardware such as 
+routers and switches.</p>
+
+<p>GNS3 provides an intuitive graphical user interface to design and 
+configure virtual networks, it runs on traditional PC hardware and may be used on 
+multiple operating systems, including <strong>Windows</strong>, <strong>Linux</strong> 
+and <strong>MacOS X</strong>.</p>
+
+<p><strong>Who can use GNS3?</strong></p>
+
+<p>GNS3 will be used for network engineers, administrators and people 
+who are preparing for certifications like Cisco <strong>CCNA</strong>, 
+<strong>CCNP</strong> and <strong>CCIE</strong> and <strong>Juniper JNCIA</strong>, 
+<strong>JNCIS</strong> and <strong>JNCIE</strong>. It can also be used to experiment 
+features or to check configurations that need to be deployed later on real devices.</p>
+
+<p>GNS3 includes exciting features, for instance connection of your 
+virtual network to real ones or packet captures using Wireshark. Also VirtualBox 
+support is included in GNS3 so that system administrators and engineers can take 
+advantage of GNS3 to make labs, test network features and study for Redhat 
+(<strong>RHCE</strong>, <strong>RHCT</strong>) and Microsoft (<strong>MCSE</strong>, 
+<strong>MCSA</strong>) certifications etc.</p>
+
+<p><strong>How do i use GNS3?</strong></p>
+
+<p>To use GNS3, you must provide your own licensed images. Download the IOS images 
+from the respective vendor site, upload it to GNS3 and start learning. You can find 
+the complete <a href="http://www.gns3.net/hardware-emulated/" target="_blank">list 
+of emulated hardware devices</a> by GNS3. Alternatively you can 
+<a href="http://www.gns3.net/appliances/" target="_blank">download and use 
+non-copyrighted appliances</a> provided by GNS3 team. Just download the appliances 
+and import them to Qemu/VirtualBox/Vmware and start learning! You can't use these 
+appliances on any copyrighted platforms such as Windows or Mac OS X.</p>
+
+<p><strong>Install GNS3 On Ubuntu 13.04</strong></p>
+
+<p>GNSs is available in default Ubuntu software center, but it may be a bit outdated. 
+So grab the source files <a href="http://sourceforge.net/projects/gns-3/" 
+ target="_blank">From SourceForge</a> or <a href="http://www.gns3.net/download/" 
+target="_blank">gns3</a> and compile and install it yourself. Alternatively GNS3 team 
+has a Ubuntu PPA to make the installation pretty easy and straight forward.</p>
+
+<p>Add the GNS3 PPA to repository, Update the packages list, and 
+   install GNS using the following commands:</p>
+
+<pre>
+ $ sudo add-apt-repository ppa:gns3/ppa
+ $ sudo apt-get update 
+ $ sudo apt-get install dynamips gns3
+ # For Debian these two packages are ready to be installed: 
+ $ sudo apt-get install dynamips gns3
+</pre>
+
+<p><strong>Configure GNS3</strong></p>
+
+<p>At the first time of GNS launch, a Setup Wizard will open. Click on the 
+<strong>step 1(Number 1)</strong> to configure the path of network device images i.e 
+IOS, Qemu, PIX etc. This is the path where you should store all your images.</p>
+
+<p><a href="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/Setup-Wizard_001.png"><img alt="Setup Wizard_001" width="810"
+src="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/Setup-Wizard_001.png"></a>
+
+<P>Now the Preferences window will open. Define the path location of your images.</p>
+
+<p><a href="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/Preferences_003.png"><img alt="Preferences_003" src="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/Preferences_003.png"></a>
+
+<P> Click Apply and Ok return to previous menu. Click on the <strong>Step 2(Number 
+2)</strong>. Click on <strong>"Dynamips link"</strong>. Select the valid Dynamips 
+path in the <strong>"executable path to Dynamips"</strong> box. Once you selected 
+the path, click on the Test settings. If all seems ok, a green message will appear 
+that shows <strong>"Dynamips successfully started"</strong>.</p>
+
+<p><a href="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/Preferences_002.png"><img alt="Preferences_002" src="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/Preferences_002.png"></a>
+
+<P> Click on the Step 3(Number 3) to select the network switches/routers images.</p>
+
+<p><a href="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/IOS-images-and-hypervisors_004.png"><img alt="IOS images and hypervisors_004" src="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/IOS-images-and-hypervisors_004.png" width="810"></a>
+
+<P> At the time of writing this, i don't have any IOS images, so i left it blank. You 
+should put your downloaded IOS, Qemu images in the folder that you have defined in the 
+first step. Click Close to return back to previous window. Finally click Ok to close 
+Setup Wizard.</p>
+
+<h4>Cisco IOS Download</h4>
+
+<a name="CiscoIosesDownload"></a><h3 class="title">New CCNP IOS Requirments for GNS3 
+<a href="http://freeccnplab.com/2014/03/31/ccnp-ios-requirments-gns3/">(Source 
+origin)</a></h3>
+
+<div class="postdate">Posted by <strong>barry</strong> on  March 31st, 2014 </div>
+			
+							<div class="entry">
+<img src="http://freeccnplab.com/wp-content/uploads/2014/03/GNS3-Logo.jpg" 
+alt="GNS3-Logo">
+<p></p>
+
+<P>If you are considering using GNS3 for your CCNA or CCNP labs but are reluctant to 
+do so as you have heard that it requires an official Cisco IOS copy this article is 
+worth reading. First GNS3 will require an Official Cisco IOS but there are a number 
+of ways that you can obtain a copy. You can of course purchase a copy from Cisco or 
+you can purchase a used router such as a 2610 and copy the IOS from it and finally 
+if you are an Internet savvy person you can find one online and download it 
+free.<p></p>
+
+<p>Before you start out buying anything or surfing the web you need to know what to 
+look for. Cisco has made changes to their CCNA and CCNP exams, these exams are now 
+using Cisco's IOS revision 15.0 or greater. Therefore you should strive to obtain 
+this revision for your lab. Now for the bad news The Cisco 7200 is the only router 
+within GNS3 that support the latest Cisco IOS release. The other 
+<a href="http://freeccnplab.com/2014/02/28/build-ccnp-lab-home/">routers</a>
+ will support 12.4 or earlier releases and if you plan on using them the 12.4 release 
+is what you should look for as it supports a few command needed for CCNP studies that 
+were not available in earlier releases.</p>
+
+<p>All this being said I have done some searching of the internet and found the 
+following site that may have more detailed information on the IOS releases available 
+for router used in GNS3:</p>
+
+<OL>
+  <LI> <a href="https://www.mediafire.com/folder/vpf46dr8pmkg3/c1700" 
+       target="_blank">C1700 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/r68qv8a6h53x9/c2600" 
+       target="_blank">C2600 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/rz3pny2v7o3av/c2691" 
+       target="_blank">C2691 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/cem9guy2q2m7c/c3620" 
+       target="_blank">C3620 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/9j66690hcu63i/c3640" 
+       target="_blank">C3640 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/ti58j4hz4yqdj/c3660" 
+       target="_blank">C3660 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/awkvvnq1syqny/c3725" 
+       target="_blank">C3725 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/xjrbvcba78yfz/c3745" 
+       target="_blank">C3745 All Released Versions</a><br>
+  <LI> <a href="https://www.mediafire.com/folder/wrmv7njkyd15t/c7200" 
+       target="_blank">C7200 All Released Versions</a></p>
+</OL>
+
+<p>Additionally here are a couple of tips when installing a Cisco IOS into GNS3. First 
+make sure you are using a uncompressed copy of the IOS, this will reduce the time it 
+takes for GNS3 to boot the routing device. The Cisco IOS release is a .bin file 
+example "c2600-adventerprisek9-mz.124-19.bin" and is compressed. In most cases if you 
+select this file when setting up your IOS in GNS3 you will be prompted if you wish to 
+decompress the file in this case answer yes, but in some cases you will to do this 
+manually in the instances you can use WIN7 to unzip the file, as a .image file. Second 
+make sure to check the Cisco site the find out the minimum memory requirement as GNS3 
+is seldom correct in the value it allocates. This will cause the router to not boot 
+properly or not at all. Lastly be sure to obtain an optimal IDEL-PC value as this will 
+reduce the processor utilization by the routing devices in you labs.</p>
+
+<p>There are many other tricks to using and optimizing GNS3 which I will cover in 
+upcoming articles but if you chose to use GNS3 I know you will find it to be an 
+excellent alternative to purchasing real hardware.</p>
+
+<p><strong>If you have found this lab helpful please help us keep this site 
+running.</strong></p>
+
+<P> It seems Cisco 7200, 3700, 2600 series are also available by following the next few 
+   anchors:
+
+<OL>
+  <LI><a href="http://commonerrors.blogspot.tw/2014/04/cisco-3725-ios-image-free-download-for.html" target=newwindow">cisco 3725 ios</a>
+  <LI><a href="http://commonerrors.blogspot.tw/2013/10/download-cisco-7200-series-router-ios.html" target=newwindow">cisco 7200 ios</a>
+  <LI><a href="http://commonerrors.blogspot.tw/search/label/GNS3%20IOS#2054897824587081792" target=newwindow">GNS3 IOS</a>,   (cisco 1700, not 2600)
+  <LI><a href="" target=newwindow"></a>
+</OL>
+
+<p> This is how your GNS console looks.</p>
+
+<p><a href="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/GNS3_005.png"><img 
+alt="GNS3_005" src="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/GNS3_005.png"
+ width="810"></a>
+
+<p> In the left pane, you will see list of available Routers/Switches. Click on the 
+respective list and drag the devices to work space to start simulate.</p>
+
+<p>Here is the sample setup of two switches and one hub which are connected each other.</p>
+
+<p><a href="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/GNS3_006.png"><img alt="GNS3_006" src="http://180016988.r.cdn77.net/wp-content/uploads/2013/09/GNS3_006.png" 
+ width="810"></a>
+
+<p> That's it now you will be able to access and configure the virtual network devices 
+as the way you perform on the physical devices. This how-to have covered only 
+installation part and basic startup things. To learn more about GNS3, you might want to 
+check out the <a href="http://www.gns3.net/documentation/" target="_blank">documentation 
+section</a> or <a href="http://www.gns3.net/video-tutorials/" target="_blank">Video 
+tutorials</a> that describes how to use GNS3 effectively.</p>
+
+<p><!-- Quick Adsense WordPress Plugin: http://quicksense.net/ --></p>
+
+For questions please refer to our 
+Q/A forum at : <a href="http://ask.unixmen.com/">http://ask.unixmen.com/ </a>
+
+<BR><BR><BR>
+<a name="CiscoIosOnGNS3"><h3>Cisco Virtual IOS on GNS3 
+<a href="http://brezular.com/2014/07/16/cisco-virtual-ios-on-gns3/">(Source 
+Origin)</a></h3>
+
+<div class="heatmapthemead-header-entry-meta entry-meta">29 Comments</a></div>
+			
+<p> The tutorial discuss the use of  <a title="GNS3" href="http://www.gns3.net/" 
+target="_blank">GNS3</a> software to run Cisco Virtual IOS (vIOS). Cisco vIOS is  
+shipped and supported as a part of the Cisco's One Platform Kit (<a title="Cisco onePK" 
+href="http://www.cisco.com/c/en/us/products/ios-nx-os-software/onepk.html" 
+target="_blank">onePK</a>) that is distributed in form of virtual machine. It might 
+be downloaded with Cisco.com account. Currently, it is not required to have Cisco 
+account associated with service contracts, Bill-to IDs, or product serial numbers in 
+order to download onePK.</p>
+
+<h5><strong>Software Prerequisites</strong></h5>
+
+<ul>
+  <li>Host OS - any 64 bit Linux OS</li>
+  <li><a title="Qemu" href="http://wiki.qemu.org/Main_Page" target="_blank">Qemu</a> 
+      emulator and virtualizer compiled with x86_64 support</li>
+  <li><a title="KVM" href="http://www.linux-kvm.org/page/Main_Page" 
+      target="_blank">KVM</a></li>
+  <li>GNS3 0.8.7 - the last version that has Qemu support included</li>
+  <li>Cisco <a href="https://developer.cisco.com/site/onepk/downloads/all-in-one-vm/" 
+      target="_blank">All In One Vm</a> &nbsp;&nbsp;
+      <a href="https://developer.cisco.com/downloads/all-in-one-VM-1.2.1-194.ova" 
+      target="_blank">all-in-one-VM-1.2.1</a> (Registration Needed)</li>
+</ul>
+
+<h5><strong>Minimum Hardware Requirements</strong></h5>
+
+<ul>
+  <li>CPU with hardware virtualization support (<a title="AMD Virtualization" 
+      href="http://www.amd.com/en-us/solutions/servers/virtualization" 
+      target="_blank">AMD-V</a> or <a title="Intel Virtualization" 
+  href="http://en.wikipedia.org/wiki/X86_virtualization#Intel_virtualization_.28VT-x.29" 
+      target="_blank">VT-X</a> virtualization extensions)</li>
+  <li>Storage - 10 GB</li>
+  <li>RAM - 2000 MB</li>
+  <li>RAM vIOS - 384 MB</li>
+</ul>
+
+<h5>Script for Extracting vIOS from All-In-One VM</h5>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/09/extract_vios.txt" 
+target="_blank">Here</a> is a Linux bash script that helps you to extract vIOS  
+<em>vios-adventerprisek9-m.vmdk</em>  from  all-in-one VM file. Download all-in-one.ova 
+file from <a href="https://developer.cisco.com/site/onepk/downloads/all-in-one-vm/" 
+target="_blank">here</a> and assign executable privileges to the script.</p>
+
+<pre>
+ $ chmod +x extract_vios.txt
+</pre>
+
+<p>Then you can run the script as it is shown below.  The only user input is 
+selecting path to all-in-one VM file and entering a root password needed for 
+temporary mount of raw image.</p>
+
+<pre>
+ $ ./extract_vios 
+</pre>
+
+<p><strong>Script Requirements</strong></p>
+
+<ul>
+  <li> VirtualBox or Qemu installed</li>
+  <li> +2.1GB free hard disk space to convert vmdk to raw format</li>
+  <li> Root password to mount raw image</li>
+</ul>
+
+<h5><strong>Configuration Steps for Extracting vIOS from All-In-One VM</strong></h5>
+
+<p><strong>1. Download the onePK All-In-One Virtual Machine</strong></p>
+
+<p><a title="OnePK Download" 
+href="https://developer.cisco.com/site/networking/one/onepk/sdk-and-docs/all-in-one-vm/" 
+target="_blank">https://developer.cisco.com/site/networking/one/onepk/sdk-and-docs/all-in-one-vm/</a></p>
+
+
+<p>Login with your Cisco account to download all-in-one virtual machine.</p>
+
+
+<p><strong>2. Extract Files from Virtual Machine</strong></p>
+
+<pre>
+ $ tar xvf all-in-one-VM-1.2.1-194.ova 
+</pre>
+
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture1-Content_of_OVA.png"><img class="aligncenter size-full wp-image-5105" 
+src="http://brezular.com/wp-content/uploads/2014/07/Picture1-Content_of_OVA.png" 
+alt="Picture1-Content_of_OVA" height="152" width="722"></a></p>
+
+<p>Picture 1 - <strong>Content of OVA Tarball</strong></p>
+
+
+<p>The virtual disk <em>all-in-one-VM-1.2.1-194-disk1.vmdk</em> contains vIOS image 
+that we are going to extract from the disk.</p>
+
+<p><strong>3. Extract vIOS from Virtual Disk</strong></p>
+
+<p>We can directly extract the vios image out of all-in-one-VM-1.2.1-194-disk1.img 
+   file.</p>
+
+<p><strong>a) Convert vmdk to raw disk</strong></p>
+
+<p>Use qemu-img utility to convert vmdk disk type to raw disk.</p>
+
+<pre>
+ $ qemu-img convert -O raw all-in-one-VM-1.2.1-194-disk1.vmdk all-in-one-VM-1.2.1-194-disk1.img
+</pre>
+
+<p><strong>b) Check the available partitions inside the virtual disk</strong></p>
+
+<pre>
+ $  fdisk -l all-in-one-VM-1.2.1-194-disk1.img
+</pre>
+
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture2-Available_Partitions.png"><img class="aligncenter size-full wp-image-5106" 
+src="http://brezular.com/wp-content/uploads/2014/07/Picture2-Available_Partitions.png" 
+alt="Picture2-Available_Partitions" height="292" width="722"></a></p>
+
+<p>Picture 2 -<strong> Available Partitions </strong></p>
+
+<p><strong>c) Determine where the partition with vIOS image starts inside the 
+virtual disk </strong></p>
+
+<p>The first partition flagged with boot option contains vIOS image. The partition 
+starts at the sector 2048. The sector size is 512 bytes. When we multiple the starting 
+sector number and the sector size we calculate the offset where the partition 
+starts ( 512 x 2048 = 1048576 ).</p>
+
+<pre>
+ $ echo '2048 * 512' | bc 
+1048576 
+</pre>
+
+<p><strong>d) Mount the partition and extract vIOS image from partition</strong></p>
+
+
+<p>Thanks the computed offset we can mount the partition and extract  vIOS image from 
+partition.</p>
+
+
+<pre>
+ $ mkdir mount-point
+ $ sudo mount -o loop,ro,offset=1048576 all-in-one-VM-1.2.1-194-disk1.img mount-point/ 
+ $ tar xvf ./mount-point/usr/share/vmcloud/data/images/vios-adventerprisek9-m.ova -C /home/brezular/
+</pre>
+
+<p>The expected result is the file <em>vios-adventerprisek9-m.vmdk </em>located in a 
+directory /home/brezular/.</p>
+
+<p><strong>4. Configure GNS3 to Run vIOS Disk</strong></p>
+
+<p>Start GNS3 and create a new project. Navigate to 
+<em>Edit</em> -&gt; <em>Preferences</em> -&gt; <em>Qemu</em> -&gt; <em>General</em> 
+<em>Settings</em>. Configure Qemu general parameters and click test button.</p>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture3-Qemu_General_Settings.png"><img class="aligncenter size-full wp-image-4999" 
+src="http://brezular.com/wp-content/uploads/2014/07/Picture3-Qemu_General_Settings.png" 
+alt="Picture3-Qemu_General_Settings" height="365" width="733"></a></p>
+
+<p>Picture 3 - <strong>Qemu General Settings</strong></p>
+
+<p>Go ahead and configure GNS3 Guest settings. Navigate to 
+<em>Edit</em> -&gt; <em>Preferences</em> -&gt; <em>Qemu</em> -&gt; <em>Qemu</em> 
+<em>Guest</em>. Configure vIOS parameters according to the picture below.</p>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture2-Qemu_Guest_Settings1.png"><img class="aligncenter size-full wp-image-5029" 
+src="http://brezular.com/wp-content/uploads/2014/07/Picture2-Qemu_Guest_Settings1.png" 
+alt="Picture2-Qemu_Guest_Settings" height="713" width="733"></a></p>
+
+<p>Picture 4 - <strong>Qemu vIOS Guest Settings</strong></p>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture3-Show_Version_Command.png"><img class="aligncenter size-full wp-image-5022" 
+src="http://brezular.com/wp-content/uploads/2014/07/Picture3-Show_Version_Command.png" 
+height="714" width="659"></a></p>
+
+<p>Picture 5 - <strong>Show Version Command</strong></p>
+
+<p>According to the show version command, vIOS distributed with onePK virtual machine 
+is only demo version.</p>
+
+<p><strong>5. Testing Connectivity</strong></p>
+
+<p>The topology consists from the two routers running vIOS that are connected via 
+GigabitEthernet0/0 interfaces.</p>
+
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture4-Topology.png"><img class="aligncenter size-full wp-image-5023" 
+src="http://brezular.com/wp-content/uploads/2014/07/Picture4-Topology.png" 
+alt="Picture4-Topology" height="117" width="441"></a></p>
+
+<p>Picture 6 - <strong>Testing Topology</strong></p>
+
+<p>Configure vIOS routers as following.</p>
+
+<pre>
+Router&gt;en 
+Router#conf t 
+Router(config)#hostname vOS-I 
+vIOS-I(config)#interface GigabitEthernet 0/0 
+vIOS-I(config-if)#ip address 172.16.1.1 255.255.255.0 
+vIOS-I(config-if)#no shutdown 
+vIOS-I(config-if)#do wr
+</pre>
+
+
+<pre>
+Router&gt;en 
+Router#conf t 
+Router(config)#hostname vIOS-II 
+vIOS-II(config)#interface GIgabitEthernet 0/0 
+vIOS-II(config-if)#ip address 172.16.1.2 255.255.255.0 
+vIOS-II(config-if)#no shutdown 
+vIOS-I(config-if)#do wr
+</pre>
+
+
+<p>Successful ping issued on the vIOS-I router proves that connectivity is established between virtual IOS instances.</p>
+
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/07/Picture5-Ping_the_router1.png"><img src="http://brezular.com/wp-content/uploads/2014/07/Picture5-Ping_the_router1.png" alt="Picture5-Ping_the_router" height="150" width="659"></a></p>
+
+
+<p>Picture 7 - <strong>Ping Between vIOS Instances</strong></p>
+
+
+<p>End.</p>
+				
+	
+<h4>29 thoughts on "Cisco Virtual IOS on GNS3"</h4>
+
+		
+<ol>
+  <li>
+<p> Thanks for this very interesting article. Slight glitch:
+Start onePK Qemu Virtual Machine needs to be replaced by</p>
+
+
+<pre>
+$ qemu-system-x86_64 ./all-in-one-VM-1.2.1-194-disk1.vmdk-enable-kvm -m 2G
+$ qemu-system-x86_64 ./all-in-one-VM-1.2.1-194-disk1.img -enable-kvm -m 2G
+</pre>
+			
+	
+  <ul>
+    <li><p> Fixed. Thank you very much.</p>
+  </ul><!-- .children -->
+  <li><p> Can this be used to run multiple router and  do ccie labs</p>
+			
+	
+  <ul>
+    <li><p> I'm not sure about the features it offers. You must test it by your own. 
+         But I'm 100% sure that some features that are normally done by ASICs can't 
+         be emulated by the image.</p>
+			
+	
+	<p> It is possible to use IOSv in GNS3 for multiple routers as long as your 
+         device has all the required resources (CPU, RAM...): 
+         <a href="https://learningnetwork.cisco.com/message/416930#416930" 
+         rel="nofollow">https://learningnetwork.cisco.com/message/416930#416930</a></p>
+  </ul><!-- .children -->
+
+  <li><p>Pingback: <a href="http://www.gns3.net/news/new-great-howtos/" rel="external 
+     nofollow">New great howtos - GNS3</a></p>
+  <li><p> Can you shared all-in-one-VM-1.2.1-194.ova?</p>
+			
+	
+     <ul>
+       <li> <p> Sharing commercial product is not a good idea. Why don't you download 
+           it by your own? You only need to create an account at 
+           <a href="http://cisco.com/" rel="nofollow">http://cisco.com</a> and they you 
+           can download it for free.</p>
+     </ul><!-- .children -->
+  <li> <p> You can directly extract the vios image out of 
+      all-in-one-VM-1.2.1-194-disk1.img.  Replace step 3 to 5 with the following:</p>
+
+
+<pre>
+$ qemu-img convert -O raw all-in-one-VM-1.2.1-194-disk1.vmdk all-in-one-VM-1.2.1-194-disk1.img 
+$ /sbin/fdisk -l all-in-one-VM-1.2.1-194-disk1.img 
+</pre>
+
+
+<pre>
+Disk all-in-one-VM-1.2.1-194-disk1.img: 21.5 GB, 21474836480 bytes 
+255 heads, 63 sectors/track, 2610 cylinders, total 41943040 sectors 
+Units = sectors of 1 * 512 = 512 bytes 
+Sector size (logical/physical): 512 bytes / 512 bytes 
+I/O size (minimum/optimal): 512 bytes / 512 bytes 
+Disk identifier: 0x0005a663 
+
+Device                             Boot      Start         End      Blocks   Id  System 
+all-in-one-VM-1.2.1-194-disk1.img1   *        2048    37750783    18874368   83  Linux 
+all-in-one-VM-1.2.1-194-disk1.img2        37752830    41940991     2094081    5  Extended 
+all-in-one-VM-1.2.1-194-disk1.img5        37752832    41940991     2094080   82  Linux swap / Solaris 
+</pre>
+
+
+<pre>
+# Partition 1 is the main partition 
+$ mkdir mnt-dir 
+$ echo '2048 * 512' | bc 
+1048576 
+$ sudo mount -o loop,ro,offset=1048576 all-in-one-VM-1.2.1-194-disk1.img mnt-dir 
+$ cp -p mnt-dir/usr/share/vmcloud/data/images/vios-adventerprisek9-m.ova 
+$ sudo umount mnt-dir 
+</pre>
+
+
+<p>Cleanup</p>
+
+     <ul>
+       <li><p> Very nice, it's working. Thank you. I'll update my tutorial according to 
+      your steps.</p>
+     </ul><!-- .children -->
+
+  <li>	<p>Pingback: <a href="http://networkclasses.in/iosv-or-cisco-virtual-ios-in-gns3/" rel="external nofollow">IOSv or Cisco Virtual IOS in GNS3 | Network Guide</a></p>
+
+<pre> 
+root@Pc:/home/Downloads/onepk# 
+qemu-img convert -O raw all-in-one-VM-1.3.0.181-disk1.vmdk all-in-one-VM-1.3.0.181-disk1.img 
+qemu-img: Could not open 'all-in-one-VM-1.3.0.181-disk1.vmdk': Operation not permitted 
+qemu-img: Could not open 'all-in-one-VM-1.3.0.181-disk1.vmdk' 
+</pre>
+
+
+<p>Is this something Cisco has blocked in 1.3 version cause i see you guys playing 
+with 1.2 only... any suggestions???</p>
+			
+	
+     <ul>
+       <li> <p> In fact, the name of the downloaded file is 
+<strong>all-in-one-VM-1.3.0.181.ova</strong> so you have to use the command:
+
+<pre>
+ $ qemu-img convert -O raw all-in-one-VM-1.3.0.181.ova all-in-one-VM-1.3.0.181.img 
+</pre>
+
+     </ul><!-- .children -->
+
+  <li>	<p> Does it work in Windows?  I got it running but Only with graphic option, 
+     which is CPU intensive. otherwise I got connection refused! error.</p>
+			
+	
+     <ul>
+       <li><p> Yes, it works also on Windows. To troubleshoot it on Linux try this:
+
+        <OL>
+           <LI> get the console port e.g <em>5001</em>.  left click on device, or 
+                issue the command <em>show device name_of_your_device</em> in GNS3 
+                console.
+           <LI> start device and issue the command <em>netstat -ano | grep 5001</em>.
+ 
+            <P>If no output is displayed, socket is not created - check your 
+               configuration. If there is an output like this a socket is created 
+               and waiting for connection:
+
+<PRE>
+tcp        0      0 127.0.0.1:5001          0.0.0.0:*               LISTEN      off (0.00/0/0) 
+</PRE>
+
+            <P> Then you can connect to console port of your device with the command:
+<em>telnet 127.0.0.1 5001</em>.  Issue the command <em>netstat -ano | grep 5001</em> 
+and noticed Established connection from 127.0.0.1:50216 to your device 127.0.0.1:5001 
+and vice versa.</p>
+
+
+<pre>
+tcp        0      0 127.0.0.1:5001          0.0.0.0:*               LISTEN      off (0.00/0/0) 
+tcp        0      0 127.0.0.1:50216         127.0.0.1:5001          ESTABLISHED off (0.00/0/0) 
+tcp        0      0 127.0.0.1:5001          127.0.0.1:50216         ESTABLISHED off (0.00/0/0) 
+</pre>
+
+
+<p>Note: if the GNS3 device is not started and there is output displayed after the command <em>netstat -ano | grep 5001</em>, another application is using the socket 127.0.0.1:5001.</p>
+        </OL>
+
+			
+	
+     </ul><!-- .children -->
+  <li> <p> No comment - except thank you very much. Awesome ...</p>
+
+  <li> <p> Is there a way to disable the autoconfig on boot ?</p>
+
+  <li> <p> Hi,</p>
+
+
+      <p> I use the GNS3 beta 4 in a Ubuntu 14.04 64 VM. The vIOS works, but the boot 
+         takes forever. Once it is started it is responsive on the console, so it does 
+         not appear slow, but the interfaces are not working.  In GNS3 the interfaces 
+         are  Ethernet0 and in vIOS Ethernet0/0.  The capture is not working as well, 
+         but work fine for IOS and IOU on the same system.  Any idea?</p>
+	
+     <ul>
+       <li> <p> Hi, do you use kvm to speed up virtualization? What NIC type do you 
+            use?</p>
+
+            <ul>
+              <li> <p> Hi, i don't use KVM and NIC type e1000.  I also noticed that 
+                   the interface status in GNS3 is alway up, even if the NIC are 
+                   shutdown in vIOS.  I have now tried to use the gns3 patched qemu 
+                   version 0.14.1 for Linux 64bit from the GNS3 website.  The boot 
+                   process is much quicker now, but the same problem with the 
+                   interfaces.</p>
+			
+	
+              <ul>
+                <li> <p> Sascha, Is there any reason why you use old qemu version? 
+                    Here is how you install Qemu on Linux (Fedora).  Using Qemu without 
+                    KVM is really painful. Here is how to get it working on Linux.
+
+<PRE>
+<a href="http://brezular.com/2012/11/07/kvm-installation-on-fedora/" rel="nofollow">http://brezular.com/2012/11/07/kvm-installation-on-fedora/</a>
+</PRE>
+
+<p>Select e1000 in GNS3 VMs settings.</p>
+
+                <li> <p> Hi, I tried the old qemu version from the GNS3 website as I 
+                   was not sure if the never versions did include the patches mentioned 
+                   on the GNS3 website. Now I compiled the latest qemu by my self 
+                   (v2.1.2) and the interfaces work now fine.  The only annoying thing 
+                   is the messages about the tftp in the vIOS console:</p>
+
+
+<pre>
+%Error opening tftp://255.255.255.255/cisconet.cfg (Timed out)
+%Error opening tftp://255.255.255.255/router-confg (Timed out)
+%Error opening tftp://255.255.255.255/ciscortr.cfg (Timed out)
+%Error opening tftp://255.255.255.255/network-confg (Timed out) 
+</pre>
+
+
+                     <p> "no service config" does not seem to have any effect to 
+                   disable it.  But let me thank you for the real good blog and all 
+                   your work!</p>
+
+                <li> <p> To get rid of the messages you have to save your configuration. 
+                   After reboot, messages have gone. I don't know how to stop sending 
+                   messages on running system as it really seems that the command 
+                   "no service config" has no effect.</p>
+              </ul><!-- .children -->
+            </ul><!-- .children -->
+          </ul><!-- .children -->
+
+  <li> <p> I'm missing a basic step - I can't seem to figure out how open a console 
+      sessions to the boxes. When I do the test in Figure 3, all components start 
+      except pemu.  I do the configuration of the vIOS guest settings. But when I try 
+      to open a console, I see:
+
+<PRE>
+~ cwr$ telnet 127.0.0.1 3003 ; exit
+Trying 127.0.0.1...
+telnet: connect to address 127.0.0.1: Connection refused
+telnet: Unable to connect to remote host
+logout
+</pre>
+
+
+<p>[Process completed]</p>
+
+
+<p>Suggestions?</p>
+
+
+<p>thanks in advance!</p>
+
+      <ul>
+        <li> <p> I forgot to mention - I'm running on a Mac OS X 10.9.5. And running 
+             0.8.7. I have been trying to figure out path qemu on my Mac, but I probably 
+             need a strong hint.</p>
+
+        <li> <p> update - I un-checked the Use KVM check box, and was able to connect 
+             thru the console! Woo hoo!</p>
+      </ul><!-- .children -->
+
+  <li> <p> fyi, forgot to mention that the vIOS image has been updated. Using 
+      <a href="https://developer.cisco.com/downloads/all-in-one-VM-1.3.0.181.ova"> 
+      https://developer.cisco.com/downloads/all-in-one-VM-1.3.0.181.ova</a> will pull 
+      the current (and available) image.</p>
+
+  <li> <p>Pingback: (December 13, 2014)
+<a href="http://networknutsnbolts.wordpress.com/2014/12/13/how-to-set-up-cisco-vios-in-gns3-v1-x-and-get-it-running/" target="_blank">How to set up Cisco vIOS in GNS3 v1.x 
+and get it running ?</a> from Networking Nuts and Bolts</p>
+</ol>
+
+<BR><BR><BR>
+
+<a name="BasicBGP"></a><h3>Basic BGP <a target="_blank"
+ href="http://www.getnetworking.net/bgp/basic-bgp">(Source Origin)</a></h3>	
+
+<p> Written by <a href="http://www.getnetworking.net/author/vanikad">admin</a> on. 
+Posted in <a href="http://www.getnetworking.net/category/bgp">BGP</a></p>
+
+
+<p>Hi everybody! This is first lab from BGP series and here I would like to talk about 
+basic bgp configuration. If you are new to bgp you need to know that each BGP router 
+belong only to one Autonomous System (AS), and BGP neighbors can be of two types:</p>
+
+<ul>
+  <li>IBGP neighbors - when two neighbors are in the same AS;</li>
+  <li>EBGP neighbors - when two neighbors belong to different AS.</li>
+</ul>
+
+
+<p>IBGP means Internal BGP, and EBGP means External BGP. In this article we'll build a 
+simple BGP scenario in GNS3 on Cisco devices, where will  configure both types of BGP 
+neighbor relationships. See below the scenario I have prepared.</p>
+
+<img 
+src="http://www.getnetworking.net/wp-content/uploads/2012/11/Basic-BGP1.gif">
+
+<p> From picture you can see that <strong>R1</strong> with <strong>BORDER_1</strong> 
+and <strong>R2</strong> with <strong>BORDER_2 </strong>are IBGP neighbors while 
+<strong>BORDER_1</strong> with <strong>BORDER_2</strong> are EBGP neighbors (because 
+they belong to different AS).</p>
+
+<P> To configure BGP start with <code>router bgp <em><strong>AS</strong></em></code> 
+which enters you to BGP configuration mode. Here AS represents Autonomous System to 
+which the router belongs.
+
+<P> Take note that a router can belong only to one BGP Autonomous System</div>
+<p>Next, configure bgp neighbors with <code>neighbor (<em><strong>ip-address</strong></em> | <strong><em>peer-group-name</em></strong>) remote-as <strong><em>AS</em></strong></code><strong>  </strong>command.
+ In this lab will set neighbors based on ip address not on peer groups. 
+To tell the router what to advertise use this command: <code>network <strong><em>network-number</em></strong> [mask <strong><em>network-mask</em></strong>] [ route-map <strong><em>map-tag</em></strong>]</code>. In this lab will not use route maps.</p>
+
+<p>Now, let's return to our scenario. Below you see configurations according to our topology and commands described above.</p>
+
+<p><strong>R1</strong></p>
+
+<pre>
+R1(config)#interface fa0/0
+R1(config-if)#ip address 192.168.0.2 255.255.255.0
+R1(config-if)#no shutdown 
+
+R1(config)#router bgp 64520 
+R1(config-router)#neighbor 192.168.0.1 remote-as 64520 
+</pre>
+
+<p><strong>BORDER_1</strong></p>
+
+<pre>
+BORDER_1(config)#interface fastEthernet 0/0
+BORDER_1(config-if)#ip address 10.0.0.1 255.255.255.0
+BORDER_1(config-if)#no shutdown 
+BORDER_1(config-if)#interface fastethernet 0/1
+BORDER_1(config-if)#ip address 192.168.0.1 255.255.255.0
+BORDER_1(config-if)#no shutdown 
+
+BORDER_1(config)#router bgp 64520
+BORDER_1(config-router)#neighbor 192.168.0.2 remote-as 64520
+BORDER_1(config-router)#neighbor 10.0.0.2 remote-as 64530
+BORDER_1(config-router)#network 192.168.0.0 mask 255.255.255.0
+</pre>
+
+<p><strong>BORDER_2</strong></p>
+
+<pre>
+BORDER_2(config)#interface fastEthernet 0/0
+BORDER_2(config-if)#ip address 10.0.0.2 255.255.255.0
+BORDER_2(config-if)#no shutdown
+BORDER_2(config-if)#interface fa0/1
+BORDER_2(config-if)#ip address 192.168.100.1 255.255.255.0
+BORDER_2(config-if)#no shutdown
+
+BORDER_2(config)#router bgp 64530
+BORDER_2(config-router)#neighbor 10.0.0.1 remote-as 64520
+BORDER_2(config-router)#neighbor 192.168.100.2 remote-as 64530
+BORDER_2(config-router)#network 192.168.100.0 mask 255.255.255.0
+</pre>
+
+<p><strong>R2</strong></p>
+
+<pre>
+R2(config)#interface fastEthernet 0/0
+R2(config-if)#ip address 192.168.100.2 255.255.255.0
+R2(config-if)#no shutdown
+
+R2(config)#router bgp 64530
+R2(config-router)#neighbor 192.168.100.1 remote-as 64530
+</pre>
+
+<P> Note that if you use the mask in network command 
+then the network in routing table must match network from this command. 
+Also note that you can advertise any network that resides in routing 
+table and is not necessary to be directly connected.</div>
+<p>You have few tools to verify bgp status:</p>
+
+<ul>
+	<li><code>show ip bgp</code>;</li>
+	<li><code>show ip bgp summary</code>;</li>
+	<li><code>show ip bgp neighbors</code>;</li>
+	<li><code>show ip bgp rib-failure</code>.</li>
+</ul>
+<p>Also you can use <code>debug </code>command. Let's  show BGP neighbors on BORDER_1:</p>
+
+<pre>
+BORDER_1#show ip bgp neighbors 
+BGP neighbor is 10.0.0.2,  remote AS 64530, external link</span>
+  BGP version 4, remote router ID 192.168.100.1
+  BGP state = Established, up for 00:20:11
+
+... output ommited ...</span>
+
+BGP neighbor is 192.168.0.2,  remote AS 64520, internal link</span>
+  BGP version 4, remote router ID 192.168.0.2
+  BGP state = Established, up for 00:28:42
+</pre>
+
+
+<p>As you see we have two neighbors with BORDER_1 one internal and one external. Let's see the results of show ip route on R1:</p>
+
+<pre>
+R1#show ip route 
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+C    192.168.0.0/24 is directly connected, FastEthernet0/0
+R1#
+</pre>
+
+
+<p>Hmmm ... !  As you have seen on R1 we
+ don't have external route to 192.168.100.0/24 which is expected to be. 
+This is because routing updates sent by BORDER_2, which is an external 
+router, have address 10.0.0.2 as source ip address, but in this 
+case R1 doesn't have any idea how to get to 10.0.0.0 network and that's 
+why BGP on R1 doesn't put in routing table a route to 192.168.100.0/24 
+but keep it only in BGP table (you can check it with <code>show ip bgp</code> command). To overcome this we have to add on R1 this command: <code>BORDER_1(config-router)#neighbor 192.168.0.2 next-hop-self</code>, which will change source ip address of routing updates sent to R1 (will change to its fa0/1 ip address).</p>
+
+<pre>
+BORDER_1(config-router)#neighbor 192.168.0.2 next-hop-self
+</pre>
+
+
+<p>The same you need to do on BORDER_2 to change update source to neighbor R1. And now let's see again routing table on R1</p>
+
+<pre>
+R1#show ip route 
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is not set
+
+C    192.168.0.0/24 is directly connected, FastEthernet0/0
+B    192.168.100.0/24 [200/0] via 192.168.0.1, 00:02:42
+R1#
+</pre>
+
+
+And a ping from R1 to R2
+<pre>
+R1#ping 192.168.100.2
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.100.2, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 56/69/92 ms
+</pre>
+
+
+<p> Whew! We have done it! This was a basic BGP example. For more examples browse through our labs. See You!</div>
+
+<p><strong>Download "Basic BGP" GNS3 Lab:</strong>
+<a href="http://www.getnetworking.net/?wpdmact=process&amp;did=MTEuaG90bGluaw==">Download</a></p>
+
+<h4>Further References</h4>
+
+<ul>
+  <li><a href="http://www.getnetworking.net/bgp/bgp-next-hop-self">BGP 
+       next-hop-self</a></li>
+  <li><a href="http://www.getnetworking.net/bgp/ebgp-multihop">EBGP multihop</a></li>
+  <li><a href="http://www.getnetworking.net/bgp/how-to-configure-bgp-peer-group">How to 
+      configure BGP Peer Group</a></li>
+  <li><a href="http://www.getnetworking.net/bgp/bgp-update-source">BGP update 
+      source</a></li>
+  <li><a href="http://www.getnetworking.net/tutorials/eigrp-video-tutorial">EIGRP basic 
+      tutorial</a></li>
+  <li><a href="http://www.getnetworking.net/tutorials/single-area-ospf-video-tutorial">Single Area OSPF tutorial</a></li>
+</ul>
+
+	<section>
+
+<h4>Comments (15)</h4>
+		
+		
+
+<ol>
+  <li> <h5>prash (<time datetime="2013-08-07" pubdate="">August 7, 2013 at 8:00 
+           am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-125">(source origin)</a></h5>
+
+
+<p>In the above scenario why we can't ping 10.0.0.0/30 from R1 and R2  . when we can ping R1 from  R2  and viseversa</p>
+
+
+
+     <ul>
+       <li><h5>admin (<time datetime="2013-08-07" pubdate="">August 7, 2013 at 10:58 
+    am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-126">(source origin)</a></h5>
+
+
+<p>Hi! Well, you can't ping 10.0.0.0/30 
+from R1 and R2 because there is not a route in routing table of R1 and 
+R2 to 10.0.0.0/30 network. This prefix (10.0.0.0/30) is not advertised 
+in BGP neither in a IGP. You can ping 192.168.100.0/24 from R1 and 
+192.168.0.0/24 from R2 because those prefixes are advertised by BGP. If 
+you need to have access to 10.0.0.0/30 network you will need to setup a 
+IGP like OSPF or EIGRP, or by putting a static route for this prefix on 
+R1 and R2.<br>
+Cheers!</p>
+
+
+
+          <ul>
+            <li> <h5>KEITH (<time datetime="2014-10-09" pubdate="">October 9, 2014 at 
+                 9:17 am</time>)
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-215">(source origin)</a></h5>
+
+
+<p>THANKS A LOT DUDE</p>
+
+
+	
+          </ul><!-- .children -->
+     </ul><!-- .children -->
+  <li> <h5>prash (<time datetime="2013-08-07" pubdate="">August 7, 2013 at 
+             8:24 pm</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-127">(source origin)</a></h5>
+
+
+<p>Hi admin !  thanks for your valuable reply. i did configured a static route and it worked. thanks a lot.</p>
+
+
+
+	<ul>
+	<li>
+<h5>admin (<time datetime="2013-08-07" pubdate="">August 7, 2013 at 9:00 
+      pm</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-128">(source origin)</a></h5>
+
+
+
+<p>It was my pleasure!</p>
+
+       </ul></ul></ul>
+	<li><h5>siti (<time datetime="2013-10-21" pubdate="">October 21, 2013 at 7:05 
+                am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-144">(source origin)</a></h5>
+
+
+<p>can u show me how to setup ospf or eigrp on R1 n R2</p>
+
+
+
+	<ul>
+	<li>
+	
+<h5>admin (<time datetime="2013-10-21" pubdate="">October 21, 2013 at 8:44 
+           pm</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-145">(source origin)</a></h5>
+
+
+<div><p>Actually, you can use this topology without OSPF or EIGRP. You could check <a href="http://www.getnetworking.net/tutorials/single-area-ospf-video-tutorial" rel="nofollow">OSPF</a> or <a href="http://www.getnetworking.net/tutorials/redistribution-into-eigrp" rel="nofollow">EIGRP</a> tutorials for details.</p>
+</div>
+
+
+
+	</ul><!-- .children -->
+	<li>
+<h5>siti (<time datetime="2013-11-03" pubdate="">November 3, 2013 at 5:37 
+         am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-146">(source origin)</a></h5>
+
+
+<div><p>hi admin..<br>
+actually i'm looking for a configuration regarding BASIC BGP CONFIGURATION IN IPV6.<br>
+do u have any that can help me with my project.</p>
+</div>
+
+
+		<li>
+<h5>avantel (<time datetime="2014-01-08" pubdate="">January 8, 2014 at 2:28 
+             am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-167">(source origin)</a></h5>
+
+<div><p>Why can't ABR2 ping R1 f0/0 and ABR1 ping R2 f0/0?</p>
+
+<p>BORDER_1#sho ip route<br>
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP<br>
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area<br>
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2<br>
+       E1 - OSPF external type 1, E2 - OSPF external type 2<br>
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2<br>
+       ia - IS-IS inter area, * - candidate default, U - per-user static route<br>
+       o - ODR, P - periodic downloaded static route</p>
+
+<p>Gateway of last resort is not set</p>
+
+<p>     10.0.0.0/24 is subnetted, 1 subnets<br>
+C       10.0.0.0 is directly connected, FastEthernet0/0<br>
+C    192.168.0.0/24 is directly connected, FastEthernet0/1<br>
+B    192.168.100.0/24 [20/0] via 10.0.0.2, 00:17:43<br>
+BORDER_1#</p>
+</div>
+
+		</article>
+	<ul>
+	<li> <h5>admin (<time datetime="2014-01-08" pubdate="">January 8, 2014 at 11:21 
+             am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-168">(source origin)</a></h5>
+
+
+<div><p>Hi,<br>
+the reason for this is that when you ping R2 from BORDER_1 and R1 from 
+BORDER_2 you issue ping with source interface fa 0/0 which is in 
+10.0.0.0/30 subnet. R1 and R2 have no route to 10.0.0.0/30 so they can't
+ answer to these pings. Try instead to ping with source interface fa 0/1
+ and will see that ping works " <code>BORDER_1#ping 192.168.100.2 source fastEthernet 0/1</code> ",<br>
+BR</p>
+</div>
+
+	</ul><!-- .children -->
+	<li> <h5>saran (<time datetime="2014-02-10" pubdate="">February 10, 2014 at 3:16 
+            am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-176">(source origin)</a></h5>
+
+
+<div><p>Hi,</p>
+
+<p>First of all, thanks for writing these great tutorials. I typed out 
+all the config's of the routers and for some reason without using the 
+next-hop-self I had all the routes and could ping 192.168.100.2 from 
+192.168.0.2. Ironically when I added the next-hop-self it stopped 
+working. Do you think this something wrong with the config I have typed 
+or a bug with GNS3?</p>
+</div>
+
+	<ul>
+	<li> <h5>admin (<time datetime="2014-02-10" pubdate="">February 10, 2014 at 7:33 
+            am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-178">(source origin)</a></h5>
+
+<div><p>Hi,</p>
+
+<p>Could you share router configs?</p>
+</div>
+
+	</ul><!-- .children -->
+	<li> <h5>Tselvan (<time datetime="2014-06-18" pubdate="">June 18, 2014 at 11:08 
+             am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-197">(source origin)</a></h5>
+
+<div><p>yes u  can...but if u share ur network is not secure now...</p>
+</div>
+
+		<li> <h5>Mithil (<time datetime="2014-11-17" pubdate="">November 17, 2014 at 11:07 
+            am</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-223">(source origin)</a></h5>
+
+
+<div><p>After executing the command: 
+<code>'BORDER_1(config-router)#neighbor 192.168.0.2 next-hop-self'</code>, you have 
+written to do "The same you need to do on BRANCH_2 to change update 
+source to neighbor R1". what exactly needs to be done here? Which is 
+branch_2 and what command needs to be done, i'm not getting ping because
+ of it. Please help</p>
+</div>
+
+	<ul>
+	<li> <h5>admin (<time datetime="2014-11-17" pubdate="">November 17, 2014 at 1:45 
+           pm</time>) 
+<a href="http://www.getnetworking.net/bgp/basic-bgp#comment-224">(source origin)</a></h5>
+
+<div><p>I'm sorry, I meant to say BORDER_2. You need to add on BORDER_2 the same 
+command, i.e., to advertise to R2 routes learned from external peers (in this case 
+BORDER_1), but with BORDER_2 being the source in advertisements. 
+<code>BORDER_1(config-router)#neighbor 192.168.100.2 next-hop-self</code></p>
+</div>
+
+</ol>
+
+<a name="GNS3WithMoreThan8Nics"></a><h3>How to configure GNS3 installed on Linux to 
+support more than 8 NIC for Qemu Instances<a href="http://brezular.com/2014/12/28/how-to-configure-gns3-installed-on-linux-to-support-more-than-8-nic-for-qemu-instances/" 
+target="newwindow">(Source Origin)</a></h3>
+
+<P>Posted on <a href="http://brezular.com/2014/12/28/how-to-configure-gns3-installed-on-linux-to-support-more-than-8-nic-for-qemu-instances/" title="3:44 PM" rel="bookmark"><time class="entry-date updated" datetime="2014-12-28T15:44:35+00:00">December 28, 2014</time></a> by <a class="url fn n" href="https://www.google.com/+RadovanBrezula1979?rel=author" title="View all posts by Radovan Brezula" rel="author">Radovan Brezula</a> 
+								
+<p>Recently I have read a question on GNS3 forum asking whether <a  target="_blank" 
+href="http://wiki.qemu.org/Main_Page">Qemu</a> supports more than 8 network adapters. 
+<a href="http://forum.gns3.net/post6979.html#p6979" target="_blank">According to 
+Google</a> search, maximum number of adapters for Qemu virtual machines can be 
+configured with a parameter<em> #define MAX_NICS 8</em> in a file 
+<em>./include/net/net.h</em> under Qemu source tree. After you set desirable value 
+you must <a href="http://brezular.com/2012/02/12/installation-solaris-sparc-2-6-sunos-5-6-on-qemu-part-1-qemu-installation/" 
+target="_blank">compile and install Qemu</a> from source.</p>
+
+<p>However I have noticed that changing the integer value in the line #define MAX_NICS  
+has no effect on the maximum number of NIC allowed for Qemu VMs. I notice that I can 
+start Core Linux Qemu machine with 18 network adapters even Qemu 2.2.0 was compiled 
+with parameter #define MAX_NICS set to 1.</p>
+
+<p>Now we know that Qemu itself does not limit the maximum network adapters to 8. We 
+will go ahead and investigate GNS3. Navigate to <em>Edit</em> -&gt; 
+<em>Preferences</em> -&gt;<em> QEMU VMs</em> and click on existing Qemu VM. Click 
+on <em>Edit</em> button for this VM and navigate to <em>Network</em> tab. Increase 
+the number of Adapters to 9.</p>
+
+<p>The GNS3 1.2.1 allows to add maximum 8 NICs for a particular Qemu virtual machine. 
+To avoid this limitation we have edit GNS3 source files and recompile GNS3 GUI and 
+server. Here are the the steps for Linux.</p>
+
+<p><strong>1. Download and extract GNS3 1.2.1 Linux Sources</strong></p>
+
+<p style="text-align: left;">
+
+<PRE>
+ $ wget http://54dbd800be60307ab3fb-af183b57d94afbc9487771ea4c2db268.r84.cf5.rackcdn.com/GNS3-1.2.1.source.zip 
+ $ unzip GNS3-1.2.1.source.zip 
+</PRE>
+
+<p><strong>2. Install GNS3 GUI</strong></p>
+
+<pre>
+ $ cd gns3-server-1.2.1 
+ $ unzip gns3-gui-1.2.1.zip 
+ $ cd gns3-gui-1.2.1/
+</PRE>
+
+<p>Edit the file <em>qemu_vm_configuration_page_ui.py</em>: Change an integer number 
+in a line <em>self.uiAdaptersSpinBox.setMaximum(8)</em> to  value that represents the 
+number of required network adapters.</p>
+
+<pre>
+ $ vi gns3/modules/qemu/ui/qemu_vm_configuration_page_ui.py
+</PRE>
+
+<p style="padding-left: 30px;">self.uiAdaptersSpinBox.setMaximum(18)</p>
+
+<p>Now GNs3 should allow to configure 18 NIC for each Qemu VM. But first we have to recompile GNS3 GUI.</p>
+
+<pre>
+ $ sudo python3 setup.py install
+</PRE>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/12/Picture1_Qemu_Network_Tab.png"><img src="http://brezular.com/wp-content/uploads/2014/12/Picture1_Qemu_Network_Tab.png"></a></p>
+
+<p style="text-align: center;">Picture 1 - <strong>GNS3 QEMU VM Network Adapters Configuration</strong></p>
+
+<p><strong>3. Install GNS3 Server</strong></p>
+
+<pre>
+ $ cd ../ 
+ $ unzip gns3-server-1.2.1.zip 
+ $ cd gns3-server-1.2.1/
+</PRE>
+
+<p>Edit a file <em>schemas.py</em> and change a parameter <em>"maximum": 8,</em> in these three parts of the file:</p>
+
+<pre>
+ $ vi gns3server/modules/qemu/schemas.py
+</PRE>
+
+<p style="padding-left: 30px;">"adapters": {<br>
+"description": "number of adapters",<br>
+"type": "integer",<br>
+"minimum": 0,<br>
+"maximum": 18,<br>
+},</p>
+
+<p style="padding-left: 30px;">"port": {<br>
+"description": "Port number",<br>
+"type": "integer",<br>
+"minimum": 0,<br>
+"maximum": 18<br>
+},</p>
+
+<p style="padding-left: 30px;">"port": {<br>
+"description": "Port number",<br>
+"type": "integer",<br>
+"minimum": 0,<br>
+"maximum": 18<br>
+},</p>
+
+<p><strong>Note</strong>: The number 18 in the line <em>"maximum":18</em> should match the value that we configured in a file  <em>qemu_vm_configuration_page_ui.py.</em></p>
+
+<p>Now we can recompile GNS3 server with the command:</p>
+
+<pre>
+ $ sudo python3 setup.py install 
+</pre>
+
+<p><strong>4. Test Connectivity Between Core Linux Qemu Instances</strong></p>
+
+<p>I have created a simple GNS3 topology 
+that consists of two Linux Core hosts emulated by Qemu. Each Core 
+host  is occupied with 18 Ethernet Interfaces (Eth0 - Eth17). 
+Hosts are connected via their interface ETh17.</p>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/12/Picture2_Simple_Topology_for_Testing_Connection.png"><img src="http://brezular.com/wp-content/uploads/2014/12/Picture2_Simple_Topology_for_Testing_Connection.png"></a></p>
+
+<p style="text-align: center;">Picture 2 - Topology for Testing Connectivity Between Linux Core Hosts</p>
+
+<p>Core-I<br>
+<PRE>
+tc@box:~$ sudo su 
+root@box:~# echo "ifconfig eth17 192.168.1.1 netmask 255.255.255.0" &gt;&gt; /opt/bootlocal.sh 
+root@box:~# /opt/bootlocal.sh 
+root@box:~# /usr/bin/filetool.sh -b
+</PRE>
+
+<p>Core-II<br>
+<PRE>
+tc@box:~$ sudo su 
+root@box:~# echo "ifconfig eth17 192.168.1.2 netmask 255.255.255.0" &gt;&gt; /opt/bootlocal.sh 
+root@box:~# /opt/bootlocal.sh 
+root@box:~# /usr/bin/filetool.sh -b
+</PRE>
+
+<p>We should be able to ping Linux Core-II IP address 192.168.1.2 from the host Core-I.</p>
+
+<p><a href="http://brezular.com/wp-content/uploads/2014/12/Picture3_Testing_Connectivity_from_Core-I.png"><img src="http://brezular.com/wp-content/uploads/2014/12/Picture3_Testing_Connectivity_from_Core-I.png"></a></p>
+
+<p style="text-align: center;">Picture 3 - <strong>Testing Connectivity Between Linux Core Hosts</strong></p>
+
+<p><strong>End.</strong></p>
+
+<a name="References"></a><h3>References</h3>
+
+<OL>
+  <LI><a href="http://lostintransit.se/2014/">Daniels networking blog</a>
+  <LI><a href="https://community.gns3.com/docs/DOC-1831">Adding IOS Images</a>
+  <LI><a href="http://www.brianlinkletter.com/persistent-configuration-changes-in-tinycore-linux/" target="newwindow">Open-Source Routing and Network 
+      Simulation</a>
+  <LI><a href="http://gns3vault.com/labs/bgp/" target="newwindow">BGP Labs</a>
+</OL>
+
+</body></html>

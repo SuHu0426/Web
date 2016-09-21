@@ -1,0 +1,339 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Virtual Storage Format</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+</head>
+<body>
+  <h1>Virtual Storage Format</h1>
+  <h2>QCOW</h2>
+  <ul>
+    <li> <a href="http://wiki.qemu.org/Features/Qcow3">QCOW3</a>
+    <li> <a href="https://people.gnome.org/~markmc/qcow-image-format-version-1.html">The QCOW Image Format</a>
+    <li> <a href="https://github.com/qemu/QEMU/blob/master/docs/specs/qcow2.txt">The QCOW2 Image Format</a>
+    <li> <a href="https://github.com/qemu/QEMU/blob/master/docs/specs/qcow2.txt">QCOW 2/3 specs</a>
+  </ul>
+  <hr>
+  <h2>QED</h2>
+  <h3>Features</h3>
+  <ul>
+    <li> <a href="http://wiki.qemu.org/Features/QED/Specification">Open specification</a>
+    <li>Fully asynchronous I/O path
+    <li>Strong data integrity due to simple design
+    <li>Backing files
+    <li> <a href="http://en.wikipedia.org/wiki/Sparse_file">Sparse file</a>
+  </ul>
+  <h3>Future Features</h3>
+  <ul>
+    <li> <a href="http://wiki.qemu.org/Features/QED/Streaming">Streaming</a>
+    <li> <a href="http://wiki.qemu.org/Features/QED/OnlineDefrag">Online defragmentation</a>
+    <li> <a href="http://wiki.qemu.org/Features/QED/ParallelSubmission">Parallel submission</a>
+    <li> <a href="http://wiki.qemu.org/Features/QED/ScanAvoidance">Meta-data scan avoidance</a>
+  </ul>
+  
+  <hr>
+
+  
+  <h2>Sparse Files in Linux</h2>
+<pre class="mdol">
+<code>mkdir /tmp/Lab-Sparse; cd /tmp/Lab-Sparse</code>
+<code>dd of=dd.sp bs=1M seek=10 count=0</code>
+<code class="out">0+0 records in
+0+0 records out
+0 bytes (0 B) copied, 8.025e-05 s, 0.0 kB/s
+</code>
+<code>ls -l</code>
+<code>du *</code>
+<code class="out">0       dd.sp
+</code>
+<code>cp dd.sp cp.sp</code>
+<code>cp --sparse=never dd.sp cp.nsp</code>
+<code>ls -l</code>
+<code>du *</code>
+<code class="out">10240   cp.nsp
+0       cp.sp
+0       dd.sp
+</code>
+<code>cd; rm -rf /tmp/Lab-Sparse</code>
+</pre>
+
+<hr>
+  <h2>Dump headrs</h2>
+<pre class="mdol">
+<code>mkdir /tmp/Lab-headers; cd /tmp/Lab-headers</code>
+<code>qemu-img create -f qcow image.qcow 1G</code>
+<code>qemu-img create -f qed image.qed 1G</code>
+<code>dd if=image.qcow of=qcow.header bs=1 count=48</code>
+<code>dd if=image.qcow2 of=qcow2.header bs=1 count=104</code>
+<code>dd if=image.qed of=qed.header bs=1 count=64</code>
+<code>hd qcow.header</code>
+<code class="out">00000000  51 46 49 fb 00 00 00 01  00 00 00 00 00 00 00 00  |QFI.............|
+00000010  00 00 00 00 00 00 00 00  00 00 00 00 40 00 00 00  |............@...|
+00000020  0c 09 00 00 00 00 00 00  00 00 00 00 00 00 00 30  |...............0|
+00000030</code>
+<code>hd qcow2.header</code>
+<code class="out">00000000  51 46 49 fb 00 00 00 03  00 00 00 00 00 00 00 00  |QFI.............|
+00000010  00 00 00 00 00 00 00 10  00 00 00 00 40 00 00 00  |............@...|
+00000020  00 00 00 00 00 00 00 02  00 00 00 00 00 03 00 00  |................|
+00000030  00 00 00 00 00 01 00 00  00 00 00 01 00 00 00 00  |................|
+00000040  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+*
+00000060  00 00 00 04 00 00 00 68                           |.......h|
+00000068
+</code>
+<code>hd qed.header</code>
+<code class="out">00000000  51 45 44 00 00 00 01 00  04 00 00 00 01 00 00 00  |QED.............|
+00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+00000020  00 00 00 00 00 00 00 00  00 00 01 00 00 00 00 00  |................|
+00000030  00 00 00 40 00 00 00 00  00 00 00 00 00 00 00 00  |...@............|
+00000040
+</code>
+<code>file qcow.header</code>
+<code class="out">qcow.header: QEMU QCOW Image (v1), 1073741824 bytes
+</code>
+<code>file qcow2.header</code>
+<code class="out">qcow2.header: QEMU QCOW Image (v3), 1073741824 bytes
+</code>
+<code>file qed.header</code>
+<code class="out">qed.header: QEMU QED Image
+</code>
+</pre>
+  <p><b>Note:</b> header.image_size &lt;= TABLE_NOFFSETS * TABLE_NOFFSETS * header.cluster_size</p>
+
+
+<hr>
+<h2>QEMU Virtual Disk Formats Test</h2>
+<h3>Build Virtual Disk vis command qemu-img</h3>
+<pre class="mdol">
+<code>qemu-img create --help</code>
+<code>qemu-img create -f qed VirtualDisk.qed 5G</code>
+<code class="vm">ls -l /dev/vd*</code>
+<code class="out">brw-rw---T 1 root disk 254,  0 May 26 04:03 /dev/vda
+brw-rw---T 1 root disk 254,  1 May 26 04:04 /dev/vda1
+brw-rw---T 1 root disk 254, 16 May 26 04:03 /dev/vdb
+brw-rw---T 1 root disk 254, 32 May 26 04:03 /dev/vdc
+brw-rw---T 1 root disk 254, 48 May 26 04:03 /dev/vdd
+</code>
+<code>sudo mkfs.ext4 /dev/vdb</code>
+<code>sudo mkfs.ext4 /dev/vdc</code>
+<code>sudo mkfs.ext4 /dev/vdd</code>
+<code>sudo mkdir /mnt/qcow2 /mnt/qed /mnt/raw</code>
+<code>sudo mount /dev/vdb /mnt/qcow2</code>
+<code>sudo mount /dev/vdc /mnt/qed</code>
+<code>sudo mount /dev/vdd /mnt/raw</code>
+</pre>
+
+<h3>Performance Test (Disk Dump)</h3>
+<pre class="mdol">
+<code>time sudo dd if=/dev/zero of=/mnt/qcow2/1G bs=1M count=1024</code>
+<code class="out">1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB) copied, 3.28502 s, 327 MB/s
+
+real    0m3.292s
+user    0m0.004s
+sys     0m3.096s
+</code>
+<code>time sudo dd if=/dev/zero of=/mnt/qcow2/4G bs=1M count=4096</code>
+<code class="out">4096+0 records in
+4096+0 records out
+4294967296 bytes (4.3 GB) copied, 4.59416 s, 935 MB/s
+
+real    0m6.911s
+user    0m0.012s
+sys     0m3.476s
+</code>
+<code>time sudo dd if=/dev/zero of=/mnt/qed/1G bs=1M count=1024</code>
+<code class="out">1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB) copied, 1.08428 s, 990 MB/s
+
+real    0m1.099s
+user    0m0.004s
+sys     0m0.852s
+</code>
+<code>time sudo dd if=/dev/zero of=/mnt/qed/4G bs=1M count=4096</code>
+<code class="out">4096+0 records in
+4096+0 records out
+4294967296 bytes (4.3 GB) copied, 4.62269 s, 929 MB/s
+
+real    0m4.632s
+user    0m0.000s
+sys     0m3.560s
+</code>
+<code>time sudo dd if=/dev/zero of=/mnt/raw/1G bs=1M count=1024</code>
+<code class="out">1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB) copied, 1.10166 s, 975 MB/s
+
+real    0m1.112s
+user    0m0.000s
+sys     0m0.852s
+</code>
+<code>time sudo dd if=/dev/zero of=/mnt/raw/4G bs=1M count=4096</code>
+<code class="out">4096+0 records in
+4096+0 records out
+4294967296 bytes (4.3 GB) copied, 4.90362 s, 876 MB/s
+
+real    0m4.912s
+user    0m0.000s
+sys     0m3.584s
+</code>
+</pre>
+
+<iframe width="600" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/pubchart?oid=1671953710&amp;format=interactive"></iframe>
+<br>
+<iframe width="600" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/pubchart?oid=802915345&amp;format=interactive"></iframe>
+<br>
+
+<h3>Performance Test (bonnie++)</h3>
+<pre class="mdol">
+<code>sudo aptitude install bonnie++</code>
+<code>sudo mkdir /mnt/qcow2/bonnie++; sudo mkdir /mnt/qed/bonnie++; sudo mkdir /mnt/raw/bonnie++</code>
+<code>sudo chown cloud:cloud /mnt/qcow2/bonnie++; sudo chown cloud:cloud /mnt/qed/bonnie++; sudo chown cloud:cloud /mnt/raw/bonnie++</code>
+<code>bonnie -d /mnt/qcow2/bonnie++ -s 1024 -r 512 -m qcow2_1G</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+qcow2_1G         1G   860  97 117277  10 114400   9  4143  92 +++++ +++  3076  11
+Latency             11321us   88391us    5291us    2712us      89us   16494us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+qcow2_1G            -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency               267us     523us     603us     184us      42us     585us
+1.96,1.96,qcow2_1G,1,1432593745,1G,,860,97,117277,10,114400,9,4143,92,+++++,+++,3076,11,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,11321us,88391us,5291us,2712us,89us,16494us,267us,523us,603us,184us,42us,585us
+</code>
+<code>bonnie -d /mnt/qed/bonnie++ -s 1024 -r 512 -m qed_1G</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+qed_1G           1G   845  98 121003  11 126728  10  3964  91 +++++ +++  3482   7
+Latency             13098us   68936us    5841us    5023us      92us   16039us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+qed_1G              -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency               361us     356us     726us     216us      46us     574us
+1.96,1.96,qed_1G,1,1432594203,1G,,845,98,121003,11,126728,10,3964,91,+++++,+++,3482,7,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,13098us,68936us,5841us,5023us,92us,16039us,361us,356us,726us,216us,46us,574us
+</code>
+<code>bonnie -d /mnt/raw/bonnie++ -s 1024 -r 512 -m raw_1G</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+raw_1G           1G   878  98 120084  10 124106  10  4286  96 +++++ +++  3305  12
+Latency             10769us   79815us    6811us    4867us      94us   24050us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+raw_1G              -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency               185us     900us     707us     175us      41us     628us
+1.96,1.96,raw_1G,1,1432594245,1G,,878,98,120084,10,124106,10,4286,96,+++++,+++,3305,12,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,10769us,79815us,6811us,4867us,94us,24050us,185us,900us,707us,175us,41us,628us
+</code>
+<code>bonnie -d /mnt/qcow2/bonnie++ -s 4096 -r 2048 -m qcow2_4G</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+qcow2_4G         4G   865  98 127348  11 103859  11  4096  93 1720954  78  2516  22
+Latency             11023us     224ms   13649ms    4683us    5326us   74234us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+qcow2_4G            -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency               218us     547us     519us     231us      41us     617us
+1.96,1.96,qcow2_4G,1,1432594332,4G,,865,98,127348,11,103859,11,4096,93,1720954,78,2516,22,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,11023us,224ms,13649ms,4683us,5326us,74234us,218us,547us,519us,231us,41us,617us
+</code>
+<code>bonnie -d /mnt/qed/bonnie++ -s 4096 -r 2048 -m qed_4G</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+qed_4G           4G   884  98 126756  11 126202  13  4210  94 1598226  72  2401  21
+Latency             11162us   19793us     536ms    5583us   36156us   72861us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+qed_4G              -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency               260us     329us     607us     188us      48us     540us
+1.96,1.96,qed_4G,1,1432594058,4G,,884,98,126756,11,126202,13,4210,94,1598226,72,2401,21,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,11162us,19793us,536ms,5583us,36156us,72861us,260us,329us,607us,188us,48us,540us
+</code>
+<code>bonnie -d /mnt/raw/bonnie++ -s 4096 -r 2048 -m raw_4G</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+raw_4G           4G   880  98 136321  12 122420  12  4340  96 1632820  74  2709  11
+Latency             12273us   82407us   57196us    5208us    6158us   73796us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+raw_4G              -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency               294us     402us     612us     164us      19us     487us
+1.96,1.96,raw_4G,1,1432592754,4G,,880,98,136321,12,122420,12,4340,96,1632820,74,2709,11,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,12273us,82407us,57196us,5208us,6158us,73796us,294us,402us,612us,164us,19us,487us
+</code>
+
+<code>bonnie -d /mnt/qcow2/bonnie++ -m 4096</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+4096             8G   879  97 125992  12 98074  11  4264  97 1140017  73  2115  24
+Latency             11432us   20671ms   12416ms    5043us   18836us   59190us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+4096                -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency             79845us     427us     529us     188us      52us     770us
+1.96,1.96,4096,1,1432594792,8G,,879,97,125992,12,98074,11,4264,97,1140017,73,2115,24,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,11432us,20671ms,12416ms,5043us,18836us,59190us,79845us,427us,529us,188us,52us,770us
+</code>
+<code>bonnie -d /mnt/qed/bonnie++ -m 4096</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+4096             8G   857  98 125854  12 122929  15  4239  95 1143902  70  2278  16
+Latency             11886us   20063ms   10556ms    5602us    5405us     168ms
+Version  1.96       ------Sequential Create------ --------Random Create--------
+4096                -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency              9634us     488us     667us     195us      36us     791us
+1.96,1.96,4096,1,1432595122,8G,,857,98,125854,12,122929,15,4239,95,1143902,70,2278,16,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,11886us,20063ms,10556ms,5602us,5405us,168ms,9634us,488us,667us,195us,36us,791us
+</code>
+<code>bonnie -d /mnt/raw/bonnie++ -m 4096</code>
+<code class="out">Version  1.96       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+4096             8G   850  97 125147  12 131697  15  4239  97 1185662  71  2056  24
+Latency             18743us   20459ms   10659ms    2960us   49200us   70599us
+Version  1.96       ------Sequential Create------ --------Random Create--------
+4096                -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16 +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++ +++++ +++
+Latency             19372us     374us     600us     174us      61us     617us
+1.96,1.96,4096,1,1432595430,8G,,850,97,125147,12,131697,15,4239,97,1185662,71,2056,24,16,,,,,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,+++++,+++,18743us,20459ms,10659ms,2960us,49200us,70599us,19372us,374us,600us,174us,61us,617us
+</code>
+</pre>
+
+<iframe width="982" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/pubchart?oid=1658836749&amp;format=interactive"></iframe>
+<br>
+<iframe width="800" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/pubchart?oid=1848155509&amp;format=interactive"></iframe>
+<br>
+<iframe width="800" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/pubchart?oid=1836080820&amp;format=interactive"></iframe>
+<br>
+<iframe width="800" height="371" seamless frameborder="0" scrolling="no" src="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/pubchart?oid=610628623&amp;format=interactive"></iframe>
+<br>
+<a href="https://docs.google.com/spreadsheets/d/1aglmPK6SmntLMbMvgcPs653gmEyfScYqppVOAnpeH14/edit?usp=sharing">bonnie++ spreadsheet</a>
+
+
+<!-- 頁底 -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+      <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+      // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+</body>
+</html>

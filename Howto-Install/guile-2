@@ -1,0 +1,11 @@
+scp -r as:/backup/guile-2 /tmp/
+sudo cp -r /tmp/guile-2 /backup/.
+cd /src2
+mkdir guile-2;cd guile-2
+cp /backup/guile-2/* .
+tar zxvf *.tar
+sudo apt-get update
+sudo apt-get install libffi-dev libunistring-dev libgc-dev
+cd obj*
+./myconf
+make 

@@ -1,0 +1,220 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Virtual Technelogy: Libvirt command</title>
+	<link type="text/css" rel="stylesheet" href="http://140.120.15.179/css/style_emacs.css" />
+</head>
+<BODY>
+<!--  style="width:794px;border:1px solid #000000;"
+<h1>作業請參考 <a href="Lab1-assignment.html">Lab 1 assignment</a></h1> -->
+<h1>Lab 3: Virtual Technelogy: Libvirt command</h1>
+<h2>實驗描述</h2>
+使用指令模式運作的 virsh方式來實現Live migration的效果.
+<h2>實驗環境</h2>
+理學大樓 1002 教室
+<table border=2>
+  <tr><td width="100">	<th width="320">Cloud-A01 ～ Cloud-D12</tr>
+  <tr><th>CPU			<td align="right">AMD Phenom(tm) II X6 1065T Processor</tr>
+  <tr><th>Memory		<td align="right">8G</tr>
+  <tr><th>Disk spaces	<td align="right">500G、500G</tr>
+  <tr><th>O.S.			<td align="right">Debian squeeze</tr>
+</table>
+<br />
+理學大樓 821 機房
+<table border=2>
+  <tr><td width="100">	<th width="320">CSIE-Cloud01 ～ CSIE-Cloud06</tr>
+  <tr><th>CPU			<td align="right">AMD Opteron(TM) Processor 6128 * 2 <br> (total 16 cpu cores)</tr>
+  <tr><th>Memory		<td align="right">32G</tr>
+  <tr><th>Disk spaces	<td align="right">500G、500G、1T</tr>
+  <tr><th>O.S.			<td align="right">Debian wheezy</tr>
+</table>
+<table border=2>
+  <tr><td width="100">	<th width="320">CSIE-Cloud07、CSIE-Cloud08</tr>
+  <tr><th>CPU			<td align="right">AMD Opteron(TM) Processor 6234 * 2<br> (total 24 cpu cores)</tr>
+  <tr><th>Memory		<td align="right">12G</tr>
+  <tr><th>Disk spaces	<td align="right">500G、500G、1T</tr>
+  <tr><th>O.S.			<td align="right">Debian wheezy</tr>
+</table>
+<br />
+實習機器
+<table border=2>
+  <tr><td width="100">	<th width="320">CSIE-Student*、CSIE-Work*</tr>
+  <tr><th>CPU			<td align="right">AMD Opteron(TM) Processor 6128<br> (total 4 cpu cores)</tr>
+  <tr><th>Memory		<td align="right">4G</tr>
+  <tr><th>Disk spaces	<td align="right">40G</tr>
+  <tr><th>O.S.			<td align="right">Debian wheezy</tr>
+</table>
+<h2>安裝實作</h2>
+ <ol>
+    <!-- <LI><a href="http://amm/uml-rfs/uml-howto.html">Original</a></LI> -->
+<h3><li>configuration of the source host</h3><pre>
+<ul><h3><li>configure virt-manager</h3></ul><div class="console"><pre>
+$ sudo aptitude update 
+$ sudo apt-get install virt-viewer virt-manager</pre></div><ul><h3><li>add new user </h3></ul><div class="console"><pre>
+$ sudo adduser cloud libvirt
+</pre></div><ul><h3><li>Exmain current virtual network</h3></ul><div class="console"><pre>$ sudo virsh net-list --all</pre></div>
+<div class="out"><pre>Name                 State      Autostart
+-----------------------------------------
+default              inactive   no 
+</pre></div><ul><h3><li>Set virtual network</h3></ul><div class="console"><pre>
+$ cd /etc/libvirt/qemu/networks/
+$ sudo nano virtNetsetup.xml
+<span style="color: red"># Write in virtNetsetup.xml</span>
+&lt;network&gt;
+  &lt;name&gt;virtNet&lt;/name&gt;
+  &lt;bridge name="virbr2" /&gt;
+  &lt;forward/&gt;
+  &lt;ip address="192.168.100.1" netmask="255.255.255.0"&gt;
+    &lt;dhcp&gt;
+      &lt;range start="192.168.100.2" end="192.168.100.254" /&gt;
+    &lt;/dhcp&gt;
+  &lt;/ip&gt;
+&lt;/network&gt;
+</pre></div></div><ul><h3><li>Create virtNetsetup.xml network</h3></ul><div class="console"><pre>
+$ sudo virsh net-create virtNetsetup.xml</pre></div><ul><h3><li>Examin virtual network again</h3></ul><div class="console"><pre>
+$ sudo virsh net-list --all</pre></div>
+<div class="out">Name                 State      Autostart
+-----------------------------------------
+virtNet              active     no        
+default              inactive   no 
+</div><ul><h3><li>Setting bridge network</h3></ul><div class="console"><pre><span style="color: red"># 請同學們不要執行這段</span>
+$ sudo brctl addbr br0
+$ sudo brctl addif br0 eth1
+$ sudo ifconfig eth1 0.0.0.0
+$ sudo ifconfig br0 <span style="color: red">[Set eth1 IP address]</span> netmask 255.255.255.0 up</pre></div>
+<div class="console"><pre>$ /sbin/ifconfig</div>
+<div class="out">br0       Link encap:Ethernet  HWaddr 68:b5:99:00:db:c5  
+          inet addr:192.168.0.82  Bcast:192.168.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::6ab5:99ff:fe00:dbc5/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:27304 errors:0 dropped:25 overruns:0 frame:0
+          TX packets:10987 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:2549823 (2.4 MiB)  TX bytes:13453125 (12.8 MiB)
+eth0      Link encap:Ethernet  HWaddr 68:b5:99:58:db:c5  
+          inet addr:140.120.16.82  Bcast:140.120.16.255  Mask:255.255.255.0
+          inet6 addr: fe80::6ab5:99ff:fe58:dbc5/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:5519987 errors:0 dropped:65 overruns:0 frame:0
+          TX packets:5913019 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:4100648412 (3.8 GiB)  TX bytes:5141624508 (4.7 GiB)
+eth1      Link encap:Ethernet  HWaddr 68:b5:99:00:db:c5  
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:10162078 errors:0 dropped:1436016 overruns:0 frame:0
+          TX packets:55000 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:7523324988 (7.0 GiB)  TX bytes:2853167 (2.7 MiB)
+          Interrupt:10 Base address:0x8000 
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:716249 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:716249 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:1047397944 (998.8 MiB)  TX bytes:1047397944 (998.8 MiB)</div>
+<div class="console"><pre>
+$ cd ~/virtIMG;ls -lh</pre></div>
+<div class="out">-rw-r--r-- 1 root root 2.0G Nov 27 11:17 LM-<span style="color: red"><b>[source group]</span>.img
+-rw-r--r-- 1 root root 2.0G Nov 27 11:25 LM-<span style="color: red"><b>[destination group]</span>.img
+</div><ul><h3><li>duplicate LM-<span style="color: red"><b>[source group]</span>.img named LM-virsh<span style="color: red"><b>[source group]</span>.img</h3></ul><div class="console"><pre>
+$ cp LM-<span style="color: red"><b>[source group]</span>.img LM-virsh<span style="color: red"><b>[source group]</span>.img
+$ ls -lh</pre></div>
+<div class="out">-rw-r--r-- 1 root root 2.0G Nov 27 11:17 LM-<span style="color: red"><b>[source group]</span>.img
+-rw-r--r-- 1 root root 2.0G Nov 27 11:25 LM-<span style="color: red"><b>[destination group]</span>.img
+-rw-r--r-- 1 root root 2.0G Nov 27 11:17 LM-virsh<span style="color: red"><b>[source group]</span>.img</div><ul><h3><li>Exmain current virtual machine condition</h3></ul><div class="console"><pre>
+$ sudo virsh list --all</pre></div>
+<div class="out"> Id    Name                           State
+---------------------------------------------
+</div><ul><h3><li>Create new virtual machine</h3></ul><div class="console"><pre>
+$ sudo virt-install --connect=qemu:///system -n LM-virsh<span style="color: red"><b>[source group]</span> -r 512 --file /home/cloud/virtIMG/LM-virsh<span style="color: red"><b>[source group]</span>.img --vnc --noautoconsole --accelerate --bridge=br0 --import</pre></div>
+<div class="console"><pre>
+$ sudo virsh list --all</pre></div>
+<div class="out"> Id    Name                           State
+----------------------------------------------------
+ 10    LM-virsh<span style="color: red"><b>[source group]</span>         running</div><ul><h3><li>Use virsh command to manage virtual machine</h3></ul><div class="console"><pre>
+<span style="color: red"><b># virsh 常用的指令</span>
+virsh [options]... [&lt;command_string&gt;]
+virsh [options]... &lt;command&gt; [args...]
+  options:
+    -h | --help             this help
+    -q | --quiet            quiet mode
+　commands:
+　　start                   start a (previously defined) inactive domain
+　　reboot                  reboot a domain
+　　suspend                 suspend a domain
+　　resume                  resume a domain
+　　shutdown                gracefully shutdown a domain
+$ sudo virsh -h　　　　　　  //check virsh commands
+<span style="color: red"># Demonstration suspend and resume</span> 
+$ sudo virsh suspend LM-virsh<span style="color: red"><b>[source group]</span>
+ Id    Name                           State
+----------------------------------------------------
+ 10    LM-virsh<span style="color: red"><b>[source group]</span>         paused
+  
+$ sudo virsh resume LM-virsh<span style="color: red"><b>[source group]</span>
+ Id    Name                           State
+----------------------------------------------------
+ 10    LM-virsh<span style="color: red"><b>[source group]</span>         running
+</pre></div>
+<div class="console"><pre>
+$ cd /etc/libvirt/qemu/
+$ ls -lh</pre></div>
+<div class="out">drwxr-xr-x 3 root root 4.0K Oct 19 18:46 networks
+-rw------- 1 root root 2.1K Oct 19 20:08 LM-virsh<span style="color: red"><b>[source group]</span>.xml
+</div><ul><h3><li>Login the VM</h3></ul><div class="console"><pre>
+$ cd ~/virtIMG/
+$ virt-viewer --connect qemu+ssh://cloud@localhost/system LM-virsh<span style="color: red"><b>[source group]</span></pre></div><p><span style="color: red"><b># Modify /etc/hosts and /etc/hostname in VM</span>
+<div class="console"><pre>
+$ sudo nano /etc/hosts
+$ sudo nano /etc/hostname
+$ sudo init 0</pre></div><ul><h3><li>Duplicate LM-virsh<span style="color: red"><b>[source group]</span>.img to destination host</h3></ul><div class="console"><pre>$ scp LM-virsh<span style="color: red"><b>[source group]</span>.img <span style="color: red">[YOUR DESTINATION IP]</span>:~/virtIMG
+</pre></div>
+<div class="console"><pre>
+$ sudo sysctl net.ipv4.ip_forward=1</pre></div>
+<div class="out">net.ipv4.ip_forward = 1</div><ul><h3><li>Start VM</h3></ul><div class="console"><pre>
+$ sudo virsh start LM-virsh<span style="color: red"><b>[source group]</span></pre></div><ul><h3><li>Check network in VM</h3></ul><div class="console"><pre>
+$ virt-viewer --connect qemu+ssh://cloud@localhost/system LM-virsh<span style="color: red"><b>[source group]</span>
+$ ping <span style="color: red"><b>[YOUR SOURCE IP]</span></pre></div><ul><h3><li>Type Ctrl+c to close VM window</h3></ul><div class="console"><pre>
+$ sudo virsh list --all</pre></div>
+<div class="out"> Id    Name                           State
+----------------------------------------------------
+ 10    LM-virsh<span style="color: red"><b>[source group]</span>         running
+</div><ul><h3><li>Useing ssh login the VM</h3></ul><div class="console"><pre>
+$ ssh -p 30<span style="color: red"><b>[source group]</span> cloud@140.120.16.100</pre></div><p><span style="color: red"># In order to proform VM migration with need to destination host as follow</span>
+<ul><h3><li>Look at destination VM condition</h3></ul><div class="console"><pre>
+$ virsh --connect qemu+ssh://cloud@<span style="color: red">[YOUR DESTINATION IP]</span>/system list</pre></div>
+<div class="out"> Id    Name                           State
+---------------------------------------------
+ 10    LM-virsh<span style="color: red"><b>[destination group]</span>    running</div>
+</div><ul><h3><li>Start VM migration</h3></ul><div class="console"><pre>
+$ sudo virsh migrate --live LM-virsh<span style="color: red"><b>[source group]</span> qemu+ssh://cloud@<span style="color: red">[YOUR DESTINATION IP]</span>/system --unsafe tcp:<span style="color: red">[YOUR DESTINATION IP]</span>:44<span style="color: red">[source group]</span></pre></div></div><ul><h3><li>Exmain source host current VM condition</h3></ul><div class="console"><pre>
+$ sudo virsh list --all</pre></div>
+<div class="out"> Id    Name                           State
+---------------------------------------------
+ -     LM-virsh<span style="color: red"><b>[source group]</span>         shut off
+ 10    LM-virsh<span style="color: red"><b>[destination group]</span>    running
+</div>
+<ul><h3><li>Exmain destination host current VM condition</h3></ul><div class="console"><pre>
+$ virsh --connect qemu+ssh://cloud@<span style="color: red">[YOUR DESTINATION IP]</span>/system list</pre></div>
+<div class="out"> Id    Name                           State
+---------------------------------------------
+ 10    LM-virsh<span style="color: red"><b>[source group]</span>         running
+ -     LM-virsh<span style="color: red"><b>[destination group]</span>    shut off
+</div>
+</div>
+</pre>
+</li>
+<h3><li>configuration of the destination host</h3><pre>
+設定的bridge和存放的img位置要跟source端一樣
+</li>
+</ol>
+<h1>References:</h1>
+ <ol>
+    <li><a href="http://libvirt.org/migration.html">Guest migration</a>
+    <li><a href="http://docs.fedoraproject.org/en-US/Fedora/13/html/Virtualization_Guide/sect-Virtualization-KVM_live_migration-Live_KVM_migration_with_virsh.html">Live KVM migration with virsh</a>
+	<li><a href="https://access.redhat.com/knowledge/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Virtualization_Administration_Guide/chap-Virtualization_Administration_Guide-Managing_guests_with_virsh.html">Managing guests with virsh</a>
+  </ol>
+</BODY>

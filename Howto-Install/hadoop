@@ -1,0 +1,86 @@
+step 1. 設定登入免密碼
+
+
+step 2. 安裝java
+$ sudo apt-get update
+$ sudo apt-get install openjdk-6-jdk openjdk-6-jre
+$ sudo update-java-alternatives -l
+java-6-openjdk 1061 /usr/lib/jvm/java-6-openjdk
+#$ sudo update-java-alternatives -s java-6-openjdk
+$ cd /src4
+$ sudo mkdir hadoop
+$ sudo chown hsu:hsu hadoop
+$ cd hadoop
+
+step 3. 下載安裝Hadoop
+$ wget http://ftp.twaren.net/Unix/Web/apache/hadoop/core/hadoop-0.20.2/hadoop-0.20.2.tar.gz
+$ tar zxvf hadoop-0.20.2.tar.gz
+$ mv hadoop-0.20.2 hadoop
+$ sudo mkdir /var/hadoop
+$ sudo chown hsu:hsu /var/hadoop
+$ cd hadoop
+
+step 4. 設定 hadoop-env.sh
+$ cat >> conf/hadoop-env.sh << EOF
+export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
+export HADOOP_HOME=/src4/hadoop/hadoop
+export HADOOP_CONF_DIR=/src4/hadoop/hadoop/conf
+EOF
+
+step 5. 設定 *-site.xml 
+$ cat > conf/core-site.xml << EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+<property>
+    <name>fs.default.name</name>
+    <value>hdfs://localhost:9000</value>
+  </property>
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/var/hadoop/hadoop-hsu</value>
+  </property>
+</configuration>
+EOF
+
+$ cat > conf/hdfs-site.xml  << EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>1</value>
+  </property>
+</configuration>
+EOF
+
+$ cat > conf/mapred-site.xml  << EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+  <property>
+    <name>mapred.job.tracker</name>
+    <value>localhost:9001</value>
+  </property>
+</configuration>
+EOF
+
+step 6. 格式化HDFS
+$ bin/hadoop namenode -format
+
+step 7. 啟動Hadoop
+$ bin/start-all.sh
+
+step 8. 完成！檢查運作狀態
+http://localhost:50030/ - Hadoop 管理介面
+http://localhost:50060/ - Hadoop Task Tracker 狀態
+http://localhost:50070/ - Hadoop DFS 狀態

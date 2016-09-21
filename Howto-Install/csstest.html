@@ -1,0 +1,198 @@
+<html>
+  <head>
+    <title>Open vSwitch</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+</head>
+  <body>
+  <h1><a href="http://openvswitch.org/">Open vSwitch</a></h1>
+
+  <h2>My ovs scripts(2015-04)</h2>
+<pre class="mdol">
+<code>cat /usr/local/bin/ovs</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+<span style="color:#8a8a8a">### BEGIN INIT INFO</span>
+<span style="color:#8a8a8a"># Provides:          SuHuTAKO</span>
+<span style="color:#8a8a8a"># Required-Start:    $all</span>
+<span style="color:#8a8a8a"># Required-Stop:</span>
+<span style="color:#8a8a8a"># Should-Start:</span>
+<span style="color:#8a8a8a"># Should-Stop:</span>
+<span style="color:#8a8a8a"># Default-Start:     2 3 4 5</span>
+<span style="color:#8a8a8a"># Default-Stop:      0 1 6</span>
+<span style="color:#8a8a8a"># Short-Description: Example initscript</span>
+<span style="color:#8a8a8a"># Description:       This file should be used to construct scripts to be</span>
+<span style="color:#8a8a8a">#                    placed in /etc/init.d.</span>
+<span style="color:#8a8a8a">### END INIT INFO</span>
+<span style="color:#8a8a8a"># Some things that run always</span>
+<span style="color:#34e3e3">touch</span> <span style="color:#efefef">/</span>var<span style="color:#efefef">/</span>lock<span style="color:#efefef">/</span>ovs
+ifLAN<span style="color:#efefef">=</span>eth0
+ifWAN<span style="color:#efefef">=</span>eth1
+LAN<span style="color:#efefef">=</span><span style="color:#fce94f">192.168.180.3</span>
+LANGW<span style="color:#efefef">=</span><span style="color:#fce94f">192.168.180.254</span>
+<span style="color:#8a8a8a">#LAN0=192.168.179.3</span>
+<span style="color:#8a8a8a">#LAN0GW=192.168.179.254</span>
+WAN<span style="color:#efefef">=</span><span style="color:#fce94f">${YourPublicIP}</span>
+WANGW<span style="color:#efefef">=</span><span style="color:#fce94f">${YourGatewayIP}</span>
+start<span style="color:#efefef">() {</span>
+    iptables <span style="color:#efefef">--</span>table nat <span style="color:#efefef">-</span>D POSTROUTING <span style="color:#efefef">--</span>out-interface <span style="color:#efefef">${ifWAN}</span> <span style="color:#efefef">-</span>j MASQUERADE
+    iptables <span style="color:#efefef">--</span>table nat <span style="color:#efefef">-</span>A POSTROUTING <span style="color:#efefef">--</span>out-interface brWAN <span style="color:#efefef">-</span>j MASQUERADE
+    sysctl net.ipv4.ip_forward<span style="color:#efefef">=</span><span style="color:#fce94f">1</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:2 down</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:1 down</span>
+    ifconfig <span style="color:#efefef">${ifLAN}</span><span style="color:#efefef">:</span><span style="color:#fce94f">0</span> down
+    ovs-vsctl add-br brLAN
+    ovs-vsctl add-port brLAN <span style="color:#efefef">${ifLAN}</span>
+    ovs-vsctl add-br brWAN
+    ovs-vsctl add-port brWAN <span style="color:#efefef">${ifWAN}</span>
+    ifconfig <span style="color:#efefef">${ifLAN}</span> <span style="color:#fce94f">0.0.0.0</span>
+    ifconfig <span style="color:#efefef">${ifWAN}</span> <span style="color:#fce94f">0.0.0.0</span>
+    <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">2</span>
+    ifconfig brLAN <span style="color:#efefef">${LAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">24</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:0 ${LAN0}/24</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:1 ${LANGW}/24</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:2 ${LAN0GW}/24</span>
+    ifconfig brWAN <span style="color:#efefef">${WAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">26</span>
+    route add default gw <span style="color:#efefef">${WANGW}</span>
+    route add <span style="color:#efefef">-</span>net <span style="color:#fce94f">192.168.180.0</span><span style="color:#efefef">/</span><span style="color:#fce94f">24</span> gw <span style="color:#efefef">${LANGW}</span>
+<span style="color:#8a8a8a">#    route add -net 192.168.179.0/24 gw ${LAN0GW}</span>
+<span style="color:#efefef">}</span>
+stop<span style="color:#efefef">() {</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:0 down</span>
+    ovs-vsctl del-port brLAN <span style="color:#efefef">${ifLAN}</span>
+    ovs-vsctl del-br brLAN
+    ovs-vsctl del-port brWAN <span style="color:#efefef">${ifWAN}</span>
+    ovs-vsctl del-br brWAN
+    ifconfig <span style="color:#efefef">${ifLAN} ${LAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">24</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:0 ${LAN0}/24</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:1 ${LANGW}/24</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:2 ${LAN0GW}/24</span>
+    ifconfig <span style="color:#efefef">${ifWAN} ${WAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">26</span>
+    route add default gw <span style="color:#efefef">${WANGW}</span>
+    sysctl net.ipv4.ip_forward<span style="color:#efefef">=</span><span style="color:#fce94f">1</span>
+    iptables <span style="color:#efefef">--</span>table nat <span style="color:#efefef">-</span>A POSTROUTING <span style="color:#efefef">--</span>out-interface <span style="color:#efefef">${ifWAN}</span> <span style="color:#efefef">-</span>j MASQUERADE
+<span style="color:#efefef">}</span>
+
+<span style="color:#8a8a8a"># Carry out specific functions when asked to by the system</span>
+<span style="color:#ffffff; font-weight:bold">case</span> <span style="color:#fce94f">&quot;</span><span style="color:#69c8db">$1</span><span style="color:#fce94f">&quot;</span> <span style="color:#ffffff; font-weight:bold">in</span>
+    start<span style="color:#efefef">)</span>
+        <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Starting script ovs&quot;</span>
+        start
+        <span style="color:#efefef">;;</span>
+    stop<span style="color:#efefef">)</span>
+        <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Stopping script ovs&quot;</span>
+        stop
+        <span style="color:#efefef">;;</span>
+    restart<span style="color:#efefef">)</span>
+        stop
+        <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">2</span>
+        start
+        <span style="color:#efefef">;;</span>
+    <span style="color:#efefef">*)</span>
+        <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Usage:</span> <span style="color:#69c8db">$0</span> <span style="color:#fce94f">{start|stop|restart}&quot;</span>
+        <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#efefef">;;</span>
+<span style="color:#ffffff; font-weight:bold">esac</span>
+
+<span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">0</span>
+</code>   
+<code>cat start-NAT0-AsDaemon</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+MEM<span style="color:#efefef">=</span><span style="color:#fce94f">8192</span>M
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm script</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ ! -</span>d <span style="color:#efefef">/</span>proc<span style="color:#efefef">/</span>sys<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>ipv4<span style="color:#efefef">/</span>conf<span style="color:#efefef">/</span>brLAN <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+   <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Network bridge brLAN does not exist, start it first.&quot;</span>
+   <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">2</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+sudo <span style="color:#34e3e3">chmod</span> <span style="color:#fce94f">666</span> <span style="color:#efefef">/</span>dev<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>tun
+sudo tunctl <span style="color:#efefef">-</span>u <span style="color:#fce94f">`whoami`</span> <span style="color:#efefef">-</span>t tapNAT0
+sudo <span style="color:#efefef">/</span>sbin<span style="color:#efefef">/</span>ifconfig tapNAT0 up
+sudo ovs-vsctl add-port brLAN tapNAT0
+mkdir <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Starting VM: NAT0..., mem=</span><span style="color:#69c8db">${MEM}</span><span style="color:#fce94f">&quot;</span>
+screen <span style="color:#efefef">-</span>S NAT0 <span style="color:#efefef">-</span>d <span style="color:#efefef">-</span>m kvm <span style="color:#efefef">-</span>name NAT0 <span style="color:#efefef">-</span>localtime <span style="color:#efefef">-</span>curses \
+    <span style="color:#efefef">-</span>m <span style="color:#efefef">${MEM}</span> \
+    <span style="color:#efefef">-</span>net nic<span style="color:#efefef">,</span>vlan<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>netdev<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span>macaddr<span style="color:#efefef">=</span><span style="color:#fce94f">50</span><span style="color:#efefef">:</span>e5<span style="color:#efefef">:</span><span style="color:#fce94f">49</span><span style="color:#efefef">:</span><span style="color:#fce94f">7</span>f<span style="color:#efefef">:</span><span style="color:#fce94f">25</span><span style="color:#efefef">:</span><span style="color:#fce94f">92</span><span style="color:#efefef">,</span>model<span style="color:#efefef">=</span>virtio \
+    <span style="color:#efefef">-</span>netdev tap<span style="color:#efefef">,</span>id<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span>ifname<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span><span style="color:#34e3e3">script</span><span style="color:#efefef">=</span>no \
+    <span style="color:#efefef">-</span>monitor unix<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock<span style="color:#efefef">,</span>server<span style="color:#efefef">,</span>nowait \
+    <span style="color:#efefef">-</span>drive index<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>media<span style="color:#efefef">=</span>disk<span style="color:#efefef">,</span><span style="color:#ffffff; font-weight:bold">if</span><span style="color:#efefef">=</span>virtio<span style="color:#efefef">,</span><span style="color:#34e3e3">file</span><span style="color:#efefef">=/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>img<span style="color:#efefef">/</span>NAT0.qcow2 <span style="color:#efefef">&amp;</span>
+</code>
+<code>cat stop-NAT0</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm script</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ -</span>S <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;system_powerdown&quot;</span> | socat <span style="color:#efefef">-</span> unix-connect<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Please wait 10 seconds.&quot;</span>
+    <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">10</span>
+<span style="color:#ffffff; font-weight:bold">else</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Socket has been removed! Shutdown by ssh or resotre Lan only.&quot;</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#34e3e3">ping</span> <span style="color:#efefef">-</span>c <span style="color:#fce94f">3 192.168.180.101</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>eq <span style="color:#fce94f">0</span> <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span> 
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;NAT0 still alive, shut it down.  Enter passwd twice!&quot;</span>
+    <span style="color:#34e3e3">ssh</span> <span style="color:#efefef">-</span>t jssu&#64;<span style="color:#fce94f">192.168.180.101</span> <span style="color:#fce94f">'sudo init 0'</span>
+<span style="color:#ffffff; font-weight:bold">else</span>
+    <span style="color:#34e3e3">rm</span> <span style="color:#efefef">-</span>rf <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Restore lan...&quot;</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ -</span>d <span style="color:#efefef">/</span>proc<span style="color:#efefef">/</span>sys<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>ipv4<span style="color:#efefef">/</span>conf<span style="color:#efefef">/</span>tapNAT0 <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span> 
+    sudo ovs-vsctl del-port brLAN tapNAT0
+    sudo <span style="color:#efefef">/</span>sbin<span style="color:#efefef">/</span>ifconfig tapNAT0 down
+    sudo tunctl <span style="color:#efefef">-</span>d tapNAT0
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+
+
+<span style="color:#8a8a8a">#! /bin/bash</span>
+
+MEM<span style="color:#efefef">=</span><span style="color:#fce94f">8192</span>M
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm script</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ ! -</span>d <span style="color:#efefef">/</span>proc<span style="color:#efefef">/</span>sys<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>ipv4<span style="color:#efefef">/</span>conf<span style="color:#efefef">/</span>brLAN <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+   <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Network bridge brLAN does not exist, start it first.&quot;</span>
+   <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">2</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+sudo <span style="color:#34e3e3">chmod</span> <span style="color:#fce94f">666</span> <span style="color:#efefef">/</span>dev<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>tun
+sudo tunctl <span style="color:#efefef">-</span>u <span style="color:#fce94f">`whoami`</span> <span style="color:#efefef">-</span>t tapNAT0
+sudo <span style="color:#efefef">/</span>sbin<span style="color:#efefef">/</span>ifconfig tapNAT0 up
+sudo ovs-vsctl add-port brLAN tapNAT0
+mkdir <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Starting VM: NAT0..., mem=</span><span style="color:#69c8db">${MEM}</span><span style="color:#fce94f">&quot;</span>
+screen <span style="color:#efefef">-</span>S NAT0 <span style="color:#efefef">-</span>d <span style="color:#efefef">-</span>m kvm <span style="color:#efefef">-</span>name NAT0 <span style="color:#efefef">-</span>localtime <span style="color:#efefef">-</span>curses \
+    <span style="color:#efefef">-</span>m <span style="color:#efefef">${MEM}</span> \
+    <span style="color:#efefef">-</span>net nic<span style="color:#efefef">,</span>vlan<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>netdev<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span>macaddr<span style="color:#efefef">=</span><span style="color:#fce94f">50</span><span style="color:#efefef">:</span>e5<span style="color:#efefef">:</span><span style="color:#fce94f">49</span><span style="color:#efefef">:</span><span style="color:#fce94f">7</span>f<span style="color:#efefef">:</span><span style="color:#fce94f">25</span><span style="color:#efefef">:</span><span style="color:#fce94f">92</span><span style="color:#efefef">,</span>model<span style="color:#efefef">=</span>virtio \
+    <span style="color:#efefef">-</span>netdev tap<span style="color:#efefef">,</span>id<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span>ifname<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span><span style="color:#34e3e3">script</span><span style="color:#efefef">=</span>no \
+    <span style="color:#efefef">-</span>monitor unix<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock<span style="color:#efefef">,</span>server<span style="color:#efefef">,</span>nowait \
+    <span style="color:#efefef">-</span>drive index<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>media<span style="color:#efefef">=</span>disk<span style="color:#efefef">,</span><span style="color:#ffffff; font-weight:bold">if</span><span style="color:#efefef">=</span>virtio<span style="color:#efefef">,</span><span style="color:#34e3e3">file</span><span style="color:#efefef">=/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>img<span style="color:#efefef">/</span>NAT0.qcow2 <span style="color:#efefef">&amp;</span>
+</code>
+</pre>
+
+<address>
+<a href="mailto:lagnua@gmail.com">ChiSheng Su</a>
+</address>
+</body>
+</html>

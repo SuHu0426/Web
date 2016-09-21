@@ -1,0 +1,298 @@
+$ sudo aptitude update 
+$ sudo aptitude install apache2
+#$ sudo aptitude install libapache2-mod-perl2
+$ sudo aptitude install postgresql
+#$ sudo aptitude install perl perl-modules
+$ sudo aptitude install bioperl
+#$ sudo aptitude install blast2 
+#$ sudo aptitude install emboss
+$ which infoalign
+/usr/bin/infoalign
+$ which sixpack
+/usr/bin/sixpack
+$ which stretcher
+/usr/bin/stretcher
+#$ sudo aptitude install exonerate 
+$ which ipcress
+/usr/bin/ipcress
+$ sudo aptitude install xvfb 
+
+<!-- ----------------------------------------------------------- -->
+
+Perl Modules
+perl -MCPAN -e shell
+Would you like to configure as much as possible automatically? [yes] 
+What approach do you want?  (Choose 'local::lib', 'sudo' or 'manual')
+ [local::lib] sudo
+ 
+cpan[1]> install DBI 
+  /usr/bin/make -- NOT OK
+cpan[2]> quit
+$ sudo aptitude install build-essential 
+$ perl -MCPAN -e shell
+> install DBI
+> install DBD-Pg 
+Warning: Cannot install DBD-Pg, don't know what it is.
+Try the command
+
+    i /DBD-Pg/
+
+to find objects with matching identifiers.
+
+> install DBD::Pg
+Enter a valid PostgreSQL postgres major version number 9
+Enter a valid PostgreSQL postgres minor version number 4   
+Enter a valid PostgreSQL postgres patch version number 165
+You need to install postgresql-server-dev-X.Y for building a server-side extension or libpq-dev for building a client-side application.
+^C
+> quit
+$ dpkg -l |grep postgresql
+$ sudo aptitude install libpq-dev
+$ perl -MCPAN -e shell
+> install DBD::Pg
+> install XML::Parser::perlSAX 
+Warning: Cannot install XML::Parser::perlSAX, don't know what it is.
+Try the command
+
+    i /XML::Parser::perlSAX/
+
+to find objects with matching identifiers.
+
+> install XML::Parser::PerlSAX
+XML::Parser::PerlSAX is up to date (0.08).
+
+> install Log::Dispatch::File 
+
+> install Error
+
+> install Config::Tiny
+
+> install Bio::Biblio
+
+> install IO::String
+IO::String is up to date (1.08).
+
+> install Data::UUID
+
+> install List::MoreUtils
+
+> install Time::Duration
+
+> install Excel::Writer::XLSX 
+
+> install Parallel::ForkManager
+
+<!-- ----------------------------------------------------------- -->
+
+$ sudo mkdir /var/www/cgi-bin
+# Add the following lines after the DocumentRoot line:
+$ sudo nano /etc/apache2/sites-enabled/000-default.conf
+        ScriptAlias /cgi-bin/ /var/www/cgi-bin/
+        <Directory "/var/www/cgi-bin">
+                AllowOverride None
+                Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+                Require all granted
+        </Directory>
+
+$ sudo a2enmod cgi
+$ ls -l /etc/apache2/mods-enabled/ | grep cgi
+lrwxrwxrwx 1 root root 27 Jan 29 16:17 cgid.conf -> ../mods-available/cgid.conf
+lrwxrwxrwx 1 root root 27 Jan 29 16:17 cgid.load -> ../mods-available/cgid.load
+
+$ sudo service apache2 reload 
+$ sudo service apache2 restart
+
+<!-- ----------------------------------------------------------- -->
+
+$ wget -O bigsdb_1.10.1.tar.gz http://downloads.sourceforge.net/project/bigsdb/bigsdb_1.10.1.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fbigsdb%2F&ts=1422519180&use_mirror=nchc
+$ tar zxvf bigsdb_1.10.1.tar.gz 
+$ cd bigsdb_1.10.1/
+$ sudo cp bigsdb.pl bigscurate.pl /var/www/cgi-bin/
+$ sudo cp -r lib /usr/local/
+$ ls -l /usr/local/lib/
+total 12
+drwxr-sr-x 5 root staff 4096 Jan 29 16:35 BIGSdb
+drwxrwsr-x 4 root staff 4096 Jan 29 15:04 python2.7
+drwxrwsr-x 3 root staff 4096 Jan 29 15:37 x86_64-linux-gnu
+$ sudo cp -r javascript /var/www/html/
+$ sudo cp bigsdb.css jquery-ui.css /var/www/html/
+$ sudo cp -r images /var/www/html/
+$ sudo cp -r conf/ /etc/bigsdb
+$ sudo su postgres
+$ createuser apache
+$ psql
+postgres=# ALTER ROLE apache WITH PASSWORD 'password';
+postgres=# \q
+$ createdb bigsdb_auth
+$ psql -f sql/auth.sql bigsdb_auth
+$ createdb bigsdb_prefs
+$ psql -f sql/prefs.sql bigsdb_prefs
+$ createdb bigsdb_refs
+$ psql -f sql/refs.sql bigsdb_refs
+$ exit
+$ sudo mkdir /var/www/html/tmp
+$ sudo touch /var/log/bigsdb.log
+$ sudo chown www-data /var/log/bigsdb.log
+
+<!-- ----------------------------------------------------------- -->
+
+$ cd /etc/postgresql/9.4/main/
+$ sudo cp pg_hba.conf pg_hba.conf.orig
+$ sudo nano pg_hba.conf
+$ sudo diff pg_hba.conf pg_hba.conf.orig
+85c85
+< local   all             postgres                                ident map=mymap
+---
+> local   all             postgres                                peer
+90c90
+< local   all             all                                     ident map=mymap
+---
+> local   all             all                                     peer
+
+$ sudo cp pg_ident.conf pg_ident.conf.orig
+$ sudo nano pg_ident.conf
+$ sudo diff pg_ident.conf pg_ident.conf.orig 
+43,47d42
+<   mymap		postgres		postgres
+<   mymap		webmaster		postgres
+<   mymap		www-data		apache
+<   mymap		bigsdb			bigsdb
+<   mymap		bigsdb			apache
+
+$ sudo cp postgresql.conf postgresql.conf.orig
+$ sudo nano postgresql.conf
+$ sudo diff postgresql.conf postgresql.conf.orig 
+59c59
+< listen_addresses = '*'			# what IP address(es) to listen on;
+---
+> #listen_addresses = 'localhost'		# what IP address(es) to listen on;
+64c64
+< max_connections = 200			# (change requires restart)
+---
+> max_connections = 100			# (change requires restart)
+115c115
+< shared_buffers = 1024MB			# min 128kB
+---
+> shared_buffers = 128MB			# min 128kB
+126c126
+< work_mem = 8MB				# min 64kB
+---
+> #work_mem = 4MB				# min 64kB
+287c287
+< effective_cache_size = 8GB
+---
+> #effective_cache_size = 4GB
+453,454c453
+< #stats_temp_directory = '/var/run/postgresql/9.4-main.pg_stat_tmp'
+< stats_temp_directory = '/dev/shm'
+---
+> stats_temp_directory = '/var/run/postgresql/9.4-main.pg_stat_tmp'
+
+$ sudo service postgresql restart
+
+<!-- ----------------------------------------------------------- -->
+
+$ sudo useradd -s /bin/sh bigsdb
+$ cd /home/cdc/bigsdb_1.10.1
+$ sudo su postgres
+$ createdb bigsdb_jobs
+$ psql -f sql/jobs.sql bigsdb_jobs
+postgres=# ALTER ROLE bigsdb WITH PASSWORD 'bigsdb';
+postgres=# \q
+$ exit
+
+$ cd /etc/bigsdb
+$ sudo cp bigsdb.conf bigsdb.conf.orig
+#$ sudo nano bigsdb.conf
+
+$ cd ~/bigsdb_1.10.1
+$ sudo cp bigsjobs.pl /usr/local/bin/
+$ sudo ln -s bigsjobs.pl bigsjobs
+$ ls -l bigsjobs*
+lrwxrwxrwx 1 root staff   11 Jan 29 17:27 bigsjobs -> bigsjobs.pl
+-rwxr-xr-x 1 root staff 2094 Jan 29 17:26 bigsjobs.pl
+
+$ cd /etc/
+$ sudo cp crontab crontab.orig
+$ sudo nano crontab
+$ diff crontab crontab.orig
+15d14
+< *  *	* * *	bigsdb	xvfb-run -a /usr/local/bin/bigsjobs
+$ sudo touch /var/log/bigsdb_jobs.log
+$ sudo chown bigsdb /var/log/bigsdb_jobs.log
+
+<!-- ----------------------------------------------------------- -->
+
+$ cd /etc/cron.hourly
+$ sudo nano cleanBIGSdb
+#!/bin/sh
+#Remove temp BIGSdb files from secure tmp folder older than 1 week.
+find /var/tmp/ -name '*BIGSdb_*' -type f -mmin +10080 -exec rm -f {} \; 2>/dev/null
+
+#Remove .jnlp files from web tree older than 1 day
+find /var/www/tmp/ -name '*.jnlp' -type f -mmin +1440 -exec rm -f {} \; 2>/dev/null
+
+#Remove other tmp files from web tree older than 1 week
+find /var/www/tmp/ -type f -mmin +10080 -exec rm -f {} \; 2>/dev/null
+$ sudo chmod +x cleanBIGSdb 
+
+
+<!-- ----------------------------------------------------------- -->
+
+$ cd ..
+$ cd /etc/logrotate.d
+$ sudo nano bigsdb
+
+
+<!-- ----------------------------------------------------------- -->
+<!-- ----------------------------------------------------------- -->
+
+$ cd /home/cdc/bigsdb_1.10.1/sql/
+$ sudo su postgres
+$ createdb bigsdb_test_seqdef
+$ psql -f seqdef.sql bigsdb_test_seqdef
+
+$ createdb bigsdb_test_isolates
+$ psql -f isolatedb.sql bigsdb_test_isolates
+
+$ psql bigsdb_test_isolates
+bigsdb_test_isolates=# ALTER TABLE isolates ADD country text;
+bigsdb_test_isolates=# ALTER TABLE isolates ADD year int;
+bigsdb_test_isolates=# \q
+$ exit
+
+<!-- ----------------------------------------------------------- -->
+
+Database-specific configuration
+
+$ cd /etc/bigsdb/
+$ sudo mkdir /etc/bigsdb/dbases
+
+
+<!-- ----------------------------------------------------------- -->
+
+$ sudo mkdir /etc/bigsdb/dbases/bigsdb_test_seqdef
+$ cd /etc/bigsdb/dbases/bigsdb_test_seqdef
+$ sudo cp ~/bigsdb_1.10.1/headers/*.html .
+$ sudo cp ~/bigsdb_1.10.1/xml/seqdef_config.xml config.xml
+$ sudo nano config.xml
+modify db="bigsdb_test_seqdef"
+add password="dbpasswd"
+
+$ sudo su postgres
+$ psql bigsdb_test_seqdef
+bigsdb_test_isolates=# INSERT INTO users (id, user_name, surname, first_name, email, affiliation, status, date_entered, datestamp, curator) VALUES (1, 'cdc', 'cdc', 'cdc', 'cssu@csmail.nchu.edu.tw', 'NCHU cdc', 'admin', 'now', 'now', 1 );
+bigsdb_test_isolates=# \q
+$ /home/cdc/bigsdb_1.10.1/scripts/maintenance/add_user.pl -a -d bigsdb_test_seqdef -n cdc -p 'password'
+
+$ psql bigsdb_test_isolates
+
+
+
+
+
+
+
+
+
+

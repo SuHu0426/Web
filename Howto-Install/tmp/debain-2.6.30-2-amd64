@@ -1,0 +1,25 @@
+Kernel config /proc/config.gz not found, looking in other places...
+Found kernel config file /boot/config-2.6.30-2-amd64
+--- Namespaces ---
+Namespaces: [1;32menabled
+[0;39mUtsname namespace: [1;32menabled
+[0;39mIpc namespace: [1;32menabled
+[0;39mPid namespace: [1;32menabled
+[0;39mUser namespace: [1;32menabled
+[0;39mNetwork namespace: [1;32menabled
+[0;39mMultiple /dev/pts instances: [1;32menabled
+[0;39m
+--- Control groups ---
+Cgroup: [1;32menabled
+[0;39mCgroup namespace: [1;32menabled
+[0;39mCgroup device: [1;32menabled
+[0;39mCgroup sched: [1;32menabled
+[0;39mCgroup cpu account: [1;32menabled
+[0;39mCgroup memory controller: [1;33mdisabled
+[0;39mCgroup cpuset: [1;32menabled
+[0;39m
+--- Misc ---
+Veth pair device: [1;32menabled
+[0;39mMacvlan: [1;32menabled
+[0;39mFile capabilities: [1;32menabled
+[0;39m

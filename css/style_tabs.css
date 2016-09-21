@@ -1,0 +1,25 @@
+
+.ui-tabs {
+    padding: 0px; 
+    background: white;
+}
+/*
+.ui-tabs .ui-tabs-nav { 
+    background: transparent; 
+    border-width: 0px 0px 0px 0px; 
+    -moz-border-radius: 0px; 
+    -webkit-border-radius: 0px; 
+    border-radius: 0px; 
+} 
+.ui-tabs .ui-tabs-panel { 
+    margin: 0em 0.2em 0.2em 0.2em;
+}
+*/
+div.FL {
+    display:inline
+	        margin-right: 20px;
+}
+a.link {
+    margin-right: 20px;
+    font-size: large;
+}

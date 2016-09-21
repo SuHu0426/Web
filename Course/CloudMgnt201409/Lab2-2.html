@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html>
+  <HEAD>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <TITLE>Virtual Technelogy: Libvirt</TITLE>
+    <link type="text/css" rel="stylesheet" href="../css/style_2014-2.css" />
+    <style type="text/css">
+    </style>
+    <script type="text/javascript"src="../javascripts/jquery-2.0.3.min.js"></script>
+    <script>
+var HostIP = [];
+var Mode = 0;
+var HexRnd = function(length) {
+    var characters = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+    var randomString = '';
+    for (var i = 0; i < length; i++ ) {
+	randomString = randomString + characters[Math.floor(Math.random()*15)];
+    }
+    //console.debug(randomString);
+    return randomString;
+}
+function reSize(jQuery){
+    var scroll = $(window).scrollTop();
+    var faqiframe = document.getElementById('if_faq');
+    faqiframe.src = faqiframe.src;
+    $('#if_faq').on('load', function(){
+	faqiframe.height=10;
+	var the_height= faqiframe.contentWindow.document.body.scrollHeight + 50;
+	faqiframe.height=the_height;
+	$(document).scrollTop(scroll);
+    });
+    
+}
+
+jQuery(document).ready(function() {
+    //====== Resize iframe ======//
+    $(window).resize(reSize);
+    //====== End Resize iframe ======//
+
+    //====== Replace IP address ======//
+    var host_code_name = ["A00","A01","A02","A03","A04","A05","A06",
+			  "B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12",
+			  "C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12",
+			  "D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D11","D12",
+			  "test1","test2","test3","test4","test5","test6"]
+    var host_num = [];
+    for (var i=0; i<7; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnA").append('<option value="'+val+'">'+host_code_name[index]+'</option>');
+    });
+    host_num = [];
+    for (var i=7; i<19; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnB").append('<option value="'+val+'">'+host_code_name[index+7]+'</option>');
+    });
+    host_num = [];
+    for (var i=19; i<31; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnC").append('<option value="'+val+'">'+host_code_name[index+19]+'</option>');
+    });
+    host_num = [];
+    for (var i=31; i<43; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnD").append('<option value="'+val+'">'+host_code_name[index+31]+'</option>');
+    });
+    host_num = [];
+    for (var i=43; i<49; i++){
+        host_num.push(i);
+    }
+    $.each( host_num , function(index, val){
+        $("#hostcnO").append('<option value="'+val+'">'+host_code_name[index+43]+'</option>');
+    });
+    
+    $(".num").change(function(){
+    	var codeVAL = $(this).val();
+	if ( codeVAL == "-1" ) {
+	} else {
+	    $(".num").val("-1");
+	    $(this).val(codeVAL);
+	    codeVAL =  new Number(codeVAL) + 10;
+	    var ip_addr = new Number(codeVAL);
+	    if ( codeVAL < 0 ) {
+		codeVAL = new Number(codeVAL)+100;
+	    }
+
+	    $(".USERNAME").html("cloud");
+	    $(".codeNUM").html(codeVAL);
+            $(".hostIP").html("172.16.1."+ip_addr);
+	    $(".vm001IP").html("172.16."+ip_addr+".1");
+	    $(".vm002IP").html("172.16."+ip_addr+".2");
+	    $(".vm003IP").html("172.16."+ip_addr+".3");
+	    $(".vm004IP").html("172.16."+ip_addr+".4");
+	    $(".gwIP").html("172.31.255.254");
+	    
+	    $(".PortNUM").html(codeVAL+"22");
+	    $(".VMPortNUM").html("2"+codeVAL+"22");
+
+	    if ( codeVAL < 10 && codeVAL >0){
+		var MAC = "10:0"+codeVAL+":02";
+	    } else {
+		var MAC = "10:"+codeVAL+":02";
+	    }
+	    for (var i=0; i<3; i++) {
+		MAC += ':' + HexRnd(2);
+	    }
+	    //console.debug(MAC);
+	    $(".randomMAC").html(MAC);
+	}
+    });
+    //====== End Replace IP address ======//
+    //====== Print Mode ======//
+    $("#PrintMode").click(function() {
+	if (Mode == 0) {
+	    Mode = 1;
+	    $('div').css('background-color', 'white');
+	    $('div').css('color', 'black');
+	    $('img').hide();
+	    $(this).val('Print Mode');
+	} else {
+	    Mode = 0;
+	    $('.console').css('background-color', 'black');
+	    $('.console').css('color', 'white');
+	    $('.adm').css('background-color', '');
+	    $('.adm').css('color', '');
+	    $('.dol').css('background-color', '');
+	    $('.dol').css('color', '');
+	    $('img').show();
+	    $(this).val('Display Mode');
+	}
+    });
+    //====== End Print Mode ======//
+    //====== input#hostIP Text numeric ======//
+    jQuery(".ipinput").keydown(function () {
+	if ( event.keyCode == 46 || event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 27 ||
+	     // Allow: Ctrl+A
+	     (event.keyCode == 65 && event.ctrlKey === true) ||
+	     // Allow: home, end, left, right
+	     (event.keyCode >= 35 && event.keyCode <= 39)) {
+	    // let it happen, don't do anything
+	    return;
+	} else if ( event.keyCode == 13 ){
+	    // Allow: Enter key submit jump
+	    tracknum = $(".ipinput").val();
+	    Play();
+	} else {
+	    // Ensure that it is a number and stop the keypress
+	    if (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57) && (event.keyCode < 96 || event.keyCode > 105 )) {
+		event.preventDefault();
+	    }
+	}
+    });
+    //====== End input#hostIP Text numeric ======//
+});             
+  </script>
+  </HEAD>
+  <BODY>
+    <h1>Lab 2: Virtual Technelogy: Libvirt</h1>
+    <h2>實驗描述</h2>
+    <p>Libvirt is Open Source API, 其目的就是在於提供使用者方便的去配置、新建、修改、監控、控制或者是遷移用戶虛擬機器, 也就是一個管理虛擬機器的工具. Libvirt 目前支援的 hypervisor 有 KVM/QEMU, Xen, LXC, OpenVZ, VirtualBOX, Microsoft Hyper-V, VMware 等. 而目前利用 Libvirt 去開發應用軟體來管理虛擬機器的種類也很多, 例如使用指令模式來管理的 virsh, virt-image, virt-install 等, 或者使用圖形化介面管理的 virt-manager, virt-viwer, 使用Web管理的 AbiCloud, OVirt, 在底下我們會利用 virsh 指令模式與 virt-manager 圖形介面模式分別來對虛擬機器做管理.</p>
+
+    <h2>實驗環境</h2>
+    <table class="nobor">
+      <tr><td class="nobor" valign="top">
+	  <table>
+	    <caption>理學大樓 1002 教室</caption>
+	    <tbody><tr>
+		<td></td>
+		<th width="320">Cloud-A01 ~ Cloud-D12</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>AMD Phenom™ II X6 1065T Processor</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>8G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G、500G</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian Wheezy</td>
+	      </tr>
+	  </tbody></table>
+	  <br>
+	  <table>
+	    <caption>虛擬機環境</caption>
+	    <tbody>
+	      <tr>
+		<td></td>
+		<th width="320">Virtual Machine</th>
+	      </tr>
+	      <tr>
+		<th>Location</th>
+		<td>821 機房伺服器</td>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>vcpu*2</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>8G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>80G (QCOW2 Format)</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian Jessie</td>
+	      </tr>
+	    </tbody>   	
+	  </table>
+
+	</td>
+	<td class="nobor" valign="top">
+	  <table>
+	    <caption>理學大樓 821 機房</caption>
+	    <tbody><tr>
+		<td></td>
+		<th width="320">CSIE-Cloud01 ~ CSIE-Cloud06</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>
+		  AMD Opteron™ Processor 6128 * 2
+		  <br>(total 16 cpu cores)</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>64G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G, 500G, 1T</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	      <tr>
+		<td></td>
+		<th width="320">CSIE-Cloud07, CSIE-Cloud08</th>
+	      </tr>
+	      <tr>
+		<th>CPU</th>
+		<td>
+		  AMD Opteron™ Processor 6234 * 2
+		  <br>(total 24 cpu cores)</td>
+	      </tr>
+	      <tr>
+		<th>Memory</th>
+		<td>128G, 160G</td>
+	      </tr>
+	      <tr>
+		<th>Disk spaces</th>
+		<td>500G, 500G, 1T</td>
+	      </tr>
+	      <tr>
+		<th>O.S.</th>
+		<td>Debian wheezy</td>
+	      </tr>
+	  </tbody></table>
+	</td>
+    </table>
+
+    <h2>環境參數</h2>
+    <p>為了避免輸入錯誤以及方便區分 IP 使用環境，我們使用下列幾個按鈕來快速取代各個不同 IP。(與 Lab1 稍有變化)</p>
+    <p>
+      <select id="hostcnA" class="num" style="text-align: center;">
+	<option value="-1">A 機器代號</option>
+      </select>
+      <select id="hostcnB" class="num" style="text-align: center;">
+	<option value="-1">B 機器代號</option>
+      </select>
+      <select id="hostcnC" class="num" style="text-align: center;">
+	<option value="-1">C 機器代號</option>
+      </select>
+      <select id="hostcnD" class="num" style="text-align: center;">
+	<option value="-1">D 機器代號</option>
+      </select>
+      <select id="hostcnO" class="num" style="text-align: center;">
+	<option value="-1">Other 機器代號</option>
+      </select>
+    </p>
+    <p>您的機器參數:</p>
+    <p>Username ：
+      <span class="USERNAME" style="color: green;">[USERNAME]</span></p>
+    <p>Code number ：
+      <span class="codeNUM" style="color: green;">[code-num]</span></p>
+    <p>Host IP ：
+      <span class="hostIP" style="color: red;">[Host-IP]</span></p>
+    <p>VM001 IP ：
+      <span class="vm001IP" style="color: GoldenRod;">[VM001-IP]</span></p>
+    <p>VM002 IP ：
+      <span class="vm002IP" style="color: GoldenRod;">[VM002-IP]</span></p>
+    <p>VM003 IP ：
+      <span class="vm003IP" style="color: GoldenRod;">[VM003-IP]</span></p>
+    <p>StudentID IP ：
+      <span class="vm004IP" style="color: GoldenRod;">[StudentID-IP]</span></p>
+    <p>Gateway ：
+      <span class="gwIP" style="color: dodgerblue;">[Gateway-IP]</span></p>
+
+    <hr>
+    <h2>安裝實作 (Virsh)</h2>
+
+    <h3>Login Server</h3>
+    <p>若您使用 MS Windows, 請參閱說明 <a href="http://snmlab.cs.nchu.edu.tw/CloudLab/Lab0.html" target="_blank">Login Server From Windows</a>.</p>
+    <p>Open a terminal emulator and then type the following commands.</p>
+    <pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span></pre>
+
+    <h3>安裝 Libvirt/Virsh 所需套件及準備工作.</h3>
+    <ol>
+      <li>安裝 libvirt-bin 套件
+	<pre class="dol">sudo aptitude update </pre>
+	<pre class="dol">sudo aptitude install libvirt-bin
+<code>The following NEW packages will be installed:
+  augeas-lenses{a} bridge-utils{a} dmeventd{a} dnsmasq-base{a} ebtables{a} ethtool{a} hdparm{a}
+  libapparmor1{a} libaugeas0{a} libdevmapper-event1.02.1{a} liblvm2cmd2.02{a} libnetcf1{a}
+  libnetfilter-conntrack3{a} libnl-3-200{a} libnl-route-3-200{a} libnuma1{a} libparted2{a}
+  libpcap0.8{a} libpciaccess0{a} libreadline5{a} libvirt-bin libvirt-clients{a}
+  libvirt-daemon{a} libvirt-daemon-system{a} libvirt0{a} libx86-1{a} libxml2-utils{a}
+  libxslt1.1{a} lvm2{a} netcat-openbsd{a} parted{a} pm-utils{a} powermgmt-base{a} vbetool{a}
+0 packages upgraded, 34 newly installed, 0 to remove and 98 not upgraded.
+Need to get 9,721 kB of archives. After unpacking 26.0 MB will be used.
+</code></pre>
+	
+      <li>將帳號加入 libvirt 群組後重新登入
+	<pre class="dol">sudo adduser <span class="USERNAME" style="color: green;">[USERNAME]</span> libvirt
+<code>Adding user `<span class="USERNAME" style="color: green;">[USERNAME]</span>' to group `libvirt' ...
+  Adding user <span class="USERNAME" style="color: green;">[USERNAME]</span> to group libvirt
+  Done.
+</code></pre>
+	<pre class="dol">exit</pre>
+	<pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span></pre>
+	
+      <li>進入 KVM/img 目錄來建立新的 image 檔, 並且設定為 QEMU copy on write 格式.
+	<div class="cmd">
+<pre class="dol">cd ~/KVM/img</pre>
+<pre class="dol">qemu-img create -f qcow2 vm002.qcow2.img 5G
+<code>Formatting 'vm002.qcow2.img', fmt=qcow2 size=5368709120 encryption=off cluster_size=65536 lazy_refcounts=off</code></pre>
+<pre class="dol">ls -lh
+<code>total 1799912
+-rw-r--r-- 1 cloud cloud  240123904 Sep 21 14:25 debian-testing-amd64-netinst.iso
+-rw-r--r-- 1 cloud cloud 5368709120 Oct  1 00:33 vm001.img
+-rw-r--r-- 1 cloud cloud     197120 Oct 10 05:58 vm002.qcow2.img</code></pre>
+</div>
+    </ol>
+    
+    <h3>定義虛擬網路</h3>
+    <ol>
+      <li>以 XML 文件來定義虛擬網路環境
+	<p>使用 XML 檔案來定義網路配置, 首先我們建立 ~/KVM/virsh 資料夾來管理 virsh 相關檔案. 我們可以從 libvirt 網站找到更詳細關於 <a href="http://libvirt.org/formatnetwork.html" target="_blank">Network XML</a> 的說明</p>
+	<pre class="dol">mkdir ~/KVM/virsh; cd ~/KVM/virsh</pre>
+	<p>查詢 interfaceid 以便待會填入, 你需要先啟動 open vSwitch</p>
+	<p>由於系統已重置, 同學請將 ~/KVM/bin/ovs-stop 與 ~/KVM/bin/ovs-start 中的 IP 變數取代成自己的 Host IP.</p>
+	<pre class="dol">~/KVM/bin/ovs-stop; ~/KVM/bin/ovs-start
+<code>Please change 'CodeNUM' into your Code-Number in this script!
+Please change 'CodeNUM' into your Code-Number in this script!
+</code></pre>
+	<pre class="dol">sed -i s'/CodeNUM/<span class="codeNUM" style="color: green;">10</span>/' ~/KVM/bin/ovs-st*</pre>
+	<pre class="dol">~/KVM/bin/ovs-stop; ~/KVM/bin/ovs-start</pre>
+	<pre class="dol">sudo ovs-vsctl show
+<code>64ab3ed8-5b10-442d-8f94-983d8b6dff6d
+    Bridge "br0"
+        Port "br0"
+            Interface "br0"
+                type: internal
+        Port "eth0"
+            Interface "eth0"
+    ovs_version: "2.3.0"
+</code></pre>
+	<pre class="dol">nano network.xml
+<code>&lt;network&gt;
+  &lt;name&gt;ovs-br0&lt;/name&gt;
+  &lt;forward mode='bridge'/&gt;
+  &lt;bridge name='br0'/&gt;
+  &lt;virtualport type='openvswitch'&gt;
+    &lt;parameters interfaceid='MY interfaceid'/&gt;
+  &lt;/virtualport&gt;
+&lt;/network&gt;
+</code></pre>
+
+      <li>使用 virsh net-define 指令根據 network.xml 內容來定義網路元件
+	<pre class="dol">sudo virsh net-define ~/KVM/virsh/network.xml
+<code>Network ovs-br0 defined from /home/cloud/KVM/virsh/network.xml
+</code></pre>
+
+	<pre class="dol">sudo virsh net-list --all
+<code> Name                 State      Autostart     Persistent
+----------------------------------------------------------
+ default              inactive   no            yes
+ ovs-br0              inactive   no            yes
+</code></pre>
+
+      <li>使用 net-start 參數將 ovs-br0 啟動
+	<pre class="dol">sudo virsh net-start ovs-br0
+<code>Network ovs-br0 started
+</code></pre>
+	<pre class="dol">sudo virsh net-list --all
+<code> Name                 State      Autostart     Persistent
+----------------------------------------------------------
+ default              inactive   no            yes
+ ovs-br0              active     no            yes
+</code></pre>
+
+      <li>使用 net-autostart 參數將 ovs-br0 設定為自動開啓
+	<pre class="dol">sudo virsh net-autostart ovs-br0
+<code>Network ovs-br0 marked as autostarted
+</code></pre>
+	<pre class="dol">sudo virsh net-list --all
+<code> Name                 State      Autostart     Persistent
+----------------------------------------------------------
+ default              inactive   no            yes
+ ovs-br0              active     yes           yes
+</code></pre>
+    </ol>
+    <h4>※ 重新定義網路的作法</h4>
+    <ol>
+      <li>先將該 network 停用
+	<pre class="dol">sudo virsh net-destroy ovs-br0</pre>
+      <li>註銷
+	<pre class="dol">sudo virsh net-undefine ovs-br0</pre>
+    </ol>
+
+    <h3>以 virt-install 指令來安裝新的虛擬機器</h3>
+	<ol>
+	  <li>安裝 virtinst 套件 (virt-install) 來安裝新的 guest 機器. 同學可以用 man 指令來查詢用法.
+	    <pre class="dol">sudo aptitude install virtinst</pre>
+	    <pre class="dol">man virt-install</pre>
+	  <li>以 ISO 光碟檔來安裝新的虛擬機器
+	    <pre class="dol">sudo virt-install \
+ --name VM002 \
+ --virt-type kvm \
+ --memory 2048 \
+ --network network=ovs-br0 \
+ --graphics vnc,listen=0.0.0.0,port=5902 \
+ --cdrom ~/KVM/img/debian-testing-amd64-netinst.iso \
+ --disk ~/KVM/img/vm002.qcow2.img,bus=virtio,cache=none
+<code>Starting install...
+Creating domain...                                                                                            |    0 B     00:00
+
+(virt-viewer:21430): Gdk-ERROR **: error: XDG_RUNTIME_DIR not set in the environment.
+
+Domain installation still in progress. You can reconnect to
+the console to complete the installation process.
+</code></pre>
+
+	    <p>檢查是否有連接到 Open vSwitch</p>
+	    <pre class="dol">sudo ovs-vsctl show
+<code>64ab3ed8-5b10-442d-8f94-983d8b6dff6d
+    Bridge "br0"
+        Port "eth0"
+            Interface "eth0"
+        Port "vnet0"
+            Interface "vnet0"
+        Port "br0"
+            Interface "br0"
+                type: internal
+    ovs_version: "2.3.0"
+</code></pre>
+      
+	    <p>查看目前機器狀態</p>
+	    <pre class="dol">sudo virsh list
+<code> Id    Name                           State
+----------------------------------------------------
+ 5     VM002                          running
+</code></pre>
+
+	    <p>打開遠端連線網頁 <a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">cloudwebui</a> 並且以 <Span Class="USERNAME" Style="Color: Green;">[USERNAME]</Span><span class="codeNUM" style="color: green;">[codeNUM]</span> 帳號登入, 選擇 編號-VM002</p>
+
+	  <li>關閉及刪除虛擬機器
+	    <p>剛剛開起來的機器沒有真的要大家安裝的意思, 接著我們試著關閉並且刪除它. 在 virsh 指令中 destory 代表 stop 的意思, 但是帶有強制關閉的意味, 很可惜的是它並不提供正常一點的方式來關閉.</p>
+	    <pre class="dol">sudo virsh destroy VM002
+<code>Domain VM002 destroyed
+</code></pre>
+	    <pre class="dol">sudo virsh undefine VM002
+<code>Domain VM002 has been undefined
+</code></pre>
+	    <p>Virsh 管理工具提供的關機方式並不保險 (類似強制關機), 建議同學還是手動從 VM 自行關閉.</p>
+
+	</ol>
+	<h3>將現有的虛擬機器匯入 libvirt 中</h3>
+	<ol>  
+	  <li>複製虛擬硬碟來快速部署機器, 由於使用了 virsh, 它以 root 身份執行 kvm 因此權限被改為 root 或是 libvirt-qemu.
+	    <pre class="dol">ls -l ~/KVM/img
+<code>total 1800044
+-rw-r--r-- 1 libvirt-qemu libvirt-qemu  240123904 Sep 21 14:25 debian-testing-amd64-netinst.iso
+-rw-r--r-- 1 cloud        cloud         583122752 Oct 31 15:28 template.img.tgz
+-rw-r--r-- 1 root         root         5368709120 Oct 10 09:26 vm001.img
+-rw-r--r-- 1 root         root             197120 Oct 10 05:58 vm002.qcow2.img</code></pre>
+	    <p>我們先將 vm001 複製兩份出來, 作為待會快速佈署使用</p>
+	    <pre class="dol">cd ~/KVM/img</pre>
+	    <pre class="dol">sudo rm vm002.qcow2.img</pre>
+	    <pre class="dol">cp vm001.img vm002.img; cp vm001.img vm003.img</pre>
+	    <p>※ 萬一 vm001 玩壞了怎麼辦, 從 ~/KVM/img/template.img.tgz 是備份檔案, 將其解壓縮並且改名即可使用.</p>
+	    <pre class="dol">tar zxvf ~/KVM/img/template.img.tgz ; mv template.img vm001.img</pre>
+	  <li>使用 import 參數來匯入機器
+	    <p>我們可以將 Lab1 中安裝好的虛擬機器匯入到 libvirt 中管理, 如此一來便可省去安裝的步驟, 達到快速部署的功效. 記得一定要先關閉舊的虛擬機器, 並且恢復網路!</p>
+	    <pre class="dol">sudo virt-install \
+ --name VM001 \
+ --import \
+ --virt-type kvm \
+ --memory 2048 \
+ --network network=ovs-br0 \
+ --graphics vnc,listen=0.0.0.0,port=5901 \
+ --disk ~/KVM/img/vm001.img,bus=virtio,cache=none
+<code>Starting install...
+Creating domain...                                                                                                    |    0 B     00:00
+
+(virt-viewer:21746): Gdk-ERROR **: error: XDG_RUNTIME_DIR not set in the environment.
+
+Domain creation completed. You can restart your domain by running:
+  virsh --connect qemu:///system start VM001
+</code></pre>
+	    <p>打開遠端連線網頁 <a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">cloudwebui</a> 並且以 <Span Class="USERNAME" Style="Color: Green;">[USERNAME]</Span><span class="codeNUM" style="color: green;">[codeNUM]</span> 帳號登入, 選擇 編號-VM001</p>
+
+	  <li>接著匯入第二部機器
+	    <pre class="dol">sudo virt-install \
+ --name VM002 \
+ --import \
+ --virt-type kvm \
+ --memory 2048 \
+ --network network=ovs-br0 \
+ --graphics vnc,listen=0.0.0.0,port=5902 \
+ --disk ~/KVM/img/vm002.img,bus=virtio,cache=none
+<code>Starting install...
+Creating domain...                                                                                                    |    0 B     00:00
+
+(virt-viewer:21746): Gdk-ERROR **: error: XDG_RUNTIME_DIR not set in the environment.
+
+Domain creation completed. You can restart your domain by running:
+  virsh --connect qemu:///system start VM002
+</code></pre>
+	    <p>打開遠端連線網頁 <a href="http://cloudwebui.cs.nchu.edu.tw:8080/guacamole/" target="_blank">cloudwebui</a> 並且以 <Span Class="USERNAME" Style="Color: Green;">[USERNAME]</Span><span class="codeNUM" style="color: green;">[codeNUM]</span> 帳號登入, 選擇 編號-VM002</p>
+	    <p>Assignment2-1: 請將 VM001 與 VM002 網路設定好 (給予不同 IP 位址, <span class="vm001IP" style="color: GoldenRod;">[VM001-IP]</span>, <span class="vm002IP" style="color: GoldenRod;">[VM002-IP]</span>), 並確保兩部虛擬機器可以互通.</p>
+	    <p>由於 virsh 並不會幫我們修改作業系統內部的名稱, 所以從 VM001 複製出來的機器通通叫作 VM001, 請自行修改名稱. (修改 /etc/hosts, /etc/hostname, 兩個檔案後重新登入. )</p>
+	    <pre class="dol">su</pre>
+	    <pre class="adm">nano /etc/hosts</pre>
+	    <pre class="adm">nano /etc/hostname</pre>
+	    <pre class="adm">hostname NewHostname</pre>
+	    <pre class="adm">exit</pre>
+	    <pre class="dol">exit</pre>
+	</ol>
+	
+	<hr>
+	<h2>安裝實作 (Virt-Manager)</h2>
+	<h3>Login Server</h3>
+    <p>若您沒有 Linux 系統請想辦法弄出一個, 您可以使用 <a href="https://www.virtualbox.org/" target="_blank">VirtualBox</a> 或者 <a href="https://my.vmware.com/web/vmware/downloads" target="_blank">VMware Player</a> 安裝 Debian 系統來完成實習.
+    <p>Open a terminal emulator and then type the following commands.</p>
+    <pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span></pre>
+    
+    <h3>安裝 virt-manager 套件</h3>
+    <p>在自己的電腦上安裝 virt-manager 來管理遠端機器.</p>
+    <pre class="dol">sudo aptitude update</pre>
+    <pre class="dol">sudo aptitude install virt-manager</pre>
+    
+    <h3>設定與遠端機器 ssh 連線啟用金鑰認証 (免密碼)</h3>
+    <p>我們要使用的是 RSA 金鑰認証, 首先要為自己的電腦建立 private key 與 public key.</p>
+    <pre class="dol">ssh-keygen
+<code>Generating public/private rsa key pair.
+Enter file in which to save the key (/home/<span class="USERNAME">[USERNAME]</span>/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/<span class="USERNAME">[USERNAME]</span>/.ssh/id_rsa.
+Your public key has been saved in /home/<span class="USERNAME">[USERNAME]</span>/.ssh/id_rsa.pub.
+The key fingerprint is:
+80:53:b4:be:0b:62:60:76:62:cf:f6:47:0e:78:12:b9 <span class="USERNAME">[USERNAME]</span>@My-Hostname
+The key's randomart image is:
++--[ RSA 2048]----+
+|     .o          |
+|     o .         |
+|    + o          |
+|   o o .         |
+|.= .+ . S        |
+|+.=E o o         |
+|  o++ =          |
+| ..... +         |
+|     .o          |
++-----------------+
+</code></pre>
+    <p>接著將自己的 public key 註冊到遠端機器上, 將來遠端機器看到該金鑰便會放行登入.</p>
+    <pre class="dol">ssh-copy-id <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span>
+<code><span class="USERNAME">[USERNAME]</span>@cloud.cs.nchu.edu.tw's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh -p '<span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span>' '<span class="USERNAME">[USERNAME]</span>@cloud.cs.nchu.edu.tw'"
+and check to make sure that only the key(s) you wanted were added.
+</code></pre>
+
+
+    <h3>建立與遠端機器的連線</h3>
+    <p>接著開啟 virt-manager 主視窗來設定遠端連線.</p>
+    <pre class="dol">virt-manager</pre>
+    <img src="img/lab2/001.png">
+    
+    <p>不用理會 Unable to connect to libvirt 錯誤訊息, 因為我們主機本來就沒有安裝 libvirt. 接著點選 Close 關閉它.</p>
+    <p>點選左上角 File 選單, 接著點選 Add connection..., 來新增遠端機器.</p>
+    <img src="img/lab2/002.png">
+
+    <p>接著在 Add Connection 視窗中, Hypervisor 選擇 QEMU/KVM, 勾選 Connect to remotte host, Method 選擇 SSH, Username 輸入 <span class="USERNAME">[USERNAME]</span>, Hostname 輸入 cloud.cs.nchu.edu.tw:<span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span>, 最後按下 Connect. (你也可以勾選 Autoconnect, 以後開啟 virt-manager 時會自動連線到這個主機.)</p>
+    <img src="img/lab2/003.png" valign="top">
+    <img src="img/lab2/004.png">
+    <p>圖中看到的 VM001 與 VM002 是我們用 virsh 所建立的機器, 但是我們在 virt-manager 中可能無法正常管理.</p>
+    <p>接下來我們試著用 virt-manager 來建立虛擬機器, 請點選 File 選單, 接著點選 New Virtual Machine.</p>
+    <img src="img/lab2/005.png">
+    <p>在這裡可以選擇安裝機器的方式, 我們選擇 import existing disk image 來匯入之前裝好的虛擬機器.</p>
+    <img src="img/lab2/006.png">
+    <p>點選 Browse...</p>
+    <img src="img/lab2/007.png">
+    <p>Storage Pools 選擇 img, 這是我們之前用 virsh 設定的. 接著點選 vm003.img, 記得嗎我們在前面有多複製一個出來, 複製硬碟前虛擬機器要關閉. 然後就按下 Choose Volume.</p>
+    <img src="img/lab2/008.png">
+    <p>OS type 選擇 Linux, Version 選擇 Debian Wheezy (or later). 接著按下 Forward.</p>
+    <img src="img/lab2/009.png">
+    <p>這個頁面可以配置記憶體大小與 CPU 數量, 我們使用預設值就好 Memory 1024MB, 1 CPU. Forward.</p>
+    <img src="img/lab2/010.png">
+    <p>Name 欄位輸入 <span class="codeNUM" style="color: green;">[Code-NUM]</span>-VM003 勾選 Custimize configuration before install. 接著點選 Advanced options 前方的小三角形圖示展開選項, 選擇 Virtual network 'ovs-br0' : Bridge network. 確認無誤後點選 Finish</p>
+    <img src="img/lab2/011.png">
+    <p>這個畫面可以讓我們進一步修改/新增/刪除虛擬機器設備, 檢查無誤就點選左上方的 Begin installation.</p>
+    <img src="img/lab2/012.png">
+    <p>開機後登入自己的帳號, 修改網路設定！</p>
+    <img src="img/lab2/013.png">
+    <p>Assignment2-2: 請將 <span class="codeNUM" style="color: green;">[Code-NUM]</span>-VM003 網路設定好 (給予另一個 IP 位址, <span class="vm003IP" style="color: GoldenRod;">[VM003-IP]</span>) 確認虛擬機器之間都可以互通.</p>    
+
+    <h2>虛擬機器遷移 (Bonus)</h2>
+    <h3>Login Server</h3>
+    <p>Open a terminal emulator and then type the following commands.</p>
+    <pre class="dol">ssh <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -X -p <span class="PortNUM" style="color: dodgerblue;">[PortNUM]</span></pre>
+    
+    <h3>複製虛擬硬碟</h3>
+    <p>複製硬碟之前請確定虛擬機器是關閉的!</p>
+    <pre class="dol">cd ~/KVM/img</pre>
+    <pre class="dol">cp vm001.img StudentID.img</pre>
+    <p>將虛擬硬碟複製一份到目標機器, A 排與 55, B排與56, 以此類推 C: 57, D: 58.</p>
+    <pre class="dol">scp StudentID.img 172.16.1.'目標編號':~/KVM/img</pre>
+    <pre class="dol">exit</pre>
+    <p>回到自己的電腦, 注意不是遠端的主機!!</p>
+    <pre class="dol">ssh-copy-id <span class="USERNAME" style="color: green;">[USERNAME]</span>@cloud.cs.nchu.edu.tw -p '目標編號22'
+<code><span class="USERNAME">[USERNAME]</span>@cloud.cs.nchu.edu.tw's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh -p '目標編號22' '<span class="USERNAME">[USERNAME]</span>@cloud.cs.nchu.edu.tw'"
+and check to make sure that only the key(s) you wanted were added.
+</code></pre>
+    <p>與遠端機器建立 Connection, 請參考前面作法.</p>
+    <p>開啟 virt-manager 建立虛擬機器 StudentID, 新建的硬碟若沒有出現在 Storage Pool 中點一下重新整理即可. 設定好網路並給予另一個 IP 位址, <span class="vm004IP" style="color: GoldenRod;">[StudentID-IP]</span>.</p>
+    <img src="img/lab2/migrate-001.png">
+    <p>在 StudentID 這個機器上按下滑鼠右鍵, 點選 migrate</p>
+    <img src="img/lab2/migrate-002.png">
+    <p>點選 Advanced options 前方的三角形展開選項, 設定 Address 172.16.1.'目標編號', 接著按下 Migrate.</p>
+    <img src="img/lab2/migrate-003.png">
+    <p>遷移成功之後就會看到機器在另一個主機上開啟, 原本主機上的 StudentID 機器會呈現 Shutoff 狀態.</p>
+    <p>助教檢查確認後, 會將機器遷移回去才算完成作業.</p>
+    <img src="img/lab2/migrate-004.png">
+
+    <hr>
+    <h2>Assignment#2</h2>
+    <p>由於系統環境重置了，請同學參考 Lab1 修正 ~/KVM/bin/ovs-stop 與 ~/KVM/bin/ovs-start 兩個 script.
+      <pre class="dol">sed -i s'/CodeNUM/<span class="codeNUM" style="color: green;">codeNUM</span>/' ~/KVM/bin/ovs-st*</pre>
+    </p>
+    <ol>
+      <li>Assignment2-1 (virsh): 請將 VM001 與 VM002 網路設定好 (給予不同 IP 位址, <span class="vm001IP" style="color: GoldenRod;">[VM001-IP]</span>, <span class="vm002IP" style="color: Golde\
+nRod;">[VM002-IP]</span>), 並確保兩部虛擬機器可以互通.
+      <li>Assignment2-2 (virt-manager): 請將 <span class="codeNUM" style="color: green;">[Code-NUM]</span>-VM003 網路設定好 (給予另一個 IP 位址, <span class="vm003IP" style="color: GoldenRod;">[VM003-IP]</span>) 確認虛擬機器之間都可以互通.
+      <li>Assignment2-3: 建立第四部虛擬機器取名為'ID學號十碼', image 檔案名稱為 'ID學號十碼.img', 將虛擬機器開啟後網路設定好 (給予另一個 IP 位址, <span class="vm004IP" style="color: GoldenRod;">[學號十碼-IP]</span>) 遷移至指定機器.
+    </ol>
+    <p>作業繳交期限 12/10</p>
+    <p><a href="assignment2.html" target="homeworkCheck">作業檢查頁</a></p>
+
+<!-- 頁底 -->
+<div id="footer" style="width: 100%; clear: left;" align="center">
+  <hr>
+  <p>註：助教會不定時修改網頁注意事項，遇到問題不妨先重新整理網頁更新內容 ^.^</p>
+  <script type="text/javascript" src="/javascripts/js_lus.js"></script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@csmail.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+  </body>
+</html>

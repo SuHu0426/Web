@@ -1,0 +1,322 @@
+<html>
+  <head>
+    <title>Homework check</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/2.1.1/jquery.js"></script>
+    <script>
+    jQuery(document).ready(function() {
+	var setPreviewSize = function() {
+	    $("iframe#PreView").attr('height', 0 );
+	    var $pvsizew = $(document).width() - 630;
+	    var $pvsizeh = $(document).height() - 170;
+	    $("iframe#PreView").attr('width', $pvsizew );
+	    $("iframe#PreView").attr('height', $pvsizeh );
+	    return;
+	}
+	/*
+	$("td.IPaddr").click(function() {
+	    var $port = $(this).next('td').text();
+	    var $url = "http://" + $(this).text() + ":" + $port;
+	    $("iframe#PreView").attr('src', $url);
+	    parseCode($url);
+	    setPreviewSize();
+	});
+	*/
+	$(".httpPort").click(function() {
+	    var $port = $(this).text();
+	    var $url = "http://cloud.cs.nchu.edu.tw" + ":" + $port;
+	    $("iframe#PreView").attr('src', $url);
+	    getSrc($url);
+	    //parseCode($url);
+	    setPreviewSize();
+	    //console.debug($url);
+	});
+	
+	$("iframe#PreView").load(function() {
+	    getSrc();
+	});
+	var getSrc = function ($url) {
+	    //var $SrcCode = $("iframe#PreView").contents().find("html").html();
+	    /*
+	    $.ajax({
+		type: 'post',
+		url: $url,
+		data: {
+		    content: $(document).html();
+		}
+	    });
+	    */
+	    var $SrcCode = $.post($SrcCode, document.documentElement.outerHTML);
+	    console.debug($SrcCode);
+	    //$("div#SrcCode").html($SrcCode);
+	}
+	var parseCode = function (o){
+	    console.debug(o);
+	    $.get (o.href,
+		   function(code){
+		       code=code.replace(/&/mg,'&#38;');
+		       code=code.replace(/</mg,'&#60;');
+		       code=code.replace(/>/mg,'&#62;');
+		       code=code.replace(/\"/mg,'&#34;');
+		       code=code.replace(/\t/g,'  ');
+		       code=code.replace(/\r?\n/g,'<br>');
+		       code=code.replace(/<br><br>/g,'<br>');
+		       code=code.replace(/ /g,'&nbsp;');
+		       $("div#SrcCode").html("");
+		       $("div#SrcCode").html(code);
+		   }
+		  );
+	}
+	$(window).resize(function() {
+	    setPreviewSize();
+	});
+	
+	var initial_Table = function() {
+	    /* 
+	     * Load student ID date
+	     */
+	    var SID = $.ajax({
+                url: "201605OpenSys.txt",
+                async: false
+            }).responseText;
+
+	    //Split values of string data
+	    var SIDArray = SID.split("\n");
+	    var portPrefix = 0;
+	    for (i = 0; i < 99; i++){
+		portPrefix = 101 + i ;
+		$("#SID2Port_tbody").append('<tr><td class="SID">'+ SIDArray[i] +'<td class="httpPort">'+ portPrefix +'80<td class="sshPort">'+ portPrefix +'22<td class="hw1"><td class="hw2">');
+	    }
+	    return;
+	}
+
+	var sethw1_Record = function() {
+	    var $Record_hw1 = ["✔"];
+	    $Record_hw1[1] = "✔";
+            $Record_hw1[5] = "✔";
+	    $Record_hw1[6] = "✔";
+	    $Record_hw1[7] = "✔";
+	    $Record_hw1[8] = "✔";
+	    $Record_hw1[10] = "✔";
+	    $Record_hw1[17] = "✔";
+	    $Record_hw1[20] = "✔";
+	    $Record_hw1[21] = "✔";
+	    $Record_hw1[22] = "✔";
+	    $Record_hw1[23] = "✔";
+	    $Record_hw1[25] = "✔";
+	    $Record_hw1[26] = "✔";
+	    $Record_hw1[27] = "✔";
+	    $Record_hw1[28] = "✔";
+	    $Record_hw1[29] = "✔";
+	    $Record_hw1[30] = "✔";
+	    $Record_hw1[32] = "✔";
+	    $Record_hw1[33] = "✔";
+	    $Record_hw1[35] = "✔";
+	    $Record_hw1[36] = "✔";
+	    $Record_hw1[37] = "✔";
+	    $Record_hw1[38] = "✔";
+	    $Record_hw1[39] = "✔";
+	    $Record_hw1[40] = "✔";
+	    $Record_hw1[44] = "✔";
+	    $Record_hw1[45] = "✔";
+	    $Record_hw1[46] = "✔";
+	    $Record_hw1[47] = "✔";
+	    $Record_hw1[48] = "✔";
+	    $Record_hw1[49] = "✔";
+	    $Record_hw1[50] = "✔";
+	    $Record_hw1[53] = "✔";
+	    $Record_hw1[54] = "✔";
+	    $Record_hw1[55] = "✔";
+	    $Record_hw1[57] = "✔";
+	    $Record_hw1[59] = "✔";
+	    $Record_hw1[61] = "✔";
+	    $Record_hw1[63] = "✔";
+	    $Record_hw1[64] = "✔";
+	    $Record_hw1[65] = "✔";
+	    $Record_hw1[66] = "✔";
+	    $Record_hw1[67] = "✔";
+	    $Record_hw1[68] = "✔";
+	    $Record_hw1[69] = "✔";
+	    $Record_hw1[72] = "✔";
+	    $Record_hw1[74] = "✔";
+	    $Record_hw1[75] = "✔";
+	    $Record_hw1[76] = "✔";
+	    $Record_hw1[77] = "✔";
+	    $Record_hw1[80] = "✔";
+	    $Record_hw1[82] = "✔";
+	    $Record_hw1[83] = "✔";
+	    $Record_hw1[84] = "✔";
+	    $Record_hw1[88] = "✔";
+	    $Record_hw1[92] = "✔";
+	    $Record_hw1[93] = "✔";
+	    $Record_hw1[94] = "✔";
+	    var $Total = $("td.hw1").length;
+	    $.each($Record_hw1, function( i, val ) {
+		$("td.hw1:eq(" + i + ")").text(val);
+	    });
+	    //console.debug($Total);
+	    return;
+	}
+	var sethw2_Record = function() {
+	    var $Record_hw2 = ["?"];
+	    $Record_hw2[1] = "✔";
+	    $Record_hw2[5] = "✔ M$ Word";
+	    $Record_hw2[6] = "✔ M$ Word";
+	    $Record_hw2[7] = "✔ M$ Word";
+	    $Record_hw2[8] = "✔ M$ Word";
+	    $Record_hw2[10] = "✔";
+	    $Record_hw2[17] = "";
+	    $Record_hw2[20] = "純文字檔";
+	    $Record_hw2[21] = "✔";
+	    $Record_hw2[22] = "純文字檔";
+	    $Record_hw2[23] = "✔";
+	    $Record_hw2[25] = "✔";
+	    $Record_hw2[26] = "✔";
+	    $Record_hw2[27] = "✔";
+	    $Record_hw2[28] = "✔";
+	    $Record_hw2[29] = "純文字檔";
+	    $Record_hw2[30] = "✔ 未排版";
+	    $Record_hw2[32] = "✔";
+	    $Record_hw2[33] = "純文字檔";
+	    $Record_hw2[35] = "純文字檔";
+	    $Record_hw2[36] = "✔";
+	    $Record_hw2[37] = "";
+	    $Record_hw2[38] = "✔";
+	    $Record_hw2[39] = "純文字檔";
+	    $Record_hw2[40] = "純文字檔";
+	    $Record_hw2[44] = "純文字檔";
+	    $Record_hw2[45] = "純文字檔";
+	    $Record_hw2[46] = "✔";
+	    $Record_hw2[47] = "✔";
+	    $Record_hw2[48] = "純文字檔";
+	    $Record_hw2[49] = "✔";
+	    $Record_hw2[50] = "✔";
+	    $Record_hw2[53] = "✔ 未排版";
+	    $Record_hw2[54] = "✔";
+	    $Record_hw2[55] = "純文字檔";
+	    $Record_hw2[57] = "✔";
+	    $Record_hw2[59] = "";
+	    $Record_hw2[63] = "✔";
+	    $Record_hw2[64] = "✔ 未排版";
+	    $Record_hw2[65] = "✔ 未排版";
+	    $Record_hw2[66] = "✔";
+	    $Record_hw2[67] = "✔ 未排版";
+	    $Record_hw2[68] = "✔";
+	    $Record_hw2[69] = "✔";
+	    $Record_hw2[72] = "純文字檔";
+	    $Record_hw2[74] = "純文字檔";
+	    $Record_hw2[75] = "純文字檔";
+	    $Record_hw2[76] = "差一點囉";
+	    $Record_hw2[77] = "✔";
+	    $Record_hw2[80] = "";
+	    $Record_hw2[82] = "✔";
+	    $Record_hw2[83] = "純文字檔";
+	    $Record_hw2[84] = "✔";
+	    $Record_hw2[88] = "✔ M$ Word";
+	    $Record_hw2[92] = "純文字檔";
+	    $Record_hw2[93] = "純文字檔";
+	    $Record_hw2[94] = "";
+	    var $Total = $("td.hw2").length;
+	    $.each($Record_hw2, function( i, val ) {
+		$("td.hw2:eq(" + i + ")").text(val);
+	    });
+	    return;
+	}
+	initial_Table();
+	//sethw1_Record();
+	//sethw2_Record();
+    });
+    </script>
+    <style>
+      table {
+      border: 3px solid black;
+      border-collapse:collapse;
+      }
+      th {
+      background-color:yellow; 
+      }
+      th, td {
+      border: 2px solid black;
+      text-align: center;
+      }
+      #col1 {
+      width: 110px;
+      }
+      #col2, #col3 {
+      width: 75px;
+      } 
+      #col4 {
+      width: 70px;
+      }
+      #col5 {                                                                                      
+      width: 90px;
+      }
+      .container {
+      overflow: hidden;
+      }
+      .left {
+      float: left;
+      width: 600px;
+      }
+      .right {
+      margin: 0 0px;
+      }
+      iframe {
+      margin: 0 0px;
+      overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Virtualization via UML homework</h1>
+    <p>連線方式請參閱 <a href="http://snmlab.cs.nchu.edu.tw/CloudLab/Lab0.html" target="_blank">Login Server from Windows</a> 或 <a href="http://www.cs.nchu.edu.tw/~snmlab/OpenSystem-1-2016/HowtoLoginServer.html" target="_blank">遠端連線與上傳檔案至伺服器教學</a></p>
+    <p>連線網址為 cloud.cs.nchu.edu.tw, 並以 -p 參數指定 ssh port 號.<br>
+ eg: ssh -p 10022 cloud@cloud.cs.nchu.edu.tw </p>
+    <p>網頁結果預覽請點擊 http port, 如果預覽功能不正常時直接以 http://cloud.cs.nchu.edu.tw:http_port 檢視(http_port 請自行取代) 。</p>
+    <p>大家可以利用 <a href="http://www.w3schools.com/html/default.asp" target="_blank">W3School</a> 等教學網站學習如何撰寫網頁。</p>
+    <a href="http://140.120.7.21/LectureNotes/Diaries/OpenSystem1Diary-2016.html#HomeWorkDue" target="_blank">HomeWork Due</a>
+    <br>
+    <div class="container">
+      <div class="left">
+	<table id="SID2Port">
+	  <colgroup>
+	    <col id="col1">
+	    <col id="col2">
+	    <col id="col3">
+	    <col id="col4">
+	    <col id="col5">
+	   <!-- <col id="col6"> -->
+	  </colgroup>
+	  <tbody id="SID2Port_tbody">
+	    <tr>
+	      <th>學號</th>
+	      <th>http port</th>
+	      <th>ssh port</th>
+	      <th>Web Server</th>
+	      <th>心得</th>
+	    </tr>
+	  </tbody>
+	</table>
+      </div>
+      <div class="right">
+    <p>預覽區</p>
+	<iframe id="PreView" frameborder="0" seamless></iframe>
+	<div id="SrcCode"></div>
+      </div>
+    </div>
+
+<!-- 頁底 -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+      <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+      // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+  </body>
+</html>

@@ -1,0 +1,197 @@
+
+/*
+table.s1 {
+    border-spacing: 0px;
+    border: 0px solid;
+    line-height: 150%;
+}
+
+td.s1 {
+    border: 0px solid;
+}
+
+th.s1 {
+    border: 0px solid;
+    font-size: 17px;
+    font-weight: bold;
+    font-family: Consolas,monospace;
+}
+*/
+.nobor {
+    border: 0px;
+}
+/*
+pre {
+    font-size:1.2em; 
+    line-height:1.4em;
+    overflow:auto;
+    background: #f0f0f0 ;
+    border: 1px solid #ccc;
+    margin-left:5px;
+    margin-top:0px;
+    padding: 0.5em;
+    width: 97.5%;
+    border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+}
+*/
+/*
+pre code {
+    font-size:12pt; 
+    line-height:1.4em;
+    overflow:auto;
+    color: silver;
+    background: black url(Code_BG.gif) left top repeat-y;
+    border:0px solid #f0f0f0;
+    margin:0px 5px 0px 0px;
+    padding: 5px 5px 5px 15px;
+    width: 97.5%;
+    display: block;
+}
+*/
+
+code.out {
+    font-size:11pt;
+    font-family: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+    line-height:1.2em;
+    overflow:auto;
+    color: silver;
+    background: black url(Code_BG.gif) left top repeat-y;
+    border:1px solid #ccc;
+    margin:0em 0em -0.75em 0em;
+    padding: 0.5em 0em 0.5em 1.25em;
+    width: 98%;
+    display: block;
+    border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+}
+
+pre.mdol,pre.dol,pre.madm,pre.adm,pre.pure {
+    font-size:1.2em;
+    font-family: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+    line-height:1.4em;
+    overflow:auto;
+    background: #f0f0f0 ;
+    border: 1px solid #ccc;
+    margin:0.5em 0em 0.5em 1.25px;
+    padding: 0.5em;
+    width: 97.5%;
+    border-radius: 0.5em;
+    -moz-border-radius: 0.5em;
+    -webkit-border-radius: 0.5em;
+}
+
+.dol:before {
+    content: "$ ";
+    overflow: auto;
+}
+
+.mdol code:before {
+    content: "$ ";
+    overflow: auto;
+}
+
+.adm:before {
+    content: "# ";
+    overflow: auto;
+}
+
+.madm code:before {
+    content: "# ";
+    overflow: auto;
+}
+
+.mdol code.vm:before {
+    content: "vm:~$ ";
+}
+
+.madm code.vm:before {
+    content: "vm:~# ";
+}
+
+.mdol code.out:before {
+    content: "";
+}
+
+.madm code.out:before {
+    content: "";
+}
+
+.mdol code.mn:before {
+    content: "mininet> ";
+}
+
+.mdol code.xvisor:before {
+    content: "@XVisor# ";
+}
+
+.out.gt:before {
+    content: "> ";
+}
+
+.out.lt:before {
+    content: "< ";
+}
+
+figure {
+    width: 302px;
+    float: right;
+    background-color: lightgrey;
+    border-width: thin;
+    margin: inherit;
+    text-align: center;
+}
+
+figure img {
+    width: 300px;
+    background-color: white;
+    vertical-align: middle;
+}
+
+figure figcaption {
+    text-align: left;
+    margin-left: 10;
+}
+
+.hidden {
+    visibility: hidden;
+    height: 0;
+    font-size: 0;
+}
+
+.red {
+    color: red;
+}
+
+.console {
+    border-radius: 8px;
+    overflow: auto;
+    width: auto;
+    color: white;
+    background: black;
+    border: solid rgba(182, 182, 182, .9);
+    border-width: .1em .1em .1em .8em;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 10px 0px;
+    font-family: Monaco,monospace;
+    font-size: large;
+}
+
+div.block {
+    white-space: pre;    
+}
+
+div.out {
+    overflow:auto;
+    width:auto;
+    color:black;
+    background: white;
+    border:solid gray;
+    border-width:.1em .1em .1em .6em;
+    padding:.4em .6em;
+    white-space: pre;
+    font-family: Consolas,monospace;
+    font-size: large;
+}
