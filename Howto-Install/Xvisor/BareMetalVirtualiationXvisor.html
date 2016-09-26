@@ -1,0 +1,601 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+    <title>Bare Metal Virtualiation: Xvisor</title>
+    <link type="text/css" rel="stylesheet" href="BareMetalVirtualiationXvisor_files/style_2015.css">
+  </head>
+  <body>
+    <table border="0" cellpadding="0">
+      <tbody><tr>
+        <td valign="top">
+          <h1>Hypervisor</h1>
+          <p>Hypervisor Classification
+            </p><ol>
+              <li>Type-1, bare metal hypervisors (native)
+                <p>Bare machine (or bare metal), in computer parlance, means a computer without its operating system.
+                  </p><ol>
+                    <li>Real-time virtualization:
+                      <ul>
+                        <li>industrial automation
+                        </li><li>medicine
+                        </li><li>telecommunications
+                        </li><li>high-performance computing
+                      </li></ul>
+                    </li><li>Security
+                      <ul>
+                        <li>rigorous certifications 
+                        </li><li>formal verification procedures
+                      </li></ul>
+                      <p>The hypervisor must isolate them from non-certifiable workloads. (must be small enough)
+                        </p><ul>
+                          <li>larger (and more "suspicious")
+                          </li><li>segregates
+                          </li><li>devastating the whole idea of isolation
+                        </li></ul>
+                  </li></ol>
+                  e.g. Oracle VM Server for SPARC, Oracle VM Server for 
+x86, the Citrix XenServer, VMware ESX/ESXi and Microsoft Hyper-V, 
+Xvisor, Jailhouse
+              </li><li>Type-2, hosted hypervisors<br>
+                e.g. VMware Workstation, VMware Player, VirtualBox and QEMU
+            </li></ol>
+
+        </td><td valign="top">
+          <figure width="302">
+            <img src="BareMetalVirtualiationXvisor_files/Hyperviseur.png" alt="Hyperviseur">
+            <figcaption>Type-1 and type-2 hypervisors</figcaption>
+          </figure>
+          <br>
+          <br>
+          <br>
+          <figure width="302">
+            <img src="BareMetalVirtualiationXvisor_files/jailhouse.jpg" alt="jailhouse">
+            <figcaption>A visualization of Linux running-bare metal (a) 
+and under the Jailhouse hypervisor (b) alongside a real-time 
+application. (Image from Yulia Sinitsyna; Tux image from Larry Ewing.)</figcaption>
+          </figure>
+      </td></tr>
+    </tbody></table>
+    <table border="0" cellpadding="0">
+      <tbody><tr>
+        <td>
+          <h2>Xvisor</h2>
+          <p>Xvisor® is an open-source type-1 hypervisor virtualization solution.
+            </p><ul>
+              <li>monolithic
+              </li><li>light-weight
+              </li><li>portable
+              </li><li>flexible
+            </li></ul>
+          <p>Xvisor supports
+            </p><ul>
+              <li>Full virtualization (primarily)<br>
+                unmodified Guest operating systems
+              </li><li>Paravirtualization (optional)<br>
+                such as VirtIO PCI/MMIO devices
+            </li></ul>
+          <p>Hypervisors can be categorized into three categories based 
+on Host hardware access, CPU virtualization, and Guest IO emulation, as 
+follows:
+            </p><ol>
+              <li><b>Complete Monolithic:</b> Complete monolithic 
+hypervisors (e.g. Xvisor) have one common software for Host hardware 
+access, CPU virtualization, and Guest IO emulation.
+              </li><li><b>Partially Monolithic:</b> Partially monolithic
+ hypervisors (e.g. KVM) are usually an extension of general purpose 
+monolithic OS (e.g. Linux®, FreeBSD®, NetBSD®, etc.) to support Host 
+hardware access + CPU virtualization in kernel and support Guest IO 
+emulation from software running in user-space (e.g. QEMU®).
+              </li><li><b>Micro-kernelized:</b> Micro-kernelized 
+hypervisors (e.g. Xen®) are usually light-weight micro-kernels providing
+ basic Host hardware access + CPU virtualization in kernel and for rest 
+it depends on a Managment Guest (e.g. Dom0 of Xen) which provides 
+complete Host hardware access, Management interface, and Guest IO 
+emulation.
+            </li></ol>
+      </td></tr>
+      <tr>
+        <td rowspan="2">
+          <figure style="float: none; width: 502px;">
+            <img src="BareMetalVirtualiationXvisor_files/xvisor1.PNG" alt="xvisor-fig1" style="width: 500px;">
+            <figcaption>System Virtual Machine Model implemented by Xvisor</figcaption>
+          </figure>
+          <br>
+          <br>
+          <h3>SettingUpASandbox</h3>
+          <ul>
+            <li>Source and Build
+            </li><li>Bootable ISO
+            </li><li>Building-Coreboot-FILO
+            </li><li>Hard Disk Image
+            </li><li>Running the setup
+          </li></ul>
+      </td></tr>
+    </tbody></table>
+
+    
+
+    
+    <table border="0" cellpadding="0">
+      <tbody><tr>
+        <td>
+          <p>Build source from xvisor-x86_64 github.
+</p><pre class="mdol"><code>sudo aptitude install gcc-multilib git-all cscope iasl cgdb xorriso \
+  libncurses5-dev m4 flex bison autoconf expect qemu-system-x86 qemu-utils</code>
+<code>git clone https://github.com/hschauhan/xvisor-x86_64.git</code>
+<code>cd xvisor-x86_64</code>
+<code>git checkout --track -b x86-next origin/x86-next</code>
+<code class="out">Branch x86-next set up to track remote branch x86-next from origin.
+Switched to a new branch 'x86-next'</code>
+<code>make ARCH=x86 x86_64_generic-defconfig</code>
+<code>make</code>
+<code>echo $?</code>
+<code class="out">0</code>
+<code>cd ..</code>
+<code>mkdir -p xvisor-iso/boot/grub</code>
+<code>cp xvisor-x86_64/build/vmm.bin xvisor-iso/boot</code>
+<code>emacs xvisor-iso/boot/grub/grub.cfg</code>
+<code class="out">set timeout=15
+set default=0
+
+menuentry "Xvisor x86_64" {
+  multiboot /boot/vmm.bin earlyprint=vga
+  boot
+}
+</code>
+<code>grub-mkrescue -o xvisor-bootable.iso xvisor-iso/</code>
+<code class="out">xorriso 1.4.0 : RockRidge filesystem manipulator, libburnia project.
+
+  Drive current: -outdev 'stdio:xvisor-bootable.iso'
+  Media current: stdio file, overwriteable
+  Media status : is blank
+  Media summary: 0 sessions, 0 data blocks, 0 data,  278g free
+  Added to ISO image: directory '/'='/tmp/grub.iGBw7p'
+  xorriso : UPDATE : 311 files added in 1 seconds
+  Added to ISO image: directory '/'='/src3/Xvisor/xvisor-iso'
+  xorriso : UPDATE : 315 files added in 1 seconds
+  xorriso : NOTE : Copying to System Area: 512 bytes from file '/usr/lib/grub/i386-pc/boot_hybrid.img'
+  ISO image produced: 4544 sectors
+  Written to medium : 4544 sectors at LBA 0
+  Writing to 'stdio:xvisor-bootable.iso' completed successfully.
+
+</code>
+<code>ls -l xvisor-bootable.iso</code>
+<code>-rw-r--r-- 1 cloud cloud 9306112 Dec 15 04:42 xvisor-bootable.iso</code>
+<code>kvm -m 2048M -cpu qemu64,+svm,vendor=AuthenticAMD -cdrom xvisor-bootable.iso -boot d</code>
+</pre>
+
+          <p>Build source form xvisor-0.2.7.tar.gz.
+</p><pre class="mdol"><code>wget http://xhypervisor.org/tarball/xvisor-0.2.7.tar.gz</code>
+<code>tar zxvf xvisor-0.2.7.tar.gz</code>
+<code>make ARCH=x86 x86_64_generic-defconfig</code>
+<code>make</code>
+<code>echo $?</code>
+<code class="out">0</code>
+<code>cd ..</code>
+<code>mkdir -p xvisor-iso-0.2.7/boot/grub</code>
+<code>cp xvisor-0.2.7/build/vmm.bin xvisor-iso-0.2.7/boot</code>
+<code>emacs xvisor-iso/boot/grub/grub.cfg</code>
+<code class="out">set timeout=15
+set default=0
+
+menuentry "Xvisor x86_64" {
+  multiboot /boot/vmm.bin earlyprint=vga
+  boot
+}
+</code>
+<code>grub-mkrescue -o xvisor-bootable-0.2.7.iso xvisor-iso-0.2.7/</code>
+<code class="out">xorriso 1.4.0 : RockRidge filesystem manipulator, libburnia project.
+
+  Drive current: -outdev 'stdio:xvisor-bootable-0.2.7.iso'
+  Media current: stdio file, overwriteable
+  Media status : is blank
+  Media summary: 0 sessions, 0 data blocks, 0 data,  278g free
+  Added to ISO image: directory '/'='/tmp/grub.xBef8g'
+  xorriso : UPDATE : 311 files added in 1 seconds
+  Added to ISO image: directory '/'='/src3/Xvisor/xvisor-iso-0.2.7'
+  xorriso : UPDATE : 315 files added in 1 seconds
+  xorriso : NOTE : Copying to System Area: 512 bytes from file '/usr/lib/grub/i386-pc/boot_hybrid.img'
+  ISO image produced: 4544 sectors
+  Written to medium : 4544 sectors at LBA 0
+  Writing to 'stdio:xvisor-bootable-0.2.7.iso' completed successfully.
+
+</code>
+<code>ls -l xvisor-bootable*.iso</code>
+<code class="out">-rw-r--r-- 1 cloud cloud 9306112 Dec 15 04:54 xvisor-bootable-0.2.7.iso
+-rw-r--r-- 1 cloud cloud 9306112 Dec 15 04:42 xvisor-bootable.iso
+</code>
+<code>kvm -m 2048M -cpu qemu64,+svm,vendor=AuthenticAMD -cdrom xvisor-bootable-0.2.7.iso -boot d</code>
+</pre>
+<h1>string "Default Password" default "EQuiN0X"</h1>
+
+
+          <p>Create a virtual disk and install grub2 onto the mbr.
+</p><pre class="mdol"><code>cd /src3/Xvisor</code>
+<code>dd if=/dev/zero of=xvisor-disk.img count=40320</code>
+<code class="out">40320+0 records in
+40320+0 records out
+20643840 bytes (21 MB) copied, 0.0619101 s, 333 MB/s
+</code>
+<code>fdisk -l xvisor-disk.img</code>
+<code class="out">Disk xvisor-disk.img: 19.7 MiB, 20643840 bytes, 40320 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+</code>
+<code class="out">Necessary inputs required to complete this step
+Number of sectors(s) = 63 (choosing default)
+Number of heads(h) = 16
+Number of cylinders(c) = C / (s * h)
+
+Thus c = 40320 / (63 * 16) = 40</code>
+<code>fdisk xvisor-disk.img</code>
+<code class="out">
+Welcome to fdisk (util-linux 2.27.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0x673c0080.
+
+Command (m for help): x
+
+Expert command (m for help): s
+Number of sectors (1-63, default 63): 63
+
+Expert command (m for help): h
+Number of heads (1-256, default 255): 16
+
+Expert command (m for help): c
+Number of cylinders (1-1048576, default 40): 40
+
+Expert command (m for help): r
+
+Command (m for help): w
+
+The partition table has been altered.
+Syncing disks.
+
+</code>
+<code>fdisk xvisor-disk.img</code>
+<code class="out">Command (m for help): n
+Partition type
+p   primary (0 primary, 0 extended, 4 free)
+e   extended (container for logical partitions)
+Select (default p):
+Using default value p
+
+Partition number (1-4, default 1):
+Using default value 1
+
+First sector (2048-40319, default 2048):
+Using default value 2048
+
+Last sector, +sectors or +size{K,M,G,T,P} (2048-40319, default 40319):
+Using default value 40319
+
+Created a new partition 1 of type 'Linux' and of size 18.7 MiB.
+
+Command (m for help): w
+The partition table has been altered.
+Syncing disks.
+</code>
+<code>fdisk -l xvisor-disk.img</code>
+<code class="out">Disk xvisor-disk.img: 19.7 MiB, 20643840 bytes, 40320 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xd7721429
+
+Device           Boot Start   End Sectors  Size Id Type
+xvisor-disk.img1       2048 40319   38272 18.7M 83 Linux
+</code>
+<code>sudo modprobe nbd max_part=8</code>
+<code>sudo qemu-nbd -c /dev/nbd0 xvisor-disk.img</code>
+<code>ls -l /dev/nbd0*</code>
+<code class="out">brw-rw---- 1 root disk 43, 0 Dec 15 16:23 /dev/nbd0
+brw-rw---- 1 root disk 43, 1 Dec 15 16:23 /dev/nbd0p1
+</code>
+<code>sudo aptitude install dosfstools</code>
+<code>sudo mkfs.vfat /dev/nbd0p1</code>
+<code>sudo mount /dev/nbd0p1 /mnt/tmp</code>
+<code>sudo grub-install --target=i386-pc --root-directory=/mnt/tmp /dev/nbd0</code>
+<code class="out">Installing for i386-pc platform.
+Installation finished. No error reported.
+</code>
+<code>sudo cp xvisor-0.2.7/build/vmm.{bin,elf} xvisor-0.2.7/build/system.map /mnt/tmp/boot</code>
+<code>sudo emacs /mnt/tmp/boot/grub/grub.cfg</code>
+<code class="out">set timeout=15
+set default=0
+
+menuentry "Xvisor x86_64" {
+  multiboot /boot/vmm.bin earlyprint=vga
+  boot
+}
+</code>
+<code>sync;sync</code>
+<code>sudo umount /mnt/tmp</code>
+<code>sudo qemu-nbd -d /dev/nbd0</code>
+<code class="out">/dev/nbd0 disconnected</code>
+<code>ls -l /dev/nbd0*</code>
+<code class="out">brw-rw---- 1 root disk 43, 0 Dec 15 16:29 /dev/nbd0</code>
+<code>sudo rmmod nbd</code>
+<code>kvm -m 2048M -cpu qemu64,+svm,vendor=AuthenticAMD -hda xvisor-disk.img</code>
+<code class="xvisor">host info</code>
+<code class="out">Host Name           : x86_64_generic
+Boot CPU            : 0
+Total Online CPUs   : 1
+Total VAPOOL        : 16 MB
+Total RAM           : 2048 MB
+</code>
+</pre>
+          <p>Preparing to Boot Guest
+</p><pre class="mdol"><code>git clone https://github.com/hschauhan/xvisor-seabios.git</code>
+<code>cd xvisor-seabios</code>
+<code>cp config-xvisor .config; make</code>
+<code>echo $?</code>
+<code class="out">0</code>
+<code>cd ..</code>
+<code>dd if=/dev/zero of=xvisor-guest.img bs=1M count=32</code>
+<code>fdisk xvisor-guest.img</code>
+<code class="out">Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0xc667de96.
+
+Command (m for help): n
+Partition type
+p   primary (0 primary, 0 extended, 4 free)
+e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-65535, default 2048):
+Last sector, +sectors or +size{K,M,G,T,P} (2048-65535, default 65535):
+
+Created a new partition 1 of type 'Linux' and of size 31 MiB.
+
+Command (m for help): w
+The partition table has been altered.
+Syncing disks.
+</code>
+<code>sudo modprobe nbd max_part=8</code>
+<code>sudo qemu-nbd -c /dev/nbd0 xvisor-guest.img</code>
+<code>sudo mkfs.vfat /dev/nbd0p1</code>
+<code>sudo qemu-nbd -d /dev/nbd0</code>
+<code>sudo mount -o loop,offset=1048576 xvisor-guest.img /mnt/tmp</code>
+<code>sudo cp xvisor-seabios/out/bios.bin /mnt/tmp</code>
+<code>sudo umount /mnt/tmp</code>
+<code>mkdir /src3/Xvisor/xvisor</code>
+<code>screen -S xvisor -d -m kvm -m 2048M -cpu qemu64,+svm,vendor=AuthenticAMD \ 
+  -curses -monitor unix:/src3/Xvisor/xvisor/MonSock,server,nowait \
+  -hda xvisor-disk.img \
+  -hdb xvisor-guest.img</code>
+<code class="xvisor">blockdev list</code>
+<code class="out">--------------------------------------------------------------------------------
+ Name             Parent           Start LBA        Blk Sz      Blk Cnt
+--------------------------------------------------------------------------------
+ hda0             ---              0                512         514
+ hda1             ---              0                512         514
+ hda0p0           hda0             2048             512         514
+ hda2             ---              0                2048        514
+ hda1p0           hda1             2048             512         514
+--------------------------------------------------------------------------------
+</code>
+<code class="xvisor">vfs ls /</code>
+<code class="out">drwxrwxrwx          0 Dec 15 2015 08:30:15 boot/</code>
+<code class="xvisor">vfs mkdir /hdb1</code>
+<code class="out">Error: command vfs failed (code -16)</code>
+<code class="xvisor">vfs ls /</code>
+<code class="out">drwxrwxrwx          0 Dec 15 2015 08:30:15 boot/
+drwxrwxrwx          0 Dec 01 2097 00:02:22 hdb1/</code>
+<code class="xvisor">vfs mount hda1p0 /hdb1</code>
+<code class="out">Trying: ext4 fat
+Mounted hda1p0 using fat at /hdb1</code>
+<code class="xvisor">vfs ls /hdb1</code>
+<code class="out">-rwxrwxrwx     131072 Dec 15 2015 08:59:28 bios.bin
+total 1</code>
+<code class="xvisor">vfs host_load 0xc0e0000 /hdb1/bios.bin</code>
+<code class="out">host: Loaded 0xc0e0000 with 131072 bytes</code>
+<code class="xvisor">guest kick guest0</code>
+<code class="out">Failed to find guest
+Error: command guest failed (code -3)</code>
+<code class="xvisor">guest list</code>
+<code class="out">-------------------------------------------------------------------------------
+ ID     Name              Endianness    Device Path
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+</code>
+<code class="xvisor">vfs umount /hdb1</code>
+<code class="out">Unmount successful</code>
+<code class="xvisor">vfs umount /</code>
+<code class="out">Unmount successful</code>
+<code class="xvisor">shutdown</code>
+<code class="out">Stopping Hypervisor Timer
+Issuing System Shutdown
+Error: shutdown failed (error -1)
+</code>
+<code>echo "quit" | sudo socat - unix-connect:/src3/Xvisor/xvisor/MonSock</code>
+<code class="out">QEMU 2.4.0 monitor - type 'help' for more information
+(qemu) quit</code>
+</pre>
+
+
+
+<pre class="hidden">make menuconfig
+make
+sudo aptitude install gcc-multilib git-all cscope iasl cgdb xorriso \
+  libncurses5-dev m4 flex bison autoconf expect qemu-system-x86 qemu-utils
+$ git clone https://github.com/hschauhan/xvisor-x86_64.git
+$ cd xvisor-x86_64
+$ git checkout --track -b x86-next origin/x86-next
+Branch x86-next set up to track remote branch x86-next from origin.
+Switched to a new branch 'x86-next'
+!!!!
+$ make ARCH=x86 x86_64_generic-defconfig
+$ make
+
+$ mkdir -p xvisor-iso/boot/grub
+$ cp xvisor-0.2.7/build/vmm.bin xvisor-iso/boot/
+$ emacs xvisor-iso/boot/grub/grub.cfg
+set timeout=15
+set default=0
+
+menuentry "Xvisor x86_64" {
+multiboot /boot/vmm.bin earlyprint=vga
+boot
+}
+
+$ grub-mkrescue -o xvisor-bootable.iso xvisor-iso/
+
+$ qemu-img create xvisor-hd.img 32M
+$ kvm -m 2048M -cpu qemu64,+svm,vendor=AuthenticAMD -cdrom xvisor-bootable.iso -hda xvisor-hd.img -boot d -s -serial stdio
+
+$ git clone https://github.com/hschauhan/xvisor-seabios.git
+$ cd xvisor-seabios
+$ cp config-xvisor .config; make
+$ cd ..
+
+$ sudo modprobe nbd max_part=8
+$ sudo qemu-nbd -c /dev/nbd0 xvisor-hd.img
+$ sudo fdisk /dev/nbd0
+n, p, 1, \n, \n
+w
+$ sudo mkfs.vfat /dev/nbd0p1
+$ sudo mount /dev/nbd0p1 /mnt/tmp
+$ sudo cp xvisor-seabios/out/bios.bin /mnt/tmp/
+$ sudo umount /mnt/tmp
+$ sudo qemu-nbd -d /dev/nbd0
+
+$ kvm -m 2048M -cpu qemu64,+svm,vendor=AuthenticAMD -cdrom xvisor-bootable.iso -hda xvisor-hd.img -boot d -s -serial stdio
+
+$ qemu-img create -f raw xvisor-hd.img 32M
+$ fdisk xvisor-hd.img
+n, p, 1, \n, \n
+w
+$ sudo losetup /dev/loop0 xvisor-hd.img -o 1048576
+$ sudo mkfs.vfat /dev/loop0
+#$ gcc -o lomount xvisor-x86_64/tests/x86/lomount.c
+$ sudo mount -t vfat -o loop,offset=1048576 xvisor-hd.img /mnt/tmp
+
+$ git clone http://review.coreboot.org/p/coreboot
+$ cd coreboot
+$ git submodule update --init --checkout
+$ cd payloads
+$ git clone http://review.coreboot.org/filo.git
+$ cd ..
+$ make crossgcc
+
+
+$ sudo aptitude install flex bison libiconv-hook1 make strip-nondeterminism
+$ sudo aptitude install cmake
+
+
+$ more ../00-INDEX
+
+Below is a brief list of all the files in ./xvisor/docs and what
+they contain. If you add a documentation file/directory under
+./xvisor/docs then please list it here in alphabetical order.
+Please try and keep the descriptions small enough to fit on one line.
+Thanks --Anup Patel
+
+00-INDEX
+- This file.
+releases/
+- Detailed information about each release.
+DesignDoc
+- Overview of Xvisor design.
+VersionScheme
+- Explanation about Xvisor Version Scheme.
+CodingStyle
+- Expected C coding style in Xvisor.
+DriverPorting
+- Recommendation for porint driver from Linux to Xvisor.
+arm/
+- ARM architecture support documentation.
+x86/
+- x86 architecture support documentation.
+
+$ more x86_TODO
+The following, in no specific order, are planned to be done:
+
+1. i8042 probe and detection based on ACPI tables.
+2. Support for IDE interface for hard drive.
+3. Complete the frame buffer support.
+4. All key handling (backspace, up-down, etc.)
+5. SMP Support.
+
+... and lots more.
+
+
+
+A. grub2
+B. Steps to build a bootable image of Xvisor
+1. Clone xvisor-x86_64 repo
+# git clone git://github.com/hschauhan/xvisor-x86_64.git
+
+2. Build Xvisor with following command:
+# make ARCH=x86 x86_64_generic-defconfig
+# make
+3. Create a directory xvisor-iso _somewhere_.
+# mkdir -p xvisor-iso/boot/grub
+
+4. Copy the xvisor image in the ISO directory:
+# cp XVISOR_BASE/build/vmm.bin xvisor-iso/boot/
+(NOTE: Here XVISOR_BASE is base directory where you pulled
+the xvisor tree.)
+
+5. Create a grub configuration file under ISO directory
+# emacs xvisor-iso/boot/grub/grub.cfg
+  CUT AND PASTE FOLLOWING IN IT
+  -------8&lt;----CUT-START--8&lt;---------------
+      set timeout=15
+      set default=0
+
+      menuentry "Xvisor x86_64" {
+           multiboot /boot/vmm.bin earlyprint=vga
+           boot
+      }
+  -------8&lt;----CUT-END----8&lt;---------------
+  Please copy paste above. A slight mistake won't
+  boot your system.
+
+6. Create a ISO to boot
+   # grub-mkrescue -o bootable.iso xvisor-iso/
+                              
+7. Boot the image
+   # qemu-system-x86_64 -cpu qemu64,+svm,vendor=AuthenticAMD -cdrom bootable.iso -hda xvisor-x86.disk -m 1024M -boot d -s -serial stdio
+
+</pre>
+    </td></tr></tbody></table>
+
+
+<h1>References</h1>
+<ol>
+  <li><a href="https://en.wikipedia.org/wiki/Bare_machine" target="_blank">Bare machine</a>
+  </li><li><a href="https://en.wikipedia.org/wiki/Hypervisor" target="_blank">Hypervisor</a>
+  </li><li><a href="http://xhypervisor.org/" target="_blank">Xvisor</a>
+  </li><li><a href="https://github.com/xvisor/xvisor" target="_blank">Xvisor github</a>
+  </li><li><a href="http://www.xvisor-x86.org/wiki/" target="_blank">Xvisor-x86</a>
+  </li><li><a href="https://github.com/xvisor/xvisor/blob/master/docs/DesignDoc" target="_blank">DesignDoc</a>
+  </li><li><a href="http://www.linuxjournal.com/content/jailhouse" target="_blank">jailhouse</a>
+  </li><li><a href="https://github.com/siemens/jailhouse" target="_blank">jailhouse github</a>
+</li></ol>
+
+<!-- é åº• -->
+<hr>
+<div id="footer" style="width: 100%; clear: left; display:inline-block" align="center">
+  <script language="JavaScript">
+          <!-- Hide JavaScript...
+           var LastUpdated = document.lastModified;
+           document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+           // End Hiding -->
+  </script><span style="text-align:center">This page was last updated 12/15/2015 17:53:55</span>
+
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> ChiSheng Su </a>
+  </address>
+</div>
+  
+
+</body></html>

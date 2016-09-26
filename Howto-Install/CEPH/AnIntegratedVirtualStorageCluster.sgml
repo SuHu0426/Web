@@ -1,0 +1,442 @@
+<!-- Content-Type: euc+sgml —-->
+<html>
+  <head><title>An Integrated Virtual Storage Cluster</title>
+        <meta http-equiv="Content-Language" content="zh-tw" charset="big5"/>
+  </head>
+  <body>
+    <h2>An Integrated Virtual Storage Cluster</h2>
+
+<P> <Eu>èúÍ¡Í¯ê·ªÂÆ§°å£þ¼Þ§¸à¡Û³ÚâÎ³</eu>, <Eu>©¶¢¯Ï²¦Ü¬ÙÆÕúµë ×ÀÝ³ªû</eu>,
+  <Eu>Ü Æèß¸ÚÄßÖ¯Ô</eu>. <Eu>Îû·ÖÍ¯ê·åÔäÒºõ</eu>, <Eu>ÁÞßÖ¯Ô£«èÂ­¥âýÒÑ°å</eu> 
+  root filesystem, <Eu>ÛúÜ </eu> (cp) <Eu>¬²â¶»¸³à</eu> (configuration),      
+  <Eu>¨ô¤ô¢Èá­</eu>.  <Eu>Í¯ê·åÔäÒßÖ¯Ô°åÚÐÄ¤Û³Ï¶èºÎûªû</eu>, <Eu>ßÖ¯Ô</eu> 
+  size <Eu>ÆÝÁË¢ì§û¶ß</eu>. <Eu>½ìÀï¨ôºõÉ¯¬Çâý³Õéç¦ý°ôÎÜ°å</eu> Virtual Storage 
+  Cluster, <Eu>¦æ§×§¸µÒÍ¯ê·ªÂÆ§ê°¥àÛ³ËÙ¹ó£¥¤ô®ñ½Ò°å¢ ë </eu>.
+
+<P> <Eu>¦ÀÁÞ</eu> Live Migration <Eu>°å«ç³ÕÞÆÍÏ</eu> VM <Eu>éç¦ý°ôÎÜ°å¿¹Óæ</eu>, 
+  <Eu>ä½¤ô½ìê°Ôð´Æ¥£Â¶°å</eu>. <Eu>éç¦ý°ôÎÜÍù¢åÍùÔð¬Ó¥à¥£Â¶§²°å</eu> storage space. 
+  Migration <Eu>²¿</eu>, <Eu>¦ºª¸éç¦ý°ôÎÜ</eu> umount, Migration <Eu>©ä§¸³à</eu>, 
+  <Eu>¦Àª¸</eu> storage space <Eu>Â¶¦ä¤ë</eu>. <Eu>ÆäÚÄ¬Ó¥à£û§²</eu>, <Eu>Þ¸¤Þ¢¬</eu>
+  Live Migration <Eu>°å¤ôãÝ³ÕÛ³×ì¥à®é</eu>.
+
+<P> <Eu>§Íóáéç¦ýÍ¯ê·£Ð°å°¸ÐÔ¬¶Îú</eu>, <Eu>â»À«§ú</eu>:  
+    <a href="./StorageVirtualization.html" 
+    target="newwindow">Storage Virtualization Essentials</a> 
+    <b>Notice</b> that the Redundancy, Data mirroring, Snapshots topics mentioned 
+    in the articles are built-in features of the Ceph filesystem.  And <b>NAS</b> 
+    and <b>SAN</b> technologies are implemented in the Ceph filesystem, too.
+    <Eu>éç¦ý¢Ó´Æ</eu> OpenStack Project  <Eu>³á·û·Ö°åõ×ðü</eu>: 
+<P><a href="http://www.openstack.org/software/openstack-storage/" 
+    target="newwindow">OpenStack Storage</a>&nbsp;&nbsp;&nbsp;
+    <a href="http://swiftstack.com/openstack-swift/architecture/" 
+    target="newwindow">OpenStack Object Storage: Swift</a>&nbsp;&nbsp;&nbsp;
+    OpenStack Storage Server 
+    <a href="https://blog.hpcloud.com/setting-single-node-openstack-storage-server-part-1" 
+    target="newwindow">Part 1</a>, 
+    <a href="https://blog.hpcloud.com/setting-single-node-openstack-storage-server-part-2" 
+    target="newwindow">Part2</a>&nbsp;&nbsp;&nbsp;
+    <a href="http://www.mirantis.com/blog/object-storage-openstack-cloud-swift-ceph/" 
+    target="newwindow">Understanding Swift and Ceph</a>
+
+<P> References
+
+<TABLE>
+  <TR><TD><a href="https://www.ibm.com/developerworks/mydeveloperworks/blogs/executivecorner/entry/storage_virtualization_what_are_you_waiting_for3?lang=en" 
+          target="newwindow">Storage Virtualization</a>&nbsp;&nbsp;&nbsp;
+      <TD><a href="http://www.continuitycentral.com/news06275.html" 
+          target="newwindow">Storage Virtualization Survey</a>
+  <TR><TD><a href="http://smartercomputingblog.in/the-need-for-storage-virtualization/" 
+          target="newwindow">Need for Storage Virtualization</a>&nbsp;&nbsp;&nbsp;
+      <TD><a href="http://fcw.com/microsites/2012/download-data-center-optimization/02-storage-virtualization-deduplication-tiering.aspx" 
+          target="newwindow">Storage virtualization tames the data beast</a>
+  <TR><TD><a href="http://www.storage-switzerland.com/Blog/Entries/2011/11/8_Virtualizing_Storage_Performance.html" 
+          target="newwindow">Virtualizing Storage Performance</a>&nbsp;&nbsp;&nbsp;
+      <TD><a href="http://www.stonefly.com/resources/Storage-Virtualization.asp"
+          target="newwindow">Storage Virtualization - Simplify Data Storage</a>
+  <TR><TD><a href=""
+          target="newwindow"></a>&nbsp;&nbsp;&nbsp; 
+      <TD><a href="" 
+          target="newwindow"></a>
+  <TR><TD><a href=""
+          target="newwindow"></a>&nbsp;&nbsp;&nbsp; 
+      <TD><a href="" 
+          target="newwindow"></a>
+</TABLE>
+
+  <h3>About OS</h3>
+
+<P> <Eu>ª·¸·¬Ó¥à</eu> Debian Wheezy and Sid (combined) Linux system.  I am sure Debian 
+Squeeze, (to be phased out pretty soon), has no built-in <b>rbd.ko</b> kernel module.
+
+<PRE>
+hsu@Amath-Client00:~$ find /lib/modules -name "rbd*"
+/lib/modules/3.2.0-4-amd64/kernel/drivers/block/rbd.ko
+</PRE>
+
+  <h3><a href="./VirtualStorageAndUsbHdd.html#StorageTerms" 
+target="newwindow">Storage Types according to OpenStack</a></h3>
+
+<OL>
+  <LI> Object Storage (REST API)
+  <LI> Block Storage (SAN)
+  <LI> File Storage (NAS)
+</OL>
+
+  <h3><a href="./StorageVirtualization.html#BenifitDasNasSan" 
+target="newwindow">Pros and Cons of Storage Types</a></h3>
+
+  <h3><a href="./VirtualStorageAndUsbHdd.html" target="_blank">Ceph Filesystem</a></h3>
+
+    <OL>
+      <LI><h4>Ceph Introduction</h4>
+<OL> 
+  <LI><a href="./VirtualStorageAndUsbHdd.html#Ceph" 
+         target="newwindow">Ceph: Open Source Storage</a>
+ 
+  <LI><a href="./VirtualStorageAndUsbHdd.html#CephIntro" 
+         target="newwindow">Ceph: Scalable distributed file system</a>
+ 
+  <LI><a href="./VirtualStorageAndUsbHdd.html#RadosAndCephFS" 
+         target="newwindow">The RADOS Object Store and Ceph Filesystem</a> and 
+      <a href="./VirtualStorageAndUsbHdd.html#RadosAndCephFS2" 
+         target="newwindow">Part 2</a>
+ 
+  <LI><a href="./VirtualStorageAndUsbHdd.html#CephKvm" 
+         target="newwindow">Basic Ceph Storage & KVM Virtualisation Tutorial</a>
+ 
+  <LI><a href="./VirtualStorageAndUsbHdd.html#CephTutorial" 
+         target="newwindow">Setting up Ceph cluster and exporting RBD</a>
+
+  <LI><a href="./VirtualStorageAndUsbHdd.html#CephOpenStack" 
+         target="newwindow">Introducing Ceph to OpenStack</a>
+
+  <LI><a href="./VirtualStorageAndUsbHdd.html#CephBenchmark" 
+         target="newwindow">Ceph and RBD benchmarks</a>
+
+  <LI><a href="./VirtualStorageAndUsbHdd.html#CephiScsi" 
+         target="newwindow">iSCSI From Ceph wiki</a>
+
+  <LI><a href="./VirtualStorageAndUsbHdd.html#MultipathRBD" 
+         target="newwindow">iSCSI Multipath with RBD</a>
+
+  <LI><a href="./VirtualStorageAndUsbHdd.html#" 
+         target="newwindow"></a>
+</OL>
+
+
+      <LI> <h4><a href="http://ceph.com/w/index.php?title=Designing_a_cluster" 
+           target="newwindow">Designing a Ceph Cluster</a></h4>
+
+<P> <Eu>¢ÓÆ¼ªè¸Ä</eu> Ceph-OSD <Eu>ê°Ôð§¡Â¤¦êæ®¢ °åøòÞÅé­</eu>, <Eu>§û¤º</eu>, 
+ <Eu>¦ê«Ï§ÍÚþÀî¤Ð¸¤¨ÅÚþÕ»¢øîÚ</eu>?  <Eu>®ñÆ¼ª·¸·ê°Ôð¬Ó¥à</eu> USB disks for 
+ portability reason? <Eu>¨Ä´Æ</eu>, USB 3 <Eu>Æé³Õ¤ù§Í</eu> Physical Hard Disk 
+ <Eu>°å¢ ¤ä®ñªÕ£å</eu>.  Performance Benchmark: <Eu>®ñÆ¼¦ý­¥Æé³Õê°Ôð¤Ð</eu> IOPS 
+ (input/output operations per second") <Eu>µÒß¾Ñó</eu>, <Eu>§û£¥´ÆøòÞÅÆé³Õ</eu>.
+
+      <LI> <h4><a href="./CephNotes.html" target="newwindow">Creation of a Ceph 
+           Cluster</a></h4>
+
+        <P> Following step 1 up to 8, we can create our own Ceph Cluster in no time.
+
+<OL>
+  <LI> Create Ceph-Temp.img and install <a href="./CepfTempPackages.html">these 
+       packages</a> in it: 
+
+       <P> All the VMs in the Ceph Storage Cluster VMs and the clients of this 
+           storage cluster can share this common template.  Hence we must test 
+           it thoroughly.
+
+  <LI> For each node in the Ceph Storage Cluster, prepare a storage space for it to 
+       carry with.
+
+       <P> This storage space may be empty space created with <b>dd</b> command, 
+       a logic disk, say /dev/sdb3, or a partition in an USB disk. But we need 
+       to format it as a btrfs block device via command similar to 
+       "<code>$ sudo mkfs.btrfs osdBlk.ada</code>"
+
+<PRE>
+$ dd if=/dev/zero of=blank.img bs=1024k count=10000
+</PRE>
+
+  <LI> When booting the above node of Ceph Storage Cluster with the <b>kvm</b> command, 
+       give it the "-hdb ../Vdisks/osdBlk.ada" extra argument.
+
+<P> The storage space will be carried by the <code>/dev/sdb</code> device.
+
+  <LI> On the Physical host, install <b>btrfs-tools</b> (via synaptic) and make btrfs 
+       filesystem on each newly prepared storage space.
+
+  <LI> Prepare the needed Data or Configuration Files:
+
+    <OL>
+      <LI> <a href="./ceph.conf">ceph.conf</a>
+
+          <P> Syntax and Usage Reference: 
+<a href="http://ceph.com/docs/master/config-cluster/ceph-conf/" 
+target="newwindow">Configuring Ceph</a>&nbsp;&nbsp;
+<a href="http://ceph.com/docs/master/rados/configuration/ceph-conf/" 
+target="newwindow">Configuring Ceph (Is this the right one?)</a>&nbsp;&nbsp;
+      <LI> <a href="./ceph.hosts">ceph.hosts</a>
+
+          <P> Nodes in Ceph Storage Cluster talk to each other via <b>ssh</b>, using 
+           <code>/etc/hosts</code> file for their IP resolutions.  Each node needs 
+           these entries in their <code>/etc/hosts</code> files.  Also, if the pysical 
+           hosts running these Ceph Storage Cluster nodes have these entries in their 
+           <code>/etc/hosts</code> files, remote login these nodes will be much more 
+           convenient.  Especially, it seems Ceph Storage Cluster is very stable, 
+           I almost always runs these nodes in the background.
+    </OL>
+
+
+  <LI> Booting Ceph-Temp, adjust everything in this template. 
+
+      <P> We then duplicate its image for all nodes in our Ceph Storage Cluster. 
+          Notice that we must turn on the <code>PermitRootLogin yes</code> entry 
+          in the  <code>/etc/ssh/sshd_config</code> file, since these nodes 
+          frequently talk to each other as root.  Also, we need to generate ssh 
+          key for root and copy it to all nodes so that authentication failure 
+          won't happen.  Using the next script, we may configure these Storage 
+          nodes:
+
+<PRE>
+$ ../bin/Config-Kvm-Storage
+../bin/Config-Kvm-Storage OS.img hostname VM-IP Ether-card TAP-No btrfs-blk-dev
+</PRE>
+
+      <P> Remember when the nodes in our Ceph Storage Cluster are ready, booting 
+        each of them for the first time in the foreground and execute the script
+        <b>$ sudo ./recover70rules</b>.  Otherwise, always get the wrong virtual 
+        ethercard, say eth1, eth2, and there won't be usable network!
+
+  <LI> <a href="http://ceph.com/w/index.php?title=Creating_a_new_file_system" 
+target="newwindow"><b>mkcephfs</b></a> --- create a new Ceph cluster file system
+
+      <P> Copy the <code>/etc/ceph/keyring.admin</code> file to all of the rest nodes 
+        in our Ceph Storage Cluster execept the one we executed <b>mkcephfs</b> 
+        command.
+
+      <P> I intend to change the original (10 GB) storage spaces to be the 
+        partitions of USB 3 disks.  I need to re-run <b>mkcephfs</b>.  Any 
+        after-effect? Hope not.
+  <LI> After testing the cluster for several times, we may boot all the nodes in 
+       background.  It seems rather stable.
+
+</OL>
+
+
+      <LI> <h4><a href="./CephNotes.html#CephClient" target="newwindow">Ceph 
+               Client</a></h4>
+
+        <P> Following step 9 up to 11, we can create our own Ceph Client in no time. 
+            Once again, CephClient <Eu>¤¾·Ö¥ë¦è´ÆÄ¯¥Þ¬Ó¥à</eu> Ceph Storage Cluster 
+            <Eu>ßÖ¯Ô</eu> client <Eu>Û³êÎú³</eu> Ceph Storage Cluster 
+            <Eu>°å¤Ý½ìÛ³×ì¥à®é</eu>.
+
+<OL>
+  <LI>  <Eu>ÁÞ</eu> Ceph-Temp <Eu>´©«í</eu> Ceph-Client, <Eu>¥à</eu> <b>Config-Kvm</b>
+        <Eu>â¶»¸¬²¢Èá­</eu>. 
+  <LI>  <Eu>ÁÞ¦±ÐÔ</eu> node of ceph storage cluster <Eu>´©«í</eu> 
+        <code>/etc/ceph/keyring.admin</code> authentication <Eu>êÆ</eu>. 
+  <LI>  <Eu>¤Ð</eu> <b>ceph-fuse</b> <Eu>Û³</eu> <b>mount</b> <Eu>´«¤È</eu>, 
+        <Eu>£È¨ç</eu> mount ceph filesystem, <Eu>àÕ®¡¤ô¨²</eu>.
+  <LI>  <Eu>¦ê</eu> ceph storage cluster <Eu>ÍÃ¸¦</eu>, <Eu>¤Ð</eu> <b>rbd</b> 
+        <Eu>´«¤È</eu>£ÉÇÒ¤Ù¢ ¸Ä block.
+  <LI>  <Eu>¦ê</eu> Ceph-Client <Eu>ÍÃ¸¦</eu> load <b>rbd</b> kernel module, 
+        <Eu>¦À¤Ð¢Æ¦Ä´«¤Èèº¢±</eu> rbd block device:
+
+<PRE>
+ $ echo "192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=`cat /tmp/secretfile` \
+   rbd foo" | sudo tee /sys/bus/rbd/add
+</PRE>
+
+     <P> <Eu>§¸¤Ý°åÔö</eu> <code>$ ls -l /dev/rbd*</code> <Eu>ê°Ôð«æ¬ç¢ ¸Ä</eu> 
+         major number 254 <Eu>°å</eu> block device.
+</OL>
+  <LI>  <Eu>ÛúÜ </eu> Ceph-Client <Eu>§¸</eu> Ceph-RBD2, <Eu>É¯¬Ç¥¬ðïÍ¯ê·Úþ¤ç</eu>, 
+        <Eu>¤Ð£Ü</eu> iSCSI Target <Eu>¤Ý½ì</eu>. 
+    </OL>
+
+<h3><a href="./Using-iSCSI-on-Debian.html" target="_blank">iSCSI</a></h3>
+
+<OL>
+      <LI> <h4>Target <a href="#OurRBDTarget">(<Eu>àè¬Ã¦êÄê¢ÉÎú</eu>)</a></h4>
+
+       <UL>
+         <LI> <code>cp Ceph-Client.img Ceph-RBD2.img</code>
+         <LI> For IP Redundancy, we need <code>eth0</code> and <code>eth1</code>.
+         <LI> install <code>iscsitarget</code> and <code>iscsitarget-dkms</code>
+         <LI> Enable iscsitarget
+
+<PRE>
+ $ diff /etc/default/iscsitarget /etc/default/iscsitarget.orig
+1c1
+< ISCSITARGET_ENABLE=true
+---
+> ISCSITARGET_ENABLE=false
+</PRE>
+
+<P> <Eu>¿ä¦ù£¥¿í¢È·ëªÕ¥Ì</eu>, <Eu>Ì¢©¶¢¯â¶åÃ©ä</eu> iSCSI Target <Eu>°å</eu> block 
+    devices, <Eu>¦À¨¤¨²ÂØ¿þ</eu> iSCSI Target via:
+
+<PRE>
+ $ sudo /etc/init.d/iscsitarget start
+</PRE>
+
+<P> <Eu>ª·ÃýÐËÆä££´Æª·¸·ÐË·Ö°åºé¯Ý</eu>, <Eu>®÷¤Ð</eu> default <Eu>¸Ò´Æ</eu> false.
+
+         <LI> We can let Ceph-RBD2 carry more (virtual) block devices.
+
+<P> <Eu>ª·¸·úä</eu> Ceph-RBD2 <Eu>¤Ð</eu> /dev/sdb <Eu>öìÁÉ</eu> ../Vdisks/blank.img, 
+   a 10 GB disk space.  Check the <code>start-Ceph-RBD2-24-efs</code> file in the 
+   <code>bin</code> directory.  <Eu>¸ÐªÎÆä¸Ä</eu> script, <Eu>ª·¸·°å</eu> iSCSI Target
+   <Eu>¥àÆÜ¤ô¤ÐªÕÞ×àè</eu>?
+
+         <LI> Configure block devices in the target via <code>/etc/iet/ietd.conf</code>
+
+<PRE>
+$ sudo diff /etc/iet/ietd.conf /etc/iet/ietd.conf.orig
+113,122d112
+< Target iqn.2001-04.com.example:storage.lun1
+<         # IncomingUser someuser secret
+<         # OutgoingUser
+<         Lun 1 Path=/dev/rbd0,Type=blockio
+<         Alias LUN1
+< Target iqn.2001-04.com.example:storage.lun2
+<         # IncomingUser someuser secret
+<         # OutgoingUser
+<         Lun 2 Path=/dev/sdb,Type=fileio
+<         Alias LUN2
+</PRE>
+
+         <LI> Allow the iSCSI initiators to import their block devices from target:
+
+<P> <b>Note:</b>  Can we control (in terms of IPs) who can import which disks? 
+           Some say yes, but I tried once. It didn't work.  I wish this will 
+           work out someday. 
+
+<PRE>
+Ceph-RBD2:~$  diff /etc/iet/initiators.allow /etc/iet/initiators.allow.bkp
+24,25c24,25
+< iqn.2001-04.com.example:storage.lun1 ALL
+< iqn.2001-04.com.example:storage.lun2 ALL
+---
+> iqn.2001-04.com.example:storage.lun1 192.168.0.100 192.168.1.100
+> iqn.2001-04.com.example:storage.lun2 192.168.0.100 192.168.1.100
+</PRE>
+
+         <LI> Import <b>rbd</b> block device from Ceph Cluster:
+
+<PRE>
+Ceph-RBD2:~$ ceph -s
+Ceph-RBD2:~$ ceph-authtool -l /etc/ceph/keyring.admin
+Ceph-RBD2:~$ echo "AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw==" >/tmp/secretfile 
+Ceph-RBD2:~$ lsmod | grep rbd
+Ceph-RBD2:~$ sudo modprobe rbd
+[sudo] password for hsu: 
+Ceph-RBD2:~$ lsmod | grep rbd
+rbd                    22311  0 
+libceph                90118  2 ceph,rbd
+Ceph-RBD2:~$ ls -l /sys/bus/rbd
+total 0
+--w------- 1 root root 4096 Sep 10 09:14 add
+drwxr-xr-x 2 root root    0 Sep 10 09:14 devices
+drwxr-xr-x 2 root root    0 Sep 10 09:14 drivers
+-rw-r--r-- 1 root root 4096 Sep 10 09:14 drivers_autoprobe
+--w------- 1 root root 4096 Sep 10 09:14 drivers_probe
+--w------- 1 root root 4096 Sep 10 09:14 remove
+--w------- 1 root root 4096 Sep 10 09:14 uevent
+Ceph-RBD2:~$ echo "192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=`cat /tmp/secretfile` rbd foo" | sudo tee /sys/bus/rbd/add
+192.168.0.6,192.168.0.7,192.168.0.8 name=admin,secret=AQBPikRQiDwkJhAAMjbxXa5fkivW09yCVbvZvw== rbd foo
+Ceph-RBD2:/home/hsu$ ls -l /sys/bus/rbd/devices
+total 0
+lrwxrwxrwx 1 root root 0 Sep 10 09:31 0 -> ../../../devices/rbd/0
+Ceph-RBD2:/home/hsu$ ls -l /sys/devices/rbd/0 
+Ceph-RBD2:/home/hsu$ ls -l /dev/rbd0
+brw-rw---T 1 root disk 254, 0 Sep 10 09:32 /dev/rbd0
+</PRE>
+
+         <LI> Restart iSCSI Target, let it know new rbd block device is available.
+
+<PRE>
+# Must restart iSCSI Target so that it knows a newly imported /dev/rbd0 block device
+# is available.  It seems automatically starting iSCSI Target and iSCSI Initiator
+# during their booting stages are useless.  Maybe also harmful?
+Ceph-RBD2:~$ sudo /etc/init.d/iscsitarget restart
+</PRE>
+       </UL>
+
+      <LI> <h4>Initiator <a href="#OurRBDTarget">(<Eu>àè¬Ã¦êÄê¢ÉÎú</eu>)</a></h4>
+
+<P> Copied from <code>/src3/KVM/ResizeDebian-Mini.img</code>, we produced Test-Eth1.  In 
+    it, we installed <code>tcpdump</code> (and <code>libpcap0.8</code> which tcpdump
+    depends) to investigate our eth1 packets are really routing in the 192.168.1.* LAN. 
+    From Test-Eth1, we created Deb2Nics, a VM with eth0 (IP: 192.168.0.253) and eth1 
+    (IP: 192.168.1.253).  We made sure the packets for 192.168.0.* and 192.168.1.* were 
+    routing in their own respective subnets.  This is the template for creating our 
+    iSCSI-iNIT root filesystem.
+
+<P> <b>Note: (11/10/2012)</b> We need to load <b>rbd</b> kernel module on iSCSI-iNIT. 
+    But, the ceph filesystem related packages are installed in Ceph-RBD2, (inherated 
+    from Ceph-Client), not in iSCSI-iNIT.  I.e. the ceph business is hided from the 
+    iSCSI Initiator.
+
+<PRE>
+ $ cp Debian-2Nics.img iSCSI-iNIT.img
+ # Booting iSCSI-iNIT, edit /etc/rc.local and install open-iscsi and multipath-tools.
+hsu@iSCSI-iNIT:~$ diff /etc/rc.local /etc/rc.local.orig
+19,21c19,20
+< ifconfig eth0 192.168.0.100
+< ifconfig eth1 192.168.1.100
+< route add default gw 192.168.1.1
+---
+> ifconfig eth0 192.168.1.100
+> route add default gw 192.168.1.33
+hsu@iSCSI-iNIT:~$ sudo apt-get install open-iscsi multipath-tools 
+ # Next we open /etc/iscsi/iscsid.conf and set node.startup to automatic. Then we 
+ # restart the initiator.  We shouldn't have started open-iscsi automatically, since 
+ # our ceph rbd block device is usually not ready, yet.  We prefer to import rbd 
+ # device in the iSCSI Target from Ceph Cluster by hands.
+hsu@iSCSI-iNIT:~$ sudo emacs /etc/iscsi/iscsid.conf # We prefer node.startup to be manual
+     . 
+     . 
+node.startup = automatic
+     . 
+     . 
+hsu@iSCSI-iNIT:~$ sudo modprobe rbd # Load rbd kernel module to recoginze rbd device
+# Probably, need to load rbd module in /etc/rc.local, since "open-iscsi restart" command 
+# is harmful for the virtual disks already in-used.
+hsu@iSCSI-iNIT:~$ sudo /etc/init.d/open-iscsi restart
+</PRE>
+      <LI> <a name="OurRBDTarget"></a><h4><a href="./Using-iSCSI-on-Debian.html" 
+           target="newwindow">Our RbdAndSanTarget</a></h4>
+      <LI> <h4><a href="./WhyLioiSCSiTarget.html" target="newwindow">Wrong Choice of 
+           Target?</a></h4>
+      <LI> <a href="http://www.open-iscsi.org/docs/README" 
+           target="newwindow">Section 8: Advanced Configuration</a>&nbsp;&nbsp;&nbsp;
+           <a href="./VirtualStorageAndUsbHdd.html#MultiPathIscsi" 
+           target="newwindow">Multipath iSCSI under Linux</a>
+</OL>
+<h3>Redundancy</h3>
+<OL>
+  <LI><a href="http://wiki.dreamhost.com/DreamObjects#What_can_I_store_in_DreamObjects_and_is_it_redundant_storage.3F"
+      target="newwindow">Data Redundancy</a>
+  <LI><a href="./StorageVirtualization.html#IPRedundancy"
+      target="newwindow">San Design: IP Redundancy</a>
+</OL>
+
+<h3><a href="./vyatta-gateway.html" 
+     target="newwindow">Virtual Gateway</a></h3>
+
+<P> <Eu>ÚþÕ»Æé³Õ­¥ªø¯Á</eu>, <Eu>ÚþÀî£«ÇÏØ­°å¢ ë </eu>. <Eu>É¯¿Ù´¼§¸ÚþÕ»Æé³Õ</eu>, 
+    <Eu>¿Í¢¬ËïúµÆ¾ÇÁ</eu>, <Eu>¨Âá­¢óËõªÕ»ã¢å</eu>. <Eu>ÆÚÕÜÑ§ÚþÀî°å¬Ó¥à</eu>, 
+    <Eu>·ûÑ§¤Ð¿ÙÆé</eu> switches <Eu>Û³</eu> cables <Eu>³ØØðÑ§¢ ÞÉÚþÕ»ªÕªªÆé</eu>,
+    <Eu>¤ô¨²</eu>. <Eu>ÀÐ</eu>, <Eu>¿Ä×îÑ§ÚþÀî</eu>, <Eu>©¶¢¯ÁÚ¦º¨Â³Ø</eu> Gateway,
+    <Eu>¬²ÊëÕ¤</eu>,  <Eu>õÒ¦ù</eu>: 192.168.0. <Eu>Û³</eu> 192.168.1. <Eu>ÚþÀî°å</eu> 
+    packets <Eu>¼ã°å¦ê¨¤¢ô°åá­Õ»£«µ©ÆÝ</eu>. 
+
+<P> iSCSI <Eu>ÆÚÕÜÚþÕ»É¯¬Çéç¦ý°ôÎÜ</eu>.  <Eu>Æé³ÕÛ³¤ôãÝ³Õ¤Ð£Ü¸¤¨Å¢øîÚ</eu>, 
+    <Eu>ê°Ôð¤Ð¿ÙÆé«ÏÚþÀî´àÆ¾</eu> Virtual Storage Cluster, hence Virtual Gateway, 
+    too.
+
+  </body>
+</html>

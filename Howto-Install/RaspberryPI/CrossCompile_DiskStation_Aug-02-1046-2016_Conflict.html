@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html;">
+    <title>Raspberry Cross Compiler</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2016.css">
+  </head>
+<body>
+  <h1>Raspberry Cross Compiler</h1>
+  <h2>Build environment</h2>
+  <p>We need following components to build Embedded Linux software for Raspberry Pi using buildroot.
+    <ul>
+      <li>Rpi-firmware
+      <li>Kernel
+      <li>zImage
+      <li>Device tree
+      <li>Rootfs
+      <li>Cross compiler
+    </ul>
+  </p>
+  <h3>Install dependencies</h3>
+<!--
+<pre class="mdol">
+<code>sudo aptitude update</code>
+<code>sudo aptitude install git libncurses5-dev flex bison texinfo g++ gettext u-boot-tools autoconf</code>
+<code>sudo aptitude install cross-gcc-dev</code>
+<code>sudo aptitude install </code>
+<code>sudo aptitude install </code>
+<code></code>
+</pre>
+-->
+
+
+
+<h3>troubleshooting</h3>
+<ul>
+  <li>Kernal panic on boot
+    <pre>Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000004</pre>
+<pre class="mdol">
+<code>make ARCH=arm menuconfig</code>
+</pre>
+<pre>
+CONFIG_ARM_THUMB=y
+CONFIG_AEABI=y
+
+or
+
+make menuconfig
+
+System Type-&gt;
+      [*] Support Thumb user binaries
+
+Kernel Features  ---&gt;
+　　   [*] Use the ARM EABI to compile the kernel
+　　   [*]   Allow old ABI binaries to run with this kernel (EXPERIMENTAL)
+</pre>
+
+
+
+<a href="https://github.com/dhruvvyas90/qemu-rpi-kernel" target="_blank">qemu-rpi-kernel</a><br>
+<a href="https://github.com/johnlane" target="_blank">https://github.com/johnlane</a><br>
+<a href="KernelBuildingForRaspberryPi.html" target="_blank">KernelBuildingForRaspberryPi</a><br>
+<a href="https://github.com/raspberrypi/firmware/tree/master/boot" target="_blank">raspberrypi firmware</a><br>
+
+
+To avoid this crash you have to comment /etc/ld.so.preload.
+<pre class="mdol">
+<code class="out">#/usr/lib/arm-linux-gnueabihf/libarmmem.so</code></pre>
+<a href="http://blog.3mdeb.com/2015/12/30/emulate-rapberry-pi-2-in-qemu/" target="_blank">Emulate Rapberry Pi 2 in QEMU</a><br>
+<br><br>
+  <li>Fix fstab on QEMU system
+<pre class="mdol">
+<code class="adm">nano /etc/fstab</code>
+</pre>
+
+<br><br>
+  <li>Kernel panic on halt
+    <pre>Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000</pre>
+
+</ul>
+
+<!-- 頁底 -->
+<hr style="margin: 8px 0px 0px 0px; border: 0;">
+<div id="footer" style="width: 100%; clear: left; display:inline-block; background: #ffffff;" align="center">
+  <script language="JavaScript">
+    <!-- Hide JavaScript...
+         var LastUpdated = document.lastModified;
+         document.writeln ('<span style="text-align:center">This page was last updated ' + LastUpdated + '</span>');
+	 // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+</body>
+</html>

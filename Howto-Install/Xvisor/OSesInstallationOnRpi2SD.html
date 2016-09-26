@@ -1,0 +1,2048 @@
+<OL>
+  <LI><a href="#Rpi2Install">Rpi2 Installation Note</a>
+  <LI><a href="#RPiEasySDCardSetup">RPi Easy SD Card Setup</a>
+     <ol>
+      <li><a href="#SD_card_setup"> SD card setup</span></a></li>
+      <li><a href="#Create_your_own"> Create your own</span></a>
+        <ul>
+          <li><a href="#Using_NOOBS">2.1 Using NOOBS</span></a></li>
+    
+          <li><a href="#Flashing_the_SD_Card">2.2 Flashing the SD Card using Linux 
+              (including on a Raspberry Pi!)</a>
+            <ul>
+              <li><a href="#Using_the_Linux_command_line">2.2.1 Using the Linux command 
+                  line</a></li>
+            </ul></li>
+          <li><a href="#Using_any_system_and_BerryBoot">2.3 Using any system and 
+              BerryBoot</a></li>
+        </ul></li>
+      <li><a href="#Other_points"> Other points</a></li>
+      <li><a href="#Manually_resizing_the_SD_card"> Manually 
+          resizing the SD card partitions (Optional)</a></li>
+      <li><a href="#Adding_a_data_partition"> Adding a data partition 
+          (Optional)</a></li>
+     </ol>
+  <LI><a href="#BerryBootV2.0">BerryBoot v2.0 - bootloader</a>
+     <UL>
+        <LI><a href="#other_devices">Other devices</a>
+        <LI><a href="#changelog">Changelog</a>
+        <LI><a href="#walkthrough">Walkthrough</a>
+        <LI><a href="#hdmi_cec_support">HDMI CEC support</a>
+        <LI><a href="#available_options_in_menu_editor">Available options in menu 
+            editor</a>
+        <LI><a href="#alternative_installation_method">Alternative 
+            installation method using disk image</a>
+        <LI><a href="#more_information">More information</a>
+     </UL>
+  <LI><a href="#NOOBS">NOOBS: New Out Of Box Software</a>
+  <LI><a href="#Fat32Filesystem">FAT32 Filesystem</a>
+  <LI><a href="#RaspberryInstallingOS">Installing Operating System Images On Rpi SD</a>
+  <LI><a href="#InstallingOSOnKinux">Installing Operating System Images on a running 
+      Linux System</a>
+  <LI><a href="http://www.elinux.org/RPiconfig">RPiconfig: No more BIOS</a>
+  <LI><a href="#StandAlonePartition">Standalone Partitioning Explained</a>
+  <LI><a href="#NoobsPartition">NOOBS partitioning and booting explained</a>
+</OL>
+
+<a name="Rpi2Install"></a><h3>Rpi2 Installation Note</h3>
+
+<P> Finally, via <b>NOOBS</b>, successfully installed Raspbian on SanDisk microSDXC. 
+    Chinese Input method, emacs, and psgml ported easily and successfully in Rpi2. 
+    See <code>/src1/emacs-21/ChEUC/ArmPorting.html</code> for the Emacs Porting Note.
+    
+<P> If disk ever failed, personal data would be lost completely. Should have setup 
+    more logic disk partitions and ported our own software in these disk partitions.
+    Especially, for waring-out prevention, Raspbiean automatically prevents the same 
+    SD spot to be written again and again.  That means the SD would become dirty 
+    pretty soon.  After a while, can we accurately shrink the size of a filesystem 
+    via say, <b>gparted</b>?
+
+<P> Directly downloading official Raspbian image and using <b>dd</b> to install it 
+    to SD failed miserably.  After <b>dd</b>, only saw <code>/dev/mmcblk0p1, 
+    /dev/mmcblk0p2</code>, two primary partitions and used only 4G (starting at 8196
+    sector).
+
+<P> We need to investigate <a href="http://elinux.org/RPI_vcgencmd_usage" 
+    target="_b">vcgencmd</a> command to probe its firmware.
+
+<PRE>
+hsu@Rpi2:~$ sudo fdisk -l
+[sudo] password for hsu: 
+    . 
+    . 
+    . 
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x000e28b8
+
+Device         Boot   Start       End   Sectors   Size Id Type
+/dev/mmcblk0p1         2048   2289062   2287015   1.1G  e W95 FAT16 (LBA)
+/dev/mmcblk0p2      2289063 249737215 247448153   118G  5 Extended
+/dev/mmcblk0p5      2293760   2359293     65534    32M 83 Linux
+/dev/mmcblk0p6      2359296   2488319    129024    63M  c W95 FAT32 (LBA)
+/dev/mmcblk0p7      2490368 249737215 247246848 117.9G 83 Linux
+# Partition 1: Booting kernel to the recovery mode.
+$ sudo mkdir /mnt/tmp
+$ sudo mount /dev/mmcblk0p1 /mnt/tmp
+$ ls -l /mnt/tmp
+total 28544
+-rwxr-xr-x 1 root root    10065 Feb 26 21:41 bcm2708-rpi-b.dtb
+-rwxr-xr-x 1 root root    10344 Feb 26 21:41 bcm2708-rpi-b-plus.dtb
+-rwxr-xr-x 1 root root    11332 Feb 26 21:41 bcm2709-rpi-2-b.dtb
+-rwxr-xr-x 1 root root    17920 Feb 26 21:53 bootcode.bin
+-rwxr-xr-x 1 root root      298 Feb 26 21:53 BUILD-DATA
+drwxr-xr-x 3 root root    32768 Feb 26 21:51 defaults
+-rwxr-xr-x 1 root root     2250 Feb 26 21:51 INSTRUCTIONS-README.txt
+drwxr-xr-x 3 root root    32768 Feb 26 22:14 os
+drwxr-xr-x 2 root root    32768 Feb 26 21:41 overlays
+-rwxr-xr-x 1 root root  2526084 Feb 26 21:52 recovery7.img
+-rwxr-xr-x 1 root root       85 Jan  1  1980 recovery.cmdline
+-rwxr-xr-x 1 root root   612024 Feb 26 21:53 recovery.elf
+-rwxr-xr-x 1 root root        0 Feb 26 21:53 RECOVERY_FILES_DO_NOT_EDIT
+-rwxr-xr-x 1 root root  2473316 Feb 26 21:53 recovery.img
+-rwxr-xr-x 1 root root 23343104 Feb 26 21:53 recovery.rfs
+-rwxr-xr-x 1 root root     9728 Feb 26 21:51 riscos-boot.bin
+# Partition 2: Extended Linux Partition for carrying logic partitions.
+# Originally, this noobs setting partition was arranged at the end of SD.
+$ sudo umount /mnt/tmp
+hsu@Rpi2:~$ sudo mount /dev/mmcblk0p5 /mnt/tmp
+hsu@Rpi2:~$ ls -l /mnt/tmp
+total 16
+drwxr-xr-x 4 root root  1024 Jan  1  1970 cache
+-rw-r--r-- 1 root root   305 Mar  3 22:43 installed_os.json
+drwx------ 2 root root 12288 Jan  1  1970 lost+found
+-rw-r--r-- 1 root root    84 Mar  3 22:43 noobs.conf
+-rw-r--r-- 1 root root    82 Jan  1  1970 wpa_supplicant.conf
+hsu@Rpi2:~$ more /mnt/tmp/installed_os.json
+[
+ {
+  "bootable" : true,
+  "description" : "A community-created port of Debian jessie for the Raspberry P
+i",
+  "folder" : "/mnt/os/Raspbian",
+  "icon" : "/mnt/os/Raspbian/Raspbian.png",
+  "name" : "Raspbian",
+  "partitions" : [
+"/dev/mmcblk0p6",
+"/dev/mmcblk0p7"
+  ],
+  "release_date" : "2016-02-26"
+ }
+]
+$ more /mnt/tmp/noobs.conf
+[General]
+default_partition_to_boot=6
+display_mode=0
+keyboard_layout=us
+language=en
+# Boot partition:  Already mounted on the /boot directory.
+# Filesystem Type c, W95 FAT32 (LBA)
+$ sudo umount /mnt/tmp
+hsu@Rpi2:~$ sudo mount /dev/mmcblk0p6 /mnt/tmp
+hsu@Rpi2:~$ ls -l /mnt/tmp
+total 19794
+-rwxr-xr-x 1 root root   10841 Feb 26 07:22 bcm2708-rpi-b.dtb
+-rwxr-xr-x 1 root root   11120 Feb 26 07:22 bcm2708-rpi-b-plus.dtb
+-rwxr-xr-x 1 root root   10871 Feb 26 07:22 bcm2708-rpi-cm.dtb
+-rwxr-xr-x 1 root root   12108 Feb 26 07:22 bcm2709-rpi-2-b.dtb
+-rwxr-xr-x 1 root root   12575 Feb 26 07:22 bcm2710-rpi-3-b.dtb
+-rwxr-xr-x 1 root root   17920 Feb  9 21:32 bootcode.bin
+-rwxr-xr-x 1 root root     136 Mar  3 22:43 cmdline.txt
+-rwxr-xr-x 1 root root    1693 Mar  3 22:43 config.txt
+-rwxr-xr-x 1 root root   18693 Aug 22  2015 COPYING.linux
+-rwxr-xr-x 1 root root    2505 Feb 26 07:22 fixup_cd.dat
+-rwxr-xr-x 1 root root    6481 Feb 26 07:22 fixup.dat
+-rwxr-xr-x 1 root root    9722 Feb 26 07:22 fixup_db.dat
+-rwxr-xr-x 1 root root    9724 Feb 26 07:22 fixup_x.dat
+-rwxr-xr-x 1 root root     103 Feb 26 10:20 issue.txt
+-rwxr-xr-x 1 root root 4046732 Feb 26 07:22 kernel7.img
+-rwxr-xr-x 1 root root 3963140 Feb 26 07:22 kernel.img
+-rwxr-xr-x 1 root root    1494 Nov 19 00:01 LICENCE.broadcom
+-rwxr-xr-x 1 root root   18974 Feb 26 10:20 LICENSE.oracle
+-rwxr-xr-x 1 root root     294 Mar  3 22:43 os_config.json
+drwxr-xr-x 2 root root    6144 Mar  3 22:31 overlays
+-rwxr-xr-x 1 root root  612472 Feb 26 07:22 start_cd.elf
+-rwxr-xr-x 1 root root 4888200 Feb 26 07:22 start_db.elf
+-rwxr-xr-x 1 root root 2739672 Feb 26 07:22 start.elf
+-rwxr-xr-x 1 root root 3840328 Feb 26 07:22 start_x.elf
+</PRE>
+
+<h4>Rpi vcgencmd usages:</h4>
+
+<PRE>
+$ sudo vcgencmd commands
+commands="vcos, ap_output_control, ap_output_post_processing, vchi_test_init, vchi_test_exit, pm_set_policy, \
+pm_get_status, pm_show_stats, pm_start_logging, pm_stop_logging, version, commands, set_vll_dir, led_control, \
+set_backlight, set_logging, get_lcd_info, arbiter, cache_flush, otp_dump, test_result, codec_enabled, get_camera, \
+get_mem, measure_clock, measure_volts, scaling_kernel, scaling_sharpness, get_hvs_asserts, measure_temp, get_config, \
+hdmi_ntsc_freqs, hdmi_adjust_clock, hdmi_status_show, hvs_update_fields, pwm_speedup, force_audio, hdmi_stream_channels, \
+hdmi_channel_map, display_power, read_ring_osc, memtest, dispmanx_list, get_rsts, schmoo, render_bar, disk_notify, \
+inuse_notify, sus_suspend, sus_status, sus_is_enabled, sus_stop_test_thread, egl_platform_switch, mem_validate, \
+mem_oom, mem_reloc_stats, file, vctest_memmap, vctest_start, vctest_stop, vctest_set, vctest_get"
+$ sudo vcgencmd get_mem arm
+arm=944M
+# According to my understanding, memory is split to GPU and CPU
+$ sudo vcgencmd get_mem gpu
+gpu=64M
+</PRE>
+
+<a name="RPiEasySDCardSetup"></a><h3>RPi Easy SD Card Setup 
+<a href="http://elinux.org/RPi_Easy_SD_Card_Setup">(Source Origin)</a></h3>
+
+<p><b>Getting Started:</b></p>
+
+<p><i><strong>SD Card Setup</strong> - for information on how to prepare the SD Card 
+used to boot your Raspberry Pi.</i></p>
+
+<p><i><a href="http://elinux.org/RPi_Beginners" title="RPi Beginners">Beginners 
+Guide</a> - you are up and running, now what can you do?</i></p>
+
+<p><i><a href="http://elinux.org/RPi_Advanced_Setup" title="RPi Advanced Setup">Advanced 
+Setup</a> - for more extensive information on setting up.</i></p>
+
+<p><i><a href="http://elinux.org/R-Pi_Troubleshooting" title="R-Pi 
+Troubleshooting">Trouble Shooting</a> - some things to check if things don't work as 
+expected.</i>
+</p>
+<div style="clear:both;"></div>
+<h3><span id="SD_card_setup">SD card setup</span></h3>
+
+<p>The Raspberry Pi will not start without a properly formatted SD Card, containing the 
+bootloader and a suitable operating system. Many problems with booting the Raspberry Pi 
+are a result of an improperly formatted or corrupted card. Make sure that you insert 
+the card before powering on the Raspberry Pi, and that you shutdown the Raspberry Pi 
+before unplugging the card. If you do have problems booting the Raspberry Pi, see the 
+<a href="http://elinux.org/R-Pi_Troubleshooting" title="R-Pi Troubleshooting"> trouble 
+shooting page</a> first.</p>
+
+<p>You will also need to choose a distribution. Available distributions 
+<a href="http://elinux.org/RPi_Distributions" title="RPi Distributions"> are shown 
+here</a>; you will need the Raspberry Pi bootloader to launch your distribution, so you 
+need one for the Raspberry Pi and cannot download a PC based distribution and use that. 
+Note that you can have several SD Cards with a separate distribution on each, then power 
+off, swap cards and restart the Raspberry Pi to use that card.</p>
+
+<p>Some Raspberry Pi kits will come with a ready-to-go card with the distribution 
+pre-installed, or these can be bought separately. There is more on this below.</p>
+
+<p>If you don't have a pre-installed card you will need to prepare your own. Make sure 
+you get a reasonable quality card rather than a cheap one. Check the 
+<a href="http://elinux.org/RPi_SD_cards" title="RPi SD cards"> SD Card list</a> if you 
+are not sure. Warning! When you write the Raspberry Pi image to your SD card you will 
+lose all data that was on the card. Official images are available from 
+<a href="http://www.raspberrypi.org/downloads">raspberrypi downloads</a>.</p>
+
+<p><b>Note: It is highly recommended</b> that you start with the latest official NOOBS 
+installer: check the Raspberry Pi official website (<a target="_b" 
+href="http://www.raspberrypi.org/downloads">http://www.raspberrypi.org/downloads</a>) 
+for the current version. This makes the process of installing an operating system as 
+easy as copying a few files in a zip archive to your SD card. This contains the 
+reccomended Raspbian distribution, as well as various other distributions, all of which 
+are available as individual images from the downloads page, if you prefer not to use 
+NOOBS.</p>
+
+<h3><span id="Create_your_own">Create your own</span></h3>
+
+<p>To create your own SD Card for the Raspberry Pi you will need access to another 
+machine, or a friend with one. You will need to be careful, as you could corrupt the 
+disk on that machine if you do things wrong (although it is not hard to do it right, 
+and NOOBS makes it impossible to go wrong). If you are lucky, you might find a local 
+Raspberry Pi or Linux group who will offer to load your card for you.</p>
+
+<p>You will also need to choose and download a distribution (mentioned above), or use 
+NOOBS, which has all the . Check the <a href="http://elinux.org/RPi_Distributions" 
+title="RPi Distributions"> Distributions list</a> to make sure that you are getting a 
+distribution that will work with the Raspberry Pi. <b>Note that the distribution must 
+be written to the card using the methods below; the standard file copy method will not 
+work</b>
+</p>
+<h4><span id="Using_NOOBS">Using NOOBS</span></h4>
+
+<p>Recently, the Raspberry Pi Foundation has released a really easy way to set up your 
+SD Card. It's called the New Out Of Box Software (or NOOBS for short) and provides a 
+really easy way to install Raspberry Pi distributions. Be warned, however, that it is 
+a 1&#160;GB download - if you have a limit on what you are allowed to download, follow 
+the instructions below, as the other images are around 500&#160;MB.</p>
+
+<ol>
+  <li> Download <a href="http://www.raspberrypi.org/downloads">NOOBS</a> from the 
+       raspberrypi.org downloads page</li>
+  <li> Insert a (4&#160;GB+) SD Card into your computer
+    <ul><li> If you want to save space on the SD Card, you can delete some of the images 
+             inside the os folder in the NOOBS zip file that you don't want to 
+             use.</li></ul></li>
+
+  <a name="FormatTheDisk"></a>
+  <li> Format the disk on a Linux System
+
+      <ol>
+        <li> Use <b>gparted</b> (or the command-line version <b>parted</b> if you 
+             prefer), if you don't have it, install it as you usually would.</li>
+        <li> <a href="#Fat32Filesystem">Format the entire disk as FAT32</a> (FAT16 will 
+             not work! Make sure you select the correct disk!)</li>
+      </ol></li>
+  <li> Extract the file you downloaded in Step 1</li>
+  <li> Copy the files you just extracted to your SD Card (see below on flashing your 
+       SD card)</li>
+</ol>
+
+<p>Not all monitors work with NOOBS straight away. If your monitor is one of those that 
+doesn't work, press the Number buttons 1-4 until you see what you want.</p>
+
+<ol>
+  <li> Default HDMI Mode</li>
+  <li> HDMI Safe Mode - Use this if Default (1) doesn't work and you cannot see 
+       anything</li>
+  <li> Composite PAL Mode - Use this or 4. if you are using the yellow and black outputs 
+       on the opposite side to the HDMI output</li>
+  <li> Composite NTSC Mode</li>
+</ol>
+
+
+<h4><span id="Flashing_the_SD_Card">Flashing the SD Card using Linux (including on a 
+Raspberry Pi!)</h4>
+
+<h4><span id="Using_the_Linux_command_line">Using the Linux command line</span></h4>
+
+<p>Please note that the use of the "dd" tool can overwrite any partition of your 
+machine. If you specify the wrong device in the instructions below you could delete 
+your primary Linux partition.  Please be careful.</p>
+
+<ol>
+  <li> Download the <a href="https://www.raspberrypi.org/downloads/raspbian/">zip 
+       file</a> containing the image from a mirror or torrent.
+    <ul>
+       <li> <a href="http://www.raspberrypi.org/downloads">raspberrypi downloads</a></li>
+    </ul></li>
+  <li> Verify if the the hash key of the zip file is the same as shown on the downloads 
+       page (optional). Assuming that you put the zip file in your home directory (~/), 
+       in the terminal run: 
+
+    <ul>
+      <li> <b>sha1sum ~/2012-12-16-wheezy-raspbian.zip</b></li>
+      <li> This will print out a long hex number which should match the "SHA-1" line for 
+           the SD image you have downloaded</li>
+    </ul></li>
+  <li> Extract the image, with
+    <ul>
+       <li> <b>unzip ~/2012-12-16-wheezy-raspbian.zip</b></li>
+    </ul></li>
+  <li> Run <b>df -h</b> to see what devices are currently mounted</li>
+  <li> If your computer has a slot for SD cards, insert the card. If not, insert the 
+       card into an SD card reader, then connect the reader to your computer.</li>
+  <li> Run <b>df -h</b> again. The device that wasn't there last time is your SD card. 
+       The left column gives the device name of your SD card. It will be listed as 
+       something like "/dev/mmcblk0p1" or "/dev/sdd1". The last part ("p1" or "1" 
+       respectively) is the partition number, but you want to write to the whole SD 
+       card, not just one partition, so you need to remove that part from the name 
+       (getting for example "/dev/mmcblk0" or "/dev/sdd") as the device for the whole 
+       SD card. Note that the SD card can show up more than once in the output of df: 
+       in fact it will if you have previously written a Raspberry Pi image to this SD 
+       card, because the Raspberry Pi SD images have more than one partition. </li>
+  <li> Now that you've noted what the device name is, you need to unmount it so that 
+       files can't be read or written to the SD card while you are copying over the SD 
+       image. So run the command below, replacing "/dev/sdd1" with whatever your SD 
+       card's device name is (including the partition number)
+    <ul>
+      <li> <b>umount /dev/sdd1</b></li>
+      <li> If your SD card shows up more than once in the output of df due to having 
+           multiple partitions on the SD card, you should unmount all of these 
+           partitions.</li>
+    </ul></li>
+  <li> In the terminal write the image to the card with this command, making sure you 
+       replace the input file <b>if=</b> argument with the path to your .img file, and 
+       the "/dev/sdd" in the output file <b>of=</b> argument with the right device name 
+       (<b>this is very important:</b> you <b>will</b> lose all data on the hard drive 
+       on your computer if you get the wrong device name). Make sure the device name is 
+       the name of the whole SD card as described above, not just a partition of it (for 
+       example, sdd, not sdds1 or sddp1, or mmcblk0 not mmcblk0p1)
+
+     <ul>
+        <li> <b>dd bs=4M if=~/2012-12-16-wheezy-raspbian.img of=/dev/sdd</b>
+          <ul>
+            <li> Please note that block size set to 4M will work most of the time, if 
+                 not, please try 1M, although 1M will take considerably longer.</li>
+          </ul></li>
+        <li> Note that if you are not logged in as root you will need to prefix this 
+             with <b>sudo </b></li>
+        <li> The dd command does not give any information of its progress and so may 
+             appear to have frozen. It could take more than five minutes to finish 
+             writing to the card. If your card reader has an LED it may blink during 
+             the write process. To see the progress of the copy operation you can run 
+             <b>pkill -USR1 -n -x dd</b> in another terminal (prefixed with <b>sudo</b> 
+             if you are not logged in as root). The progress will be displayed (perhaps 
+             not immediately, due to buffering) in the original window, not the window 
+             with the <b>pkill</b> command.</li>
+        <li> Alternatively, you can use the following command to run dd as a background 
+             process. It will return a pid as well as report the result of the copy upon 
+             completion: 
+
+          <ul>
+            <li><b> dd bs=4M if=./2015-05-05-raspbian-wheezy.img of=/dev/sdd &amp; 
+                    pid=$! </b></li>
+            <li>You can verify the process is still running throughout the copy with: 
+                <b>pidof dd</b> </li>
+          </ul></li>
+     </ul></li>
+  <li> Instead of dd you can use dcfldd; it will give a progress report about how much 
+       has been written.</li>
+  <li> Another option to monitor progress is to use Pipe Viewer (pv). Pipe <b>dd</b> 
+       input part through <b>pv</b> to the output part of <b>dd</b>:
+    <ul><li>
+        <pre>dd bs=4M if=2014-09-09-wheezy-raspbian.img | pv | dd of=/dev/mmcblk0</pre></li>
+        <li><pre>2,02GB 0:06:34 [10,4MB/s] [       &lt;=&gt;                              ]</pre></li>
+    </ul></li>
+  <li> You can check what's written to the SD card by dd-ing from the card back to your 
+       harddisk to another image, and then running diff (or md5sum) on those two images. 
+       There should be no difference.</li>
+  <li> As root run the command <b>sync</b> or if a normal user run <b>sudo sync</b> 
+       (this will ensure the write cache is flushed and that it is safe to unmount your 
+       SD card)</li>
+  <li> Remove SD card from card reader, insert it in the Raspberry Pi, and have 
+       fun</li></ol>
+
+<h4><span id="Using_any_system_and_BerryBoot">Using any system and BerryBoot</span></h4>
+
+<p>If your Raspberry Pi is connected to the <b>Internet</b>, you can use the 
+<a href="#BerryBootV2.0">BerryBoot installer</a> to let it download and install the 
+operating system. This requires that you first use a normal Windows/Mac/Linux computer 
+to download a small .zip file with the Berryboot system files and extract it to an empty 
+SD card. Then you put the SD card in your Raspberry Pi, and follow the on-screen prompts 
+to complete the installation. An additional advantage is that Berryboot allows you to 
+install more than one operating system on a single SD card. Also, it is not necessary to 
+install any additional software on your normal Windows/Mac/Linux computer.</p>
+
+<h3><span id="Other_points">Other points</span></h3>
+
+<p>To write your SD card you start by downloading the SD image (the data you will write 
+to the card). The best way to do this is using 
+<a href="http://en.wikipedia.org/wiki/BitTorrent_(protocol)">BitTorrent</a>. This 
+generally results in a faster download as it is a highly distributed system (you will 
+be downloading the data from users who have previously downloaded it).</p>
+
+<h3><span id="Manually_resizing_the_SD_card">Manually resizing the SD card partitions 
+(Optional)</span></h3>
+
+<p>The SD card image is sized for a 2&#160;GB card. So, if you are using an SD card with 
+a greater capacity, you may find that only 2&#160;GB is available. If this is the case, 
+then to gain more free space, the partitions must be resized.  The Fedora Remix and the 
+BerryBoot will automatically resize the partitions on the mounted card during the first 
+boot. The Debian , OpenSuSe and Rasbian images won't, so you'll have to do it manually. 
+The easiest way is to use the tool <a href="http://elinux.org/RPi_raspi-config" 
+title="RPi raspi-config">RPi raspi-config</a> selecting menu item EXPAND-ROOTFS - Expand 
+Root Partition to Fill SD Card. If you want to resize the SD card whilst the SD card is 
+not mounted in the Raspberry Pi, look 
+<a href="http://elinux.org/RPi_Resize_Flash_Partitions" title="RPi Resize Flash 
+Partitions">here</a> for instructions.</p>
+
+<h3><span id="Adding_a_data_partition">Adding a data partition (Optional)</span></h3>
+
+<p>If you would rather not resize the partition on another machine as described above, 
+either because you do not have another working Linux machine or you wish to keep your 
+data on another partition to your operating system, you can instead create a new data 
+partition and have that mount automatically at boot.</p>
+
+<ul>
+  <li>First you need to become root and install parted (I did all of this from the boot 
+      command prompt, although if you feel safer in a GUI, you can do all of this in a terminal window):</li>
+<pre>sudo su -
+apt-get install parted
+</pre>
+  <li>Then you need to run parted on your SD card, mine is /dev/mmcblk0, 
+      <a href="http://en.wiktionary.org/wiki/your_mileage_may_vary">ymmv</a>:</li>
+
+      <pre>parted /dev/mmcblk0</pre>
+  <li>Once running, set the display units to something usable and then print your 
+      partition table:</li>
+<pre>unit chs print</pre>
+  <li>You should see something like this:</li>
+<pre>
+Model: SD SD08G (sd/mmc)
+Disk /dev/mmcblk0: 121279,3,31
+Sector size (logical/physical): 512B/512B
+BIOS cylinder,head,sector geometry: 121280,4,32.  Each cylinder is 65.5kB.
+Partition Table: msdos
+Number  Start      End         Type     File system     Flags
+ 1      16,0,0     1215,3,31   primary  fat32           lba
+ 2      1232,0,0   26671,3,31  primary  ext4
+ 3      26688,0,0  29743,3,31  primary  linux-swap(v1)
+</pre>
+
+  <li>Now you need to create your data partition - you need to choose one more than 
+          the end of partition 3 with ,0,0 as your start and use the number from the 
+          line that starts with Disk as your end:</li>
+
+<pre>
+mkpart primary 29744,0,0 121279,3,31
+print
+</pre>
+  <li>That should show your new partition:</li>
+<pre>
+Number  Start      End          Type      File system     Flags
+ 1      16,0,0     1215,3,31    primary   fat32           lba
+ 2      1232,0,0   26671,3,31   primary   ext4
+ 3      26688,0,0  29743,3,31   primary   linux-swap(v1)
+ 4      29744,0,0  121279,3,31  primary
+</pre>
+  <li>Now quit and format the partition (again, ymmv with the specific device name, 
+         try ls /dev for some clues), and then label it:</li>
+<pre>
+quit
+mkfs.ext4 /dev/mmcblk0p4
+e2label /dev/mmcblk0p4 data
+</pre>
+  <li>Now we need to make sure that the partition is mounted automatically when the 
+         system boots (maybe don't use vi if you never have before, try nano):</li>
+
+<pre>vi /etc/fstab</pre>
+  <li>Enter a line exactly like this at the end of the file and save and quit your 
+         text editor:</li>
+<pre>/dev/mmcblk0p4  /data           ext4    defaults        1       2</pre>
+  <li>Create the mount point:</li>
+<pre>mkdir /data</pre>
+  <li>Now mount the partition:</li>
+<pre>
+mount /data
+cd /data
+ls
+</pre>
+</ul>
+
+<p>Your new partition has been created!</p>
+
+
+<a name="BerryBootV2.0"></a><h3>BerryBoot v2.0 - bootloader / universal operating system 
+installer <a href="http://www.berryterminal.com/doku.php/berryboot">(Source 
+Origin)</a></h3>
+
+<P><a href="https://github.com/maxnet/berryboot">BerryBoot GitHub</a>
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/berryboot-menu.png?
+id=berryboot" title="berryboot-menu.png"><img 
+src="http://www.berryterminal.com/lib/exe/fetch.php/berryboot-menu.png?w=1000" 
+title="Berryboot screenshot" alt="Berryboot screenshot" width="1000"/></a></p>
+
+
+<p>For people short on SD cards: Berryboot is a simple boot selection screen, allowing 
+you to put multiple Linux distribution on a single SD card. In addition it allows you 
+to put the operating system files on an external USB hard drive instead of on the SD 
+card itself.<br/></p>
+
+
+<p><strong>Download link Berryboot for the original Raspberry Pi:</strong> 
+<a href="http://downloads.sourceforge.net/project/berryboot/berryboot-20140814.zip" 
+title="http://downloads.sourceforge.net/project/berryboot/berryboot-20140814.zip" 
+rel="nofollow">berryboot-20140814.zip</a><br/>
+sha1sum: f6a5f4fa59ae62c1e64288ec0cc69908c69f9b81</p>
+
+
+<p><strong>Download link Berryboot for the Raspberry Pi 2:</strong> 
+<a href="https://sourceforge.net/projects/berryboot/files/berryboot-20160209-pi2.zip/download">berryboot-20160209-pi2.zip</a>&nbsp;&nbsp;
+<a href="http://downloads.sourceforge.net/project/berryboot/berryboot-20150916-pi2-only.zip">berryboot-20150916-pi2-only.zip</a><br/>
+sha1sum: aaf63e2d7f09f4c010515de5a2a80db6f1a236ef</p>
+
+
+<p>To install: extract the contents of the .zip file to a normal (FAT formatted) SD 
+card, and put it in your Raspberry Pi. This can be simply done under Windows without 
+any special image writer software. Once you start your Pi it will start an installer 
+that reformats the SD card and downloads the operating systems files from the Internet.
+</p>
+
+<h4 id="other_devices">Other devices</h4>
+
+<p>In addition to running on the Raspberry Pi, Berryboot also supports Android tablets, TV sticks and boards that have an Allwinner A10 or A20 processor.<br/>
+For more information see the <a href="/doku.php/berryboot_a10" title="berryboot_a10">BerryBoot A10/A20 page</a></p>
+
+<h4 id="changelog">Changelog</h4>
+
+<p>-> Moved to: <a href="/doku.php/berryboot/changelog" 
+title="berryboot:changelog">Berryboot Changelog</a></p>
+
+<h4 id="walkthrough">Walkthrough</h4>
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/bb1.png?id=berryboot" title="bb1.png"><img src="http://www.berryterminal.com/lib/exe/fetch.php/bb1.png?w=1000" alt="" width="1000"/></a></p>
+
+
+<p>If your Pi is connected to the Internet BerryBoot will try to detect your location based on your IP-address, and set the right timezone automatically.
+Verify that it is correct and press "ok"</p>
+
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/bb2.png?id=berryboot" title="bb2.png"><img src="http://www.berryterminal.com/lib/exe/fetch.php/bb2.png?w=1000" alt="" width="1000"/></a></p>
+
+
+<p>Select where you want to store the operating system files, and press "format"<br/>
+You can choose to install the operating system files:</p>
+
+<ul>
+  <li><div> on the SD card itself </div></li>
+
+  <li><div> on an external USB stick/disk.</div></li>
+
+  <li><div> on networked storage (for more information see: <a href="/doku.php/storing_your_files_on_a_synology_nas_using_iscsi" title="storing_your_files_on_a_synology_nas_using_iscsi">storing your files on a Synology NAS</a>)</div></li>
+</ul>
+
+<p>Be aware that if you choose an external drive, the files of the operating system will be stored there, but you still need to keep the SD card in the Pi to boot from.</p>
+
+
+<p>WARNING: all existing files on the disk will be erased.</p>
+
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/bb3.png?id=berryboot" title="bb3.png"><img src="http://www.berryterminal.com/lib/exe/fetch.php/bb3.png?w=1000" alt="" width="1000"/></a></p>
+
+
+<p>Select which operating system you want to install.
+You can add more later.</p>
+
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/bb4.png?id=berryboot" title="bb4.png"><img src="http://www.berryterminal.com/lib/exe/fetch.php/bb4.png?w=1000" alt="" width="1000"/></a></p>
+
+
+<p>It will download the files from the Internet automatically.</p>
+
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/bb5.png?id=berryboot" title="bb5.png"><img src="http://www.berryterminal.com/lib/exe/fetch.php/bb5.png?w=1000" alt="" width="1000"/></a></p>
+
+
+<p>In the Berryboot menu editor you can install more operating systems, rename them, delete them, etc.
+Press "exit" to exit the editor and start using the operating system you installed.</p>
+
+<h4 id="hdmi_cec_support">HDMI CEC support</h4>
+
+<p>When attached to a HDMI TV, you can also use the arrows on your TV remote to select an operating system to boot, instead of using your keyboard or mouse.</p>
+
+<h4 id="available_options_in_menu_editor">Available options in menu editor</h4>
+
+<ul>
+  <li><div> "Add <abbr title="Operating System">OS</abbr>" (or CTRL+A on keyboard, red button on TV remote)<br/>
+Single click to download additional operating systems from the Internet.<br/>
+Hold down your mouse button over the "Add <abbr title="Operating System">OS</abbr>" button and select "copy <abbr title="Operating System">OS</abbr> from USB stick", to install an operating system saved on USB stick.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Edit" (or ENTER on keyboard)<br/>
+Change the name of the selected operating system.<br/>
+You used to be able to change the memory split setting here as well, but for new installations (that have CMA enabled) this is no longer used.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Clone"<br/>
+Creates a copy of the selected operating system.<br/>
+It is possible to create either a copy that includes the file system changes you made, or create a copy of the original operating system image as downloaded from the Internet.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Backup"<br/>
+Creates a backup of a single operating system or all of them to a USB stick, or SD card (requires USB SD card reader).<br/>
+Backups of individual images can be restored by holding down the "add <abbr title="Operating System">OS</abbr>" button and selecting "copy <abbr title="Operating System">OS</abbr> from USB stick"</div></li>
+</ul>
+
+<ul>
+  <li><div> "Delete" (or DEL on keyboard)<br/>
+Deletes the files of the selected operating system.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Make default"<br/>
+Makes the selected operating system the default. On boot, this operating system will be started automatically unless another is selected within a number of seconds.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Exit" (or ESC on keyboard)<br/>
+Exits the menu editor.</div></li>
+</ul>
+
+<p><strong>Advanced options</strong></p>
+
+
+<p><a href="http://www.berryterminal.com/lib/exe/detail.php/berryboot_menu2.png?id=berryboot" title="berryboot_menu2.png"><img src="http://www.berryterminal.com/lib/exe/fetch.php/berryboot_menu2.png?w=1000" alt="" width="1000"/></a></p>
+
+
+<p>Click on the ">>" button to the right of the screen to see all options.</p>
+
+<ul>
+  <li><div> "Advanced configuration"<br/>
+Editor for configuration files such as cmdline.txt and config.txt</div></li>
+</ul>
+
+<p>When using a Raspberry Pi you can specify kernel parameters and Berryboot parameters in cmdline.txt (use uEnv.txt if you have another device).<br/>
+Special Berryboot parameters:</p>
+
+
+<p><code>bootmenutimeout=&lt;number of seconds&gt; - number of seconds before default operating system is started.
+nobootmenutimeout - do not start the default operating system automatically.</code></p>
+
+
+<p>In config.txt advanced overscan, HDMI and overclocking settings can be specified.
+See <a href="http://www.elinux.org/RPiconfig#File_format" title="http://www.elinux.org/RPiconfig#File_format" rel="nofollow">the RPIconfig page on eLinux.org</a> for details.<br/>
+Note that <b>overclocking is known to cause SD card filesystem corruption,</b> so only use that when you are using an USB stick or drive as storage and know what you are doing.</p>
+
+<ul>
+  <li><div> "Console"<br/>
+Activates a console on tty2<br/>
+Press CTRL+ALT+F2 to access, username "root", no password.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Set password"<br/>
+Password protects access to the menu editor, so that unauthorized users cannot delete or edit the operating systems.</div></li>
+</ul>
+
+<ul>
+  <li><div> "Repair filesystem"<br/>
+Performs a file system check and repair. Attempts to repair file system corruption. Can perform a lot of writes to the SD card, so you might want to make a backup of important files first.</div></li>
+</ul>
+
+<h4 id="alternative_installation_method">Alternative installation method using disk image</h4>
+
+<p>
+If you are experiencing problems unpacking the installation files to a FAT formatted SD card (the easiest and recommend installation method), you can alternatively use a tool like Win32diskimager or dd to write <a href="https://sourceforge.net/projects/berryboot/files/berryboot-20160209-pi2.zip/download">newer disk image</a>&nbsp; or &nbsp;<a href="http://sourceforge.net/projects/berryboot/files/berryboot-cubieboard-beta6.zip/download" title="http://sourceforge.net/projects/berryboot/files/berryboot-cubieboard-beta6.zip/download" rel="nofollow">this disk image</a> to the card.<br/>
+The disk image is meant to install Berryboot on another device, but it includes the Raspberry Pi boot files as well.
+</p>
+
+<h4 id="more_information">More information</h4>
+
+<p>
+For advanced users:
+</p>
+<ul>
+  <li><div> <a href="/doku.php/storing_your_files_on_a_synology_nas_using_iscsi" title="storing_your_files_on_a_synology_nas_using_iscsi">Storing your files on a Synology NAS (Berryboot iSCSI setup)</a></div></li>
+
+  <li><div> <a href="/doku.php/berryboot/headless_installation" title="berryboot:headless_installation">Headless installation (install Berryboot without display attached, using VNC)</a></div></li>
+
+  <li><div> <a href="/doku.php/berryboot/local_repository_on_network_share" title="berryboot:local_repository_on_network_share">Creating a local repository on a Windows network share</a></div></li>
+
+  <li><div> <a href="/doku.php/berryboot/adding_custom_distributions" title="berryboot:adding_custom_distributions">Adding your own custom operating systems to the menu</a></div></li>
+
+  <li><div> <a href="https://github.com/maxnet/berryboot" title="https://github.com/maxnet/berryboot" rel="nofollow">Berryboot source code on Github</a></div></li>
+
+  <li><div> <a href="https://github.com/maxnet/berryboot/issues?state=open" title="https://github.com/maxnet/berryboot/issues?state=open" rel="nofollow">Report bugs</a></div></li>
+</ul>
+
+<div>berryboot.txt . Last modified: 2015/09/16 15:45 by max</div>
+
+<a name="Fat32Filesystem"></a><hr/>
+ 
+<h3>FAT32 Filesystem</h3>
+
+<P>The Raspberry Pi's bootloader (built into the GPU, so non-updateable) only has 
+support for reading from FAT (both FAT16 and FAT32) filesystems though, and is unable 
+to boot from an exFAT filesystem. So if you want to use NOOBS on a card that is 64GB 
+or larger, (usually formatted with the exFAT filesystem), you need to reformat it as 
+FAT32 first, before copying the NOOBS files to it.
+</p>
+
+<p> The standard formatting tools built into Linux operating system is able to create 
+FAT32 partitions (might also be labelled as FAT or MS-DOS). Simply delete the existing 
+exFAT partition and create and format a new FAT32 primary partition.</p>
+<hr/>
+ 
+<a name="NOOBS"></a><h3>NOOBS <a href="https://www.raspberrypi.org/documentation/installation/noobs.md" 
+target="_b">(Source Origin)</a></h3>
+
+<p><strong>New Out Of the Box Software</strong> - an easy operating system install 
+manager for the Raspberry Pi</p>
+
+<p><img src="https://www.raspberrypi.org/documentation/installation/images/noobs.png" 
+alt="NOOBS OS selection"></p>
+
+<h4>How to get NOOBS</h4>
+
+<h4>Buy a pre-installed SD card</h4>
+
+<p>The easiest way to get NOOBS is to buy an SD card with NOOBS pre-installed; this is 
+available for &#163;4 on the
+ <a href="http://swag.raspberrypi.org/collections/frontpage/products/noobs-8gb-sd-card">swag store</a>.</p>
+
+<h4>Download</h4>
+
+<p>Alternatively, NOOBS is available for download on the Raspberry Pi website: 
+<a href="http://www.raspberrypi.org/downloads">raspberrypi.org/downloads</a></p>
+
+<h4>How to install NOOBS on an SD card</h4>
+
+<p>Once you've downloaded the NOOBS zip file, you'll need to copy the contents to a 
+formatted SD card on your computer.</p>
+
+<p>To set up a blank SD card with NOOBS:</p>
+
+<ul>
+  <li>Format an SD card that is 4GB or larger as FAT. See instructions on how to do 
+      this below.</li>
+  <li>Download and extract the files from the NOOBS zip file.</li>
+  <li>Copy the extracted files onto the SD card that you just formatted so that this 
+      file is at the root directory of the SD card. Please note that in some cases it 
+      may extract the files into a folder; if this is the case then please copy across 
+      the files from inside the folder rather than the folder itself.</li>
+  <li>On first boot the "RECOVERY" FAT partition will be automatically resized to a 
+      minimum, and a list of OSs that are available to install will be displayed.</li>
+</ul>
+
+<h4>How to format an SD card as FAT</h4>
+
+<p><strong>Note:</strong> If you're formatting an SD (or micro SD) card that has a 
+capacity over 32 GB (i.e. 64GB and above) then see the separate 
+<a href="#FormattingSDXCCard">SDXC formatting</a> instructions OR 
+<a href="#FormatTheDisk">Format the disk</a></p>
+
+<h5>Linux</h5>
+
+<p> For Linux users we recommend <code>gparted</code> (or the command line version 
+<code>parted</code>). Norman Dunbar has written up <a href="#NOOBSForRaspberryPi">NOOBS 
+For Raspberry Pi</a> for Linux users. In the section <a target="_b" 
+href="#FormattingSDCard">Initialise Your SD Card</a>, you may find the SD Formatting 
+Instructions.
+</p>
+
+<h4>What's included in NOOBS</h4>
+
+<p>The following Operating Systems are currently included in NOOBS:</p>
+
+<ul>
+  <li><a href="http://raspbian.org/">Raspbian</a></li>
+  <li><a href="http://pidora.ca/">Pidora</a></li>
+  <li><a href="http://wiki.openelec.tv/index.php?title=Raspberry_Pi_FAQ">OpenELEC</a></li>
+  <li><a href="http://osmc.tv/">OSMC</a></li>
+  <li><a href="https://www.riscosopen.org/wiki/documentation/show/Welcome%20to%20RISC%20OS%20Pi">RISC OS</a></li>
+  <li><a href="http://archlinuxarm.org/platforms/armv6/raspberry-pi">Arch Linux</a></li>
+</ul>
+
+<p> As of NOOBS v1.3.10 (September 2014), only Raspbian is installed by default in 
+NOOBS. The others can be installed with a network connection.</p>
+
+<h4>NOOBS and NOOBS Lite</h4>
+
+<p>NOOBS is available in two forms: offline and network install; or network install 
+only.</p>
+
+<p> The full version has Raspbian included, so it can be installed from the SD card 
+while offline, whereas using NOOBS Lite,  or installing any other operating system, 
+requires an internet connection during installation.</p>
+
+<p>Note that the operating system image on the full version can be outdated if a new 
+version of the OS is released, but if connected to the internet you will be shown the 
+option of downloading the latest version if there is a newer one available.</p>
+
+<h4>NOOBS Development</h4>
+
+<h4>Latest NOOBS release</h4>
+
+<p> The latest NOOBS release is <strong>v1.4.2</strong>, released on <strong>28th 
+September 2015</strong>.</p>
+
+<p> (From NOOBS v1.4.0 onwards, NOOBS Lite only shares the first two digits of the 
+version number, i.e. v1.4)</p>
+
+<h4>NOOBS Documentation</h4>
+
+<p> A more comprehensive documentation, including more advanced configuration of NOOBS, 
+is available on <a href="https://github.com/raspberrypi/noobs/blob/master/README.md" 
+target="_b">GitHub</a>.</p>
+
+<h4>NOOBS source code</h4>
+
+<p> See the NOOBS source code on <a href="https://github.com/raspberrypi/noobs" 
+target="_b">GitHub</a>.</p>
+
+<a name="FormattingSDXCCard"></a><h3>Formatting an SDXC card for use with NOOBS</h3>
+
+<p> According to the <a href="https://www.sdcard.org/developers/overview/capacity/">SD 
+specifications</a> any SD card larger than 32GB is an SDXC card, and has to be formatted 
+with the exFAT filesystem. Which means the official SD Formatter tool will 
+<em>always</em> format cards that are 64GB or larger as exFAT.</p>
+
+<p> The Raspberry Pi's bootloader (built into the GPU, so non-updateable) only has 
+support for reading from FAT (both FAT16 and FAT32) filesystems though, and is unable 
+to boot from an exFAT filesystem. So if you want to use NOOBS on a card that is 64GB 
+or larger, you need to reformat it as FAT32 first, before copying the NOOBS files to 
+it.</p>
+
+<h4>Linux and Mac OS</h4>
+
+<p> The standard formatting tools built into these operating systems are able to create 
+FAT32 partitions (might also be labelled as FAT or MS-DOS). Simply delete the existing 
+exFAT partition and create and format a new FAT32 primary partition, before proceeding 
+with the rest of the 
+<a href="https://www.raspberrypi.org/documentation/installation/noobs.md">NOOBS 
+instructions</a>.</p>
+
+
+<a name="NOOBSForRaspberryPi"></a>
+<h3>NOOBS For Raspberry Pi 
+<a href="http://qdosmsq.dunbar-it.co.uk/blog/2013/06/noobs-for-raspberry-pi/" 
+target="_b">(Source Origin)</a></h3>	</header><!-- .entry-header -->
+
+
+<p><strong>Updated 11th January 2015 to document NOOBS 1.3.11.</strong></p>
+
+<p> NOOBS is the latest user friendly installation system from the Raspberry Pi. It 
+allows you the ability to choose one of 7 (currently) Operating Systems to run on 
+your Pi and a separate data partition to save your possibly shared data. You can pick 
+and choose and change your OS at any time you wish simply by rebooting and holding 
+the SHIFT key down. However, any user data on the SD card will be lost each time.</p>
+
+<p> NOOBS is "New Out Of Box Software" by the way. Want to know more? Read on...</p>
+
+<p> There are plenty of places on the web that tell you how to use NOOBS to set up 
+a system, but so far, they all assume one thing, that you are using some flavour of 
+Windows.  One fine example is this video on You Tube - 
+<a href="http://www.youtube.com/watch?v=TyFDaMpdh2c" target="_blank" 
+title="http://www.youtube.com/watch?v=TyFDaMpdh2c">TyFDaMpdh2c</a>. I'm not.</p>
+
+<p>So, what follows is a quick and easy guide for the Linux user to get a new SD card 
+ready for use in their Raspberry Pi.</p>
+
+<a name="FormattingSDCard"></a><h4>Initialise Your SD Card</h4>
+
+<p> The SD card needs to be formatted as FAT32 initially. Most cards come with this 
+formatting, but if you have stolen a card from a camera or similar device, it might be 
+best to properly initialise it. Just in case.</p>
+
+<p> You will need a 4GB or larger card. NOOBS adds a recovery partition to the card 
+which uses up some space, and holds the various distros and support files for the 
+"recovery" process. Basically, the installer lives on the card.</p>
+
+<p><strong>The following assumes you have root privileges, so either <code>su -</code> 
+or prefix all commands, unless otherwise advised, with <code>sudo</code></strong>.  If 
+you see commands prefixed by a '<strong>#</strong>' prompt, that means that the command 
+should be run with sudo or as root. If the commands have a '<strong>$</strong>' prompt, 
+then you can run those commands as your normal user.</p>
+
+<p>My laptop comes with an SD card slot, which is always device <code>/dev/mmcblk0</code>
+ and partitions on the SD card are named as <code>/dev/mmcblk0pn</code> where the 'n' 
+part starts at 1 and increases as desired.</p>
+
+<p> First we need to find the device, assuming your system is different to mine. The 
+easiest way is to run the following:</p>
+
+<pre>
+# fdisk -l
+</pre>
+
+<p> The parameter is a lower case L for "list". This command lists all the mounted and 
+unmounted devices on your computer. Make sure you don't have the SD card in the slot 
+yet though!</p>
+
+<p> Now, insert the card, and run the command again. If you are prompted to mount the 
+card or open it in a file manager etc, ignore it. We don't want or need the card to be 
+mounted.</p>
+
+<blockquote><p>As mentioned, some Linux distros may auto-mount the SD card when you put 
+it in the slot. If yours does, then unmount it or "safely remove" it - whichever option 
+you are given.</p>
+
+<p> On my Linux Mint laptop, under KDE, I get prompted with a pop-up telling me what 
+partitions are on the newly inserted card, and offering me the choice to open in Dolphin 
+or just to mount the partition. If I ignore the pop-up for 5 seconds or so, it vanishes, 
+and the card remains unmounted.</p>
+
+<p>If you use KDE and Dolphin, and if the card is auto-mounted, open Dolphin, find the 
+SD card on the list of devices down the left side, right click it and the top option is 
+to "safely remove" the device.</p>
+
+<p>You might need to "safely remove" all the partitions on the SD Card, not just one, 
+if all of them have been auto-mounted.</p></blockquote>
+
+<p>Compare the two listings and you should see something like the following:</p>
+
+<pre>
+...
+...
+Disk /dev/mmcblk0: 7948 MB, 7948206080 bytes
+4 heads, 16 sectors/track, 242560 cylinders, total 15523840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x000dbfc6
+
+        Device Boot      Start         End      Blocks   Id  System
+/dev/mmcblk0p1            8192      122879       57344    c  W95 FAT32 (LBA)
+/dev/mmcblk0p2          122880    15523839     7700480   83  Linux
+</pre>
+
+<p> In my case, I know the SD card is 8GB in size, so the above difference in before and 
+after leads me to conclude that <code>/dev/mmcblk0</code> is indeed my SD card.</p>
+
+<p>The above listing is from a card that already has been used in my Pi, it has two 
+existing partitions - which I'm about to wipe!</p>
+
+<p>Now that we have a device, we can create the single partition we require:</p>
+
+<pre>
+# fdisk /dev/mmcblk0
+</pre>
+
+<p>The above command takes you into the <code>fdisk</code> utility that allows you to 
+manipulate (and destroy!) your SD card. It must be run as root, or using 
+<code>sudo</code>.</p>
+
+<p>If you have existing partitions on the device, delete them using the 'd' command. 
+(Use the '<strong>m</strong>' command to get a list of available commands if you need 
+to.)</p>
+
+<pre>
+Command (m for help): d
+Selected partition 1
+</pre>
+
+<p> You will be prompted for the partition number each time, so repeat until you have 
+deleted them all. Listing the existing partitions afterwards should show the 
+following:</p>
+
+<pre>
+Command (m for help): p
+
+Disk /dev/mmcblk0: 7948 MB, 7948206080 bytes
+4 heads, 16 sectors/track, 242560 cylinders, total 15523840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+        Device Boot      Start         End      Blocks   Id  System
+</pre>
+
+<p> Now we can create a single new partition, the '<strong>n</strong>' command does 
+this:</p>
+
+<pre>
+Command (m for help): n
+
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): p
+
+Partition number (1-4, default 1): 1
+
+First sector (2048-15523839, default 2048): 
+Using default value 2048
+
+Last sector, +sectors or +size{K,M,G} (2048-15523839, default 15523839): 
+Using default value 15523839
+</pre>
+
+<p> The above creates a primary partition, numbered 1, with the default start and end 
+sector values. This creates a single partition over the entire SD card, with a bit of 
+space left - as required - at the start.</p>
+
+<p>Use the '<strong>p</strong>' command to check all is well:</p>
+
+<pre>
+Command (m for help): p
+
+Disk /dev/mmcblk0: 7948 MB, 7948206080 bytes
+4 heads, 16 sectors/track, 242560 cylinders, total 15523840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+        Device Boot      Start         End      Blocks   Id  System
+/dev/mmcblk0p1            2048    15523839     7760896   83  Linux
+</pre>
+
+<p> So far so good, except the partition type is <code>Linux</code> and not 
+<code>FAT32</code>. We need to change it. The '<strong>t</strong>' command is our 
+friend:</p>
+
+<pre>
+Command (m for help): t
+Selected partition 1
+Hex code (type L to list codes): l
+...
+...
+ b  W95 FAT32       51  OnTrack DM6 Aux 9f  BSD/OS          e4  SpeedStor      
+ c  W95 FAT32 (LBA) 52  CP/M            a0  IBM Thinkpad hi eb  BeOS fs        
+...
+...
+Hex code (type L to list codes): b
+Changed system type of partition 1 to b (W95 FAT32)
+</pre>
+
+<p>Again, use the '<strong>p</strong>' command to check all is well:</p>
+
+<pre>
+Command (m for help): p
+
+Disk /dev/mmcblk0: 7948 MB, 7948206080 bytes
+4 heads, 16 sectors/track, 242560 cylinders, total 15523840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+        Device Boot      Start         End      Blocks   Id  System
+/dev/mmcblk0p1            2048    15523839     7760896    b  W95 FAT32
+</pre>
+
+<blockquote><p>Some people may have problems getting their card to boot in the Raspberry 
+Pi when wiped and re-partitioned like this. If you have that problem, simply make the 
+new partition bootable using the <strong>a</strong> command. </p>
+
+<p> I didn't need to do this on my card(s) but I have heard from people who do. Strange 
+that some cards need bootable partitions while others don't.</p>
+
+<p> When NOOBS' own installer takes over, it will partition the card to suit itself, 
+and set bootable flags as desired. And it won't be the partition you created that NOOBS 
+makes bootable, it will be a small one, located right at the very end of the card, 
+which holds the NOOBS installer.</p></blockquote>
+
+<p> All that remains now is to write the new partition table to the SD card. The 
+'<strong>w</strong>' command does this:</p>
+
+<pre>
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+
+WARNING: If you have created or modified any DOS 6.x
+partitions, please see the fdisk manual page for additional
+information.
+Syncing disks.
+</pre>
+
+<p><code>Fdisk</code> will exit when we write the partition table.</p>
+
+<p> So far, all we have done is to create a new, blank, partition and although we told 
+<code>fdisk</code> that it would be <code>FAT32</code> we have yet to format it. We 
+need to do this now, however, be careful to format the <em>partition</em> and not the 
+<em>device</em>. </p>
+
+<pre>
+# mkfs.vfat /dev/mmcblk0<strong>p1</strong>
+
+mkfs.vfat 3.0.12 (29 Oct 2011)
+</pre>
+
+<p>That's done when you get back to the prompt. Now we can get the software.</p>
+
+<h4>Download the NOOBS Software</h4>
+
+<p> Go to <a href="http://www.raspberrypi.org/downloads" target="_blank" 
+title="http://www.raspberrypi.org/downloads">http://www.raspberrypi.org/downloads</a>
+ and at the top of the page, you will notice the section entitled "New 
+Out Of the Box Software (Recommended)" - that's where we need to be.</p>
+
+<p> Click on either the torrent or direct download links. To save bandwidth on the main 
+servers use the torrent link - if you have a torrent client installed, otherwise, click 
+the direct link.</p>
+
+<p> When prompted, save the file to a good location, I use 
+<code>Downloads/RaspberryPi/distros</code> in my home directory. Your location might 
+possibly be different!</p>
+
+<p> It takes about 10 minutes to download, depending on your bandwidth and the busyness 
+of the server. I was getting around 1800 Kb per second download speed, and the file 
+itself is around 760 Mb in size, which is smaller than previous versions but it no 
+longer has 6 different distros inside it!</p>
+
+<p>While it's downloading, have a cuppa!</p>
+
+<p> When it is finished downloading, it is best to verify that what you have is exactly 
+what you should have. The download page shows a SHA1 checksum of, currently, 
+"7bc2220f9c6a63cbcc6cafb039a3f0b24055cf23" so, open a shell session and verify the 
+download:</p>
+
+<pre>
+$ # The following command is "sha(one)sum" and not "sha(ell)sum" :-)
+$ sha1sum /home/norman/Downloads/RaspberryPi/distros/NOOBS_v1_3_11.zip 7bc2220f9c6a63cbcc6cafb039a3f0b24055cf23  /home/norman/Downloads/RaspberryPi/distros/NOOBS_v1_3_11.zip
+</pre>
+
+<p> You don't need to be root to do this, so <code>sudo</code> is not required. Compare 
+the two checksums and if they are both the same, carry on, otherwise, the download is 
+probably corrupt. Download it again.</p>
+
+<h4>Copy to the SD Card</h4>
+
+<p>Now we need to mount the SD card, so eject it and put it back in again. This time, if 
+you are prompted to open it in a file browser, do so. You can find out where it was 
+mounted by running the <code>mount</code> command, as your normal user, and search from 
+the partition name as above:</p>
+
+<pre>
+$ mount | grep -i mmcblk0p1
+</pre>
+
+<p>You should see something like:</p>
+
+<pre>
+/dev/mmcblk0p1 on /media/F493-CE5C type ....
+</pre>
+
+<p>We need to be in a shell session in the above location, so :</p>
+
+<pre>
+$ cd /media/F493-CE5C
+</pre>
+
+<p>And now we are ready to extract the software to the SD card. This is a simple 
+<code>unzip</code> command as follows:</p>
+
+<pre>
+$ unzip /home/norman/Downloads/RaspberryPi/distros/NOOBS_v1_3_11.zip 
+
+Archive:  /home/norman/Downloads/RaspberryPi/distros/NOOBS_v1_3_11.zip
+  inflating: bootcode.bin            
+  inflating: BUILD-DATA              
+   creating: defaults/
+   creating: defaults/slides/
+  inflating: defaults/slides/A.png   
+  inflating: INSTRUCTIONS-README.txt  
+   creating: os/
+   creating: os/Raspbian/
+  inflating: os/Raspbian/os.json     
+  inflating: os/Raspbian/root.tar.xz  
+  inflating: os/Raspbian/partitions.json  
+  inflating: os/Raspbian/partition_setup.sh  
+  inflating: os/Raspbian/release_notes.txt  
+   creating: os/Raspbian/slides_vga/
+  inflating: os/Raspbian/slides_vga/C.png  
+  inflating: os/Raspbian/slides_vga/A.png  
+  inflating: os/Raspbian/slides_vga/D.png  
+  inflating: os/Raspbian/slides_vga/G.png  
+  inflating: os/Raspbian/slides_vga/B.png  
+  inflating: os/Raspbian/slides_vga/E.png  
+  inflating: os/Raspbian/slides_vga/F.png  
+ extracting: os/Raspbian/Raspbian_-_Boot_to_Scratch.png  
+  inflating: os/Raspbian/flavours.json  
+  inflating: os/Raspbian/boot.tar.xz  
+ extracting: os/Raspbian/Raspbian.png  
+   creating: os/Data_Partition/
+  inflating: os/Data_Partition/os.json  
+  inflating: os/Data_Partition/partitions.json  
+ extracting: os/Data_Partition/data.tar.xz  
+ extracting: os/Data_Partition/Data_Partition.png  
+  inflating: recovery.cmdline        
+  inflating: recovery.elf            
+ extracting: RECOVERY_FILES_DO_NOT_EDIT  
+  inflating: recovery.img            
+  inflating: recovery.rfs            
+  inflating: riscos-boot.bin  
+</pre>
+
+<p> That's it. The software is installed on the SD card, and is ready to be used. We 
+need to get out of the SD card though, and unmount it before we can use it in the 
+RaspberryPi.</p>
+
+<pre>
+$ cd
+$ sudo umount /dev/mmcblk0p1 
+</pre>
+
+<h4>Installation of Your Chosen OS</h4>
+
+<p>Insert the SD card into your RaspberryPi, <strong>with the power disconnected</strong>
+ and then connect or turn on the power.</p>
+
+<p> A mini-system will appears and start reorganising the SD card layout.  Partitions 
+will be resized and new ones created and so on. You will end up with an SD card with a 
+different set of partitions to the one single partition that we created above, this is 
+ok. NOOBS is doing its thing and getting the SD card ready for installation.</p>
+
+<p> Once the partitions have been resized and created as required, you are presented 
+with a menu screen where you may select up to 7 different Operating Systems to install, 
+plus an option to create a separate 512 Mb data partition.</p>
+
+<p> At the bottom of the screen, there is an option to set the language to be used for 
+the installation, and you may also select a keyboard layout here - if yours differs 
+from the default.</p>
+
+<p> Can't see the screen? Press one of the following number keys to assist, it may be 
+best to press a digit key on the top row of the keyboard instead of the numeric keypad, 
+which might not be activated by NOOBS by default.</p>
+
+<ul>
+  <li>"1" to select output to the HDMI socket, and potentially, from there, to a VGA 
+      adaptor. This is the default output for NOOBS.</li>
+  <li>"2" to select output to "Safe HDMI". Choose this if the default HDMI isn't showing 
+      anything and you are definitely using an HDMI connected monitor or TV.</li>
+  <li>"3" to select composite PAL output. This is the "normal" TV arial socket on the 
+      side of your Pi, if your Pi is as old as mine! Later Pis have different sockets 
+      for composite output. PAL is used in the UK, Japan and Australia, for example.</li>
+  <li>"4" to select composite NTSC for the USA TV system. I'm told it stands for Never 
+      Twice the Same Colour!</li>
+</ul>
+
+<p>The Available Operating Systems are:</p>
+
+<ul>
+  <li>Raspbian</li>
+  <li>Boot to Scratch</li>
+  <li>Arch</li>
+  <li>OpenELEC</li>
+  <li>RaspBMC</li>
+  <li>PiDora</li>
+  <li>RiscOS</li>
+</ul>
+
+<p> There is an additional option to create a 512 Mb data partition. This could be 
+useful, and If you have sufficient space on the SD card, I would advise selecting this 
+option, especially if you may be installing more than one Operating System.</p>
+
+<p> Note: The operating systems shown with an SD Card icon are available directly from 
+the NOOBS card. Those with an icon resembling a network cable and network socket are 
+required to be downloaded from the internet, so you will need a working internet 
+connection to install Arch, for example.</p>
+
+<p> Select all the desired Operating Systems you wish to install by clicking the small 
+box at the start of each entry in the menu. If a tick or cross appears, it has been 
+selected. Just click it again if you made a mistake, or have changed your mind.</p>
+
+<p> When done selecting Operating Systems, click on the "Install" button.  Take note of 
+the warning that appears next - if you are planning to try another distro, then any 
+existing data on this SD card will be obliterated when the new OS is installed. This 
+isn't a problem on the very first use of the SD card, but might be if you have been 
+using one particular distro for a while but wish to try another.</p>
+
+<p> If you need to preserve your data, make a backup of at least your Home directory, 
+and anything in the separate data partition, just to be safe.</p>
+
+<p> Click the "yes" button to install the OS. Then go and have another coffee because 
+it takes a wee while to write the OS to the SD card. My own Pi gives me about 1.8 MB 
+per second and there is quite a few Gb to write - depending on how many Operating 
+Systems are being installed.</p>
+
+<p> The installation will display a running total of the amount of data written so far, 
+and how much is to be installed in total. Beware that these numbers do not include the 
+Operating Systems that must be downloaded, only those that are on the SD card itself.</p>
+
+<p> When all the installations have completed, a pop-up dialogue will let you know that 
+it's time to reboot. Click the OK button on the dialog that has the title "OS(es) 
+Installed" and the Pi will reboot. If you installed more than one Operating System, a 
+menu will let you select the one you wish to boot into. Double-click the chosen 
+Operating System and the Pi will boot that one.</p>
+
+<p>You might have some initial configuration to do on first use, that depends on the OS 
+in question.</p>
+
+<h4>Selecting a New Operating System on Reboot</h4>
+
+<p> When the Pi reboots, if you installed more than one Operating System, you will be 
+offered a menu of the installed Operating Systems. As above, double-click the desired 
+one. If you do nothing for 10 seconds, the Operating System you used last will be 
+booted.</p>
+
+<p> If you created a separate Data Partition, where is it? A good question. My own 
+install of Raspbian, Arch, OpenElec, Riscos and a Data Partition, resulted in my 16 Gb 
+SD card being formatted with 13 different partitions, set up as follows:</p>
+
+<ul>
+  <li>RiscOS on partitions 5 and 6.</li>
+  <li>Data Partition on partition 7.</li>
+  <li>Raspbian on partitions 8 and 9.</li>
+  <li>Arch Linux on partitions 10 and 11.</li>
+  <li>OpenElec on partitions 12 and 13.</li>
+</ul>
+
+<p> So the data partition is partition 7, and we know that it is formatted as an ext4 
+file system, so where is it mounted when I boot into Rasbian, for example?</p>
+
+<p> The <code>mount</code> command is your friend and it can be run from your normal pi 
+user, not just root. Running the command, results in the following:</p>
+
+<pre>
+$ mount | grep -i p7
+
+/dev/mmcblk0p7 on /media/data type ext4 ...
+</pre>
+
+<p> So, it would appear that the data partition is mounted on /media/data. In fact, 
+<em>all</em> the other Operating Systems' partitions are automatically mounted by 
+Raspbian, in /media/something_or_other.</p>
+
+<p> When logging in to Arch Linux, the data partition is not automatically mounted, and 
+neither are any of the other Operating Systems' partitions. In Arch Linux, <em>you</em> 
+tell it what to do - it makes no assumptions.</p>
+
+<h4>Reinstallation and Recovery</h4>
+
+<p> If you need to reinstall, or recover from a huge foul up, you should first attempt 
+to backup any data that you have been creating. The recovery process will trash it 
+without trace.</p>
+
+<p> Of course, if the system is so badly trashed, you might not be able to take a 
+backup, but at least try!</p>
+
+<p> Boot the RaspberryPi from the SD card again, and when prompted on screen (for about 
+3 seconds) press and hold the SHIFT key. Any one will work.</p>
+
+<p> The installation menu will appear again, simply follow the instructions in the 
+<em>Installation</em> section above to recover your OS. Alternatively, choose a new OS 
+to try out - there are 7 to choose from, as listed above.</p>
+
+<p>Have fun.</p>
+
+
+<a name="RaspberryInstallingOS"></a><h3>Installing Operating System Images On Rpi SD 
+<a href="https://www.raspberrypi.org/documentation/installation/installing-images/"
+target="_b">(Source Origin)</a></h3>
+
+<p>How to install a Raspberry Pi Operating System image on an SD card. You will need 
+another computer with an SD card reader to install the image.</p>
+
+<p>We recommend most users download <a href="../noobs.md">NOOBS</a> which is designed 
+to be very easy to use. However more advanced users looking to install a particular 
+image should use this guide.</p>
+
+<h4>Download the image</h4>
+
+<p>Official images for recommended Operating Systems are available to download from 
+the Raspberry Pi website: <a href="http://www.raspberrypi.org/downloads/" 
+target="_b">raspberrypi.org/downloads</a></p>
+
+<p>Alternative distributions are available from third party vendors.</p>
+
+<p>After downloading the .zip file, unzip it to get the image file (.img) for writing 
+to your SD card.</p>
+
+<h4>Writing an image to the SD card</h4>
+
+<p>With the image file of the distribution of your choice, you need to use an image 
+writing tool to install it on your SD card.  The guide for Linux system is presented 
+below:</p>
+
+<a name="InstallingOSOnKinux"></a><h3>Installing Operating System Images on Linux 
+<a href="https://www.raspberrypi.org/documentation/installation/installing-images/linux.md">(Source Origin)</a></h3>
+
+<P> Please note that the title should be <b>Installing Operating System Images for Rpi2 
+on a running Linux system</b>.  Also, shall we format the SD card as a FAT32 filesystem, 
+first?
+
+<p>Please note that the use of the <code>dd</code> tool can overwrite any partition 
+of your machine. If you specify the wrong device in the instructions below you could 
+delete your primary Linux partition. Please be careful.</p>
+
+<ul>
+  <li><p>Run <code>df -h</code> to see what devices are currently mounted.</p></li>
+
+  <li><p>If your computer has a slot for SD cards, insert the card. If not, insert the 
+      card into an SD card reader, then connect the reader to your computer.</p></li>
+
+  <li><p>Run <code>df -h</code> again. The new device that has appeared is your SD card. 
+      The left column gives the device name of your SD card; it will be listed as 
+      something like <code>/dev/mmcblk0p1</code> or <code>/dev/sdd1</code>. The last 
+      part (<code>p1</code> or <code>1</code> respectively) is the partition number 
+      but you want to write to the whole SD card, not just one partition. Therefore 
+      you need to remove that part from the name (getting, for example, 
+      <code>/dev/mmcblk0</code> or <code>/dev/sdd</code>) as the device for the whole 
+      SD card. Note that the SD card can show up more than once in the output of df; 
+      it will do this if you have previously written a Raspberry Pi image to this SD 
+      card, because the Raspberry Pi SD images have more than one partition.</p></li>
+
+  <li><p>Now that you've noted what the device name is, you need to unmount it so that 
+      files can't be read or written to the SD card while you are copying over the SD 
+      image.</p></li>
+
+  <li><p>Run <code>umount /dev/sdd1</code>, replacing <code>sdd1</code> with whatever 
+      your SD card's device name is (including the partition number).</p></li>
+ 
+  <li><p>If your SD card shows up more than once in the output of <code>df</code> due 
+      to having multiple partitions on the SD card, you should unmount all of these 
+      partitions.</p></li>
+
+  <li><p>In the terminal, write the image to the card with the command below, making 
+      sure you replace the input file <code>if=</code> argument with the path to your 
+      <code>.img</code> file, and the <code>/dev/sdd</code> in the output file 
+      <code>of=</code> argument with the right device name. This is very important, as 
+      you will lose all data on the hard drive if you provide the wrong device name. 
+      Make sure the device name is the name of the whole SD card as described above, 
+      not just a partition of it; for example <code>sdd</code>, not <code>sdds1</code> 
+      or <code>sddp1</code>; or <code>mmcblk0</code>, not <code>mmcblk0p1</code>.</p>
+
+<pre>
+<code>dd bs=4M if=2015-11-21-raspbian-jessie.img of=/dev/sdd</code>
+</pre>
+
+  <li><p>Please note that block size set to <code>4M</code> will work most of the time; 
+      if not, please try <code>1M</code>, although this will take considerably 
+      longer.</p></li>
+
+  <li><p>Also note that if you are not logged in as root you will need to prefix this 
+      with <code>sudo</code>.</p></li>
+
+  <li><p>The <code>dd</code> command does not give any information of its progress and 
+      so may appear to have frozen; it could take more than five minutes to finish 
+      writing to the card. If your card reader has an LED it may blink during the 
+      write process. To see the progress of the copy operation you can run 
+      <code>pkill -USR1 -n -x dd</code> in another terminal, prefixed with 
+      <code>sudo</code> if you are not logged in as root. The progress will be 
+      displayed in the original window and not the window with the <code>pkill</code> 
+      command; it may not display immediately, due to buffering.</p></li>
+
+  <li><p>Instead of <code>dd</code> you can use <code>dcfldd</code>; it will give a 
+      progress report about how much has been written.</p></li>
+
+<PRE>
+$ apt-cache search dcfldd
+dcfldd - enhanced version of dd for forensics and security
+</PRE>
+
+  <li><p>You can check what's written to the SD card by <code>dd</code>-ing from the 
+      card back to another image on your hard disk, truncating the new image to the 
+      same size as the original, and then running <code>diff</code> (or 
+      <code>md5sum</code>) on those two images.</p></li>
+
+  <li><p>The SD card might be bigger than the original image, and dd will make a copy 
+      of the whole card. We must therefore truncate the new image to the size of the 
+      original image.  Make sure you replace the input file if= argument with the 
+      right device name. <code>diff</code> should report that the files are 
+      identical.</p>
+
+<pre>
+dd bs=4M if=/dev/sdd of=from-sd-card.img
+truncate --reference 2015-11-21-raspbian-jessie.img from-sd-card.img
+diff -s from-sd-card.img 2015-11-21-raspbian-jessie.img
+</pre></li>
+
+  <li><p>Run <code>sync</code>; this will ensure the write cache is flushed and that 
+      it is safe to unmount your SD card.</p></li>
+
+  <li>Remove the SD card from the card reader.</li>
+</ul>
+<hr />
+
+<p><em>This article uses content from the eLinux wiki page 
+<a href="#RPiEasySDCardSetup">RPi_Easy_SD_Card_Setup</a>, which 
+is shared under the <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative 
+Commons Attribution-ShareAlike 3.0 Unported license</a></em></p>
+
+
+<a name="StandAlonePartition"></a><h3>Standalone partitioning and booting explained 
+<a href="https://github.com/raspberrypi/noobs/wiki/Standalone-partitioning-explained">(Source Origin)</a></h3>
+
+<div>Bharat edited this page <time>on Aug 14, 2015</time> . 4 revisions</div>
+
+<h4>Standalone partitioning</h4>
+
+<p>A standalone .img file is a complete byte-for-byte image of an <em>entire</em> SD 
+card. It includes the <a href="http://en.wikipedia.org/wiki/Master_Boot_Record">MBR</a> 
+(which stores the <a href="http://en.wikipedia.org/wiki/Master_Boot_Record#Disk_partitioning">partition table</a>) 
+as well as all the raw partitions.  This is the lowest-level possible way of 
+<a href="http://www.raspberrypi.org/documentation/installation/installing-images/README.md">writing an SD card</a>, 
+but it's the only way to access multiple partitions on an SD card using Windows (via 
+the Win32DiskImager software).</p>
+
+<p>Writing an image like <a href="http://www.raspberrypi.org/downloads/raspbian/" 
+target="_b">Raspbian Jessie Img (02/06/2016)</a> to an SD card typically creates two 
+partitions:</p>
+
+<ol>
+  <li>A small FAT-format <strong>boot</strong> partition, which contains the Raspberry 
+     Pi <a href="https://github.com/raspberrypi/firmware/tree/master/boot">firmware</a>, 
+     a compiled <a href="https://github.com/raspberrypi/linux/">Linux kernel</a> and 
+     some config files. (This is the only partition that Windows is able to 'see'.)</li>
+  <li>A large ext4-format <strong>root</strong> partition, which contains all the files 
+      directly used by Linux, including all the applications and your user's home 
+      directory.</li>
+</ol>
+
+<p>Because the partition table (and raw partitions) are copied directly from the .img 
+file to the SD card, the root partition will be the exact size that the .img specifies. 
+Therefore if your SD card is much larger than the .img file, you'll have a lot of unused 
+space after the end of the root partition. To make use of this unused space you can use 
+a tool like <a href="http://www.raspberrypi.org/documentation/configuration/raspi-config.md">raspi-config</a> 
+to automatically resize the root partition as large as possible.</p>
+
+<h5>Partition naming</h5>
+
+<p> On the Raspberry Pi, the whole SD card is referred to (by Linux) as 
+<code>/dev/mmcblk0</code>, the first (boot) partition is referred to as 
+<code>/dev/mmcblk0p1</code> and the second (root) partition is referred to as 
+<code>/dev/mmcblk0p2</code>.  (Similarly, if accessing the SD card on a Linux PC using 
+a USB SD card-reader, the whole card <em>might</em> be <code>/dev/sdb</code>, the 
+first partition would then be <code>/dev/sdb1</code> and the second partition would 
+be <code>/dev/sdb2</code>. If you have multiple drives connected to your PC, these 
+names might change to <code>/dev/sdc</code>, <code>/dev/sdc1</code> &amp; 
+<code>/dev/sdc2</code>.)</p>
+
+<h4>Standalone booting</h4>
+
+<p>Unlike a traditional PC, a Raspberry Pi doesn't use any of the 
+<a href="http://en.wikipedia.org/wiki/Master_Boot_Record#System_bootstrapping">bootstrap 
+code</a> stored in the MBR. When the Raspberry Pi is powered on, it instead:</p>
+
+<ol>
+  <li>Loads and runs the <code>bootcode.bin</code> file from the first partition 
+      (<code>/dev/mmcblk0p1</code>) on the SD card, provided the partition has a FAT 
+      filesystem.</li>
+  <li><code>bootcode.bin</code> in turn then loads and runs <code>start.elf</code> (and 
+      <code>fixup.dat</code>) also from the first partition.</li>
+  <li><code>start.elf</code> then reads <code>config.txt</code> and sets up any GPU 
+      <a href="http://www.raspberrypi.org/documentation/configuration/config-txt.md" 
+      target="_b">configuration</a> requested.</li>
+  <li><code>start.elf</code> then reads <code>cmdline.txt</code> and loads and runs 
+      <code>kernel.img</code> (the Linux kernel) or <code>kernel7.img</code> (for 
+      Raspberry Pi 2 (B)), passing it the entire command-line that it read from 
+      <code>cmdline.txt</code>. (On most standalone Raspberry Pi images the root 
+      filesystem is on the second partition, so there'll be a 
+      <code>root=/dev/mmcblk0p2</code> option somewhere in 
+      <code>cmdline.txt</code>.)</li>
+  <li>The loaded Linux kernel then parses the command-line that it was given to 
+      determine where its root filesystem is stored (<code>/dev/mmcblk0p2</code> in 
+      most cases).</li>
+  <li>The Linux kernel then mounts the <code>/dev/mmcblk0p2</code> partition as the 
+      root (<code>/</code>) filesystem, and continues booting the rest of the system 
+      from there.</li>
+  <li>In most cases the <code>/etc/fstab</code> file (File System TABle) on the root 
+      filesystem will have a line asking for the <code>/dev/mmcblk0p1</code> partition 
+      to be mounted at <code>/boot</code>. This allows you to modify files on the first 
+      partition (<code>/dev/mmcblk0p1</code>) from within Linux. For example, you could 
+      edit <code>/boot/config.txt</code> and these modifications to 
+      <code>config.txt</code> would then get read by <code>start.elf</code> when you 
+      next rebooted the Pi.</li>
+</ol>
+
+<a name="NoobsPartition"></a><h3>NOOBS partitioning and booting explained 
+<a href="https://github.com/raspberrypi/noobs/wiki/NOOBS-partitioning-explained">(Source 
+Origin)</a></h3>
+      <div class="gh-header-meta">
+        Andrew Scheller edited this page <time>22 days ago</time> . 
+           6 revisions
+      </div>
+
+<p><strong>Note that</strong> this was written for NOOBS v1.3.x / v1.4.x and the 
+partition numbering has changed slightly in NOOBS v1.5.x</p>
+
+<p>The multiple partitions that NOOBS divides your SD card into (at <em>least</em> 5) 
+can be quite overwhelming and confusing. This page will try and explain how it all 
+works, and illustrate how NOOBS differs from the 'traditional' standalone images.</p>
+
+<h4>Non-NOOBS partitioning</h4>
+
+<p>Before you can understand how NOOBS partitioning works, you need to understand how 
+<a href="#StandAlonePartition" target="_b">standalone partitioning</a> works on the 
+Raspberry Pi, so go and read that page if you haven't already.</p>
+
+<h5>More partition naming theory</h5>
+
+<p>For <a href="https://en.wikipedia.org/wiki/Master_boot_record" target="_b">historical 
+reasons</a> (only 4 'slots' in the partition table), hard-drives and SD cards can only 
+have a maximum of 4 <strong>primary</strong> partitions. To work around that limitation, 
+one of those primary partitions can optionally be an <strong>extended</strong> 
+partition. An extended partition can contain an unlimited number of 
+<strong>logical</strong> partitions inside it. Under Linux, the primary partitions are 
+always numbered 1-4 (i.e. seen as <code>/dev/mmcblk0p1</code> - 
+<code>/dev/mmcblk0p4</code> on the Pi), and any logical partitions are always numbered 
+5 and above (i.e. seen as <code>/dev/mmcblk0p5</code> and above on the Pi).</p>
+
+<h4>NOOBS partitioning</h4>
+
+<p>When NOOBS is first copied to a FAT-format SD card, there's just a single partition 
+taking up all the space on the card, and this is where the files from the NOOBS zipfile 
+get written to. In tabular form it looks like:</p>
+
+<table>
+<thead>
+<tr>
+<th>Primary <br> partition</th><th>&nbsp;&nbsp;&nbsp;</th>
+<th>Logical <br> partition</th><th>&nbsp;&nbsp;&nbsp;</th>
+<th>Type</th><th>&nbsp;&nbsp;&nbsp;</th>
+<th>Label</th><th>&nbsp;&nbsp;&nbsp;</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td><th>&nbsp;&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;&nbsp;</th>
+<td>New Volume</td><th>&nbsp;&nbsp;&nbsp;</th>
+<td>NOOBS boot files &amp; initramfs, OS recovery images</td>
+</tr>
+</tbody>
+</table>
+
+<p>The <em>only</em> difference between NOOBS and NOOBS lite is that NOOBS lite doesn't 
+include any OS recovery images.</p>
+
+<h4>NOOBS bootup (low-level)</h4>
+
+<p>When the Raspberry Pi is powered on with a NOOBS card inserted, it:</p>
+
+<ol>
+  <li>Loads and runs <code>bootcode.bin</code> from the FAT-format 
+      <code>/dev/mmcblk0p1</code>, exactly as it does for standalone images. (This 
+      behaviour is built into the BCM2835's internal firmware on all Pis, and so can't 
+      be changed.)</li>
+  <li><code>bootcode.bin</code> then spots that <code>start.elf</code> is missing, so 
+      it loads and runs <code>recovery.elf</code> instead.</li>
+  <li>Running <code>recovery.elf</code> then switches the firmware into "NOOBS mode" - 
+      it uses <code>recovery.img</code> instead of <code>kernel.img</code>, 
+      <code>recovery.cmdline</code> instead of <code>cmdline.txt</code>, and it sets 
+      the root filesystem to <code>recovery.rfs</code>.</li>
+  <li><code>recovery.elf</code> then reads <code>recovery.cmdline</code> and loads and 
+      runs <code>recovery.img</code> (the Linux kernel), passing it the entire 
+      command-line that it read from <code>recovery.cmdline</code> and telling it to 
+      load <code>recovery.rfs</code> as the root filesystem (an initramfs containing 
+      various scripts and the NOOBS GUI application).</li>
+  <li>What happens next depends on which 'mode' NOOBS is operating in...</li>
+</ol>
+
+<h4>NOOBS bootup (setup mode)</h4>
+
+<PRE>
+# Edited from the output of "$ sudo fdisk -l " command.
+Device         Boot    Start      End  Sectors   Size Id Type
+/dev/mmcblk0p1          8192   242187   233996 114.3M  e W95 FAT16 (LBA)
+/dev/mmcblk0p2        245760 30253055 30007296  14.3G 85 Linux extended
+/dev/mmcblk0p3      30253056 30318591    65536    32M 83 Linux
+/dev/mmcblk0p5        253952   376831   122880    60M  c W95 FAT32 (LBA)
+/dev/mmcblk0p6        385024 30253055 29868032  14.2G 83 Linux
+</PRE>
+
+<p>If <code>runinstaller</code> is present in the kernel command-line, then this must 
+be the first time NOOBS has been booted, so it enters 'setup mode'. It then:</p>
+
+<ol>
+  <li>Automatically shrinks the first (and only) partition <code>/dev/mmcblk0p1</code>,
+      making it just large enough to hold whatever files it contains, and labels it as 
+      'RECOVERY'. For NOOBS lite this partition will have a size of approximately XMB; 
+      for NOOBS this partition will have a size of approximately XGB.</li>
+  <li>Creates a new large empty extended partition <code>/dev/mmcblk0p2</code>, using 
+      up the vast majority of the remaining card space.</li>
+  <li>Creates a new small (32MB) ext4-format partition <code>/dev/mmcblk0p3</code>
+      at the end of the card, and labels it as 'SETTINGS'. This is used to store files 
+      telling NOOBS which OSes are installed (and what partitions they're installed on), 
+      which OS should be loaded by default, which language/keyboard NOOBS should use, 
+      etc.
+
+<PRE>
+$ sudo mount /dev/mmcblk0p3 /mnt/tmp
+[sudo] password for hsu: 
+raspberrypi:~$ ls -l /mnt/tmp
+total 16
+drwxr-xr-x 4 root root  1024 Jan  1  1970 cache
+-rw-r--r-- 1 root root   301 Jan  1  1970 installed_os.json
+drwx------ 2 root root 12288 Jan  1  1970 lost+found
+-rw-r--r-- 1 root root    86 Jan  1  1970 noobs.conf
+drwxr-xr-x 3 root root  1024 Jan  1  1970 os
+raspberrypi:~$ more /mnt/tmp/noobs.conf
+[General]
+default_partition_to_boot=800
+display_mode=0
+keyboard_layout=us
+language=us
+raspberrypi:~$ more /mnt/tmp/installed_os.json
+[
+ {
+  "description" : "A community-created port of Debian jessie, optimised for the Raspberry Pi",
+  "folder" : "/settings/os/Raspbian",
+  "icon" : "/settings/os/Raspbian/icon.png",
+  "name" : "Raspbian",
+  "partitions" : [
+"/dev/mmcblk0p5",
+"/dev/mmcblk0p6"
+  ],
+  "release_date" : "2015-09-25"
+ }
+]
+$ ls -l /mnt/tmp/os
+total 1
+drwxr-xr-x 3 root root 1024 Jan  1  1970 Raspbian
+raspberrypi:~$ ls -l /mnt/tmp/os/Raspbian
+total 6
+-rw-r--r-- 1 root root 1662 Jan  1  1970 icon.png
+-rw-r--r-- 1 root root  385 Jan  1  1970 os.json
+-rw-r--r-- 1 root root  420 Jan  1  1970 partition_setup.sh
+-rw-r--r-- 1 root root  526 Jan  1  1970 partitions.json
+drwxr-xr-x 2 hsu  hsu  1024 Jan  1  1970 slides_vga
+<a name="partitions.json"></a>$ cat /mnt/tmp/os/Raspbian/partitions.json
+{
+ "partitions" : [
+  {
+   "filesystem_type" : "FAT",
+   "label" : "boot",
+   "partition_size_nominal" : 60,
+   "tarball" : "http://downloads.raspberrypi.org/raspbian/boot.tar.xz",
+   "uncompressed_tarball_size" : 21,
+   "want_maximised" : false
+  },
+  {
+   "filesystem_type" : "ext4",
+   "label" : "root",
+   "mkfs_options" : "-O ^huge_file",
+   "partition_size_nominal" : 3600,
+   "tarball" : "http://downloads.raspberrypi.org/raspbian/root.tar.xz",
+   "uncompressed_tarball_size" : 2939,
+   "want_maximised" : true
+  }
+ ]
+}
+$ sudo umount /mnt/tmp
+</PRE></li>
+
+  <li>Removes <code>runinstaller</code> from <code>recovery.cmdline</code> to prevent 
+      this process from being triggered again.</li>
+</ol>
+
+<p>The settings are stored on a small auxiliary partition rather than the same 
+<code>/dev/mmcblk0p1</code> partition as everything else. This is because of the NOOBS 
+'prime directive' - "NOOBS never writes to the first FAT partition. FAT partition the 
+first, NOOBS no writee...". By never writing anything to the first partition (after the 
+'setup mode' has finished), this ensures that the first partition can never become 
+corrupted; and so NOOBS 'recovery mode' will <strong>always</strong> be accessible (to 
+allow OSes to be re-installed), no matter what happens to the rest of the SD card.</p>
+
+<p>This then changes the partitions to:</p>
+
+<table>
+<thead>
+<tr>
+<th>Primary<br> partition</th><th>&nbsp;&nbsp;</th>
+<th>Logical<br> partition</th><th>&nbsp;&nbsp;</th>
+<th>Type</th><th>&nbsp;&nbsp;</th>
+<th>Label</th><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;</th>
+<td>RECOVERY</td><th>&nbsp;&nbsp;</th>
+<td>NOOBS boot files &amp; initramfs,<br> OS recovery images</td>
+</tr>
+<tr>
+<td>2</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>extended</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>Any logical partitions</td>
+</tr>
+<tr>
+<td>3</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>ext4</td><th>&nbsp;&nbsp;</th>
+<td>SETTINGS</td><th>&nbsp;&nbsp;</th>
+<td>NOOBS settings</td>
+</tr>
+</tbody>
+</table>
+
+<h4>NOOBS bootup (recovery mode)</h4>
+
+<p>If NOOBS detects that no Operating Systems have been installed yet, or if the user 
+is pressing the Shift key (or any of the other 
+<a href="https://github.com/raspberrypi/noobs#troubleshooting">trigger actions</a>
+ are in effect), NOOBS enters 'recovery mode'. This displays the OS-installation menu, 
+allowing the user to choose which OS(es) to install. Refer to the 
+<a href="https://github.com/raspberrypi/noobs/blob/master/README.md">normal 
+documentation</a> for more details a about this menu.</p>
+
+<p><img src="http://downloads.raspberrypi.org/NOOBS/screenshots/os_installed.png" 
+width="1000" alt="Install menu"></p>
+
+<p>As you may have guessed, the "Available space" displayed here is the size of the 
+extended <code>/dev/mmcblk0p2</code> partition, which is where all the OSes get 
+installed to.</p>
+
+<h4>NOOBS datafiles</h4>
+
+<p>In contrast to the standalone images described earlier (which contain raw 
+partitions), NOOBS instead uses (compressed) 
+<a href="https://en.wikipedia.org/wiki/Tar_%28computing%29">tarballs</a>
+ of the partition contents, along with a bunch of settings files. NOOBS is responsible 
+for actually creating the partitions on the SD card itself, which means the partitions 
+are always created at the "correct" size in the first place, there's no need to resize 
+them later. And unlike the low-level raw partitions, the tarballs don't store unused 
+disk blocks.</p>
+
+<h4>NOOBS OS installation</h4>
+
+<p>For the first example, let's assume that the user is installing just Raspbian. The 
+partitions.json (which can be viewed online <a href="#partitions.json" 
+target="_b">here</a>) then specifies which partitions should be created, how big they 
+should be, and which filesystems they should use. In this example it would create a 
+60MB FAT partition (<code>/dev/mmcblk0p5</code>), format it, and extract the contents 
+of <code>boot.tar.xz</code> to it. As the root partition has <code>want_maximised: 
+true</code> it would then create an ext4 partition (<code>/dev/mmcblk0p6</code>) 
+filling up the <em>entirety</em> of the rest of the extended partition, format it, 
+and extract the contents of <code>root.tar.xz</code> to it. This gives us the full 
+partition layout shown in the table earlier. It then runs the 
+<code>partition_setup.sh</code> script which mounts these new partitions, and edits 
+files (typically just <code>cmdline.txt</code> on the boot partition and 
+<code>/etc/fstab</code> on the root partition) to tell Raspbian which partitions it 
+got installed to. This allows Raspbian to adjust itself to being stored on 
+<code>/dev/mmcblk0p5</code> and <code>/dev/mmcblk0p6</code> instead of 
+<code>/dev/mmcblk0p1</code> and <code>/dev/mmcblk0p2</code>. And finally it updates 
+the settings partition with details of the OS we just installed.</p>
+
+<table>
+<thead>
+<tr>
+<th>Primary<br> partition</th><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Logical<br> partition</th><th>&nbsp;&nbsp;</th>
+<th>Type</th><th>&nbsp;&nbsp;</th>
+<th>Label</th><th>&nbsp;&nbsp;</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;</th>
+<td>RECOVERY</td><th>&nbsp;&nbsp;</th>
+<td>NOOBS boot files &amp; initramfs, OS recovery images</td>
+</tr>
+<tr>
+<td>2</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>extended</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>Any logical partitions</td>
+</tr>
+<tr>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>5</td><th>&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;</th>
+<td>boot</td><th>&nbsp;&nbsp;</th>
+<td>Raspbian boot files</td>
+</tr>
+<tr>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>6</td><th>&nbsp;&nbsp;</th>
+<td>ext4</td><th>&nbsp;&nbsp;</th>
+<td>root</td><th>&nbsp;&nbsp;</th>
+<td>Raspbian root filesystem</td>
+</tr>
+<tr>
+<td>3</td><th>&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;</th>
+<td>ext4</td><th>&nbsp;&nbsp;</th>
+<td>SETTINGS</td><th>&nbsp;&nbsp;</th>
+<td>NOOBS settings</td>
+</tr>
+</tbody>
+</table>
+
+<p>If instead we were installing Raspbian <em>and</em> ArchLinux then we might end up 
+with ArchLinux's boot partition as <code>/dev/mmcblk0p5</code>, ArchLinux's root 
+partition as <code>/dev/mmcblk0p6</code>, Raspbian's boot partition as 
+<code>/dev/mmcblk0p7</code> and Raspbian's root partition as 
+<code>/dev/mmcblk0p8</code>. As both Raspbian's and ArchLinux's 
+<code>partitions.json</code> file specify one of their partitions as 
+<code>want_maximised: true</code>
+ then we'd end up with two small boot partitions and two large-as-possible root 
+partitions. NOOBS never 'wastes' any space on an SD card.</p>
+
+<table>
+<thead>
+<tr>
+<th width="10">Primary<br>  partition</th><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Logical<br>  partition</th><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Type</th><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Label</th><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>RECOVERY</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>NOOBS boot files &amp; initramfs, OS recovery images</td>
+</tr>
+<tr>
+<td>2</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>extended</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>Any logical partitions</td>
+</tr>
+<tr>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>5</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>boot</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>ArchLinux boot files</td>
+</tr>
+<tr>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>6</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>ext4</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>root</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>ArchLinux root filesystem</td>
+</tr>
+<tr>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>7</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>FAT</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>boot1</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>Raspbian boot files</td>
+</tr>
+<tr>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>8</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>ext4</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>root1</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>Raspbian root filesystem</td>
+</tr>
+<tr>
+<td>3</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td></td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>ext4</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>SETTINGS</td><th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<td>NOOBS settings</td>
+</tr>
+</tbody>
+</table>
+
+<PRE>
+$ sudo mount /dev/mmcblk0p1 /mnt/tmp
+$ ls -l /mnt/tmp
+total 24556
+-rwxr-xr-x 1 root root    17856 Feb 19  2015 bootcode.bin
+-rwxr-xr-x 1 root root      303 Feb 19  2015 BUILD-DATA
+drwxr-xr-x 3 root root    32768 Feb 17  2015 defaults
+-rwxr-xr-x 1 root root     2250 Feb 19  2015 INSTRUCTIONS-README.txt
+drwxr-xr-x 2 root root    32768 Feb 17  2015 os
+-rwxr-xr-x 1 root root  2148120 Feb 19  2015 recovery7.img
+-rwxr-xr-x 1 root root       40 Jan  1  1980 recovery.cmdline
+-rwxr-xr-x 1 root root   554520 Feb 19  2015 recovery.elf
+-rwxr-xr-x 1 root root        0 Feb 19  2015 RECOVERY_FILES_DO_NOT_EDIT
+-rwxr-xr-x 1 root root  2100464 Feb 19  2015 recovery.img
+-rwxr-xr-x 1 root root 20238331 Feb 19  2015 recovery.rfs
+-rwxr-xr-x 1 root root     9728 Feb 19  2015 riscos-boot.bin
+</PRE>
+
+<h4>NOOBS bootup ('boot mode')</h4>
+
+<p>If the user isn't pressing the Shift key, and (using the information stored on the 
+settings partition) NOOBS detects that only one bootable Operating System has been 
+installed, it automatically boots that Operating System. It does this by reading the 
+settings partition to determine the boot partition for that OS, and then instructs the 
+firmware to "soft-reboot" using the OS's boot partition. This then 'reboots' the 
+firmware and loads start.elf from the specified partition (typically /dev/mmcblk0p5 if 
+only one OS is installed) and then proceeds the same as the standalone boot described 
+at the very top of this page - start.elf loads kernel.img and reads cmdline.txt, and 
+then kernel.img uses the command-line that was passed to it to determine which partition
+the root filesystem is stored on (typically /dev/mmcblk0p6 if only one OS is installed), 
+and loads the rest of the system from there.</p>
+
+<p>If instead multiple Operating Systems have been installed, NOOBS then displays the 
+OS-boot menu, allowing the user to choose which OS(es) to boot.
+<img src="http://downloads.raspberrypi.org/NOOBS/screenshots/boot_select.png"  
+width="1000" alt="Boot menu"> Once the user has selected an option (or if the menu 
+times out and defaults to the last-booted option) then the boot proceeds as described 
+immediately above, with NOOBS using the information on the settings partition to 
+determine which partition to "soft-reboot" as the boot partition.</p>
+
+<p>If using the autoboot.txt feature described 
+<a href="https://github.com/raspberrypi/noobs#how-to-bypass-the-recovery-splashscreen-and-boot-directly-into-a-fixed-partition">here</a> 
+then bootcode.bin immediately "soft-reboots" to the specified partition at power-on, and 
+skips loading NOOBS entirely.</p>
+
+<h5>Booting RISC OS within NOOBS</h5>
+
+<p>The one small caveat to the above is that RISC OS doesn't understand partition 
+tables, and so it has to be installed to a specific partition at a specific offset. 
+This is what the riscos-boot.bin file is for, and why the RISC OS 'root' partition is 
+still stored as a raw partition and not as a tarball. However NOOBS handles all these 
+details for you automatically, and it's still possible to install other OSes alongside 
+RISC OS.</p>
+

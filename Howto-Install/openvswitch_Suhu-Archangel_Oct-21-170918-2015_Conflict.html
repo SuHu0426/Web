@@ -1,0 +1,789 @@
+<html>
+  <head>
+    <title>Open vSwitch</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+</head>
+  <body>
+<h1><a href="http://openvswitch.org/">Open vSwitch</a></h1>
+
+<h2>Install OVS git version(2.4.90-1 2015-10)</h2>
+<a href="INSTALL.Debian.md">INSTALL.Debian.md</a>
+<pre class="mdol">
+<code>sudo aptitude install build-essential module-assistant git</code>
+<code>sudo apt-get build-dep openvswitch</code>
+<code>sudo aptitude install dkms ipsec-tools racoon uuid-runtime python-twisted-web</code>
+<code>git clone https://github.com/openvswitch/ovs.git</code>
+<code>cd ovs</code>
+<code>DEB_BUILD_OPTIONS='parallel=4' fakeroot debian/rules binary</code>
+<code>ls -l ../*.deb</code>
+<code class="out">-rw-r--r-- 1 cssu cssu  628336 10月  5 19:54 ../openvswitch-common_2.4.90-1_amd64.deb
+-rw-r--r-- 1 cssu cssu 2943956 10月  5 19:55 ../openvswitch-datapath-dkms_2.4.90-1_all.deb
+-rw-r--r-- 1 cssu cssu 4394030 10月  5 19:54 ../openvswitch-datapath-source_2.4.90-1_all.deb
+-rw-r--r-- 1 cssu cssu 5675708 10月  5 19:55 ../openvswitch-dbg_2.4.90-1_amd64.deb
+-rw-r--r-- 1 cssu cssu   38666 10月  5 19:54 ../openvswitch-ipsec_2.4.90-1_amd64.deb
+-rw-r--r-- 1 cssu cssu   32520 10月  5 19:54 ../openvswitch-pki_2.4.90-1_all.deb
+-rw-r--r-- 1 cssu cssu 1120278 10月  5 19:54 ../openvswitch-switch_2.4.90-1_amd64.deb
+-rw-r--r-- 1 cssu cssu   47896 10月  5 19:54 ../openvswitch-test_2.4.90-1_all.deb
+-rw-r--r-- 1 cssu cssu  406904 10月  5 19:54 ../openvswitch-testcontroller_2.4.90-1_amd64.deb
+-rw-r--r-- 1 cssu cssu  196494 10月  5 19:54 ../openvswitch-vtep_2.4.90-1_amd64.deb
+-rw-r--r-- 1 cssu cssu   83260 10月  5 19:54 ../python-openvswitch_2.4.90-1_all.deb
+</code>
+<code>cd ..</code>
+<code>sudo dpkg -i *.deb</code>
+</pre>
+
+<h2>OVS SystemD init script and unit file(2.4.90-1 2015-10)</h2>
+<p>For example:
+<ol>
+  <li>the script: <code>/usr/local/bin/ovs</code>
+<pre>
+<code class="out">#! /bin/bash
+
+ifWAN=eth1
+ipWAN=123.123.15.180/26
+gwWAN=123.123.15.190
+ifLAN=eth0
+ipLAN=192.168.180.3/24
+
+start() {
+    ovs-vsctl add-br brWAN
+    ovs-vsctl add-port brWAN ${ifWAN}
+    ifconfig ${ifWAN} 0
+    ifconfig brWAN ${ipWAN}
+    route add default gw ${gwWAN}
+
+    ovs-vsctl add-br brLAN
+    ovs-vsctl add-port brLAN ${ifLAN}
+    ifconfig ${ifLAN} 0
+    ifconfig brLAN ${ipLAN}
+}
+
+stop() {
+    ovs-vsctl del-port brWAN ${ifWAN}
+    ovs-vsctl del-br brWAN
+    ifconfig  ${ifWAN} ${ipWAN}
+    route add default gw ${gwWAN}
+
+    ovs-vsctl del-port brLAN ${ifLAN}
+    ovs-vsctl del-br brLAN
+    ifconfig ${ifLAN} ${ipLAN}
+}
+
+case $1 in
+    start|stop)
+        "$1" ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1 ;;
+esac
+</code>
+</pre>
+  <li>the unit file: <code>/etc/systemd/system/ovs.service</code>
+<pre>
+<code class="out">[Unit]
+Description=Open vSwitch autostart daemon
+After=syslog.target network.target nss-lookup.target openvswitch-switch.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ovs start
+ExecStop=/usr/local/bin/ovs stop
+Restart=on-failure
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+</code>
+</pre>
+</ol>
+<pre class="mdol">
+<code>sudo systemctl enable ovs.service</code>
+<code class="out">Created symlink from /etc/systemd/system/multi-user.target.wants/ovs.service to /etc/systemd/system/ovs.service.
+</code>
+<code>sudo service ovs start</code>
+<code>sudo service ovs stop</code>
+</pre>
+</p>
+
+<h2>My ovs scripts(2015-04)</h2>
+<pre class="mdol">
+<code>cat /usr/local/bin/ovs</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+<span style="color:#8a8a8a">### BEGIN INIT INFO</span>
+<span style="color:#8a8a8a"># Provides:          SuHuTAKO</span>
+<span style="color:#8a8a8a"># Required-Start:    $all</span>
+<span style="color:#8a8a8a"># Required-Stop:</span>
+<span style="color:#8a8a8a"># Should-Start:</span>
+<span style="color:#8a8a8a"># Should-Stop:</span>
+<span style="color:#8a8a8a"># Default-Start:     2 3 4 5</span>
+<span style="color:#8a8a8a"># Default-Stop:      0 1 6</span>
+<span style="color:#8a8a8a"># Short-Description: Example initscript</span>
+<span style="color:#8a8a8a"># Description:       This file should be used to construct scripts to be</span>
+<span style="color:#8a8a8a">#                    placed in /etc/init.d.</span>
+<span style="color:#8a8a8a">### END INIT INFO</span>
+<span style="color:#8a8a8a"># Some things that run always</span>
+<span style="color:#34e3e3">touch</span> <span style="color:#efefef">/</span>var<span style="color:#efefef">/</span>lock<span style="color:#efefef">/</span>ovs
+ifLAN<span style="color:#efefef">=</span>eth0
+ifWAN<span style="color:#efefef">=</span>eth1
+LAN<span style="color:#efefef">=</span><span style="color:#fce94f">192.168.180.3</span>
+LANGW<span style="color:#efefef">=</span><span style="color:#fce94f">192.168.180.254</span>
+<span style="color:#8a8a8a">#LAN0=192.168.179.3</span>
+<span style="color:#8a8a8a">#LAN0GW=192.168.179.254</span>
+WAN<span style="color:#efefef">=</span><span style="color:#fce94f">${YourPublicIP}</span>
+WANGW<span style="color:#efefef">=</span><span style="color:#fce94f">${YourGatewayIP}</span>
+start<span style="color:#efefef">() {</span>
+    iptables <span style="color:#efefef">--</span>table nat <span style="color:#efefef">-</span>D POSTROUTING <span style="color:#efefef">--</span>out-interface <span style="color:#efefef">${ifWAN}</span> <span style="color:#efefef">-</span>j MASQUERADE
+    iptables <span style="color:#efefef">--</span>table nat <span style="color:#efefef">-</span>A POSTROUTING <span style="color:#efefef">--</span>out-interface brWAN <span style="color:#efefef">-</span>j MASQUERADE
+    sysctl net.ipv4.ip_forward<span style="color:#efefef">=</span><span style="color:#fce94f">1</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:2 down</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:1 down</span>
+    ifconfig <span style="color:#efefef">${ifLAN}</span><span style="color:#efefef">:</span><span style="color:#fce94f">0</span> down
+    ovs-vsctl add-br brLAN
+    ovs-vsctl add-port brLAN <span style="color:#efefef">${ifLAN}</span>
+    ovs-vsctl add-br brWAN
+    ovs-vsctl add-port brWAN <span style="color:#efefef">${ifWAN}</span>
+    ifconfig <span style="color:#efefef">${ifLAN}</span> <span style="color:#fce94f">0.0.0.0</span>
+    ifconfig <span style="color:#efefef">${ifWAN}</span> <span style="color:#fce94f">0.0.0.0</span>
+    <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">2</span>
+    ifconfig brLAN <span style="color:#efefef">${LAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">24</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:0 ${LAN0}/24</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:1 ${LANGW}/24</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:2 ${LAN0GW}/24</span>
+    ifconfig brWAN <span style="color:#efefef">${WAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">26</span>
+    route add default gw <span style="color:#efefef">${WANGW}</span>
+    route add <span style="color:#efefef">-</span>net <span style="color:#fce94f">192.168.180.0</span><span style="color:#efefef">/</span><span style="color:#fce94f">24</span> gw <span style="color:#efefef">${LANGW}</span>
+<span style="color:#8a8a8a">#    route add -net 192.168.179.0/24 gw ${LAN0GW}</span>
+<span style="color:#efefef">}</span>
+stop<span style="color:#efefef">() {</span>
+<span style="color:#8a8a8a">#    ifconfig brLAN:0 down</span>
+    ovs-vsctl del-port brLAN <span style="color:#efefef">${ifLAN}</span>
+    ovs-vsctl del-br brLAN
+    ovs-vsctl del-port brWAN <span style="color:#efefef">${ifWAN}</span>
+    ovs-vsctl del-br brWAN
+    ifconfig <span style="color:#efefef">${ifLAN} ${LAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">24</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:0 ${LAN0}/24</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:1 ${LANGW}/24</span>
+<span style="color:#8a8a8a">#    ifconfig ${ifLAN}:2 ${LAN0GW}/24</span>
+    ifconfig <span style="color:#efefef">${ifWAN} ${WAN}</span><span style="color:#efefef">/</span><span style="color:#fce94f">26</span>
+    route add default gw <span style="color:#efefef">${WANGW}</span>
+    sysctl net.ipv4.ip_forward<span style="color:#efefef">=</span><span style="color:#fce94f">1</span>
+    iptables <span style="color:#efefef">--</span>table nat <span style="color:#efefef">-</span>A POSTROUTING <span style="color:#efefef">--</span>out-interface <span style="color:#efefef">${ifWAN}</span> <span style="color:#efefef">-</span>j MASQUERADE
+<span style="color:#efefef">}</span>
+
+<span style="color:#8a8a8a"># Carry out specific functions when asked to by the system</span>
+<span style="color:#ffffff; font-weight:bold">case</span> <span style="color:#fce94f">&quot;</span><span style="color:#69c8db">$1</span><span style="color:#fce94f">&quot;</span> <span style="color:#ffffff; font-weight:bold">in</span>
+    start<span style="color:#efefef">)</span>
+        <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Starting script ovs&quot;</span>
+        start
+        <span style="color:#efefef">;;</span>
+    stop<span style="color:#efefef">)</span>
+        <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Stopping script ovs&quot;</span>
+        stop
+        <span style="color:#efefef">;;</span>
+    restart<span style="color:#efefef">)</span>
+        stop
+        <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">2</span>
+        start
+        <span style="color:#efefef">;;</span>
+    <span style="color:#efefef">*)</span>
+        <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Usage:</span> <span style="color:#69c8db">$0</span> <span style="color:#fce94f">{start|stop|restart}&quot;</span>
+        <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#efefef">;;</span>
+<span style="color:#ffffff; font-weight:bold">esac</span>
+
+<span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">0</span>
+</code>   
+<code>cat start-NAT0-AsDaemon</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+MEM<span style="color:#efefef">=</span><span style="color:#fce94f">8192</span>M
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm script</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ ! -</span>d <span style="color:#efefef">/</span>proc<span style="color:#efefef">/</span>sys<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>ipv4<span style="color:#efefef">/</span>conf<span style="color:#efefef">/</span>brLAN <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+   <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Network bridge brLAN does not exist, start it first.&quot;</span>
+   <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">2</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+sudo <span style="color:#34e3e3">chmod</span> <span style="color:#fce94f">666</span> <span style="color:#efefef">/</span>dev<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>tun
+sudo tunctl <span style="color:#efefef">-</span>u <span style="color:#fce94f">`whoami`</span> <span style="color:#efefef">-</span>t tapNAT0
+sudo <span style="color:#efefef">/</span>sbin<span style="color:#efefef">/</span>ifconfig tapNAT0 up
+sudo ovs-vsctl add-port brLAN tapNAT0
+mkdir <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Starting VM: NAT0..., mem=</span><span style="color:#69c8db">${MEM}</span><span style="color:#fce94f">&quot;</span>
+screen <span style="color:#efefef">-</span>S NAT0 <span style="color:#efefef">-</span>d <span style="color:#efefef">-</span>m kvm <span style="color:#efefef">-</span>name NAT0 <span style="color:#efefef">-</span>localtime <span style="color:#efefef">-</span>curses \
+    <span style="color:#efefef">-</span>m <span style="color:#efefef">${MEM}</span> \
+    <span style="color:#efefef">-</span>net nic<span style="color:#efefef">,</span>vlan<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>netdev<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span>macaddr<span style="color:#efefef">=</span><span style="color:#fce94f">50</span><span style="color:#efefef">:</span>e5<span style="color:#efefef">:</span><span style="color:#fce94f">49</span><span style="color:#efefef">:</span><span style="color:#fce94f">7</span>f<span style="color:#efefef">:</span><span style="color:#fce94f">25</span><span style="color:#efefef">:</span><span style="color:#fce94f">92</span><span style="color:#efefef">,</span>model<span style="color:#efefef">=</span>virtio \
+    <span style="color:#efefef">-</span>netdev tap<span style="color:#efefef">,</span>id<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span>ifname<span style="color:#efefef">=</span>tapNAT0<span style="color:#efefef">,</span><span style="color:#34e3e3">script</span><span style="color:#efefef">=</span>no \
+    <span style="color:#efefef">-</span>monitor unix<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock<span style="color:#efefef">,</span>server<span style="color:#efefef">,</span>nowait \
+    <span style="color:#efefef">-</span>drive index<span style="color:#efefef">=</span><span style="color:#fce94f">0</span><span style="color:#efefef">,</span>media<span style="color:#efefef">=</span>disk<span style="color:#efefef">,</span><span style="color:#ffffff; font-weight:bold">if</span><span style="color:#efefef">=</span>virtio<span style="color:#efefef">,</span><span style="color:#34e3e3">file</span><span style="color:#efefef">=/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>img<span style="color:#efefef">/</span>NAT0.qcow2 <span style="color:#efefef">&amp;</span>
+</code>
+<code>cat stop-NAT0</code>
+<code class="out"><span style="color:#8a8a8a">#! /bin/bash</span>
+<span style="color:#8a8a8a"># Don't Edit, File automatically generated by Config-Kvm script</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> <span style="color:#efefef">$EUID</span> <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+   <span style="color:#ffffff; font-weight:bold">then</span> sudo <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Super User passwd, please:&quot;</span>
+        <span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>ne <span style="color:#fce94f">0</span> <span style="color:#efefef">]</span>
+          <span style="color:#ffffff; font-weight:bold">then</span>  <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Sorry, need su privilege!&quot;</span>
+                <span style="color:#8ae234; font-weight:bold">exit</span> <span style="color:#fce94f">1</span>
+        <span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ -</span>S <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;system_powerdown&quot;</span> | socat <span style="color:#efefef">-</span> unix-connect<span style="color:#efefef">:/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT<span style="color:#efefef">/</span>MonSock
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Please wait 10 seconds.&quot;</span>
+    <span style="color:#34e3e3">sleep</span> <span style="color:#fce94f">10</span>
+<span style="color:#ffffff; font-weight:bold">else</span>
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Socket has been removed! Shutdown by ssh or resotre Lan only.&quot;</span>
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#34e3e3">ping</span> <span style="color:#efefef">-</span>c <span style="color:#fce94f">3 192.168.180.101</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[</span> $? <span style="color:#efefef">-</span>eq <span style="color:#fce94f">0</span> <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span> 
+    <span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;NAT0 still alive, shut it down.  Enter passwd twice!&quot;</span>
+    <span style="color:#34e3e3">ssh</span> <span style="color:#efefef">-</span>t jssu&#64;<span style="color:#fce94f">192.168.180.101</span> <span style="color:#fce94f">'sudo init 0'</span>
+<span style="color:#ffffff; font-weight:bold">else</span>
+    <span style="color:#34e3e3">rm</span> <span style="color:#efefef">-</span>rf <span style="color:#efefef">/</span>src3<span style="color:#efefef">/</span>KVM<span style="color:#efefef">/</span>network-NAT
+<span style="color:#ffffff; font-weight:bold">fi</span>
+
+<span style="color:#8ae234; font-weight:bold">echo</span> <span style="color:#fce94f">&quot;Restore lan...&quot;</span>
+<span style="color:#ffffff; font-weight:bold">if</span> <span style="color:#efefef">[ -</span>d <span style="color:#efefef">/</span>proc<span style="color:#efefef">/</span>sys<span style="color:#efefef">/</span>net<span style="color:#efefef">/</span>ipv4<span style="color:#efefef">/</span>conf<span style="color:#efefef">/</span>tapNAT0 <span style="color:#efefef">];</span> <span style="color:#ffffff; font-weight:bold">then</span> 
+    sudo ovs-vsctl del-port brLAN tapNAT0
+    sudo <span style="color:#efefef">/</span>sbin<span style="color:#efefef">/</span>ifconfig tapNAT0 down
+    sudo tunctl <span style="color:#efefef">-</span>d tapNAT0
+<span style="color:#ffffff; font-weight:bold">fi</span>
+</code>
+</pre>
+  
+  <h2>Install from Debian mirror</h2>
+  <pre class="dol">sudo aptitude install openvswitch-common openvswitch-ipsec openvswitch-pki openvswitch-switch openvswitch-vtep python-openvswitch
+</pre>
+
+  <h2>Install dependency softwares</h2>
+<p>Add source mirror site to sources.list</p>
+<pre class="mdol">$ more /etc/apt/sources.list
+<code class="out">deb http://mirror.cs.nchu.edu.tw/debian/ wheezy main contrib
+deb http://mirror.cs.nchu.edu.tw/debian/ jessie main contrib
+deb-src http://mirror.cs.nchu.edu.tw/debian/ wheezy main contrib
+deb-src http://mirror.cs.nchu.edu.tw/debian/ jessie main contrib
+</code>$ sudo aptitude update; sudo aptitude safe-upgrade
+$ sudo aptitude install build-essential module-assistant
+$ sudo apt-get build-dep openvswitch
+$ sudo aptitude install graphviz libtool</pre>
+<hr>
+
+  <h2>Install stable version</h2>
+Download from official website <a href="http://openvswitch.org/download/" target="_blank">[link]</a>
+<pre class="mdol">$ tar zxvf openvswitch-*.tar.gz
+$ cd openvswitch-*
+$ fakeroot debian/rules binary
+$ cd ..
+$ sudo aptitude install dkms ipsec-tools racoon uuid-runtime python-twisted-web
+$ sudo dpkg -i *.deb
+$ rm -rf *.deb openvswitch-*
+</pre>
+  <h2>Install git version</h2>
+  <h3>Reference <a href="http://www.pixelchaos.net/2012/11/16/linux-kvm-openvswitch-on-debian-wheezy" target="_blank">Wheezy source</a> (2013)</h3>
+
+<pre class="mdol">$ sudo aptitude install git
+$ git clone git://git.openvswitch.org/openvswitch
+$ cd openvswitch
+$ dpkg-buildpackage -b
+$ echo $?
+$ cd ..
+$ sudo aptitude install racoon ipsec-tools python-twisted-web dkms uuid-runtime
+</pre>
+Kernel version 3.11 or newer versions:
+<pre class="mdol">$ sudo dpkg -i openvswitch-switch_*_amd64.deb openvswitch-common_*_amd64.deb \
+        openvswitch-datapath-source_*.deb openvswitch-datapath-dkms_*_all.deb \
+        openvswitch-test_*_all.deb openvswitch-pki_*_all.deb \
+        openvswitch-ipsec_*_amd64.deb python-openvswitch_*_all.deb
+$ lsmod | grep openvswitch
+<code class="out">openvswitch            63837  0
+vxlan                  30915  1 openvswitch
+gre                    12957  1 openvswitch
+libcrc32c              12426  1 openvswitch
+</code></pre>
+Kernel version below 3.11:
+<pre class="mdol">$ sudo dpkg -i openvswitch-switch_*_amd64.deb openvswitch-common_*_amd64.deb \
+        openvswitch-datapath-source_*.deb openvswitch-datapath-dkms_*_all.deb \
+        openvswitch-test_*_all.deb ovsdbmonitor_*_all.deb \
+        openvswitch-ipsec_*_amd64.deb python-openvswitch_*_all.deb \
+        openvswitch-controller_*_amd64.deb openvswitch-pki_*_all.deb
+$ sudo module-assistant auto-install openvswitch-datapath
+$ lsmod | grep openvswitch
+<code class="out">openvswitch            62681  0
+gre                    12531  1 openvswitch
+</code></pre>
+    <h3>VXLAN and Gre tunnel</h3>
+<pre class="mdol">
+# br0 is internel bridge
+# On host1
+$ sudo ovs-vsctl add-port br0 vx0 -- set interface vx0 type=vxlan options:remote_ip=${host2IP}
+# On host2
+$ sudo ovs-vsctl add-port br0 vx0 -- set interface vx0 type=vxlan options:remote_ip=${host1IP}
+# Remove
+$ sudo ovs-vsctl del-port vx0
+</pre>
+<pre class="mdol">
+# On host1
+$ sudo ovs-vsctl add-port br0 gre0 -- set interface gre0 type=vxlan options:remote_ip=${host2IP}
+# On host2
+$ sudo ovs-vsctl add-port br0 gre0 -- set interface gre0 type=vxlan options:remote_ip=${host1IP}
+# Remove
+$ sudo ovs-vsctl del-port gre0
+</pre>
+    <h3>POX Controller</h3>
+<pre class="mdol">$ git clone http://github.com/noxrepo/pox
+$ cd pox
+$ more README
+<code class="out">POX is a network controller written in Python.
+POX officially requires Python 2.7 (though much of it will work fine
+fine with Python 2.6), and should run under Linux, Mac OS, and Windows.
+You can place a pypy distribution alongside pox.py (in a directory
+named "pypy"), and POX will run with pypy (this can be a significant
+performance boost!).
+POX currently communicates with OpenFlow 1.0 switches and includes
+special support for Open vSwitch.
+pox.py boots up POX. It takes a list of module names on the command line,
+locates the modules, calls their launch() function (if it exists), and
+then transitions to the "up" state.
+Modules are looked for everywhere that Python normally looks, plus the
+"pox" and "ext" directories.  Thus, you can do the following:
+./pox.py forwarding.l2_learning
+You can pass options to the modules by specifying options after the module
+name.  These are passed to the module's launch() funcion.  For example,
+to set the address or port of the controller, invoke as follows:
+./pox.py openflow.of_01 --address=10.1.1.1 --port=6634
+pox.py also supports a few command line options of its own which should
+be given first:
+--verbose      print stack traces for initialization exceptions
+--no-openflow  don't start the openflow module automatically
+</code>$ cd /usr/local/bin
+$ sudo ln -s /src3/OpenvSwitch/pox/pox.py
+</pre>
+    
+    <h3>FlowVisor</h3>
+<pre class="mdol">$ git clone git://github.com/OPENNETWORKINGLAB/flowvisor.git
+$ sudo aptitude install ant openjdk-6-jdk
+$ cd flowvisor
+$ make
+$ make doc
+$ sudo adduser flowvisor
+$ sudo make fvuser=flowvisor fvgroup=flowvisor install
+<code class="out">...
+Installation prefix (/usr/local):
+Install to different root directory ()
+...
+Enter password for account 'fvadmin' on the flowvisor:
+...
+</code></pre>
+    
+    <h3>Examples</h3>
+<pre class="mdol">$ pox.py --verbose openflow.of_01 --port=6634 forwarding.l2_learning
+$ sudo ovs-vsctl set-controller br1 tcp:127.0.0.1
+$ sudo ovs-vsctl show
+<code class="out">0e337a5e-5e01-4ba7-8007-1cbacf4689d5
+    Bridge "br0"
+        Port "eth0"
+            Interface "eth0"
+        Port "br0"
+            Interface "br0"
+                type: internal
+        Port tapOMV
+            Interface tapOMV
+    Bridge "br1"
+        Controller "tcp:127.0.0.1"
+        Port "eth1"
+            Interface "eth1"
+        Port "br1"
+            Interface "br1"
+                type: internal
+    ovs_version: "1.11.90"
+</code>$ sudo ovs-vsctl del-controller br1
+</pre>
+    
+    <hr>
+    <h3>Open vSwitch 1.7.0</h3>
+<pre class="mdol">
+$ sudo mkdir /src3/OpenvSwitch
+$ sudo chown jssu:jssu /src3/OpenvSwitch
+$ cd /src3/OpenvSwitch
+$ wget http://openvswitch.org/releases/openvswitch-1.7.0.tar.gz
+$ tar zxvf openvswitch-1.7.0.tar.gz 
+$ cd openvswitch-1.7.0/
+$ ./configure --with-linux=/lib/modules/`uname -r`/build CONFIG_TUN=yes
+$ make
+$ sudo make install
+$ sudo mkdir -p /usr/local/var/run/openvswitch
+$ sudo insmod datapath/linux/openvswitch.ko
+$ mkdir -p /usr/local/etc/openvswitch
+$ sudo ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+$ sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+                     --remote=db:Open_vSwitch,manager_options \
+                     --private-key=db:SSL,private_key \
+                     --certificate=db:SSL,certificate \
+                     --bootstrap-ca-cert=db:SSL,ca_cert \
+                     --pidfile --detach
+$ sudo ovs-vsctl --no-wait init
+$ sudo ovs-vswitchd --pidfile --detach
+$ sudo ovs-vsctl add-br br0
+$ sudo ovs-vsctl add-port br0 eth0
+$ kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+</pre>
+<h3>Installation (old)</h3>
+<pre class="mdol">
+$ cd /src4/KVM
+$ sudo aptitude install autoconf uml-utilities build-essential pkg-config libssl-dev
+$ sudo aptitude install python-jsonpipe python-qt4 python-zope.interface python-twisted-conch
+# $ mv ~/Downloads/openvswitch-1.4.1.tar.gz .
+$ wget http://openvswitch.org/releases/openvswitch-1.4.1.tar.gz
+$ tar zxvf openvswitch-1.4.1.tar.gz
+$ rm openvswitch-1.4.1.tar.gz
+$ mv openvswitch-1.4.1 openvswitch
+$ cd openvswitch
+$ ./configure --with-linux=/lib/modules/`uname -r`/build CONFIG_TUN=yes
+$ make
+$ sudo make install
+$ sudo mkdir -p /usr/local/var/run/openvswitch
+  </pre>
+Load kernel modules with "insmod".
+<pre class="mdol">
+$ sudo insmod datapath/linux/openvswitch_mod.ko
+$ dmesg | grep "Open vSwitch"
+[84094.179344] openvswitch_mod: Open vSwitch switching datapath 1.4.1, built Mar 31 2012 20:37:23  
+$ lsmod | grep "openvswitch"
+openvswitch_mod        67907  0 
+  </pre>
+Initialize the configuration database using ovsdb-tool, e.g.:
+<pre class="mdol">
+$ sudo mkdir -p /usr/local/etc/openvswitch
+$ sudo ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
+  </pre>
+<h3>Startup</h3>
+Before starting ovs-vswitchd itself, you need to start its configuration database, ovsdb-server.
+<pre class="mdol">
+$ sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+                    --remote=db:Open_vSwitch,manager_options \
+                    --private-key=db:SSL,private_key \
+                    --certificate=db:SSL,certificate \
+                    --bootstrap-ca-cert=db:SSL,ca_cert \
+                    --pidfile --detach
+  </pre>
+Initialize the database using ovs-vsctl.
+<pre class="mdol">
+$ sudo ovs-vsctl --no-wait init
+  </pre>
+Start the main Open vSwitch daemon.
+<pre class="mdol">
+$ sudo ovs-vswitchd --pidfile --detach
+Sep 24 10:36:37|00001|reconnect|INFO|unix:/usr/local/var/run/openvswitch/db.sock: connecting...
+Sep 24 10:36:37|00002|reconnect|INFO|unix:/usr/local/var/run/openvswitch/db.sock: connected
+  </pre>
+Stop the Open vSwitch daemons.
+<pre class="mdol">
+$ sudo kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+  </pre>
+Create a bridge
+<pre class="mdol">
+$ sudo ovs-vsctl add-br br0
+$ sudo ovs-vsctl add-port br0 eth0
+$ sudo ovs-vsctl show
+a09ea244-910a-4dc2-ba18-969d2ea884f9
+  Bridge "br0"
+      Port "br0"
+          Interface "br0"
+              type: internal
+      Port "eth0"
+          Interface "eth0"
+$ sudo ifconfig br0 up
+$ sudo ifconfig br0 down
+  </pre>
+<h3>Scripts</h3>
+<pre class="mdol">
+$ cd ../bin/
+$ more ovs-start
+<code class="out">
+#! /bin/bash
+sudo insmod /src4/KVM/openvswitch/datapath/linux/openvswitch_mod.ko
+sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+    --remote=db:Open_vSwitch,manager_options \
+    --private-key=db:SSL,private_key \
+    --certificate=db:SSL,certificate \
+    --bootstrap-ca-cert=db:SSL,ca_cert \
+    --pidfile --detach
+sudo ovs-vsctl --no-wait init
+sudo ovs-vswitchd --pidfile --detach
+sudo ovs-vsctl add-br br0
+sudo ovs-vsctl add-port br0 eth0
+sudo ovs-vsctl show
+sudo ifconfig eth0 0.0.0.0
+sudo ifconfig br0 192.168.0.2
+sudo route add default gw 192.168.0.254
+</code></pre>
+<hr>
+<pre class="mdol">
+$ more ovs-stop
+<code class="out">
+#! /bin/bash
+sudo ovs-vsctl del-port br0 eth0
+sudo ovs-vsctl del-br br0
+sudo ovs-vsctl show
+sudo ifconfig eth0 192.168.0.2
+sudo route add default gw 192.168.0.254
+sudo kill `cd /usr/local/var/run/openvswitch && cat ovsdb-server.pid ovs-vswitchd.pid`
+sudo rmmod openvswitch_mod 
+</code></pre>
+<hr>
+<pre class="mdol">
+$ more TAP-start
+<code class="out">
+#! /bin/bash
+Bridge='br0'
+HostIP=`ifconfig ${Bridge} | grep "Bcast" | sed 's/^[ \t]*inet addr://' | sed 's/[ \t]*Bcast:.*$//'`
+sudo ifconfig $1 ${HostIP} netmask 255.255.255.255 up
+sudo ovs-vsctl add-port ${Bridge} $1
+</code></pre>
+<hr>
+<pre class="mdol">
+$ more TAP-stop
+<code class="out">
+#! /bin/bash
+Bridge='br0'
+sudo ifconfig $1 down
+sudo ovs-vsctl del-port ${Bridge} $1
+</code></pre>
+<pre class="mdol">$ chmod +x ovs-start ovs-stop TAP-start TAP-stop</pre>
+<hr>
+<pre class="mdol">
+$ more start-VM
+<code class="out">
+#! /bin/bash
+# Don't Edit, File automatically generated by Config-KVM script
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+echo "Starting VM: ovs-VM..., mem=1024M"
+mkdir /src4/KVM/network-ovs
+sudo kvm -name ovs-VM -m 1024M -localtime \
+  -net nic,macaddr=6c:f0:49:17:96:a6 \
+  -net tap,script=/src4/KVM/bin/TAP-start,downscript=/src4/KVM/bin/TAP-stop \
+  -monitor unix:/src4/KVM/network-ovs/MonSock,server,nowait \
+  -usb -usbdevice tablet -k en-us \
+  -hda /src4/KVM/Resize/Debian-Mini.img \
+  -daemonize
+</code></pre>
+<hr>
+<pre class="mdol">
+$ more stop-VM
+<code class="out">
+#! /bin/bash
+# Don't Edit, File automatically generated by Config-KVM script
+if [ $EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ $? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+       fi
+fi
+echo "system_powerdown" | sudo socat - unix-connect:/src4/KVM/network-ovs/MonSock
+echo "Please wait 5 seconds."
+sleep 5
+sudo rm -rf /src4/KVM/network-ovs
+</code>
+</pre>
+<pre class="mdol">$ rm *~
+$ chmod +x start-VM stop-VM
+$ ovs-start
+$ start-VM</pre>
+<hr>
+<pre class="mdol">
+  $ more Config-Kvm-ovs
+<code class="out">
+#! /bin/bash
+if [ $# != 4 ]
+  then echo "$0 OS.img hostname VM-IP Ether-card"
+  exit 1
+elif [ ! -f $1 ]
+  then echo "OS image: $1 does not exist."
+  exit 2
+elif [ ! -d /mnt/tmp ] 
+ then echo "Mount point /mnt/tmp does not exist, create it first."
+ exit 3
+fi
+# We also need to test hostname, VM-IP, Ether-card are legal ones.
+KvmScript="start-${2}"
+StopAndRestoreLan="stop-${2}-restore-lan"
+DeclAutoGen="# Don't Edit, File automatically generated by Config-KVM script" 
+# We need to get the Ip of the assigned ether card and its MAC address and get a 
+# fake MAC address for our VM.
+HostIP=`ifconfig $4 | grep "Bcast" | sed 's/^[ \t]*inet addr://' | sed 's/[ \t]*Bcast:.*$//'`
+PREFIX=`ifconfig $4 | grep "HWaddr" | sed 's/^[be][rt].[0-9]*.*Link.*HWaddr //' | cut -d':' -f 1-3`
+F4=`od -An -N1 -x /dev/random | sed 's/^\ 00//'`
+F5=`od -An -N1 -x /dev/random | sed 's/^\ 00//'`
+F6=`od -An -N1 -x /dev/random | sed 's/^\ 00//'`
+FakeMac=$PREFIX:${F4}:${F5}:${F6}
+echo " I got current IP: ${HostIP}, FakeMac: ${FakeMac}"
+echo "$2" >hostname
+echo "127.0.0.1       localhost.localdomain localhost" >hosts
+# Without the next line, "$ hostname --fqdn" can't produce the correct hostname.
+echo "127.0.1.1       $2" >>hosts
+echo "" >>hosts
+echo "# The following lines are desirable for IPv6 capable hosts" >>hosts
+echo "# \(added automatically by netbase upgrade\)" >>hosts
+echo "" >>hosts
+echo "::1 ip6-localhost ip6-loopback" >>hosts
+echo "fe00::0 ip6-localnet" >>hosts
+echo "ff00::0 ip6-mcastprefix" >>hosts
+echo "ff02::1 ip6-allnodes" >>hosts
+echo "ff02::2 ip6-allrouters" >>hosts
+echo "ff02::3 ip6-allhosts" >>hosts
+string=`basename $0`
+Offset=`file $1`
+Offset=`echo -n ${Offset##*startsector }`
+Offset=`echo -n ${Offset%%,*}`
+Offset=`expr ${Offset} '*' 512`
+Gateway=`ip route list`
+Gateway=`echo -n ${Gateway#*default via }`
+Gateway=`echo -n ${Gateway%% dev*}`
+echo "We need your root passwd for mounting $1:"
+sudo mount -o loop,offset=${Offset} $1 /mnt/tmp
+# Apparently, Debian adopts the lousy Ubuntu ether device rename policy.  We are forced 
+# to empty the /etc/udev/rules.d/70*net* file!!  Otherwise, next time we boot our VM, 
+# its ether device name will be wrong!
+WHOAMI=`whoami`
+sudo cp hostname /mnt/tmp/etc/hostname
+sudo cp /etc/resolv.conf /mnt/tmp/etc
+sudo cp hosts /mnt/tmp/etc/hosts
+sudo cp recover70rules /mnt/tmp/home/${WHOAMI}
+sudo cp ../DebianNetFiles/Empty70NetFile /mnt/tmp/home/${WHOAMI}
+# Bring up ether interface and route packets to host in /etc/rc.local
+cp ../DebianNetFiles/rc.local.kvm rc.local
+cat &lt;&lt;EOF >interfaces
+auto lo eth0
+iface lo inet loopback
+iface eth0 inet static
+      address ${3}
+      netmask 255.255.255.0
+      gateway ${Gateway}
+      dns-nameservers 140.120.13.1 140.120.1.2
+EOF
+cat &lt;&lt;'EOF' >modules
+virtio
+virtio_pci
+virtio_ring
+virtio_net
+virtio_blk
+EOF
+echo "# route add default gw ${HostIP}" >>rc.local
+echo "" >>rc.local
+ 
+echo "exit 0" >>rc.local
+sudo cp rc.local /mnt/tmp/etc/rc.local
+sudo chmod 755 /mnt/tmp/etc/rc.local
+sudo mv /mnt/tmp/etc/network/interfaces /mnt/tmp/etc/network/interfaces.orig
+sudo cp interfaces /mnt/tmp/etc/network/interfaces
+sudo mv /etc/initramfs-tools/modules /etc/initramfs-tools/modules.orig
+sudo cp modules /etc/initramfs-tools/modules
+sudo mv /mnt/tmp/etc/ssh/ssh_config /mnt/tmp/etc/ssh/ssh_config.orig 
+sudo mv /mnt/tmp/etc/ssh/sshd_config /mnt/tmp/etc/ssh/sshd_config.orig 
+sudo cp ../DebianNetFiles/ssh_config /mnt/tmp/etc/ssh
+sudo cp ../DebianNetFiles/sshd_config /mnt/tmp/etc/ssh
+sudo mv /mnt/tmp/etc/apt/sources.list /mnt/tmp/etc/apt/sources.list.orig
+sudo cp ../DebianNetFiles/sources.list /mnt/tmp/etc/apt  
+if [ -f /mnt/tmp/etc/udev/rules.d/70-persistent-net.rules ]
+then echo "Fix 70-persistent-net"
+    sudo rm /mnt/tmp/etc/udev/rules.d/70-persistent-net.rules
+fi
+sudo umount /mnt/tmp
+# Next three files are no longer needed and rc.local does not exist for Minix
+rm -f rc.local hostname hosts interfaces modules
+# Preparing Host Network Configuration Script
+SrcDir=`dirname $(pwd)`
+SockDir=${SrcDir}/network-$$
+echo SockDir=${SockDir}
+cat &lt;&lt;EOF >${KvmScript}
+#! /bin/bash
+${DeclAutoGen}
+if [ \$EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ \$? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+        fi
+fi
+echo "Starting VM: ${2}..., mem=1024M"
+mkdir ${SockDir}
+EOF
+cp ${KvmScript} ${KvmScript}-AsDaemon
+cat &lt;&lt;EOF >>${KvmScript}
+sudo kvm -name $2 -m 1024M -localtime \\
+  -net nic,macaddr=${FakeMac},model=virtio \\
+  -net tap,script=/src4/KVM/bin/start-TAP,downscript=/src4/KVM/bin/stop-TAP \\
+  -monitor unix:${SockDir}/MonSock,server,nowait \\
+  -usb -usbdevice tablet -k en-us \\
+  -drive index=0,media=disk,if=virtio,file=$1 \\
+  -daemonize
+EOF
+cat &lt;&lt;EOF >>${KvmScript}-AsDaemon
+sudo screen -S $2 -d -m kvm -name $2 -m 1024M -localtime \\
+  -net nic,macaddr=${FakeMac},model=virtio \\
+  -net tap,script=/src4/KVM/bin/start-TAP,downscript=/src4/KVM/bin/stop-TAP \\
+  -monitor unix:${SockDir}/MonSock,server,nowait \\
+  -usb -usbdevice tablet -k en-us \\
+  -drive index=0,media=disk,if=virtio,file=$1 \\
+  -curses -daemonize
+EOF
+# Preparing Restore Lan Script
+cat &lt;&lt;EOF >${StopAndRestoreLan}
+#! /bin/bash
+${DeclAutoGen}
+if [ \$EUID -ne 0 ]
+   then sudo echo "Super User passwd, please:"
+        if [ \$? -ne 0 ]
+          then  echo "Sorry, need su privilege!"
+                exit 1
+       fi
+fi
+echo "system_powerdown" | sudo socat - unix-connect:${SockDir}/MonSock
+echo "Please wait 5 seconds."
+sleep 5
+sudo rm -rf ${SockDir}
+EOF
+chmod 755 ${KvmScript} ${KvmScript}-AsDaemon ${StopAndRestoreLan} 
+</code></pre>
+<h1>Openflow control</h1>
+<pre class="mdol">
+$ sudo ovs-vsctl set-controller br0 tcp:0.0.0.0:6633
+$ sudo ovs-ofctl show br0
+$ sudo ovs-ofctl dump-flows br0
+$ sudo ovs-ofctl add-flow br0 "table=0 ip dl_type=0x0800 nw_proto=6 tp_dst=80 nw_dst=140.120.15.180 idle_timeout=0  action=mod_nw_dst:192.168.180.10,normal"
+$ sudo ovs-ofctl add-flow br0 "table=0 ip dl_type=0x0800 nw_proto=6 tp_dst=80 nw_src=192.168.180.10 idle_timeout=0  action=mod_nw_src:140.120.15.180,normal"
+$ sudo ovs-ofctl del-flows br0
+</pre>
+<p>Delete all flows and then insert initial flow.</p>
+<pre class="dol">$ sudo ovs-ofctl del-flows brLAN ; sudo ovs-ofctl add-flow brLAN "table=0,priority=0,action=normal"
+</pre>
+
+<pre class="mdol">
+<code class="out">
+</code>
+</pre>
+
+<hr>
+<script language="JavaScript">
+<!-- Hide JavaScript...
+var LastUpdated = document.lastModified;
+document.writeln ("This page was last updated " + LastUpdated);
+// End Hiding -->
+</script>
+<address style="text-align: right;"><a href="mailto:cssu@cs.nchu.edu.tw">Chi-Sheng Su</a></address>
+
+</body>
+</html>
