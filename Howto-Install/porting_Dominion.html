@@ -1,0 +1,604 @@
+<html>
+  <head>
+    <title>Dominion Porting Notes</title>
+    <link type="text/css" rel="stylesheet" href="/css/style_2015.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+  </head>
+<body>
+<h1>Porting Notes</h1>
+<p>Install devuan_jessie_1.0.0-beta_amd64_NETINST.iso</p>
+<p>Installed softwares
+<ul>
+  <li>Printer Server
+  <li>SSH
+  <li>base system
+</ul>
+</p>
+
+<h2>Sources list</h2>
+<h3>/etc/apt/sources.list</h3>
+<pre class="mdol">
+<code>sudo cp /etc/apt/sources.list /etc/apt/sources.list.orig</code>
+<code class="out">deb http://tw.mirror.devuan.org/merged/ jessie main non-free contrib
+deb-src http://tw.mirror.devuan.org/merged/ jessie main non-free contrib
+
+# jessie-security, previously known as 'volatile'
+deb http://tw.mirror.devuan.org/merged/ jessie-security main contrib non-free
+#deb-src http://tw.mirror.devuan.org/merged/ jessie-security main contrib non-free
+
+# jessie-updates, previously known as 'volatile'
+deb http://tw.mirror.devuan.org/merged/ jessie-updates main contrib non-free
+#deb-src http://tw.mirror.devuan.org/merged/ jessie-updates main contrib non-free
+
+deb http://tw.mirror.devuan.org/merged/ ascii main non-free contrib
+deb http://tw.mirror.devuan.org/merged/ ascii-security main contrib non-free
+deb http://tw.mirror.devuan.org/merged/ ascii-updates main contrib non-free
+
+# Multimedia
+deb http://www.deb-multimedia.org jessie main non-free
+deb http://www.deb-multimedia.org stretch main non-free
+</code>
+<code>sudo aptitude update</code>
+<code>sudo aptitude install deb-multimedia-keyring</code>
+<code>sudo aptitude update</code>
+<code>sudo aptitude dist-upgrade</code>
+<code class="out">      Remove the following packages:
+1)      aptitude
+2)      libpng12-dev
+3)      perl-modules
+4)      rsyslog
+</code>
+<code>sudo apt-get install aptitude</code>
+<code>sudo aptitude install rsyslog</code>
+<code>sudo aptitude install deborphan</code>
+<code>sudo dpkg -P `deborphan`</code>
+<code>sudo aptitude clean</code>
+</pre>
+
+<h2>System</h2>
+<h3>base system tools and drivers</h3>
+<pre class="mdol">
+<code>sudo aptitude install linux-headers-amd64 firmware-linux-free build-essential</code>
+<code>sudo aptitude install firmware-linux-nonfree</code>
+<code>sudo init 6</code>
+</pre>
+  
+<h3>sudo user</h3>
+<pre class="mdol">
+<code>su</code>
+<code class="adm">cp /etc/sudoers /etc/sudoers</code>
+<code class="adm">nano /etc/sudoers</code>
+<code class="adm">diff /etc/sudoers /etc/sudoers</code>
+<code class="out">21d20
+$lt; cssu	ALL=(ALL) NOPASSWD:ALL
+</code>
+</pre>
+
+<h3>profiles (PATH, PS1)</h3>
+<pre class="mdol">
+<code>cp .profile .profile.orig</code>
+<code>diff .profile .profile.orig</code>
+<code class="out">19c19,22
+&lt; export PATH=.:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+---
+&gt; # set PATH so it includes user's private bin if it exists
+&gt; if [ -d "$HOME/bin" ] ; then
+&gt;     PATH="$HOME/bin:$PATH"
+&gt; fi
+</code>
+<code>cp .bashrc .bashrc.orig</code>
+<code>diff .bashrc .bashrc.orig</code>
+<code class="out">46c46
+&lt; force_color_prompt=yes
+---
+&gt; #force_color_prompt=yes
+60c60
+&lt;     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u\[\033[00m\]@\[\033[35m\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+---
+&gt;     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+114,115d113
+&lt;
+&lt; export PATH=.:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+</code>
+<code>sudo dpkg-reconfigure locales</code>
+</pre>
+
+<h3>Hosts, hosts.allow, hosts.deny</h3>
+<pre class="mdol">
+<code>cd /etc</code>
+<code>sudo cp hosts hosts.orig</code>
+<code>sudo cp hosts.allow hosts.allow.orig</code>
+<code>sudo cp hosts.deny hosts.deny.orig</code>
+<code>cat hosts</code>
+<code class="out">127.0.0.1	localhost
+127.0.1.1	SuHu-Dominion
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+140.120.7.1     fish.amath.nchu.edu.tw  fish
+140.120.7.19    Amd-Srv                 as
+140.120.7.20    am-mirror               amm
+140.120.7.21    am-DebMirror            amdm
+140.120.7.41    amd-op                  amd-op
+140.120.8.101   Amath-Client01          ac01
+140.120.8.102   Amath-Client02          ac02
+140.120.8.103   Amath-Client03          ac03
+140.120.8.104   Amath-Client04          ac04
+140.120.8.105   Amath-Client05          ac05
+140.120.8.106   Amath-Client06          ac06
+140.120.8.107   Amath-Client07          ac07
+140.120.8.108   Amath-Client08          ac08
+140.120.8.109   Amath-Client09          ac09
+140.120.8.110   Amath-Client10          ac10
+140.120.8.111   Amath-Client11          ac11
+140.120.8.112   Amath-Client12          ac12
+140.120.8.113   Amath-Client13          ac13
+140.120.8.114   Amath-Client14          ac14
+140.120.8.115   Amath-Client15          ac15
+140.120.8.116   Amath-Client16          ac16
+140.120.8.117   Amath-Client17          ac17
+140.120.8.118   Amath-Client18          ac18
+140.120.8.119   Amath-Client19          ac19
+140.120.8.120   Amath-Client20          ac20
+140.120.8.121   Amath-Client21          ac21
+140.120.8.201   av-01                   av01
+140.120.8.202   av-02                   av02
+140.120.8.203   av-03                   av03
+140.120.8.204   av-04                   av04
+140.120.8.205   av-05                   av05
+140.120.8.206   av-06                   av06
+140.120.8.207   av-07                   av07
+140.120.8.208   av-08                   av08
+140.120.8.209   av-09                   av09
+140.120.8.210   av-10                   av10
+140.120.8.211   av-11                   av11
+140.120.8.212   av-12                   av12
+140.120.8.213   av-13                   av13
+140.120.15.160	SNMLab-Minerva		snmm
+140.120.15.187	1010-Printer		print
+140.120.15.189	SNMLab-Printer		snmpnt
+140.120.16.69	CSE-Mirror		csm
+140.120.16.70	CSE-Server		css
+140.120.16.71	CSE-Cloud01		cs01
+140.120.16.72	CSE-Cloud02		cs02
+140.120.16.73	CSE-Cloud03		cs03
+140.120.16.74	CSE-Cloud04		cs04
+140.120.16.75	CSE-Cloud05		cs05
+140.120.16.76	CSE-Cloud06		cs06
+140.120.16.77	CSE-Cloud07		cs07
+140.120.16.78	CSE-Cloud08		cs08
+140.120.16.81   CSE-E01                 ce01
+140.120.16.82   CSE-E02                 ce02
+140.120.16.83   CSE-E03                 ce03
+140.120.16.84   CSE-E04                 ce04
+140.120.16.124	CSE-Web			csw
+192.168.180.1	SuHu-OpenWrt		ggwrt
+192.168.180.11	SuHu-Diva		gg1
+192.168.180.12	SuHu-Dominion		gg2
+192.168.180.13	SuHu-Archangel		gg3
+192.168.180.31  CrossCompilePi          ccpi
+192.168.180.33	GNS3			gns3
+192.168.180.253	SuHu-Web		web
+192.168.180.254	SuHu-Router		sur
+
+## CSIE-Devices
+# DNS port 7021
+140.120.13.1	CSIE-DNS		csdns
+140.120.13.25	SNM-WebServer		snmweb
+140.120.13.57	CSE-3845		c3845
+140.120.13.58	CSE-NME3750S		cnme
+140.120.13.59	CSE-3560G		c3560g
+140.120.13.60	CSE-3560G-2		c3560g2
+140.120.13.61	CSE-2960		c2960
+140.120.13.62	CSE-3750X		c3750
+
+# TGOS
+140.120.16.120	ODDash			dash
+</code>
+<code>cat hosts.allow</code>
+<code class="out"># /etc/hosts.allow: list of hosts that are allowed to access the system.
+#                   See the manual pages hosts_access(5) and hosts_options(5).
+#
+# Example:    ALL: LOCAL @some_netgroup
+#             ALL: .foobar.edu EXCEPT terminalserver.foobar.edu
+#
+# If you're going to protect the portmapper use the name "rpcbind" for the
+# daemon name. See rpcbind(8) and rpc.mountd(8) for further information.
+#
+
+ALL: localhost
+ALL: 127.0.0.1
+ALL: 127.0.1.1
+ALL: 10.0.0.0/255.0.0.0
+ALL: 172.16.0.0/255.240.0.0
+ALL: 192.168.0.0/255.255.0.0
+ALL: 140.120.7.19
+ALL: 140.120.7.20
+ALL: 140.120.7.21
+ALL: 140.120.8.101
+ALL: 140.120.8.102
+ALL: 140.120.8.103
+ALL: 140.120.8.104
+ALL: 140.120.8.105
+ALL: 140.120.8.106
+ALL: 140.120.8.107
+ALL: 140.120.8.108
+ALL: 140.120.8.109
+ALL: 140.120.8.110
+ALL: 140.120.8.111
+ALL: 140.120.8.112
+ALL: 140.120.8.113
+ALL: 140.120.8.114
+ALL: 140.120.8.115
+ALL: 140.120.8.116
+ALL: 140.120.8.117
+ALL: 140.120.8.118
+ALL: 140.120.8.119
+ALL: 140.120.8.120
+ALL: 140.120.8.121
+ALL: 140.120.13.1
+ALL: 140.120.13.2
+ALL: 140.120.13.41
+ALL: 140.120.13.42
+ALL: 140.120.13.43
+ALL: 140.120.13.44
+ALL: 140.120.13.45
+ALL: 140.120.13.46
+ALL: 140.120.13.47
+ALL: 140.120.13.128/255.255.255.224
+ALL: 140.120.13.240/255.255.255.240
+ALL: 140.120.14.97
+ALL: 140.120.14.107
+ALL: 140.120.14.108
+ALL: 140.120.14.109
+ALL: 140.120.14.110
+ALL: 140.120.14.111
+ALL: 140.120.15.128/255.255.255.192
+ALL: 140.120.16.20
+ALL: 140.120.16.21
+ALL: 140.120.16.22
+ALL: 140.120.16.64/255.255.255.192
+ALL: 140.120.19.1
+ALL: 140.120.19.2
+ALL: 140.120.19.3
+ALL: 140.120.19.4
+ALL: 140.120.19.5
+ALL: .dynamic-ip.hinet.net
+ALL: .dynamic.hinet.net
+ALL: .emome-ip.hinet.net
+ALL: .EMOME-IP.hinet.net
+ALL: .hinet.net
+ALL: .hinet-ip.hinet.net
+ALL: 101.12.
+ALL: 101.13.
+ALL: 101.14.
+ALL: 101.15.
+</code>
+<code>cat hosts.deny</code>
+<code class="out"># /etc/hosts.deny: list of hosts that are _not_ allowed to access the system.
+#                  See the manual pages hosts_access(5) and hosts_options(5).
+#
+# Example:    ALL: some.host.name, .some.domain
+#             ALL EXCEPT in.fingerd: other.host.name, .other.domain
+#
+# If you're going to protect the portmapper use the name "rpcbind" for the
+# daemon name. See rpcbind(8) and rpc.mountd(8) for further information.
+#
+# The PARANOID wildcard matches any host whose name does not match its
+# address.
+#
+# You may wish to enable this to ensure any programs that don't
+# validate looked up hostnames still leave understandable logs. In past
+# versions of Debian this has been the default.
+# ALL: PARANOID
+
+ALL: ALL
+</code>
+</pre>
+
+
+<h2>Desktop environment</h2>
+<h3>Enlightenment</h3>
+<a href="enlightenment.html" target="_blank">Intallation steps</a>
+<pre class="mdol">
+<code>sudo aptitude install xserver-xorg xserver-xorg-video-all xorg</code>
+<code>sudo aptitude install mesa-utils mesa-utils-extra</code>
+<code>sudo aptitude install libssl1.0.0</code>
+</pre>
+
+<h3>Reverse Mouse Scrolling</h3>
+<pre class="mdol">
+<code>echo "pointer = 1 2 3 5 4 6 7 8 9 10 11 12" &gt; .Xmodmap</code>
+<code>xmodmap .Xmodmap</code>
+</pre>
+
+
+
+<h2>Applications</h2>
+<h3>Browser</h3>
+<pre class="mdol">
+<code>sudo aptitude install firefox-esr firefox-esr-l10n-zh-tw</code>
+<code>wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb</code>
+<code>sudo aptitude install gconf-service libgconf-2-4 libpango1.0-0 fonts-liberation libappindicator1 libcurl3 xdg-utils</code>
+<code>sudo dpkg -i google-chrome-stable_current_amd64.deb</code>
+</pre>
+
+<h3>Emacs</h3>
+<pre class="mdol">
+<code>sudo aptitude install emacs</code>
+<code>sudo aptitude install emacs-goodies-el</code>
+<code>cat .emacs</code>
+<code class="out">(custom-set-variablesmacs': No such file or directory
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#242424" "#e5786d" "#95e454" "#cae682" "#8ac6f2" "#333366" "#ccaa8f" "#f6f3e8"])
+ '(custom-enabled-themes (quote (deeper-blue)))
+ '(inhibit-startup-screen t)
+ '(package-archives
+   (quote
+    (("gnu" . "http://elpa.gnu.org/packages/")
+     ("melpa" . "http://melpa.org/packages/")
+     ("marmalade" . "https://marmalade-repo.org/packages/")))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+(add-to-list 'load-path "~/.emacs.d/lisp/")
+;;(require 'web-mode)
+;;(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+;;(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+;;(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
+;;(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+;;(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+;;(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+;;(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+(require 'package)
+(package-initialize)
+(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
+                         ("melpa" . "http://melpa.org/packages/")
+                         ("marmalade" . "https://marmalade-repo.org/packages/")))
+(setq-default indent-tabs-mode nil)
+(add-hook 'java-mode-hook (lambda ()
+			    (setq c-basic-offset 4
+				  tab-width 4
+				  indent-tabs-mode nil)))
+(global-set-key (kbd "lt;f1&gt;")   'shell)
+(global-set-key (kbd "lt;f2&gt;")   'align)
+(global-set-key (kbd "lt;C-f2&gt;") 'align-regexp)
+(global-set-key (kbd "lt;f3&gt;")   'speedbar)
+(global-set-key (kbd "lt;C-f3&gt;") 'sr-speedbar-open)
+(global-set-key (kbd "lt;f4&gt;")   'auto-complete-mode)
+(global-set-key (kbd "lt;f5&gt;")   'append-to-buffer)
+(add-hook 'java-mode-hook
+          (lambda()
+            (local-set-key (kbd "C-c lt;right&gt;") 'hs-show-block)
+            (local-set-key (kbd "C-c lt;left&gt;")  'hs-hide-block)
+            (local-set-key (kbd "C-c lt;up&gt;")    'hs-hide-all)
+            (local-set-key (kbd "C-c lt;down&gt;")  'hs-show-all)
+            (yas-minor-mode t)
+            (auto-complete-mode t)
+            (tabbar-mode t)
+            (hs-minor-mode t)))
+(add-hook 'tabbar-mode-hook
+          (lambda()
+            (tabbar-install-faces t)))</code>
+
+</pre>
+
+<h2>中文輸入、亂碼解決</h2>
+<h3>fcitx</h3>
+<pre class="mdol">
+<code>sudo aptitude install fcitx fcitx-chewing fcitx-frontend-all</code>
+</pre>
+    
+<h3>中文字體</h3>
+<pre class="mdol">
+<code>sudo aptitude install fonts-cwtex-heib ttf-wqy-microhei xfonts-intl-chinese-big xfonts-intl-chinese</code>
+</pre>
+
+<h3>中文啟動軟體</h3>
+<pre class="mdol">
+<code>cat forceZhTW.sh</code>
+<code class="out">#! /bin/bash
+cd /usr/share/applications
+for f in /usr/share/applications/*.desktop; do
+     sudo sed -i 's/Exec=/Exec=env LANG=zh_TW.UTF-8 /g' $f
+done</code>
+<code>sudo aptitude search zh-tw</code>
+<code>sudo aptitude install softwares-l10n-zh-tw</code>
+</pre>
+
+<h3>Console 滑鼠支援</h3>
+<pre class="mdol">
+<code>sudo aptitude install gpm</code>
+</pre>
+
+<h3>Time sunc</h3>
+<pre class="mdol">
+<code>sudo aptitude install ntpdate</code>
+<code>sudo ntpdate 140.120.1.2</code>
+</pre>
+
+<!--
+<h1>Audio</h1>
+
+<h2>Pulseaudio</h2>
+<h3>Listen Line-in (loopback)</h3>
+<pre class="mdol">
+<code>pactl load-module module-loopback</code>
+<code>cat /etc/pulse/default.pa</code>
+<code class="out">...
+load-module module-loopback</code>
+</pre>
+
+<h2>Bluetooth</h2>
+<pre class="mdol">
+<code>sudo aptitude install bluetooth blueman</code>
+</pre>
+<h3>Fix audio delay</h3>
+<pre class="mdol">
+<code class="out">#!/bin/bash
+BLUEZCARD=`pactl list cards short | egrep -o bluez.*[[:space:]]`
+pactl set-card-profile $BLUEZCARD a2dp_sink
+pactl set-card-profile $BLUEZCARD off
+pactl set-card-profile $BLUEZCARD a2dp_sink</code>
+</pre>
+
+<h3>Connect keyboard</h3>
+<pre class="mdol">
+<code>bluetoothctl</code>
+<code class="adm">power on</code>
+<code class="adm">agent on</code>
+<code class="adm">pair &lt;MAC address&gt;</code>
+<code class="adm">connect &lt;MAC address&gt;</code>
+</pre>
+
+
+
+<h1>Video</h1>
+
+<h2>Xorg</h2>
+<h3>Install AMD/ATI Driver (fglrx)</h3>
+<pre class="mdol">
+<code>sudo aptitude install fglrx-driver fglrx-modules-dkms</code>
+</pre>
+
+<h3>Try to completely remove your ATI drivers from your system</h3>
+<pre class="mdol">
+<code>sudo apt-get purge "fglrx.*"</code>
+<code>sudo apt-get install --reinstall xserver-xorg-core libgl1-mesa-glx libgl1-mesa-dri</code>
+<code>sudo dpkg-reconfigure xserver-xorg</code>
+<code>sudo reboot</code>
+</pre>
+
+<h3>Change Resolution (xrandr)</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install linux-headers-amd64</div>
+      <div class="dol">xrandr -q</div>
+      <div class="dol">xrandr --newmode "1920x1080" 173.00  1920 2048 2248 2576  1080 1083 1088 1120 -HSync +VSync</div>
+      <div class="dol">xrandr --addmode VGA-0 "1920x1080"</div>
+      <div class="dol">xrandr --output VGA-0 --mode "1920x1080"</div>
+    </div>
+    <h3>Dual Screen</h3>
+    <div class="console">
+      <div class="dol">xrandr --output HDMI-0 --mode 1920x1080 --output DVI-0 --mode 1920x1080 --right-of HDMI-0</div>
+    </div>
+    <hr>
+
+
+    <h3>Emacs</h3>
+    <p>php-mode</p>
+    <div class="console">
+      <div class="dol">cd .emacs.d</div>
+      <div class="dol">wget http://php-mode.svn.sourceforge.net/svnroot/php-mode/tags/php-mode-1.5.0/php-mode.el</div>
+      <div class="dol">EDIT .emacs</div>
+      <div class="out">;;set php-mode
+(autoload 'php-mode "~/.emacs.d/php-mode" "Major mode for editing php code." t)
+(add-to-list 'auto-mode-alist '("\\.php$" . php-mode))
+(add-to-list 'auto-mode-alist '("\\.inc$" . php-mode))</div>
+    </div>
+    <h3>Reverse Mouse Scrolling</h3>
+    <div class="console">
+      <div class="dol">echo "pointer = 1 2 3 5 4 6 7 8 9 10 11 12" &gt; .Xmodmap</div>
+      <div class="dol">xmodmap .Xmodmap</div>
+    </div>
+    <hr>
+    <h2>Media Key Binding</h2>
+    <h3>LXDE (openbox)</h3>
+    <div class="console">
+      <div class="dol">emacs ~/.config/openbox/lxde-rc.xml&</div>
+      <div class="dol">C-s &lt;!-- Keybindings for running applications --&gt;</div>
+      <div class="out">    &lt;!-- Keybindings for audio volume --&gt;
+    &lt;keybind key="XF86AudioLowerVolume"&gt;
+      &lt;action name="Execute"&gt;
+	&lt;execute&gt;amixer -q set Master 1- unmute&lt;/execute&gt;
+      &lt;/action&gt;
+    &lt;/keybind&gt;
+    &lt;keybind key="XF86AudioRaiseVolume"&gt;
+      &lt;action name="Execute"&gt;
+	&lt;execute&gt;amixer -q set Master 1+ unmute&lt;/execute&gt;
+      &lt;/action&gt;
+    &lt;/keybind&gt;
+    &lt;keybind key="XF86AudioMute"&gt;
+      &lt;action name="Execute"&gt;
+	&lt;execute&gt;amixer -q set Master toggle&lt;/execute&gt;
+      &lt;/action&gt;
+    &lt;/keybind&gt;</div>
+      <div class="dol">mv ~/.config/openbox/lxde-rc.xml~ ~/.config/openbox/lxde-rc.xml.orig</div>
+    </div>
+    <hr>
+    <h2>Synchronize Directory</h2>
+    <h3>Rsync</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install rsync</div>
+      <div class="dol">rsync -rltvp --delete -e "ssh -p 22 -l user" Source_Host:/backup/Dropbox/ /backup/Dropbox/</div>
+    </div>
+    <h3>Unison 雙向同步</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install unison</div>
+      <div class="dol">ssh -t host2 sudo aptitude install unison</div>
+      <div class="dol">unison</div>
+      <div class="dol">ssh host2 unison</div>
+      <div class="dol">emacs .unison/default.prf &</div>
+      <div class="out">&#35; Unison preferences file
+root = /backup
+root = ssh://host2//backup
+path = Dropbox
+auto = true
+batch = true
+maxthreads = 500
+owner = true
+group = true
+perms = -1
+repeat = 1
+retry = 3
+sshargs = -C
+xferbycopying = true
+silent = true
+fastcheck = true
+log = true
+logfile = /home/user/.unison/unison.log</div>
+    <div class="dol">mv .unison/default.prf~ .unison/default.prf.orig</div>
+    <div class="dol">unison &</div>
+    </div>
+
+    <hr>
+    <h2>中文輸入、亂碼解決</h2>
+
+    <h3>hime</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install hime im-switch</div>
+      <div class="dol">im-switch -s hime</div>
+    </div>
+    <h3>emacs (ibus)</h3>
+    <div class="console">
+      <div class="dol">sudo aptitude install ibus ibus-chewing python-xlib</div>
+      <div class="dol">ibus-daemon -d</div>
+    </div>
+    <p>下載 <a href="https://launchpad.net/ibus.el">ibus.el</a> - IBus client for GNU Emacs</p>
+    <div class="console">
+      <div class="dol">tar zxvf ibus-el-0.3.2.tar.gz</div>
+      <div class="dol">cp -a ibus-el-0.3.2 ~/.emacs.d/</div>
+      <div class="dol">edit .emacs</div>
+      <div class="out">;;set ibus-el
+ (add-to-list 'load-path "~/.emacs.d/ibus-el-0.3.2")
+ (require 'ibus)
+ (add-hook 'after-init-hook 'ibus-mode-on)</div>
+    </div>
+
+-->
+    <hr>
+    <address>
+      <a href="mailto:cssu@csmail.nchu.edu.tw">SuHu</a>
+    </address>
+  </body>
+</html>
