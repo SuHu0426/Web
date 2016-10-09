@@ -428,6 +428,67 @@ done</code>
 <code>sudo ntpdate 140.120.1.2</code>
 </pre>
 
+<h3>SSH config</h3>
+<pre class="mdol">
+<code>ssh-keygen</code>
+<code>cat .ssh/config</code>
+<code class="out">Host gg1
+     User cssu
+     ForwardX11 yes
+
+Host gg2
+     User cssu
+     ForwardX11 yes
+
+Host gg3
+     User cssu
+     ForwardX11 yes
+
+Host css
+     User cse
+     ForwardX11 yes
+
+Host csm
+     User cse
+     ForwardX11 yes
+
+Host cs0*
+     User cloud
+     ForwardX11 yes
+
+Host ac*
+     User hsu
+     ForwardX11 yes
+
+Host as
+     User hsu
+     ForwardX11 yes
+
+Host c2*
+     User cse
+     ForwardX11 no
+
+Host c3*
+     User cse
+     ForwardX11 no
+
+Host cnme
+     User cse
+     ForwardX11 no
+
+Host dash
+     User cse
+     HostName 140.120.16.120
+     ForwardX11 yes
+
+Host web
+     User cssu
+     ForwardX11 no
+</code>
+<code></code>
+<code></code>
+</pre>
+
 <!--
 <h1>Audio</h1>
 
@@ -596,9 +657,22 @@ logfile = /home/user/.unison/unison.log</div>
     </div>
 
 -->
-    <hr>
-    <address>
-      <a href="mailto:cssu@csmail.nchu.edu.tw">SuHu</a>
-    </address>
-  </body>
+
+
+<!-- 頁底 -->
+<hr style="margin: 8px 0px 0px 0px; border: 0;">
+<div id="footer" style="width: 100%; clear: left; display:inline-block; background: #ffffff;" align="center">
+  <script language="JavaScript">
+    <!-- Hide JavaScript...
+         var LastUpdated = document.lastModified;
+         document.writeln ('<span style="text-align:center">This page was last
+         updated ' + LastUpdated + '</span>');
+         // End Hiding -->
+  </script>
+  <address style="text-align: right; float: right; margin-right:1em;">
+    <a href="mailto:cssu@cs.nchu.edu.tw"> Chi-Sheng Su </a>
+  </address>
+</div>
+
+</body>
 </html>
