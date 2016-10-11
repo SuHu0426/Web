@@ -491,6 +491,21 @@ Host web
 <code></code>
 </pre>
 
+<h2>Audio</h2>
+<h3>Pulseaudio</h3>
+<pre class="mdol">
+<code>sudo aptitude install pulseaudio</code>
+</pre>
+
+<p>Listen Line-in (loopback)
+<pre class="mdol">
+<code>pactl load-module module-loopback</code>
+<code>cat /etc/pulse/default.pa</code>
+<code class="out">...
+load-module module-loopback</code>
+</pre>
+</p>
+
 <!--
 <h1>Audio</h1>
 
