@@ -20,20 +20,20 @@
 <h3>/etc/apt/sources.list</h3>
 <pre class="mdol">
 <code>sudo cp /etc/apt/sources.list /etc/apt/sources.list.orig</code>
-<code class="out">deb http://tw.mirror.devuan.org/merged/ jessie main non-free contrib
+<code class="out">deb http://mirror.cs.nchu.edu.tw/devuan/ jessie main non-free contrib
 deb-src http://tw.mirror.devuan.org/merged/ jessie main non-free contrib
 
 # jessie-security, previously known as 'volatile'
-deb http://tw.mirror.devuan.org/merged/ jessie-security main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/devuan/ jessie-security main contrib non-free
 #deb-src http://tw.mirror.devuan.org/merged/ jessie-security main contrib non-free
 
 # jessie-updates, previously known as 'volatile'
-deb http://tw.mirror.devuan.org/merged/ jessie-updates main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/devuan/ jessie-updates main contrib non-free
 #deb-src http://tw.mirror.devuan.org/merged/ jessie-updates main contrib non-free
 
-deb http://tw.mirror.devuan.org/merged/ ascii main non-free contrib
-deb http://tw.mirror.devuan.org/merged/ ascii-security main contrib non-free
-deb http://tw.mirror.devuan.org/merged/ ascii-updates main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/devuan/ ascii main non-free contrib
+deb http://mirror.cs.nchu.edu.tw/devuan/ ascii-security main contrib non-free
+deb http://mirror.cs.nchu.edu.tw/devuan/ ascii-updates main contrib non-free
 
 # Multimedia
 deb http://www.deb-multimedia.org jessie main non-free
@@ -390,8 +390,9 @@ ALL: ALL
             (hs-minor-mode t)))
 (add-hook 'tabbar-mode-hook
           (lambda()
-            (tabbar-install-faces t)))</code>
-
+            (tabbar-install-faces t)))
+</code>
+<code>export NO_AT_BRIDGE=1</code>
 </pre>
 
 <h2>中文輸入、亂碼解決</h2>
@@ -487,9 +488,20 @@ Host web
      User cssu
      ForwardX11 no
 </code>
-<code></code>
-<code></code>
 </pre>
+
+<h3>Dropbox</h3>
+<pre class="mdol">
+<code>wget https://www.dropbox.com/download?dl=packages/debian/dropbox_2015.10.28_amd64.deb -O dropbox_2015.10.28_amd64.deb</code>
+<code>sudo dpkg -i dropbox_2015.10.28_amd64.deb</code>
+<code>sudo aptitude install python-gtk2</code>
+<code>sudo chown cssu:cssu /video</code>
+<code>dropbox start -i</code>
+<code>sudo chown root:root /video</code>
+<code>cd</code>
+<code>ln -s /video/Dropbox/Web</code>
+</pre>
+
 
 <h2>Audio</h2>
 <h3>Pulseaudio</h3>
@@ -505,6 +517,30 @@ Host web
 load-module module-loopback</code>
 </pre>
 </p>
+
+<h2>KVM</h2>
+<h3>KVM Scripts</h3>
+<pre class="mdol">
+<code>sudo mkdir /src3/KVM /mnt/tmp</code>
+<code>sudo chown cssu:cssu /src3/KVM</code>
+<code>cd /src3/KVM</code>
+<code>git clone git@github.com:SuHu0426/KVM-Scripts.git .</code>
+<code>git add xxxx</code>
+<code>git commit -m 'comments'</code>
+<code>git push</code>
+</pre>
+
+<h3>kmln</h3>
+<pre class="mdol">
+<code>sudo mkdir /src4/kmln</code>
+<code>sudo chown cssu:cssu /src4/kmln</code>
+<code>cd /src4/kmln</code>
+<code>git clone git@github.com:SuHu0426/KMLN.git .</code>
+<code>git add xxxx</code>
+<code>git commit -m 'comments'</code>
+<code>git push</code>
+</pre>
+
 
 <!--
 <h1>Audio</h1>
